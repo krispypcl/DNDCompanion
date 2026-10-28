@@ -6,6 +6,7 @@
 
 <AuthForm
   title="Create an account"
+  name="Create an account"
   submitLabel="Sign up"
   fields={[
     { id: 'email', label: 'Email', type: 'email', autocomplete: 'email' },

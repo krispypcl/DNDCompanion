@@ -5,6 +5,7 @@
 
   let {
     title,
+    name,
     lede,
     fields,
     submitLabel,
@@ -13,7 +14,11 @@
     standalone = true,
     children
   }: {
-    title: string;
+    /** Omitted where the submit button already says what the form does. The
+        form keeps the name as an aria-label, so it is still announced. */
+    title?: string;
+    /** What the form is, for assistive tech, when there is no visible title. */
+    name: string;
     lede?: string;
     fields: Field[];
     submitLabel: string;
@@ -46,41 +51,49 @@
 </script>
 
 <div class="wrap" class:standalone>
-  <section class="card">
-    <h1>{title}</h1>
-    {#if lede}<p class="lede">{lede}</p>{/if}
+  <div class="stack">
+    {#if standalone}<p class="brand">DND Companion</p>{/if}
 
-    <form onsubmit={handle}>
-      {#each fields as field (field.id)}
-        <div class="field">
-          <label for={field.id}>{field.label}</label>
-          <input
-            id={field.id}
-            type={field.type}
-            autocomplete={field.autocomplete}
-            bind:value={values[field.id]}
-            required
-          />
-        </div>
-      {/each}
+    <section class="card">
+      {#if title}<h1>{title}</h1>{/if}
+      {#if lede}<p class="lede">{lede}</p>{/if}
 
-      {#if error}<p class="error" role="alert">{error}</p>{/if}
-      {#if notice}<p class="notice" role="status">{notice}</p>{/if}
+      <form onsubmit={handle} aria-label={name} class:bare={!title}>
+        {#each fields as field (field.id)}
+          <div class="field">
+            <label for={field.id}>{field.label}</label>
+            <input
+              id={field.id}
+              type={field.type}
+              autocomplete={field.autocomplete}
+              bind:value={values[field.id]}
+              required
+            />
+          </div>
+        {/each}
 
-      <button type="submit" disabled={busy}>{busy ? busyLabel : submitLabel}</button>
-    </form>
+        {#if error}<p class="error" role="alert">{error}</p>{/if}
+        {#if notice}<p class="notice" role="status">{notice}</p>{/if}
 
-    <nav>{@render children?.()}</nav>
-  </section>
+        <button type="submit" disabled={busy}>{busy ? busyLabel : submitLabel}</button>
+      </form>
+
+      <nav>{@render children?.()}</nav>
+    </section>
+  </div>
 </div>
 
 <style>
   .wrap { display: flex; justify-content: center; }
+  .stack { width: 100%; max-width: 23rem; }
+  .brand {
+    margin: 0 0 1rem; text-align: center; font-size: 1.25rem;
+    font-weight: 600; letter-spacing: -0.01em;
+  }
   /* Its own page centres in the viewport; embedded, it sits in the flow. */
   .standalone { min-height: 100dvh; align-items: center; padding: 1.5rem; }
   .card {
     width: 100%;
-    max-width: 23rem;
     background: var(--surface);
     border: 1px solid var(--line-soft);
     border-radius: var(--r);
@@ -89,6 +102,8 @@
   h1 { font-size: 1.25rem; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
   .lede { margin: 0.5rem 0 0; color: var(--dim); font-size: 0.875rem; line-height: 1.5; }
   form { display: flex; flex-direction: column; gap: 0.875rem; margin-top: 1.5rem; }
+  /* With no title above it, the form is the top of the card. */
+  form.bare { margin-top: 0; }
   .field { display: flex; flex-direction: column; gap: 0.3125rem; }
   label {
     font-size: 0.6875rem; letter-spacing: 0.1em; text-transform: uppercase;
