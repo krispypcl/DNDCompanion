@@ -44,9 +44,15 @@
     onchange(marked >= n ? n - 1 : n);
   }
 
-  function step(delta: number) {
+  /**
+   * Steps what the reader sees — the remaining count — and converts back to the
+   * stored spent count. On a spend tracker those run in opposite directions, so
+   * stepping the stored number directly made "Decrease" raise the display.
+   */
+  function stepRemaining(delta: number) {
     if (!editable) return;
-    onchange(clampSpent(marked + delta, max));
+    const next = remaining + delta;
+    onchange(clampSpent(accrue ? next : max - next, max));
   }
 </script>
 
@@ -81,15 +87,19 @@
         ></button>
       {/each}
     </div>
-  {:else if tracker.type === 'gauge'}
-    <div class="gauge" aria-hidden="true">
-      <i style:width="{max > 0 ? (remaining / max) * 100 : 0}%"></i>
-    </div>
   {:else}
-    <div class="counter">
-      <button disabled={!editable} onclick={() => step(-1)} aria-label="Decrease">−</button>
-      <span class="value">{remaining}</span>
-      <button disabled={!editable} onclick={() => step(1)} aria-label="Increase">+</button>
+    <!-- A gauge shows the bar instead of repeating the number, which the
+         heading already carries. Both shapes share the same stepper: a gauge
+         used to render the bar alone and could never be changed. -->
+    {#if tracker.type === 'gauge'}
+      <div class="gauge" aria-hidden="true">
+        <i style:width="{max > 0 ? (remaining / max) * 100 : 0}%"></i>
+      </div>
+    {/if}
+    <div class="counter" class:spread={tracker.type === 'gauge'}>
+      <button disabled={!editable} onclick={() => stepRemaining(-1)} aria-label="Decrease">−</button>
+      {#if tracker.type !== 'gauge'}<span class="value">{remaining}</span>{/if}
+      <button disabled={!editable} onclick={() => stepRemaining(1)} aria-label="Increase">+</button>
     </div>
   {/if}
 
@@ -129,6 +139,7 @@
     to   { transform: scale(1); }
   }
   .counter { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.4rem; }
+  .counter.spread { justify-content: space-between; }
   .counter button {
     width: 1.8rem; height: 1.8rem;
     border: 1px solid var(--line);
