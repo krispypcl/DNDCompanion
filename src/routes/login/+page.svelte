@@ -6,7 +6,7 @@
 </script>
 
 <AuthForm
-  title="Sign in"
+  name="Sign in"
   submitLabel="Sign in"
   fields={[
     { id: 'email', label: 'Email', type: 'email', autocomplete: 'email' },
