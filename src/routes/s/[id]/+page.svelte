@@ -19,12 +19,14 @@
   import ThemePicker from '$lib/components/ThemePicker.svelte';
   import UndoToast from '$lib/components/UndoToast.svelte';
   import { sheetRepo } from '$lib/data/sheets';
-  import { formulaContext, modifierOf, passiveScore, spellSaveDC } from '$lib/rules/derived';
+  import { formulaContext, modifierOf, passiveScore } from '$lib/rules/derived';
   import { themeStyle } from '$lib/theme';
   import { session } from '$lib/stores/session';
   import { sheetStore } from '$lib/stores/sheet';
   import { canUndo, lastLabel, resetUndo, snapshot, undo } from '$lib/stores/undo';
+  import { ABILITIES } from '$lib/types';
   import type {
+    Ability,
     Definition,
     Feature,
     RestKind,
@@ -36,7 +38,7 @@
     TrackerType
   } from '$lib/types';
 
-  const TABS = ['Combat', 'Spells', 'Equipment', 'Features', 'Character', 'Notes'];
+  const TABS = ['Combat', 'Spells', 'Equipment', 'Features', 'Character', 'Notes', 'Backstory'];
   const PASSIVES = ['perception', 'insight', 'investigation'] as const;
 
   let loading = $state(true);
@@ -54,12 +56,6 @@
   const sign = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
   const initiative = $derived(
     definition ? (definition.combat?.initiative ?? modifierOf(definition, 'dex')) : 0
-  );
-  /** Only a character who casts something has one; most martials do not. */
-  const saveDc = $derived(
-    definition?.spellcastingAbility
-      ? spellSaveDC(definition, definition.spellcastingAbility)
-      : null
   );
 
   $effect(() => {
@@ -283,6 +279,45 @@
             {#if tab === 'Combat'}
               <AttackList {definition} {editable} onchange={setDefinition} />
             {:else if tab === 'Spells'}
+              <div class="casting">
+                <div>
+                  <h3>Spellcasting ability</h3>
+                  {#if editable}
+                    <select
+                      aria-label="Spellcasting ability"
+                      value={definition.spellcastingAbility ?? 'none'}
+                      onchange={(e) => {
+                        const next = { ...definition };
+                        if (e.currentTarget.value === 'none') delete next.spellcastingAbility;
+                        else next.spellcastingAbility = e.currentTarget.value as Ability;
+                        setDefinition(next);
+                      }}
+                    >
+                      <option value="none">None</option>
+                      {#each ABILITIES as ability (ability)}
+                        <option value={ability}>{ability.toUpperCase()}</option>
+                      {/each}
+                    </select>
+                  {:else}
+                    <p class="castval">{definition.spellcastingAbility?.toUpperCase() ?? '—'}</p>
+                  {/if}
+                </div>
+                <div>
+                  <h3>Spell save DC</h3>
+                  <EditableField value={definition.spellSaveDc ?? ''} {editable} type="number"
+                                 label="Spell save DC" placeholder="—"
+                                 onchange={(v) => setDefinition({ ...definition, spellSaveDc: v === '' ? undefined : Number(v) })} />
+                </div>
+                <div>
+                  <h3>Spell attack bonus</h3>
+                  <EditableField value={definition.spellAttackBonus ?? ''}
+                                 display={definition.spellAttackBonus != null ? sign(definition.spellAttackBonus) : undefined}
+                                 {editable} type="number"
+                                 label="Spell attack bonus" placeholder="—"
+                                 onchange={(v) => setDefinition({ ...definition, spellAttackBonus: v === '' ? undefined : Number(v) })} />
+                </div>
+              </div>
+
               {#if !editable || (definition.spells ?? []).length > 0}
                 <SpellTable {definition} />
               {/if}
@@ -359,11 +394,18 @@
                   <code>homebrew</code> marks an entry as yours and drops the 5e.tools link.
                 </p>
               {/if}
-            {:else}
+            {:else if tab === 'Notes'}
               <div class="notes">
                 <EditableField value={definition.notes} {editable} type="textarea" label="Notes"
                                placeholder="Nothing written yet."
                                onchange={(v) => setDefinition({ ...definition, notes: String(v) })} />
+              </div>
+            {:else}
+              <div class="notes">
+                <EditableField value={definition.backstory ?? ''} {editable} type="textarea"
+                               rows={16} label="Backstory"
+                               placeholder="Nothing written yet."
+                               onchange={(v) => setDefinition({ ...definition, backstory: String(v) })} />
               </div>
             {/if}
           {/snippet}
@@ -378,13 +420,10 @@
               <EditableField value={definition.combat?.ac} {editable} type="number"
                              label="AC" onchange={(v) => patchCombat('ac', Number(v))} />
             </b>
-            <span class="cap">Armor class</span>
+            <span class="cap">AC</span>
           </div>
           <div class="defbox"><b>{sign(initiative)}</b><span class="cap">Initiative</span></div>
-        </div>
-
-        <div class="stats">
-          <div class="statbox">
+          <div class="defbox">
             <b>
               <EditableField value={definition.proficiency} display={sign(definition.proficiency)}
                              {editable} type="number" label="Proficiency bonus"
@@ -392,7 +431,7 @@
             </b>
             <span class="cap">Prof</span>
           </div>
-          <div class="statbox">
+          <div class="defbox">
             <b>
               <EditableField value={definition.combat?.speed}
                              display={definition.combat?.speed != null
@@ -403,11 +442,21 @@
             </b>
             <span class="cap">Speed</span>
           </div>
-          <div class="statbox" title={saveDc === null
-              ? 'Set a spellcasting ability under Character to work this out'
-              : `8 + proficiency + ${definition.spellcastingAbility?.toUpperCase()} modifier`}>
-            <b>{saveDc ?? '—'}</b>
+          <div class="defbox">
+            <b>
+              <EditableField value={definition.abilitySaveDc ?? ''} {editable} type="number"
+                             label="Ability save DC" placeholder="—"
+                             onchange={(v) => setDefinition({ ...definition, abilitySaveDc: v === '' ? undefined : Number(v) })} />
+            </b>
             <span class="cap">Save DC</span>
+          </div>
+          <div class="defbox">
+            <b>
+              <EditableField value={sheetState.inspiration ?? 0} {editable} type="number"
+                             label="Inspiration"
+                             onchange={(v) => setState({ ...sheetState, inspiration: Number(v) })} />
+            </b>
+            <span class="cap">Inspiration</span>
           </div>
         </div>
 
@@ -532,34 +581,22 @@
   .rail-right { order: 1; display: flex; flex-direction: column; }
   .centre { display: flex; flex-direction: column; }
 
-  .defense { display: grid; grid-template-columns: 1fr 1fr; gap: 0.625rem; margin: 0.625rem 0 0; }
+  .defense { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin: 0.625rem 0 0; }
   .defbox {
     background: var(--raised); border: 1px solid var(--line-soft); border-radius: var(--r);
-    padding: 0.875rem 0.625rem; text-align: center;
+    padding: 0.625rem 0.3125rem; text-align: center; min-width: 0;
     transition: border-color 0.2s ease;
   }
   .defbox:hover { border-color: var(--line); }
   .defbox b {
-    display: block; font-size: 1.6875rem; font-weight: 600; line-height: 1;
+    display: block; font-size: 1.375rem; font-weight: 600; line-height: 1;
     color: var(--a-hi); font-variant-numeric: tabular-nums;
   }
   .defbox .cap { margin-top: 0.4375rem; }
   .defbox :global(.field) {
     --fld-leading: 1; --fld-pad-y: 0px;
     field-sizing: fixed; display: block; margin-inline: auto;
-    width: 4rem; text-align: center; font-size: 1.6875rem;
-  }
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.625rem; margin-top: 0.625rem; }
-  .statbox {
-    background: var(--raised); border: 1px solid var(--line-soft); border-radius: var(--r-sm);
-    padding: 0.5rem 0.3125rem; text-align: center; min-width: 0;
-  }
-  .statbox b { display: block; font-size: 1.0625rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .statbox .cap { margin-top: 0.1875rem; }
-  .statbox :global(.field) {
-    --fld-leading: 1.2; --fld-pad-y: 0px;
-    field-sizing: fixed; display: block; margin-inline: auto;
-    width: 3.25rem; text-align: center; font-size: 1.0625rem;
+    width: 3.25rem; text-align: center; font-size: 1.375rem;
   }
   .trk { padding-top: 1.25rem; }
   .trk .cap { margin-bottom: 0.625rem; }
@@ -584,6 +621,18 @@
   .hint { color: var(--faint); font-size: 0.78rem; margin: 0.5rem 0 0; line-height: 1.5; }
   .hint code { background: var(--raised); border-radius: 3px; padding: 0.05rem 0.25rem; font-size: 0.95em; }
   .themerow { display: flex; align-items: center; gap: 1rem; margin: 1.25rem 0; flex-wrap: wrap; }
+  .casting { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+  .casting h3 {
+    font-size: 0.6875rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--label); font-weight: 600; margin: 0 0 0.25rem;
+  }
+  .casting :global(.field) { font-size: 1.0625rem; font-weight: 600; width: 4rem; field-sizing: fixed; }
+  .castval { margin: 0; font-size: 1.0625rem; font-weight: 600; padding: 0.15rem 0.3rem; border: 1px solid transparent; }
+  .casting select {
+    background: var(--bg); border: 1px solid var(--line); color: var(--text);
+    border-radius: var(--r-sm); padding: 0.15rem 0.3rem; font: inherit;
+    font-size: 1.0625rem; font-weight: 600;
+  }
   /* Every other tab starts its content at the panel's edge; the notes field
      insets its text by its own padding and border, so pull the box back by
      exactly that and widen it to match. The text then lines up with the table

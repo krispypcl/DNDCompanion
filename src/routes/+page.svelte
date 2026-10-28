@@ -157,10 +157,25 @@
     background: var(--surface); border: 1px solid var(--line); color: var(--text);
     border-radius: 6px; padding: 0.4rem 0.9rem; font: inherit; font-size: 0.875rem; cursor: pointer;
   }
-  button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  button {
+    transition: border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+  }
+  button:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
+  button:active:not(:disabled) { transform: translateY(1px); }
   .ghost { color: var(--dim); }
   .ghost:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
   ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+  /* Rows arrive in order; past the sixth they are all but simultaneous. */
+  li { animation: rise 0.28s cubic-bezier(0.2, 0.7, 0.3, 1) backwards; }
+  li:nth-child(2) { animation-delay: 0.04s; }
+  li:nth-child(3) { animation-delay: 0.08s; }
+  li:nth-child(4) { animation-delay: 0.12s; }
+  li:nth-child(5) { animation-delay: 0.16s; }
+  li:nth-child(n + 6) { animation-delay: 0.2s; }
   li {
     display: flex;
     align-items: center;
@@ -169,9 +184,9 @@
     border-radius: 8px;
     background: var(--surface);
     padding-right: 0.5rem;
-    transition: border-color 0.15s ease;
+    transition: border-color 0.15s ease, transform 0.15s ease;
   }
-  li:hover { border-color: var(--accent); }
+  li:hover { border-color: var(--a-edge); transform: translateY(-1px); }
   li a {
     display: block; flex: 1; min-width: 0;
     padding: 0.75rem 0.9rem; text-decoration: none; color: inherit;

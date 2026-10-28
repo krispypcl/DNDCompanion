@@ -133,7 +133,7 @@
   }
   .hp-readout { display: flex; align-items: baseline; gap: 0.25rem; margin-top: 0.375rem; }
   .hp-readout strong {
-    font-size: 2.375rem; line-height: 1; font-weight: 600;
+    font-size: 2.875rem; line-height: 1; font-weight: 600;
     color: var(--a-hi); font-variant-numeric: tabular-nums;
   }
   .hp-readout strong.bloodied, .hp-readout strong.down { color: var(--danger); }
@@ -153,8 +153,8 @@
   }
 
   .bar {
-    height: 6px; background: oklch(20% 0.004 286); border-radius: 3px;
-    overflow: hidden; margin: 0.625rem 0 0; display: flex;
+    height: 10px; background: oklch(20% 0.004 286); border-radius: 5px;
+    overflow: hidden; margin: 0.75rem 0 0; display: flex;
   }
   .bar i { display: block; height: 100%; transition: width 0.35s ease; }
   .cur { background: var(--a-mid); }
