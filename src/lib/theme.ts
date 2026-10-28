@@ -10,13 +10,23 @@
  * through: a dusty blue themes the sheet quietly, a vivid red does not.
  */
 
-export type ThemeName = 'copper' | 'ash' | 'blood' | 'verdigris' | 'arcane' | 'steel';
+export type ThemeName =
+  | 'slate'
+  | 'sage'
+  | 'ash'
+  | 'copper'
+  | 'blood'
+  | 'verdigris'
+  | 'arcane'
+  | 'steel';
 
 export type Theme = { label: string; hue: number; chroma: number };
 
 /** `hex` is only a swatch fallback and the seed for the colour input; the
     rendered accent always comes from hue and chroma. */
 export const THEMES: Record<ThemeName, Theme & { hex: string }> = {
+  slate: { label: 'Slate', hue: 255, chroma: 0.45, hex: '#7994b7' },
+  sage: { label: 'Sage', hue: 150, chroma: 0.45, hex: '#789d7f' },
   copper: { label: 'Copper', hue: 52, chroma: 1, hex: '#d2783b' },
   ash: { label: 'Ash', hue: 280, chroma: 0.14, hex: '#90919e' },
   blood: { label: 'Blood', hue: 22, chroma: 1.05, hex: '#db6b6a' },
@@ -25,7 +35,8 @@ export const THEMES: Record<ThemeName, Theme & { hex: string }> = {
   steel: { label: 'Steel', hue: 238, chroma: 0.8, hex: '#4a9bcc' }
 };
 
-export const DEFAULT_THEME: ThemeName = 'copper';
+/** Soft and low-chroma: a new sheet should not arrive shouting. */
+export const DEFAULT_THEME: ThemeName = 'slate';
 export const THEME_NAMES = Object.keys(THEMES) as ThemeName[];
 
 /** The chroma a picked colour needs to count as a full-strength accent. Above

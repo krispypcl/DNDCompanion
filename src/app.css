@@ -7,8 +7,9 @@
 :root {
   color-scheme: dark;
 
-  --h: 52;  /* accent hue */
-  --c: 1;   /* chroma scale: 0 is neutral, 1 is full */
+  /* Matches DEFAULT_THEME ('slate') in src/lib/theme.ts. */
+  --h: 255; /* accent hue */
+  --c: 0.45; /* chroma scale: 0 is neutral, 1 is full */
 
   --bg: oklch(12% 0.005 285.823);
   --surface: oklch(16.5% 0.005 285.89);

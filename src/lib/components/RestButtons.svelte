@@ -18,8 +18,8 @@
   } = $props();
 
   const LABELS: Record<RestKind, string> = {
-    short: 'Short rest',
-    long: 'Long rest',
+    short: 'Short Rest',
+    long: 'Long Rest',
     dawn: 'Dawn'
   };
 
