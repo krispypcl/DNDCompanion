@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from 'vitest';
 import ListEditor from '$lib/components/ListEditor.svelte';
 
 const columns = [
-  { key: 'label', label: 'Label' },
+  { key: 'label', label: 'Label', placeholder: 'Risk Dice' },
   { key: 'type', label: 'Shape', type: 'select' as const, options: ['pips', 'counter'] }
 ];
 
@@ -50,6 +50,19 @@ describe('ListEditor', () => {
     });
     (screen.getByLabelText('Remove Features 2') as HTMLButtonElement).click();
     expect(onchange).toHaveBeenCalledWith([{ label: 'a', type: 'pips' }, { label: 'c', type: 'pips' }]);
+  });
+
+  it('shows an example in each free-text field', () => {
+    render(ListEditor, {
+      props: {
+        title: 'Trackers',
+        items: [{ label: '', type: 'pips' }],
+        columns,
+        blank: () => ({ label: '', type: 'pips' }),
+        onchange: () => {}
+      }
+    });
+    expect((screen.getByLabelText('Trackers 1 Label') as HTMLInputElement).placeholder).toBe('Risk Dice');
   });
 
   it('renders an empty list without an add row', () => {
