@@ -40,6 +40,22 @@ export function spellAttackBonus(def: Definition, ability: Ability): number {
   return def.proficiency + modifierOf(def, ability);
 }
 
+/**
+ * Total weight carried. An item's weight is per unit, so it counts once per
+ * item in the stack; an item without a weight counts as none rather than
+ * blocking the sum.
+ */
+export function weightCarried(def: Definition): number {
+  const total = (def.equipment ?? []).reduce((sum, item) => {
+    const w = Number(item.weight);
+    if (!Number.isFinite(w)) return sum;
+    const qty = Number(item.qty);
+    return sum + w * (Number.isFinite(qty) && qty > 0 ? qty : 1);
+  }, 0);
+  // Keep a half-pound from turning into 7.500000000000001.
+  return Math.round(total * 100) / 100;
+}
+
 /** The context tracker formulas are evaluated against. */
 export function formulaContext(def: Definition): FormulaContext {
   const mods = Object.fromEntries(ABILITIES.map((a) => [a, modifierOf(def, a)])) as Record<

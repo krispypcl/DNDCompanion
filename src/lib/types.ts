@@ -67,7 +67,7 @@ export type Spell = LinkableEntry & {
   notes?: string;
   prepared?: boolean;
 };
-export type Item = LinkableEntry & { qty?: number; weight?: string; notes?: string };
+export type Item = LinkableEntry & { qty?: number; weight?: number; notes?: string };
 
 /** The long-form character writing, kept apart from the one-line details. */
 export type Traits = {

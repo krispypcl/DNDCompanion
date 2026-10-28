@@ -174,6 +174,7 @@
     flex: 1 1 18rem;
     min-width: 0;
   }
+  dl > div { text-align: center; }
   dt {
     font-size: 0.6875rem;
     letter-spacing: 0.1em;
@@ -184,7 +185,8 @@
   }
   dd { margin: 0; font-size: 0.9375rem; }
   dd :global(.field) { width: 100%; field-sizing: fixed; }
-  .wide { flex: 1 1 100%; min-width: 0; }
+  /* The URL is long and reads left to right; the writing below is prose. */
+  .wide { flex: 1 1 100%; min-width: 0; text-align: left; }
   .wide :global(.field) { width: 100%; field-sizing: fixed; }
 
   .writing {
