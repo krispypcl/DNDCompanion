@@ -6,6 +6,7 @@
 
 <AuthForm
   title="Reset your password"
+  name="Reset your password"
   submitLabel="Send reset link"
   fields={[{ id: 'email', label: 'Email', type: 'email', autocomplete: 'email' }]}
   onsubmit={async (v) => {

@@ -62,7 +62,23 @@
 
 <svelte:head><title>DND Companion</title></svelte:head>
 
-<main class:auth={isConfigured && !$session.loading && !$session.user}>
+{#if isConfigured && !$session.loading && !$session.user}
+  <AuthForm
+    name="Sign in"
+    submitLabel="Sign in"
+    fields={[
+      { id: 'email', label: 'Email', type: 'email', autocomplete: 'email' },
+      { id: 'password', label: 'Password', type: 'password', autocomplete: 'current-password' }
+    ]}
+    onsubmit={async (v) => {
+      await signIn(v.email, v.password);
+    }}
+  >
+    <a href="{base}/signup">Create an account</a>
+    <a href="{base}/reset">Forgot password</a>
+  </AuthForm>
+{:else}
+<main>
   <header>
     <h1>DND Companion</h1>
     {#if $session.user}
@@ -77,23 +93,6 @@
     </p>
   {:else if $session.loading}
     <p class="dim">Loading…</p>
-  {:else if !$session.user}
-    <AuthForm
-      title="Sign in"
-      lede="Character sheets for your table. Each sheet has its own link that anyone can open and read; only you can change yours."
-      submitLabel="Sign in"
-      standalone={false}
-      fields={[
-        { id: 'email', label: 'Email', type: 'email', autocomplete: 'email' },
-        { id: 'password', label: 'Password', type: 'password', autocomplete: 'current-password' }
-      ]}
-      onsubmit={async (v) => {
-        await signIn(v.email, v.password);
-      }}
-    >
-      <a href="{base}/signup">Create an account</a>
-      <a href="{base}/reset">Forgot password</a>
-    </AuthForm>
   {:else}
     <div class="bar">
       <h2>Your characters</h2>
@@ -146,16 +145,10 @@
     {/if}
   {/if}
 </main>
+{/if}
 
 <style>
   main { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
-  /* Signed out, the page is the sign-in card, so centre it. */
-  main.auth {
-    display: flex; flex-direction: column; align-items: center;
-    justify-content: center; min-height: 82dvh;
-  }
-  main.auth header { justify-content: center; margin-bottom: 0.25rem; }
-  main.auth :global(.card) { text-align: left; }
   header { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
   h1 { font-size: 1.5rem; margin: 0 0 0.5rem; }
   h2 { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin: 0; }
