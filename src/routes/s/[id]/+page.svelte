@@ -3,6 +3,7 @@
   import { base } from '$app/paths';
   import AbilityBlock from '$lib/components/AbilityBlock.svelte';
   import AttackList from '$lib/components/AttackList.svelte';
+  import DetailsBlock from '$lib/components/DetailsBlock.svelte';
   import EditableField from '$lib/components/EditableField.svelte';
   import EntryLink from '$lib/components/EntryLink.svelte';
   import EquipmentList from '$lib/components/EquipmentList.svelte';
@@ -264,6 +265,7 @@
         {/if}
         <AttackList {definition} {editable} onchange={setDefinition} />
       {:else if tab === 'Character'}
+        <DetailsBlock {definition} {editable} onchange={setDefinition} />
         <AbilityBlock {definition} {editable} onchange={setDefinition} />
         <div class="prof-row">
           <span class="cap">Proficiency bonus</span>
