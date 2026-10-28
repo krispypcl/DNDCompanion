@@ -93,7 +93,7 @@
     /* Override the variables rather than the padding directly, so the derived
        height stays in step with it. */
     --fld-leading: 1.4; --fld-pad-y: 0px;
-    field-sizing: fixed; display: block; width: 100%;
+    field-sizing: fixed; display: block; width: 2.75rem; margin-inline: auto;
     font-size: 0.6875rem; color: var(--faint); font-variant-numeric: tabular-nums;
     text-align: center;
   }

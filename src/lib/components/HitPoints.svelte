@@ -52,6 +52,7 @@
   }
 </script>
 
+<div class="meter">
 <span class="cap">Hit points</span>
 
 <div class="hp-readout">
@@ -66,7 +67,7 @@
 
   <span class="dice">
     <span class="cap">Hit dice</span>
-    <b>
+    <b class="dicenum">
       <EditableField value={definition.combat?.hitDice} editable={editDefinition} label="Hit dice"
                      placeholder="—" onchange={(v) => patchCombat('hitDice', String(v))} />
     </b>
@@ -76,6 +77,7 @@
 <div class="bar" aria-hidden="true">
   <i class="cur" class:bloodied class:down style:width="{pct(sheetState.hpCurrent)}%"></i>
   <i class="tmp" style:width="{pct(sheetState.hpTemp)}%"></i>
+</div>
 </div>
 
 {#if down}
@@ -119,18 +121,16 @@
     font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
     color: var(--label); font-weight: 600;
   }
-  /* Bottom-aligned, so the value itself sits right above the gauge. */
-  .dice { text-align: right; margin-left: auto; align-self: flex-end; }
-  .dice b {
-    display: block; font-size: 1.0625rem; font-weight: 600;
-    font-variant-numeric: tabular-nums; margin-top: 0.125rem;
+  /* Label on the left of its value, sharing the temp marker's baseline. */
+  .dice { margin-left: auto; display: inline-flex; align-items: baseline; gap: 0.4375rem; }
+  .dicenum {
+    font-size: 1.0625rem; font-weight: 600; font-variant-numeric: tabular-nums;
   }
   .dice :global(.field) {
     --fld-leading: 1.2; --fld-pad-y: 0px;
-    field-sizing: fixed;
-    display: block; text-align: right; width: 4.5rem;
+    field-sizing: fixed; display: inline-block; text-align: right; width: 4rem;
   }
-  .hp-readout { display: flex; align-items: baseline; gap: 0.375rem; margin-top: 0.375rem; }
+  .hp-readout { display: flex; align-items: baseline; gap: 0.25rem; margin-top: 0.375rem; }
   .hp-readout strong {
     font-size: 2.375rem; line-height: 1; font-weight: 600;
     color: var(--a-hi); font-variant-numeric: tabular-nums;
@@ -143,7 +143,7 @@
     color: var(--dim);
   }
   /* Same weight and size as the maximum beside it, so the two read as one line. */
-  .temp { color: var(--dim); font-size: 1rem; font-variant-numeric: tabular-nums; margin-left: 0.125rem; }
+  .temp { color: var(--dim); font-size: 1rem; font-variant-numeric: tabular-nums; }
   .temp small {
     font-size: 0.6875rem; letter-spacing: 0.1em; text-transform: uppercase;
     margin-left: 0.25rem; color: var(--faint);
@@ -168,7 +168,8 @@
   .pip.fail[aria-pressed='true'] { background: var(--danger); border-color: var(--danger); }
   /* Two groups, not one wrapping row: what changes hit points now, and what
      restores them on a rest. The rule between says which is which. */
-  .actions { margin-top: auto; padding-top: 1rem; }
+  .meter { margin-top: auto; }
+  .actions { padding-top: 1rem; }
   .hprow { display: flex; gap: 0.5rem; }
   .restrow { margin-top: 0.625rem; padding-top: 0.625rem; border-top: 1px solid var(--line-soft); }
   .restrow :global(.rests) { display: flex; gap: 0.5rem; }
@@ -186,7 +187,9 @@
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.5rem 0.5rem;
     font: inherit; font-size: 0.875rem; cursor: pointer; flex: 1 1 0; min-width: 0;
+    transition: border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
   }
+  .hprow button:active, .restrow :global(.rests button:active) { transform: translateY(1px); }
   .hprow button:hover, .restrow :global(.rests button:hover) {
     border-color: var(--a-edge); color: var(--a);
   }

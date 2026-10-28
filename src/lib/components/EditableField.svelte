@@ -67,6 +67,7 @@
     color: var(--text);
     background: none;
     box-sizing: border-box;
+    transition: border-color 0.18s ease, background-color 0.18s ease;
   }
   .readout { display: inline-block; }
   .empty { color: var(--dim); }

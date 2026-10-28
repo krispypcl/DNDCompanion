@@ -58,6 +58,6 @@
   .x:hover { color: var(--bad); }
   .add { margin-top: 0.6rem; background: none; border: 1px dashed var(--line); color: var(--dim); border-radius: 6px; padding: 0.35rem 0.8rem; font: inherit; font-size: 0.85rem; cursor: pointer; }
   /* Matches the notes placeholder: body size, --dim. */
-  .empty { color: var(--dim); }
+  .empty { color: var(--dim); margin: 0; }
   input::placeholder { color: var(--dim); opacity: 0.65; }
 </style>

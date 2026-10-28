@@ -158,7 +158,8 @@
     border-radius: 6px; padding: 0.4rem 0.9rem; font: inherit; font-size: 0.875rem; cursor: pointer;
   }
   button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-  .ghost { background: none; border: 0; color: var(--dim); padding: 0; font-size: 0.85rem; }
+  .ghost { color: var(--dim); }
+  .ghost:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
   ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
   li {
     display: flex;

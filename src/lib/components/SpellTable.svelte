@@ -44,5 +44,5 @@
   .name { font-weight: 600; white-space: nowrap; }
   .notes { color: var(--dim); font-size: 0.82rem; }
   /* Matches the notes placeholder: body size, --dim. */
-  .empty { color: var(--dim); }
+  .empty { color: var(--dim); margin: 0; }
 </style>
