@@ -38,10 +38,15 @@
   const accrue = $derived(tracker.direction === 'accrue');
   const remaining = $derived(accrue ? marked : max - marked);
 
-  /** Tapping pip n sets the count to n, or to n-1 when it was already there. */
+  /**
+   * Pips show what is left, filled from the left, so spending empties the
+   * right-hand end. Tapping pip n leaves n remaining — or n-1 when n is
+   * already the last lit one, so tapping the first pip twice empties it.
+   */
   function tapPip(n: number) {
     if (!editable) return;
-    onchange(marked >= n ? n - 1 : n);
+    const next = remaining === n ? n - 1 : n;
+    onchange(clampSpent(accrue ? next : max - next, max));
   }
 
   /**
@@ -78,8 +83,8 @@
       {#each Array(max) as _, i (i)}
         <button
           class="pip"
-          class:on={accrue ? i < marked : i >= marked}
-          aria-pressed={accrue ? i < marked : i >= marked}
+          class:on={i < remaining}
+          aria-pressed={i < remaining}
           aria-label="{tracker.label} {i + 1}"
           disabled={!editable}
           style:--delay="{i * 45}ms"

@@ -28,9 +28,9 @@
   <p class="empty">No attacks yet.</p>
 {:else}
   <div class="scroller">
-    <table>
+    <table class:editing={editable}>
       <thead>
-        <tr><th>Name</th><th>Hit</th><th>Damage</th><th>Notes</th>{#if editable}<th></th>{/if}</tr>
+        <tr><th>Name</th><th>Hit</th><th>Damage</th><th class="notes">Notes</th>{#if editable}<th></th>{/if}</tr>
       </thead>
       <tbody>
         {#each definition.attacks as attack, i (i)}
@@ -42,6 +42,7 @@
                 {attack.name}
               {/if}
               <EntryLink name={attack.name} source={attack.source} category="items" override={attack.lookupUrl} />
+              {#if !editable && attack.notes}<span class="note-under">{attack.notes}</span>{/if}
             </td>
             {#each (['bonus', 'damage', 'notes'] as const) as key (key)}
               {@const example = { bonus: '+8', damage: '2d6 + 5', notes: 'Slow mastery, range 30/90' }[key]}
@@ -82,4 +83,17 @@
   .add { margin-top: 0.6rem; background: none; border: 1px dashed var(--line); color: var(--dim); border-radius: 6px; padding: 0.35rem 0.8rem; font: inherit; font-size: 0.85rem; cursor: pointer; }
   .empty { color: var(--dim); font-size: 0.9rem; }
   input::placeholder { color: var(--dim); opacity: 0.65; }
+  .note-under { display: none; font-size: 0.78rem; color: var(--faint); }
+  @media (max-width: 700px) {
+    /* Read-only, the notes move under the name. While editing they stay a
+       column, because a hidden column cannot be typed into. */
+    table:not(.editing) .notes { display: none; }
+    table:not(.editing) .note-under { display: block; margin-top: 0.15rem; }
+    /* With the notes column gone, the remaining three fit without scrolling —
+       but only if the table stops insisting on its desktop width and the
+       damage is allowed to wrap. The damage is what you read mid-fight. */
+    table:not(.editing) { min-width: 0; }
+    table:not(.editing) .name { white-space: normal; }
+    table:not(.editing) .damage { white-space: normal; }
+  }
 </style>
