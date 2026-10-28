@@ -33,11 +33,26 @@ describe('HitPoints', () => {
     expect(screen.queryByLabelText('Hit dice')).toBeNull();
   });
 
-  it('shows a dash for temp HP rather than a bare zero', () => {
-    render(HitPoints, {
+  it('shows no temp HP marker when there is none', () => {
+    const { container } = render(HitPoints, {
       props: { definition: definition(), state: state(), editable: true, onchange: () => {} }
     });
-    expect(screen.getByText('—')).toBeTruthy();
+    expect(container.querySelector('.temp')).toBeNull();
+    expect((container.querySelector('.tmp') as HTMLElement).style.width).toBe('0%');
+  });
+
+  it('shows temp HP as a plus beside the total, and as the tail of the bar', () => {
+    const { container } = render(HitPoints, {
+      props: {
+        definition: definition(),          // 44 max
+        state: { ...state(), hpTemp: 11 }, // 44 + 11 = 55 total
+        editable: true,
+        onchange: () => {}
+      }
+    });
+    expect(container.querySelector('.temp')?.textContent).toBe('+11');
+    expect((container.querySelector('.tmp') as HTMLElement).style.width).toBe('20%');
+    expect((container.querySelector('.cur') as HTMLElement).style.width).toBe('80%');
   });
 
   it('offers death saves only once the character is down', () => {
