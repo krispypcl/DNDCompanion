@@ -392,7 +392,11 @@
           </div>
           <div class="statbox">
             <b>
-              <EditableField value={definition.combat?.speed} {editable} type="number"
+              <EditableField value={definition.combat?.speed}
+                             display={definition.combat?.speed != null
+                               ? `${definition.combat.speed} ft.`
+                               : undefined}
+                             {editable} type="number"
                              label="Speed" onchange={(v) => patchCombat('speed', Number(v))} />
             </b>
             <span class="cap">Speed</span>
@@ -405,21 +409,6 @@
           </div>
         </div>
 
-        <h2 class="cap trk-cap">Trackers</h2>
-        <TrackerGroup
-          trackers={definition.trackers ?? []}
-          spent={sheetState.trackers}
-          ctx={formulaContext(definition)}
-          editable={isOwner}
-          {refilling}
-          onchange={setTracker}
-        />
-        {#if (definition.trackers ?? []).length === 0}
-          <p class="empty">
-            No trackers yet.{#if isOwner}&nbsp;Add them under Character.{/if}
-          </p>
-        {/if}
-
         <div class="passives">
           <h2 class="cap">Passive</h2>
           {#each PASSIVES as skill (skill)}
@@ -429,6 +418,20 @@
             </div>
           {/each}
         </div>
+
+        {#if (definition.trackers ?? []).length > 0}
+          <div class="trk">
+            <h2 class="cap">Trackers</h2>
+            <TrackerGroup
+              trackers={definition.trackers}
+              spent={sheetState.trackers}
+              ctx={formulaContext(definition)}
+              editable={isOwner}
+              {refilling}
+              onchange={setTracker}
+            />
+          </div>
+        {/if}
 
         <div class="money">
           <h2 class="cap">Currency</h2>
@@ -538,7 +541,8 @@
     field-sizing: fixed;
     display: block; width: 100%; text-align: center; font-size: 1.0625rem;
   }
-  .trk-cap { margin: 1.25rem 0 0.625rem; }
+  .trk { padding-top: 1.25rem; }
+  .trk .cap { margin-bottom: 0.625rem; }
   /* Directly below the trackers. With equal-height rails the slack falls to
      the bottom of the panel, not into a gap above this. */
   .passives { padding-top: 1.25rem; }
@@ -555,7 +559,8 @@
   .feature:first-child { border-top: 0; }
   .feature h3 { margin: 0 0 0.2rem; font-size: 0.95rem; display: flex; gap: 0.3rem; align-items: center; }
   .feature p { margin: 0; font-size: 0.875rem; color: var(--dim); overflow-wrap: anywhere; }
-  .empty { color: var(--faint); font-size: 0.875rem; }
+  /* Matches the notes placeholder: body size, --dim. */
+  .empty { color: var(--dim); }
   .hint { color: var(--faint); font-size: 0.78rem; margin: 0.5rem 0 0; line-height: 1.5; }
   .hint code { background: var(--raised); border-radius: 3px; padding: 0.05rem 0.25rem; font-size: 0.95em; }
   .themerow { display: flex; align-items: center; gap: 1rem; margin: 1.25rem 0; flex-wrap: wrap; }

@@ -43,5 +43,6 @@
   td { padding: 0.4rem 0.6rem 0.4rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
   .name { font-weight: 600; white-space: nowrap; }
   .notes { color: var(--dim); font-size: 0.82rem; }
-  .empty { color: var(--dim); font-size: 0.9rem; }
+  /* Matches the notes placeholder: body size, --dim. */
+  .empty { color: var(--dim); }
 </style>

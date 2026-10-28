@@ -52,16 +52,7 @@
   }
 </script>
 
-<div class="head">
-  <span class="cap">Hit points</span>
-  <span class="dice">
-    <span class="cap">Hit dice</span>
-    <b>
-      <EditableField value={definition.combat?.hitDice} editable={editDefinition} label="Hit dice"
-                     placeholder="—" onchange={(v) => patchCombat('hitDice', String(v))} />
-    </b>
-  </span>
-</div>
+<span class="cap">Hit points</span>
 
 <div class="hp-readout">
   <strong class:bloodied class:down><CountUp value={sheetState.hpCurrent} /></strong>
@@ -72,6 +63,14 @@
   {#if sheetState.hpTemp > 0}
     <span class="temp">+{sheetState.hpTemp}<small>temp</small></span>
   {/if}
+
+  <span class="dice">
+    <span class="cap">Hit dice</span>
+    <b>
+      <EditableField value={definition.combat?.hitDice} editable={editDefinition} label="Hit dice"
+                     placeholder="—" onchange={(v) => patchCombat('hitDice', String(v))} />
+    </b>
+  </span>
 </div>
 
 <div class="bar" aria-hidden="true">
@@ -102,14 +101,16 @@
   </div>
 {/if}
 
-<div class="controls">
+<div class="actions">
   {#if editable}
-    <button onclick={() => act('Damage', applyDamage(sheetState, amount, hpMax))}>Damage</button>
-    <input type="number" min="1" bind:value={amount} aria-label="Amount" />
-    <button onclick={() => act('Healing', applyHealing(sheetState, amount, hpMax))}>Heal</button>
-    <button onclick={() => act('Temp HP', setTempHp(sheetState, amount))}>Temp</button>
+    <div class="hprow">
+      <input type="number" min="1" bind:value={amount} aria-label="Amount" />
+      <button onclick={() => act('Damage', applyDamage(sheetState, amount, hpMax))}>Damage</button>
+      <button onclick={() => act('Healing', applyHealing(sheetState, amount, hpMax))}>Heal</button>
+      <button onclick={() => act('Temp HP', setTempHp(sheetState, amount))}>Temp</button>
+    </div>
   {/if}
-  {@render children?.()}
+  <div class="restrow">{@render children?.()}</div>
 </div>
 
 <style>
@@ -118,8 +119,8 @@
     font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
     color: var(--label); font-weight: 600;
   }
-  .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
-  .dice { text-align: right; }
+  /* Bottom-aligned, so the value itself sits right above the gauge. */
+  .dice { text-align: right; margin-left: auto; align-self: flex-end; }
   .dice b {
     display: block; font-size: 1.0625rem; font-weight: 600;
     font-variant-numeric: tabular-nums; margin-top: 0.125rem;
@@ -129,7 +130,7 @@
     field-sizing: fixed;
     display: block; text-align: right; width: 4.5rem;
   }
-  .hp-readout { display: flex; align-items: baseline; gap: 0.5rem; margin-top: 0.375rem; }
+  .hp-readout { display: flex; align-items: baseline; gap: 0.375rem; margin-top: 0.375rem; }
   .hp-readout strong {
     font-size: 2.375rem; line-height: 1; font-weight: 600;
     color: var(--a-hi); font-variant-numeric: tabular-nums;
@@ -138,10 +139,11 @@
   .max { color: var(--dim); font-size: 1rem; font-variant-numeric: tabular-nums; }
   .max :global(.field) {
     --fld-leading: 1.4; --fld-pad-y: 0px;
-    field-sizing: fixed; width: 3rem; text-align: left;
+    field-sizing: fixed; width: 2.75rem; text-align: left;
+    color: var(--dim);
   }
   /* Same weight and size as the maximum beside it, so the two read as one line. */
-  .temp { color: var(--dim); font-size: 1rem; font-variant-numeric: tabular-nums; }
+  .temp { color: var(--dim); font-size: 1rem; font-variant-numeric: tabular-nums; margin-left: 0.125rem; }
   .temp small {
     font-size: 0.6875rem; letter-spacing: 0.1em; text-transform: uppercase;
     margin-left: 0.25rem; color: var(--faint);
@@ -164,24 +166,28 @@
   }
   .pip[aria-pressed='true'] { background: var(--a); border-color: var(--a); }
   .pip.fail[aria-pressed='true'] { background: var(--danger); border-color: var(--danger); }
-  .controls { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: auto; padding-top: 1rem; }
-  /* The rest buttons are handed in as children inside their own wrapper; this
-     dissolves it so they lay out in the same row rather than on a line below. */
-  .controls :global(.rests) { display: contents; }
-  .controls input {
-    width: 4rem; background: var(--raised); border: 1px solid var(--line);
-    color: var(--text); border-radius: var(--r-sm); padding: 0.5rem 0.5rem;
-    font: inherit; font-size: 0.875rem; text-align: center;
+  /* Two groups, not one wrapping row: what changes hit points now, and what
+     restores them on a rest. The rule between says which is which. */
+  .actions { margin-top: auto; padding-top: 1rem; }
+  .hprow { display: flex; gap: 0.5rem; }
+  .restrow { margin-top: 0.625rem; padding-top: 0.625rem; border-top: 1px solid var(--line-soft); }
+  .restrow :global(.rests) { display: flex; gap: 0.5rem; }
+  .restrow :global(.rests button) { flex: 1 1 0; }
+  .hprow input {
+    width: 3.5rem; flex: none; background: var(--bg); border: 1px solid var(--line);
+    color: var(--text); border-radius: var(--r-sm); padding: 0.5rem 0.375rem;
+    font: inherit; font-size: 0.9375rem; font-weight: 600; text-align: center;
+    font-variant-numeric: tabular-nums;
     -moz-appearance: textfield; appearance: textfield;
   }
-  .controls input::-webkit-outer-spin-button,
-  .controls input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  .controls button, .controls :global(.rests button) {
+  .hprow input::-webkit-outer-spin-button,
+  .hprow input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .hprow button, .restrow :global(.rests button) {
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
-    border-radius: var(--r-sm); padding: 0.5rem 1rem;
-    font: inherit; font-size: 0.875rem; cursor: pointer; flex: 1 1 auto;
+    border-radius: var(--r-sm); padding: 0.5rem 0.5rem;
+    font: inherit; font-size: 0.875rem; cursor: pointer; flex: 1 1 0; min-width: 0;
   }
-  .controls button:hover, .controls :global(.rests button:hover) {
+  .hprow button:hover, .restrow :global(.rests button:hover) {
     border-color: var(--a-edge); color: var(--a);
   }
 </style>
