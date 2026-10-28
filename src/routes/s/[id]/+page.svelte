@@ -207,7 +207,7 @@
 {:else if sheet && definition && sheetState}
   <!-- The theme is scoped here, not to :root, so a campaign view can later show
        several characters in their own colours at once. -->
-  <div class="sheet" style={themeStyle(definition.identity.theme)}>
+  <div class="sheet themed" style={themeStyle(definition.identity.theme)}>
     <header class="identity">
       <div class="portrait" class:has={Boolean(definition.identity.portraitUrl?.trim())}>
         {#if definition.identity.portraitUrl?.trim()}
@@ -516,7 +516,9 @@
   .defbox .cap { margin-top: 0.4375rem; }
   .defbox :global(input) { width: 3.5rem; text-align: center; font-size: 1.6875rem; }
   .trk-cap { margin: 1.25rem 0 0.625rem; }
-  .passives { margin-top: auto; padding-top: 1.25rem; }
+  /* Directly below the trackers. With equal-height rails the slack falls to
+     the bottom of the panel, not into a gap above this. */
+  .passives { padding-top: 1.25rem; }
   .passive {
     display: flex; justify-content: space-between; font-size: 0.8125rem;
     padding: 0.375rem 0; color: var(--dim); border-bottom: 1px solid var(--line-soft);
@@ -539,7 +541,6 @@
     .band, .main { grid-template-columns: 1fr; }
     /* On a phone the attacks must come before an 18-row skill list. */
     .rail-skills { order: 3; }
-    .passives { margin-top: 1rem; padding-top: 0; }
     .identity { gap: 0.75rem; }
     .spacer { flex-basis: 100%; height: 0; }
   }
