@@ -16,6 +16,11 @@ export class StaleWriteError extends Error {
 
 const COLUMNS = 'id, owner_id, campaign_id, name, retired, definition, state, created_at, updated_at';
 
+/** The list needs something readable even before a name has been typed. */
+export function sheetName(definition: Definition): string {
+  return definition?.identity?.name?.trim() || 'Untitled sheet';
+}
+
 export function makeSheetRepo(client: SupabaseClient) {
   async function guardedUpdate(
     id: string,
@@ -62,11 +67,24 @@ export function makeSheetRepo(client: SupabaseClient) {
     },
 
     saveDefinition(id: string, definition: Definition, expectedUpdatedAt: string) {
-      return guardedUpdate(id, { definition }, expectedUpdatedAt);
+      // `name` is a projection of the character's name, written in the same
+      // guarded update so the two can never drift. It exists as its own column
+      // so the sheet list can be queried without loading every definition.
+      return guardedUpdate(id, { definition, name: sheetName(definition) }, expectedUpdatedAt);
     },
 
     saveState(id: string, state: State, expectedUpdatedAt: string) {
       return guardedUpdate(id, { state }, expectedUpdatedAt);
+    },
+
+    /**
+     * Permanent. Row-level security restricts this to the owner, so a refusal
+     * arrives as a Postgres error and must reach the caller rather than being
+     * reported as a success.
+     */
+    async deleteSheet(id: string): Promise<void> {
+      const { error } = await client.from('sheets').delete().eq('id', id);
+      if (error) throw new Error(error.message);
     }
   };
 }
