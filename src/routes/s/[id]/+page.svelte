@@ -253,7 +253,7 @@
           {editing ? 'Done' : 'Edit'}
         </button>
       {/if}
-      <a class="back" href="{base}/">Sheets</a>
+      <a class="back" href="{base}/">Back</a>
     </header>
 
     <div class="band">
@@ -283,7 +283,9 @@
             {#if tab === 'Combat'}
               <AttackList {definition} {editable} onchange={setDefinition} />
             {:else if tab === 'Spells'}
-              <SpellTable {definition} />
+              {#if !editable || (definition.spells ?? []).length > 0}
+                <SpellTable {definition} />
+              {/if}
               {#if editable}
                 <ListEditor
                   title="Edit spells"
@@ -311,7 +313,7 @@
                   <p>{feature.body}</p>
                 </article>
               {:else}
-                <p class="empty">No features yet.</p>
+                {#if !editable}<p class="empty">No features yet.</p>{/if}
               {/each}
               {#if editable}
                 <ListEditor
@@ -445,6 +447,20 @@
 {/if}
 
 <style>
+  /* Panels arrive in reading order rather than all at once. */
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+  .identity, .band > :global(*), .main > :global(*) {
+    animation: rise 0.3s cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
+  }
+  .band > :global(*:nth-child(1)) { animation-delay: 0.04s; }
+  .band > :global(*:nth-child(2)) { animation-delay: 0.08s; }
+  .main > :global(*:nth-child(1)) { animation-delay: 0.12s; }
+  .main > :global(*:nth-child(2)) { animation-delay: 0.16s; }
+  .main > :global(*:nth-child(3)) { animation-delay: 0.2s; }
+
   .centred { max-width: 30rem; margin: 4rem auto; padding: 0 1rem; text-align: center; color: var(--dim); }
   .centred a { color: var(--a); }
   .sheet { padding: 1.5rem; max-width: 110rem; margin: 0 auto; }
@@ -489,6 +505,8 @@
     font-size: 0.8125rem; cursor: pointer; flex: none; min-width: 4.5rem;
   }
   .edit[aria-pressed='true'] { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
+  .edit, .undo, .back { transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease; }
+  .edit:active, .undo:active, .back:active { transform: translateY(1px); }
   .undo {
     background: none; border: 1px solid var(--line); color: var(--dim);
     border-radius: var(--r-sm); padding: 0.375rem 0.75rem; font: inherit;
@@ -518,7 +536,9 @@
   .defbox {
     background: var(--raised); border: 1px solid var(--line-soft); border-radius: var(--r);
     padding: 0.875rem 0.625rem; text-align: center;
+    transition: border-color 0.2s ease;
   }
+  .defbox:hover { border-color: var(--line); }
   .defbox b {
     display: block; font-size: 1.6875rem; font-weight: 600; line-height: 1;
     color: var(--a-hi); font-variant-numeric: tabular-nums;
@@ -526,8 +546,8 @@
   .defbox .cap { margin-top: 0.4375rem; }
   .defbox :global(.field) {
     --fld-leading: 1; --fld-pad-y: 0px;
-    field-sizing: fixed;
-    display: block; width: 100%; text-align: center; font-size: 1.6875rem;
+    field-sizing: fixed; display: block; margin-inline: auto;
+    width: 4rem; text-align: center; font-size: 1.6875rem;
   }
   .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.625rem; margin-top: 0.625rem; }
   .statbox {
@@ -538,8 +558,8 @@
   .statbox .cap { margin-top: 0.1875rem; }
   .statbox :global(.field) {
     --fld-leading: 1.2; --fld-pad-y: 0px;
-    field-sizing: fixed;
-    display: block; width: 100%; text-align: center; font-size: 1.0625rem;
+    field-sizing: fixed; display: block; margin-inline: auto;
+    width: 3.25rem; text-align: center; font-size: 1.0625rem;
   }
   .trk { padding-top: 1.25rem; }
   .trk .cap { margin-bottom: 0.625rem; }
@@ -560,7 +580,7 @@
   .feature h3 { margin: 0 0 0.2rem; font-size: 0.95rem; display: flex; gap: 0.3rem; align-items: center; }
   .feature p { margin: 0; font-size: 0.875rem; color: var(--dim); overflow-wrap: anywhere; }
   /* Matches the notes placeholder: body size, --dim. */
-  .empty { color: var(--dim); }
+  .empty { color: var(--dim); margin: 0; }
   .hint { color: var(--faint); font-size: 0.78rem; margin: 0.5rem 0 0; line-height: 1.5; }
   .hint code { background: var(--raised); border-radius: 3px; padding: 0.05rem 0.25rem; font-size: 0.95em; }
   .themerow { display: flex; align-items: center; gap: 1rem; margin: 1.25rem 0; flex-wrap: wrap; }

@@ -90,12 +90,19 @@
     color: var(--label); font-weight: 600;
   }
   .abmod { font-size: 0.6875rem; color: var(--dim); font-variant-numeric: tabular-nums; }
-  .row { display: flex; align-items: center; gap: 0.5625rem; padding: 0.3125rem 0; font-size: 0.845rem; }
+  .row {
+    display: flex; align-items: center; gap: 0.5625rem;
+    padding: 0.3125rem 0.25rem; margin: 0 -0.25rem; font-size: 0.845rem;
+    border-radius: var(--r-sm); transition: background-color 0.15s ease;
+  }
+  .row:hover { background: oklch(20% 0.004 286); }
   .dot {
     width: 0.5625rem; height: 0.5625rem; border-radius: 50%;
     border: 1.5px solid var(--faint); background: none; padding: 0; flex: none; cursor: pointer;
   }
   .dot:disabled { cursor: default; }
+  .dot { transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease; }
+  .dot:not(:disabled):hover { transform: scale(1.25); }
   .dot.on { background: var(--a); border-color: var(--a); }
   .dot.expert { box-shadow: 0 0 0 2px var(--a-edge); }
   .name { flex: 1; color: var(--dim); min-width: 0; overflow-wrap: anywhere; line-height: 1.3; }
