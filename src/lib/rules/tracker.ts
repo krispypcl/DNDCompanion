@@ -22,9 +22,3 @@ export function trackerRemaining(tracker: Tracker, spent: number, ctx: FormulaCo
   const used = clampSpent(spent, max);
   return tracker.direction === 'accrue' ? used : max - used;
 }
-
-export function initialSpent(_tracker: Tracker, _ctx: FormulaContext): number {
-  // Both directions store "how many are marked". A spend tracker starts full
-  // (nothing marked); an accrue tracker starts empty (nothing marked).
-  return 0;
-}

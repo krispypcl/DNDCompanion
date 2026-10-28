@@ -31,7 +31,7 @@
 
   const sheet = $derived($sheetStore.sheet as Sheet | null);
   const definition = $derived(sheet?.definition as Definition | undefined);
-  const state = $derived(sheet?.state as State | undefined);
+  const sheetState = $derived(sheet?.state as State | undefined);
   const isOwner = $derived(Boolean($session.user && sheet && $session.user.id === sheet.owner_id));
   const editable = $derived(isOwner && editing);
 
@@ -61,9 +61,9 @@
   function setDefinition(next: Definition) { sheetStore.setDefinition(next); }
 
   function setTracker(id: string, value: number) {
-    if (!state) return;
-    snapshot(state, 'Tracker');
-    setState({ ...state, trackers: { ...state.trackers, [id]: value } });
+    if (!sheetState) return;
+    snapshot(sheetState, 'Tracker');
+    setState({ ...sheetState, trackers: { ...sheetState.trackers, [id]: value } });
   }
 
   function afterRest(label: string) {
@@ -96,8 +96,8 @@
   </div>
 {:else if loadError}
   <div class="centred"><h1>Could not load</h1><p>{loadError}</p></div>
-{:else if sheet && definition && state}
-  <VitalsStrip {definition} {state} editable={isOwner} onchange={setState} />
+{:else if sheet && definition && sheetState}
+  <VitalsStrip {definition} state={sheetState} editable={isOwner} onchange={setState} />
 
   <div class="title">
     <div class="who">
@@ -121,7 +121,7 @@
     {#snippet children(tab)}
       {#if tab === 'Play'}
         <div class="row">
-          <RestButtons {definition} {state} editable={isOwner} onchange={setState} onrest={afterRest} />
+          <RestButtons {definition} state={sheetState} editable={isOwner} onchange={setState} onrest={afterRest} />
           {#if $canUndo}
             <button class="undo" onclick={doUndo}>Undo {$lastLabel}</button>
           {/if}
@@ -129,7 +129,7 @@
         <div class="trackers">
           <TrackerGroup
             trackers={definition.trackers ?? []}
-            spent={state.trackers}
+            spent={sheetState.trackers}
             ctx={formulaContext(definition)}
             editable={isOwner}
             {refilling}

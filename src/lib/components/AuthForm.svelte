@@ -1,5 +1,7 @@
 <script lang="ts">
-  type Field = { id: string; label: string; type: string; autocomplete: string };
+  import type { FullAutoFill } from 'svelte/elements';
+
+  type Field = { id: string; label: string; type: string; autocomplete: FullAutoFill };
 
   let {
     title,

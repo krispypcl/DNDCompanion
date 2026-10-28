@@ -7,7 +7,7 @@
 
   let {
     definition,
-    state,
+    state: sheetState,
     editable,
     onchange
   }: {
@@ -20,11 +20,11 @@
   let amount = $state(1);
 
   const hpMax = $derived(definition.combat?.hpMax ?? 0);
-  const ratio = $derived(hpMax > 0 ? Math.min(1, state.hpCurrent / hpMax) : 0);
-  const down = $derived(state.hpCurrent === 0);
+  const ratio = $derived(hpMax > 0 ? Math.min(1, sheetState.hpCurrent / hpMax) : 0);
+  const down = $derived(sheetState.hpCurrent === 0);
 
   function act(label: string, next: State) {
-    snapshot(state, label);
+    snapshot(sheetState, label);
     onchange(next);
   }
 </script>
@@ -33,9 +33,9 @@
   <div class="hp">
     <span class="label">Hit points</span>
     <div class="readout">
-      <strong class:bloodied={ratio <= 0.5} class:down><CountUp value={state.hpCurrent} /></strong>
+      <strong class:bloodied={ratio <= 0.5} class:down><CountUp value={sheetState.hpCurrent} /></strong>
       <span class="max">/ {hpMax}</span>
-      {#if state.hpTemp > 0}<span class="temp">+{state.hpTemp}</span>{/if}
+      {#if sheetState.hpTemp > 0}<span class="temp">+{sheetState.hpTemp}</span>{/if}
     </div>
     <div class="bar" aria-hidden="true"><i style:width="{ratio * 100}%"></i></div>
 
@@ -47,9 +47,9 @@
           bind:value={amount}
           aria-label="Amount"
         />
-        <button onclick={() => act('Damage', applyDamage(state, amount, hpMax))}>Damage</button>
-        <button onclick={() => act('Healing', applyHealing(state, amount, hpMax))}>Heal</button>
-        <button onclick={() => act('Temp HP', setTempHp(state, amount))}>Temp</button>
+        <button onclick={() => act('Damage', applyDamage(sheetState, amount, hpMax))}>Damage</button>
+        <button onclick={() => act('Healing', applyHealing(sheetState, amount, hpMax))}>Heal</button>
+        <button onclick={() => act('Temp HP', setTempHp(sheetState, amount))}>Temp</button>
       </div>
     {/if}
   </div>
@@ -74,13 +74,13 @@
             <button
               class="pip"
               class:fail={kind === 'failures'}
-              aria-pressed={state.deathSaves[kind] >= n}
+              aria-pressed={sheetState.deathSaves[kind] >= n}
               aria-label="{kind} {n}"
               disabled={!editable}
               onclick={() =>
                 act(
                   'Death save',
-                  setDeathSave(state, kind, state.deathSaves[kind] >= n ? n - 1 : n)
+                  setDeathSave(sheetState, kind, sheetState.deathSaves[kind] >= n ? n - 1 : n)
                 )}
             ></button>
           {/each}
