@@ -19,7 +19,7 @@
   import ThemePicker from '$lib/components/ThemePicker.svelte';
   import UndoToast from '$lib/components/UndoToast.svelte';
   import { sheetRepo } from '$lib/data/sheets';
-  import { formulaContext, modifierOf, passiveScore } from '$lib/rules/derived';
+  import { formulaContext, modifierOf, passiveScore, spellSaveDC } from '$lib/rules/derived';
   import { themeStyle } from '$lib/theme';
   import { session } from '$lib/stores/session';
   import { sheetStore } from '$lib/stores/sheet';
@@ -54,6 +54,12 @@
   const sign = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
   const initiative = $derived(
     definition ? (definition.combat?.initiative ?? modifierOf(definition, 'dex')) : 0
+  );
+  /** Only a character who casts something has one; most martials do not. */
+  const saveDc = $derived(
+    definition?.spellcastingAbility
+      ? spellSaveDC(definition, definition.spellcastingAbility)
+      : null
   );
 
   $effect(() => {
@@ -242,28 +248,10 @@
 
       <div class="spacer"></div>
 
-      <div class="chip">
-        <b>
-          {#if editable}
-            <EditableField value={definition.proficiency} editable={true} type="number"
-                           label="Proficiency bonus"
-                           onchange={(v) => setDefinition({ ...definition, proficiency: Number(v) })} />
-          {:else}{sign(definition.proficiency)}{/if}
-        </b>
-        <span class="cap">Prof</span>
-      </div>
-      <div class="chip on"><b>{sign(initiative)}</b><span class="cap">Initiative</span></div>
-      <div class="chip">
-        <b>
-          {#if editable}
-            <EditableField value={definition.combat?.speed ?? 0} editable={true} type="number"
-                           label="Speed" onchange={(v) => patchCombat('speed', Number(v))} />
-          {:else}{definition.combat?.speed ?? '—'}{/if}
-        </b>
-        <span class="cap">Speed</span>
-      </div>
-
       <SaveIndicator />
+      {#if $canUndo}
+        <button class="undo" onclick={doUndo}>Undo {$lastLabel}</button>
+      {/if}
       {#if isOwner}
         <button class="edit" aria-pressed={editing} onclick={() => (editing = !editing)}>
           {editing ? 'Done' : 'Edit'}
@@ -278,9 +266,6 @@
           {#snippet children()}
             <RestButtons {definition} state={sheetState} editable={isOwner}
                          onchange={setState} onrest={afterRest} />
-            {#if $canUndo}
-              <button class="undo" onclick={doUndo}>Undo {$lastLabel}</button>
-            {/if}
           {/snippet}
         </HitPoints>
       </section>
@@ -406,6 +391,34 @@
           <div class="defbox"><b>{sign(initiative)}</b><span class="cap">Initiative</span></div>
         </div>
 
+        <div class="stats">
+          <div class="statbox">
+            <b>
+              {#if editable}
+                <EditableField value={definition.proficiency} editable={true} type="number"
+                               label="Proficiency bonus"
+                               onchange={(v) => setDefinition({ ...definition, proficiency: Number(v) })} />
+              {:else}{sign(definition.proficiency)}{/if}
+            </b>
+            <span class="cap">Prof</span>
+          </div>
+          <div class="statbox">
+            <b>
+              {#if editable}
+                <EditableField value={definition.combat?.speed ?? 0} editable={true} type="number"
+                               label="Speed" onchange={(v) => patchCombat('speed', Number(v))} />
+              {:else}{definition.combat?.speed ?? '—'}{/if}
+            </b>
+            <span class="cap">Speed</span>
+          </div>
+          <div class="statbox" title={saveDc === null
+              ? 'Set a spellcasting ability under Character to work this out'
+              : `8 + proficiency + ${definition.spellcastingAbility?.toUpperCase()} modifier`}>
+            <b>{saveDc ?? '—'}</b>
+            <span class="cap">Save DC</span>
+          </div>
+        </div>
+
         <h2 class="cap trk-cap">Trackers</h2>
         <TrackerGroup
           trackers={definition.trackers ?? []}
@@ -454,13 +467,18 @@
   .portrait {
     width: 4.5rem; height: 4.5rem; border-radius: var(--r); border: 1px solid var(--a-edge);
     flex: none; display: flex; align-items: flex-end; justify-content: center;
-    padding-bottom: 0.375rem; overflow: hidden; position: relative;
+    position: relative; overflow: visible;
     background: linear-gradient(150deg, oklch(32% calc(0.05 * var(--c)) var(--h)),
                                         oklch(18% calc(0.02 * var(--c)) var(--h)));
   }
-  .portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .portrait img {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; border-radius: var(--r);
+  }
+  /* Sits on the bottom edge, half in and half out. */
   .lvl {
-    position: relative; background: var(--a-wash); border: 1px solid var(--a-edge);
+    position: absolute; left: 50%; bottom: 0; transform: translate(-50%, 50%);
+    background: var(--surface); border: 1px solid var(--a-edge);
     color: var(--a); border-radius: var(--r-sm); font-size: 0.6875rem; font-weight: 650;
     padding: 0.0625rem 0.5rem; letter-spacing: 0.02em; white-space: nowrap;
   }
@@ -472,20 +490,18 @@
   }
   .lvledit { display: inline-flex; gap: 0.3rem; align-items: baseline; }
   .spacer { flex: 1; }
-  .chip {
-    background: var(--raised); border: 1px solid var(--line-soft); border-radius: var(--r);
-    padding: 0.5rem 0.875rem; text-align: center; flex: none; min-width: 4.375rem;
-  }
-  .chip b { display: block; font-size: 1.25rem; line-height: 1.15; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .chip :global(input) { width: 3rem; text-align: center; }
-  .chip.on { border-color: var(--a-edge); background: var(--a-wash); }
-  .chip.on b { color: var(--a); }
   .edit {
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font: inherit;
     font-size: 0.8125rem; cursor: pointer; flex: none;
   }
   .edit[aria-pressed='true'] { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
+  .undo {
+    background: none; border: 1px solid var(--line); color: var(--dim);
+    border-radius: var(--r-sm); padding: 0.375rem 0.75rem; font: inherit;
+    font-size: 0.8125rem; cursor: pointer; flex: none;
+  }
+  .undo:hover { border-color: var(--a-edge); color: var(--a); }
 
   /* Equal heights: the hit point module matches the ability band beside it. */
   .band {
@@ -493,11 +509,6 @@
     gap: 1rem; margin-bottom: 1rem; align-items: stretch;
   }
   .hp { display: flex; flex-direction: column; }
-  .undo {
-    background: none; border: 1px solid var(--line); color: var(--dim);
-    border-radius: var(--r-sm); padding: 0.3125rem 0.75rem; font: inherit;
-    font-size: 0.8125rem; cursor: pointer;
-  }
 
   .main { display: grid; grid-template-columns: 16.5rem 1fr 18.75rem; gap: 1rem; align-items: stretch; }
   .rail-skills { order: -1; }
@@ -515,6 +526,14 @@
   }
   .defbox .cap { margin-top: 0.4375rem; }
   .defbox :global(input) { width: 3.5rem; text-align: center; font-size: 1.6875rem; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.625rem; margin-top: 0.625rem; }
+  .statbox {
+    background: var(--raised); border: 1px solid var(--line-soft); border-radius: var(--r-sm);
+    padding: 0.5rem 0.3125rem; text-align: center; min-width: 0;
+  }
+  .statbox b { display: block; font-size: 1.0625rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .statbox .cap { margin-top: 0.1875rem; }
+  .statbox :global(input) { width: 100%; text-align: center; font-size: 1.0625rem; padding: 0; }
   .trk-cap { margin: 1.25rem 0 0.625rem; }
   /* Directly below the trackers. With equal-height rails the slack falls to
      the bottom of the panel, not into a gap above this. */

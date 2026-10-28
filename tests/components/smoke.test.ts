@@ -76,7 +76,7 @@ describe('every component renders without throwing', () => {
       }
     });
     const labels = [...container.querySelectorAll('button')].map((b) => b.textContent?.trim());
-    expect(labels).toEqual(['Short rest', 'Long rest', 'Dawn']);
+    expect(labels).toEqual(['Short Rest', 'Long Rest', 'Dawn']);
   });
 
   test('EntryLink builds a real link for a sourced entry', () => {

@@ -82,7 +82,7 @@ describe('AbilityColumns', () => {
     const headings = Array.from(container.querySelectorAll('.group .ab')).map((n) =>
       n.textContent?.trim()
     );
-    expect(headings).toEqual(['str', 'dex', 'con', 'int', 'wis', 'cha']);
+    expect(headings).toEqual(['str', 'dex', 'int', 'wis', 'cha']); // con governs none
   });
 
   it('orders skills alphabetically within a group', () => {
@@ -92,11 +92,9 @@ describe('AbilityColumns', () => {
     expect(names).toEqual(['Animal Handling', 'Insight', 'Medicine', 'Perception', 'Survival']);
   });
 
-  it('says so rather than leaving a gap where an ability governs no skills', () => {
+  it('omits an ability that governs no skills rather than heading an empty group', () => {
     mount();
-    const con = screen.getByLabelText(groupLabel('con'));
-    expect(con.querySelectorAll('.row .name')).toHaveLength(0);
-    expect(con.textContent).toContain('No skills');
+    expect(screen.queryByLabelText(groupLabel('con'))).toBeNull();
   });
 
   it('shows the group modifier and each skill total', () => {

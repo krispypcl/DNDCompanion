@@ -5,8 +5,8 @@
    * DEX modifier. Read-only viewers see only the fields that have a value.
    */
   import EditableField from './EditableField.svelte';
-  import { abilityModifier } from '$lib/rules/derived';
-  import type { Definition } from '$lib/types';
+  import { abilityModifier, spellSaveDC } from '$lib/rules/derived';
+  import { ABILITIES, type Ability, type Definition } from '$lib/types';
 
   let {
     definition,
@@ -28,6 +28,13 @@
   const dexMod = $derived(abilityModifier(definition.abilities?.dex ?? 10));
   const initiative = $derived(definition.combat?.initiative ?? dexMod);
   const shown = $derived(FIELDS.filter((f) => editable || definition.identity[f.key]));
+
+  function setSpellcasting(value: string) {
+    const next = { ...definition };
+    if (value === 'none') delete next.spellcastingAbility;
+    else next.spellcastingAbility = value as Ability;
+    onchange(next);
+  }
 
   function patchIdentity(key: string, value: string) {
     onchange({ ...definition, identity: { ...definition.identity, [key]: value } });
@@ -85,6 +92,22 @@
 
   {#if editable}
     <div class="portrait-field">
+      <dt>Spellcasting ability</dt>
+      <select
+        aria-label="Spellcasting ability"
+        value={definition.spellcastingAbility ?? 'none'}
+        onchange={(e) => setSpellcasting(e.currentTarget.value)}
+      >
+        <option value="none">None — no save DC</option>
+        {#each ABILITIES as ability (ability)}
+          <option value={ability}>
+            {ability.toUpperCase()} — save DC {spellSaveDC(definition, ability)}
+          </option>
+        {/each}
+      </select>
+    </div>
+
+    <div class="portrait-field">
       <dt>Portrait URL</dt>
       <EditableField
         value={definition.identity.portraitUrl ?? ''}
@@ -132,5 +155,9 @@
   dd { margin: 0; font-size: 0.95rem; }
   .num { font-variant-numeric: tabular-nums; }
   .portrait-field { flex: 1 1 100%; min-width: 0; }
-  .portrait-field :global(input) { width: 100%; }
+  .portrait-field :global(input), .portrait-field select { width: 100%; }
+  select {
+    background: var(--bg); border: 1px solid var(--line); color: var(--text);
+    border-radius: var(--r-sm); padding: 0.25rem 0.375rem; font: inherit; font-size: 0.9rem;
+  }
 </style>

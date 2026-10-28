@@ -103,8 +103,8 @@
 
 <div class="controls">
   {#if editable}
-    <input type="number" min="1" bind:value={amount} aria-label="Amount" />
     <button onclick={() => act('Damage', applyDamage(sheetState, amount, hpMax))}>Damage</button>
+    <input type="number" min="1" bind:value={amount} aria-label="Amount" />
     <button onclick={() => act('Healing', applyHealing(sheetState, amount, hpMax))}>Heal</button>
     <button onclick={() => act('Temp HP', setTempHp(sheetState, amount))}>Temp</button>
   {/if}
