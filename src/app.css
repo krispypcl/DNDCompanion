@@ -1,14 +1,46 @@
+/**
+ * Monochrome base, one accent. The greys are HeroUI's dark tokens: near-neutral
+ * (chroma 0.005) with a whisper of hue, so the accent is the only colour in the
+ * room. Every accent shade derives from --h and --c, which a sheet sets per
+ * character; see src/lib/theme.ts.
+ */
 :root {
   color-scheme: dark;
-  --bg: #262624;
-  --surface: #2f2f2c;
-  --line: #45443f;
-  --text: #f0eee6;
-  --dim: #9d978a;
-  --accent: #c8714f;
-  --good: #7da27d;
-  --bad: #c25b4e;
+
+  --h: 52;  /* accent hue */
+  --c: 1;   /* chroma scale: 0 is neutral, 1 is full */
+
+  --bg: oklch(12% 0.005 285.823);
+  --surface: oklch(16.5% 0.005 285.89);
+  --raised: oklch(21% 0.006 285.89);
+  --line: oklch(26% 0.006 286.033);
+  --line-soft: oklch(22% 0.006 286.033);
+
+  --text: oklch(99.11% 0 0);
+  --dim: oklch(65% 0.006 286);
+  --faint: oklch(50% 0.006 286);
+
+  --a-wash: oklch(24% calc(0.035 * var(--c)) var(--h));
+  --a-edge: oklch(42% calc(0.075 * var(--c)) var(--h));
+  --a-mid: oklch(58% calc(0.105 * var(--c)) var(--h));
+  --a: oklch(76% calc(0.135 * var(--c)) var(--h));
+  --a-hi: oklch(86% calc(0.115 * var(--c)) var(--h));
+
+  /* Danger stays on the one hue: deeper and far more saturated than the
+     accent, so it reads as heavy rather than as a second colour. */
+  --danger: oklch(58% calc(0.19 * var(--c)) var(--h));
+  --danger-wash: oklch(28% calc(0.07 * var(--c)) var(--h));
+
+  --r: 0.5rem;
+  --r-sm: 0.375rem;
+
+  /* Names the components already use, pointed at the new ramp so the whole app
+     themes at once. They retire as each component is reworked. */
+  --accent: var(--a);
+  --good: var(--a-mid);
+  --bad: var(--danger);
 }
+
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
 body {

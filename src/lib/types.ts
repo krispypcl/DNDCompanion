@@ -81,6 +81,8 @@ export type Definition = {
     alignment?: string;
     portraitUrl?: string;
     lookupUrl?: string;
+    /** A theme name from src/lib/theme.ts; anything else falls back. */
+    theme?: string;
   };
   abilities: Record<Ability, number>;
   proficiency: number;

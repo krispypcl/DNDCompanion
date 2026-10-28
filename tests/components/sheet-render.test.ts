@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import { render } from '@testing-library/svelte';
-import AbilityColumns from '$lib/components/AbilityColumns.svelte';
+import AbilityBand from '$lib/components/AbilityBand.svelte';
+import HitPoints from '$lib/components/HitPoints.svelte';
+import SkillRail from '$lib/components/SkillRail.svelte';
 import Tracker from '$lib/components/Tracker.svelte';
-import VitalsStrip from '$lib/components/VitalsStrip.svelte';
 import { formulaContext } from '$lib/rules/derived';
 import { emptyState, type Definition, type Tracker as TrackerT } from '$lib/types';
 
@@ -39,35 +40,34 @@ const riskDice: TrackerT = {
 };
 
 describe('the sheet renders real numbers', () => {
-  test('ability columns show scores, modifiers and save bonuses', () => {
-    const { container } = render(AbilityColumns, {
+  test('the ability band leads with modifiers and keeps the scores', () => {
+    const { container } = render(AbilityBand, {
       props: { definition: loka, editable: false, onchange: () => {} }
     });
     const text = container.textContent ?? '';
-    expect(text).toContain('Dexterity');
-    expect(text).toContain('+4');          // DEX 18 modifier
-    expect(text).toContain('Save +7');     // proficient: 4 + 3
-    expect(text).toContain('Save +3');     // CON, not proficient
+    expect(text).toContain('+4');   // DEX 18 modifier
+    expect(text).toContain('18');   // the score itself, smaller
+    expect(text).toContain('+7');   // DEX save: proficient, 4 + 3
+    expect(text).toContain('+3');   // CON save: not proficient
   });
 
-  test('skill columns show totals and passive scores', () => {
-    const { container } = render(AbilityColumns, {
+  test('the skill rail shows totals', () => {
+    const { container } = render(SkillRail, {
       props: { definition: loka, editable: false, onchange: () => {} }
     });
     const text = container.textContent ?? '';
     expect(text).toContain('Stealth');
     expect(text).toContain('+7');          // DEX 4 + prof 3
-    expect(text).toContain('12');          // passive Perception: 10 + 2
   });
 
-  test('vitals strip shows HP out of max and AC', () => {
+  test('the hit point module shows HP out of max and the hit dice', () => {
     const state = { ...emptyState(), hpCurrent: 40 };
-    const { container } = render(VitalsStrip, {
+    const { container } = render(HitPoints, {
       props: { definition: loka, state, editable: false, onchange: () => {} }
     });
     const text = container.textContent ?? '';
     expect(text).toContain('/ 40');
-    expect(text).toContain('16');          // AC
+    expect(text).toContain('5d8');
   });
 
   test('a pips tracker renders one button per point', () => {

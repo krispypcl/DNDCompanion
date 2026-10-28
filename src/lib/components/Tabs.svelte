@@ -41,9 +41,8 @@
 <style>
   .tablist {
     display: flex;
-    gap: 0.25rem;
-    border-bottom: 1px solid var(--line);
-    padding: 0 1rem;
+    gap: 1.25rem;
+    border-bottom: 1px solid var(--line-soft);
     overflow-x: auto;
     scrollbar-width: none;
   }
@@ -55,12 +54,12 @@
     color: var(--dim);
     font: inherit;
     font-size: 0.9rem;
-    padding: 0.6rem 0.7rem;
+    padding: 0.5rem 0 0.6875rem;
     cursor: pointer;
     white-space: nowrap;
     transition: color 0.15s ease, border-color 0.15s ease;
   }
   button:hover { color: var(--text); }
-  .active { color: var(--text); border-bottom-color: var(--accent); }
-  section { padding: 1rem; }
+  .active { color: var(--a); border-bottom-color: var(--a); }
+  section { padding: 1rem 0 0; }
 </style>
