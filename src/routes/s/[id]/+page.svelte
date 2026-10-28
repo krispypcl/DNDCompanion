@@ -11,7 +11,6 @@
   import HitPoints from '$lib/components/HitPoints.svelte';
   import RestButtons from '$lib/components/RestButtons.svelte';
   import SaveIndicator from '$lib/components/SaveIndicator.svelte';
-  import SiteHeader from '$lib/components/SiteHeader.svelte';
   import SkillRail from '$lib/components/SkillRail.svelte';
   import SpellTable from '$lib/components/SpellTable.svelte';
   import Tabs from '$lib/components/Tabs.svelte';
@@ -198,8 +197,6 @@
   <title>{definition?.identity?.name?.trim() || sheet?.name || 'Character sheet'}</title>
 </svelte:head>
 
-<SiteHeader showBack />
-
 {#if loading}
   <p class="centred">Loading…</p>
 {:else if loadError === 'notfound'}
@@ -257,6 +254,7 @@
           {editing ? 'Done' : 'Edit'}
         </button>
       {/if}
+      <a class="back" href="{base}/">Sheets</a>
     </header>
 
     <div class="band">
@@ -460,7 +458,7 @@
   }
   .cap {
     display: block; font-size: 0.625rem; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--faint); font-weight: 600; margin: 0;
+    color: var(--dim); font-weight: 600; margin: 0;
   }
 
   .identity { display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
@@ -502,6 +500,12 @@
     font-size: 0.8125rem; cursor: pointer; flex: none;
   }
   .undo:hover { border-color: var(--a-edge); color: var(--a); }
+  .back {
+    background: var(--raised); border: 1px solid var(--line); color: var(--dim);
+    border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font-size: 0.8125rem;
+    text-decoration: none; flex: none; line-height: 1.5;
+  }
+  .back:hover { border-color: var(--a-edge); color: var(--a); }
 
   /* Equal heights: the hit point module matches the ability band beside it. */
   .band {

@@ -76,7 +76,7 @@
 <style>
   .cap {
     font-size: 0.625rem; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--faint); font-weight: 600; margin: 0 0 0.75rem;
+    color: var(--dim); font-weight: 600; margin: 0 0 0.75rem;
   }
   .group { margin-bottom: 0.875rem; }
   .group:last-child { margin-bottom: 0; }
@@ -87,9 +87,9 @@
   }
   .ab {
     font-size: 0.625rem; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--faint); font-weight: 600;
+    color: var(--dim); font-weight: 600;
   }
-  .abmod { font-size: 0.6875rem; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .abmod { font-size: 0.6875rem; color: var(--dim); font-variant-numeric: tabular-nums; }
   .row { display: flex; align-items: center; gap: 0.5625rem; padding: 0.3125rem 0; font-size: 0.845rem; }
   .dot {
     width: 0.5625rem; height: 0.5625rem; border-radius: 50%;
@@ -103,7 +103,7 @@
   .bonus {
     font-variant-numeric: tabular-nums; font-size: 0.8125rem; min-width: 2.125rem;
     text-align: center; border: 1px solid var(--line-soft); border-radius: var(--r-sm);
-    padding: 0.125rem 0; color: var(--dim); flex: none;
+    padding: 0.125rem 0; color: var(--text); font-weight: 600; flex: none;
   }
   .row.prof .bonus { border-color: var(--a-edge); background: var(--a-wash); color: var(--a); }
 </style>

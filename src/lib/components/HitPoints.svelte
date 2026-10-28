@@ -35,6 +35,10 @@
 
   const hpMax = $derived(definition.combat?.hpMax ?? 0);
   const ratio = $derived(hpMax > 0 ? Math.min(1, sheetState.hpCurrent / hpMax) : 0);
+  /* Temp HP sits beyond the maximum, so the bar is scaled to both and the
+     temporary part is the grey tail on the right. */
+  const barTotal = $derived(hpMax + sheetState.hpTemp);
+  const pct = (n: number) => (barTotal > 0 ? (n / barTotal) * 100 : 0);
   const down = $derived(sheetState.hpCurrent === 0);
   const bloodied = $derived(ratio > 0 && ratio <= 0.5);
 
@@ -58,15 +62,17 @@
                      onchange={(v) => patchCombat('hpMax', Number(v))} />
     {:else}{hpMax}{/if}
   </span>
+  {#if sheetState.hpTemp > 0}
+    <span class="temp" title="Temporary hit points">+{sheetState.hpTemp}</span>
+  {/if}
 </div>
 
-<div class="bar" aria-hidden="true"><i class:bloodied class:down style:width="{ratio * 100}%"></i></div>
+<div class="bar" aria-hidden="true">
+  <i class="cur" class:bloodied class:down style:width="{pct(sheetState.hpCurrent)}%"></i>
+  <i class="tmp" style:width="{pct(sheetState.hpTemp)}%"></i>
+</div>
 
 <div class="pairs">
-  <div class="pair">
-    <span class="cap">Temp HP</span>
-    <b>{sheetState.hpTemp > 0 ? sheetState.hpTemp : '—'}</b>
-  </div>
   <div class="pair">
     <span class="cap">Hit dice</span>
     <b>
@@ -115,7 +121,7 @@
   .cap {
     display: block;
     font-size: 0.625rem; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--faint); font-weight: 600;
+    color: var(--dim); font-weight: 600;
   }
   .readout { display: flex; align-items: baseline; gap: 0.5rem; margin-top: 0.375rem; }
   .readout strong {
@@ -124,14 +130,20 @@
   }
   .readout strong.bloodied, .readout strong.down { color: var(--danger); }
   .max { color: var(--dim); font-size: 1rem; font-variant-numeric: tabular-nums; }
+  .temp {
+    color: var(--dim); font-size: 1.125rem; font-weight: 600;
+    font-variant-numeric: tabular-nums; margin-left: 0.125rem;
+  }
   .max :global(input) { width: 4rem; }
   .bar {
     height: 6px; background: oklch(20% 0.004 286); border-radius: 3px;
-    overflow: hidden; margin: 0.75rem 0 1rem;
+    overflow: hidden; margin: 0.75rem 0 1rem; display: flex;
   }
-  .bar i { display: block; height: 100%; background: var(--a-mid); transition: width 0.35s ease; }
-  .bar i.bloodied, .bar i.down { background: var(--danger); }
-  .pairs { display: grid; grid-template-columns: 1fr 1fr; gap: 0.625rem; }
+  .bar i { display: block; height: 100%; transition: width 0.35s ease; }
+  .cur { background: var(--a-mid); }
+  .cur.bloodied, .cur.down { background: var(--danger); }
+  .tmp { background: var(--dim); }
+  .pairs { display: grid; grid-template-columns: 1fr; gap: 0.625rem; }
   .pair {
     background: var(--raised); border: 1px solid var(--line-soft);
     border-radius: var(--r-sm); padding: 0.5rem 0.625rem; min-width: 0;
@@ -151,6 +163,9 @@
   .pip[aria-pressed='true'] { background: var(--a); border-color: var(--a); }
   .pip.fail[aria-pressed='true'] { background: var(--danger); border-color: var(--danger); }
   .controls { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: auto; padding-top: 1rem; }
+  /* The rest buttons are handed in as children inside their own wrapper; this
+     dissolves it so they lay out in the same row rather than on a line below. */
+  .controls :global(.rests) { display: contents; }
   .controls input {
     width: 3.4rem; background: var(--raised); border: 1px solid var(--line);
     color: var(--text); border-radius: var(--r-sm); padding: 0.3125rem 0.4375rem;

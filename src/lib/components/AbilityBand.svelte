@@ -70,7 +70,7 @@
   .cap {
     display: block;
     font-size: 0.625rem; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--faint); font-weight: 600;
+    color: var(--dim); font-weight: 600;
   }
   .saves-cap { margin-top: 1.125rem; }
   .abilities, .saves { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.625rem; }
@@ -103,7 +103,7 @@
   .save b { display: block; font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
   .save.on b { color: var(--a); }
   .save span {
-    font-size: 0.59rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint);
+    font-size: 0.59rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim);
   }
   @media (max-width: 860px) {
     .abilities, .saves { grid-template-columns: repeat(3, 1fr); }
