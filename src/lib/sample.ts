@@ -15,6 +15,8 @@ export function blankDefinition(name = 'New character'): Definition {
     trackers: [],
     equipment: [],
     currency: {},
-    notes: ''
+    traits: {},
+    notes: '',
+    backstory: ''
   };
 }
