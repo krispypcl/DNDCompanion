@@ -16,6 +16,8 @@
     /** Required: fixed layout is what stops the headers moving. */
     width: string;
     type?: 'text' | 'number';
+    /** A fixed set of values renders as a select rather than a text box. */
+    options?: readonly string[];
     placeholder?: string;
     numeric?: boolean;
     /** Reads as secondary, and folds under the name on a narrow screen. */
@@ -99,7 +101,15 @@
 
             {#each rest as col (col.key)}
               <td class:muted={col.muted} class:numeric={col.numeric} class:fold={col.muted}>
-                {#if editable}
+                {#if editable && col.options}
+                  <select
+                    value={String(item[col.key] ?? col.options[0])}
+                    aria-label="{nameOf(item) || `Row ${i + 1}`} {col.label}"
+                    onchange={(e) => patch(i, col.key, e.currentTarget.value)}
+                  >
+                    {#each col.options as option (option)}<option>{option}</option>{/each}
+                  </select>
+                {:else if editable}
                   <input
                     type={col.type === 'number' ? 'number' : 'text'}
                     value={item[col.key] ?? ''}
@@ -160,13 +170,13 @@
   .muted { color: var(--dim); font-size: 0.85rem; }
   .numeric { font-variant-numeric: tabular-nums; }
   .rm { padding-right: 0; }
-  input {
+  input, select {
     background: var(--bg); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.2rem 0.35rem; font: inherit;
     font-size: 0.875rem; width: 100%; min-width: 0; box-sizing: border-box;
     transition: border-color 0.15s ease;
   }
-  input:hover { border-color: var(--a-edge); }
+  input:hover, select:hover { border-color: var(--a-edge); }
   input::placeholder { color: var(--dim); opacity: 0.6; }
   input[type='number'] { -moz-appearance: textfield; appearance: textfield; }
   input[type='number']::-webkit-outer-spin-button,

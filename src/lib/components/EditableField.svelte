@@ -5,6 +5,7 @@
     editable,
     type = 'text',
     placeholder = '—',
+    hint,
     label,
     rows = 6,
     onchange
@@ -14,7 +15,10 @@
     display?: string;
     editable: boolean;
     type?: 'text' | 'number' | 'textarea';
+    /** Shown in place of an empty value when not editing. */
     placeholder?: string;
+    /** An example, shown only inside the input. Falls back to `placeholder`. */
+    hint?: string;
     label?: string;
     rows?: number;
     onchange: (next: string | number) => void;
@@ -45,7 +49,14 @@
   <textarea class="field" aria-label={label} value={String(value ?? '')} onchange={commit} {rows}
   ></textarea>
 {:else}
-  <input class="field" {type} aria-label={label} value={value ?? ''} onchange={commit} />
+  <input
+    class="field"
+    {type}
+    aria-label={label}
+    placeholder={hint ?? (placeholder === '—' ? '' : placeholder)}
+    value={value ?? ''}
+    onchange={commit}
+  />
 {/if}
 
 <style>

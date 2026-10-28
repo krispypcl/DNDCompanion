@@ -6,7 +6,6 @@
   import DetailsBlock from '$lib/components/DetailsBlock.svelte';
   import EditableField from '$lib/components/EditableField.svelte';
   import EntryLink from '$lib/components/EntryLink.svelte';
-  import ListEditor from '$lib/components/ListEditor.svelte';
   import HitPoints from '$lib/components/HitPoints.svelte';
   import RestButtons from '$lib/components/RestButtons.svelte';
   import SaveIndicator from '$lib/components/SaveIndicator.svelte';
@@ -38,7 +37,7 @@
     TrackerType
   } from '$lib/types';
 
-  const TABS = ['Combat', 'Spells', 'Equipment', 'Features', 'Character', 'Notes', 'Backstory'];
+  const TABS = ['Combat', 'Spells', 'Equipment', 'Features', 'Trackers', 'Character', 'Notes', 'Backstory'];
   const PASSIVES = ['perception', 'insight', 'investigation'] as const;
 
   let loading = $state(true);
@@ -75,6 +74,16 @@
     { key: 'name', label: 'Item', width: '60%', placeholder: 'Tinderbox' },
     { key: 'qty', label: 'Amount', width: '20%', type: 'number' as const, numeric: true, placeholder: '1' },
     { key: 'weight', label: 'Weight', width: '20%', type: 'number' as const, numeric: true, placeholder: '—' }
+  ];
+  const TRACKER_COLUMNS = [
+    { key: 'label', label: 'Label', width: '18%', placeholder: 'Risk Dice' },
+    { key: 'max', label: 'Max', width: '13%', placeholder: '4 or prof + 1' },
+    { key: 'die', label: 'Die', width: '8%', placeholder: 'd8' },
+    { key: 'type', label: 'Shape', width: '12%', options: ['pips', 'counter', 'gauge'] as const },
+    { key: 'direction', label: 'Direction', width: '12%', options: ['spend', 'accrue'] as const },
+    { key: 'resetOn', label: 'Resets on', width: '13%', options: ['manual', 'short', 'long', 'dawn'] as const },
+    { key: 'resetAmount', label: 'Refill', width: '10%', placeholder: 'full' },
+    { key: 'source', label: 'Source', width: '14%', muted: true, placeholder: 'valdagunslinger' }
   ];
   const FEATURE_COLUMNS = [
     { key: 'title', label: 'Title', width: '26%', placeholder: "Sheriff's Star" },
@@ -246,19 +255,27 @@
       <div class="who">
         <h1>
           <EditableField value={definition.identity.name} {editable} label="Name"
+                         hint="Character name"
                          onchange={(v) => patchIdentity('name', v)} />
         </h1>
         <p class="sub">
           <EditableField value={definition.identity.class} {editable} label="Class"
-                         placeholder="Class" onchange={(v) => patchIdentity('class', v)} />
+                         placeholder="Class" hint="Gunslinger"
+                         onchange={(v) => patchIdentity('class', v)} />
           <EditableField value={definition.identity.subclass} {editable} label="Subclass"
-                         placeholder="Subclass" onchange={(v) => patchIdentity('subclass', v)} />
+                         placeholder="Subclass" hint="White Hat"
+                         onchange={(v) => patchIdentity('subclass', v)} />
           <EditableField value={definition.identity.ancestry} {editable} label="Ancestry"
-                         placeholder="Ancestry" onchange={(v) => patchIdentity('ancestry', v)} />
+                         placeholder="Ancestry" hint="Tiefling (Glasya)"
+                         onchange={(v) => patchIdentity('ancestry', v)} />
+          <EditableField value={definition.identity.background} {editable} label="Background"
+                         placeholder="Background" hint="Criminal"
+                         onchange={(v) => patchIdentity('background', v)} />
           {#if editable}
             <span class="lvledit">level
               <EditableField value={definition.identity.level} editable={true} type="number"
-                             label="Level" onchange={(v) => patchIdentity('level', Number(v))} />
+                             label="Level" placeholder="5"
+                             onchange={(v) => patchIdentity('level', Number(v))} />
             </span>
           {/if}
           <EntryLink name={definition.identity.class ?? ''}
@@ -341,7 +358,7 @@
                 <div>
                   <h3>Spell save DC</h3>
                   <EditableField value={definition.spellSaveDc ?? ''} {editable} type="number"
-                                 label="Spell save DC" placeholder="—"
+                                 label="Spell save DC" placeholder="15"
                                  onchange={(v) => setDefinition({ ...definition, spellSaveDc: v === '' ? undefined : Number(v) })} />
                 </div>
                 <div>
@@ -349,7 +366,7 @@
                   <EditableField value={definition.spellAttackBonus ?? ''}
                                  display={definition.spellAttackBonus != null ? sign(definition.spellAttackBonus) : undefined}
                                  {editable} type="number"
-                                 label="Spell attack bonus" placeholder="—"
+                                 label="Spell attack bonus" placeholder="7"
                                  onchange={(v) => setDefinition({ ...definition, spellAttackBonus: v === '' ? undefined : Number(v) })} />
                 </div>
               </div>
@@ -386,6 +403,24 @@
                 blank={() => ({ title: '', body: '' }) as Feature}
                 onchange={(features) => setDefinition({ ...definition, features: features as Feature[] })}
               />
+            {:else if tab === 'Trackers'}
+              <EntryTable
+                items={trackerRows}
+                columns={TRACKER_COLUMNS}
+                {editable}
+                category="items"
+                emptyText="No trackers yet."
+                addLabel="Add tracker"
+                blank={blankTracker}
+                onchange={(rows) => saveTrackers(rows as TrackerRow[])}
+              />
+              {#if editable}
+                <p class="hint">
+                  Max accepts a number or a formula over <code>level</code>, <code>prof</code> and
+                  ability modifiers — <code>prof + 1</code>, <code>level / 2</code>. Source
+                  <code>homebrew</code> marks an entry as yours and drops the 5e.tools link.
+                </p>
+              {/if}
             {:else if tab === 'Character'}
               <DetailsBlock {definition} {editable} onchange={setDefinition} />
               {#if editable}
@@ -394,28 +429,6 @@
                   <ThemePicker value={definition.identity.theme}
                                onchange={(name) => patchIdentity('theme', name)} />
                 </div>
-                <ListEditor
-                  title="Trackers"
-                  items={trackerRows}
-                  onchange={saveTrackers}
-                  blank={blankTracker}
-                  columns={[
-                    { key: 'label', label: 'Label', width: '22%', placeholder: 'Risk Dice' },
-                    { key: 'max', label: 'Max or formula', width: '16%', placeholder: '4 or prof + 1' },
-                    { key: 'die', label: 'Die', width: '8%', placeholder: 'd8' },
-                    { key: 'type', label: 'Shape', type: 'select', options: ['pips', 'counter', 'gauge'] },
-                    { key: 'direction', label: 'Direction', type: 'select', options: ['spend', 'accrue'] },
-                    { key: 'resetOn', label: 'Resets on', type: 'select', options: ['manual', 'short', 'long', 'dawn'] },
-                    { key: 'resetAmount', label: 'Refill', width: '10%', placeholder: 'full' },
-                    { key: 'group', label: 'Group', width: '12%', placeholder: 'Class' },
-                    { key: 'source', label: 'Source', width: '10%', placeholder: 'valdagunslinger' }
-                  ]}
-                />
-                <p class="hint">
-                  Max accepts a number or a formula over <code>level</code>, <code>prof</code> and
-                  ability modifiers — <code>prof + 1</code>, <code>level / 2</code>. Source
-                  <code>homebrew</code> marks an entry as yours and drops the 5e.tools link.
-                </p>
               {/if}
             {:else if tab === 'Notes'}
               <div class="notes">
@@ -452,7 +465,7 @@
                              {editable} type="number" label="Proficiency bonus"
                              onchange={(v) => setDefinition({ ...definition, proficiency: Number(v) })} />
             </b>
-            <span class="cap">Prof</span>
+            <span class="cap">Proficiency</span>
           </div>
           <div class="defbox">
             <b>
@@ -468,7 +481,7 @@
           <div class="defbox">
             <b>
               <EditableField value={definition.abilitySaveDc ?? ''} {editable} type="number"
-                             label="Ability save DC" placeholder="—"
+                             label="Ability save DC" placeholder="15"
                              onchange={(v) => setDefinition({ ...definition, abilitySaveDc: v === '' ? undefined : Number(v) })} />
             </b>
             <span class="cap">Save DC</span>
@@ -485,12 +498,14 @@
 
         <div class="passives">
           <h2 class="cap">Passive</h2>
-          {#each PASSIVES as skill (skill)}
-            <div class="passive">
-              <span>{skill[0].toUpperCase() + skill.slice(1)}</span>
-              <b>{passiveScore(definition, skill)}</b>
-            </div>
-          {/each}
+          <div class="defense">
+            {#each PASSIVES as skill (skill)}
+              <div class="defbox">
+                <b>{passiveScore(definition, skill)}</b>
+                <span class="cap">{skill[0].toUpperCase() + skill.slice(1)}</span>
+              </div>
+            {/each}
+          </div>
         </div>
 
         {#if (definition.trackers ?? []).length > 0}
@@ -570,11 +585,13 @@
   }
   .who { flex: 1 1 auto; min-width: 0; }
   .who h1 { margin: 0; font-size: 1.375rem; font-weight: 600; letter-spacing: -0.015em; }
+  .sub :global(input.field) { min-width: 5.5rem; }
   .sub {
     margin: 0.25rem 0 0; color: var(--dim); font-size: 0.8125rem;
     display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline;
   }
   .lvledit { display: inline-flex; gap: 0.3rem; align-items: baseline; }
+  .lvledit :global(.field) { text-align: center; }
   .edit {
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font: inherit;
@@ -590,7 +607,7 @@
   }
   .undo:hover { border-color: var(--a-edge); color: var(--a); }
   .back {
-    background: var(--raised); border: 1px solid var(--line); color: var(--dim);
+    background: var(--raised); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font-size: 0.8125rem;
     text-decoration: none; flex: none; line-height: 1.5;
   }
@@ -612,9 +629,11 @@
   .defbox {
     background: var(--raised); border: 1px solid var(--line-soft); border-radius: var(--r);
     padding: 0.625rem 0.3125rem; text-align: center; min-width: 0;
-    transition: border-color 0.2s ease;
+    display: flex; flex-direction: column; justify-content: space-between;
+    min-height: 4.125rem;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
   }
-  .defbox:hover { border-color: var(--line); }
+  .defbox:hover { border-color: var(--a-edge); background: var(--a-wash); }
   .defbox b {
     display: block; font-size: 1.375rem; font-weight: 600; line-height: 1;
     color: var(--a-hi); font-variant-numeric: tabular-nums;
@@ -622,7 +641,9 @@
     white-space: nowrap;
   }
   /* Tighter than a section title: "INSPIRATION" has to fit a third of the rail. */
-  .defbox .cap { margin-top: 0.4375rem; font-size: 0.5875rem; letter-spacing: 0.06em; }
+  /* These labels are full words in a third of the rail: "Investigation" and
+     "Proficiency" both have to fit without breaking. */
+  .defbox .cap { margin-top: 0.4375rem; font-size: 0.5375rem; letter-spacing: 0.03em; }
   .defbox :global(.field) {
     --fld-leading: 1; --fld-pad-y: 0px;
     field-sizing: fixed; display: block; margin-inline: auto;
@@ -633,6 +654,7 @@
   /* Directly below the trackers. With equal-height rails the slack falls to
      the bottom of the panel, not into a gap above this. */
   .passives { padding-top: 1.25rem; }
+  .passives .cap:first-child { margin-bottom: 0.625rem; }
   .money { padding-top: 1.25rem; }
   .money .cap { margin-bottom: 0.5rem; }
   .carried {
@@ -641,12 +663,6 @@
     border-top: 1px solid var(--line-soft);
   }
   .carried b { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 600; }
-  .passive {
-    display: flex; justify-content: space-between; font-size: 0.8125rem;
-    padding: 0.375rem 0; color: var(--dim); border-bottom: 1px solid var(--line-soft);
-  }
-  .passive:last-child { border-bottom: 0; }
-  .passive b { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 600; }
 
   .hint { color: var(--faint); font-size: 0.78rem; margin: 0.5rem 0 0; line-height: 1.5; }
   .hint code { background: var(--raised); border-radius: 3px; padding: 0.05rem 0.25rem; font-size: 0.95em; }
