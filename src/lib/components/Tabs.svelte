@@ -19,7 +19,7 @@
   }
 </script>
 
-<nav role="tablist">
+<div class="tablist" role="tablist">
   {#each tabs as tab (tab)}
     <button
       role="tab"
@@ -30,7 +30,7 @@
       {tab}
     </button>
   {/each}
-</nav>
+</div>
 
 {#key active}
   <section role="tabpanel" in:fade={{ duration: 140 }}>
@@ -39,7 +39,7 @@
 {/key}
 
 <style>
-  nav {
+  .tablist {
     display: flex;
     gap: 0.25rem;
     border-bottom: 1px solid var(--line);
@@ -47,7 +47,7 @@
     overflow-x: auto;
     scrollbar-width: none;
   }
-  nav::-webkit-scrollbar { display: none; }
+  .tablist::-webkit-scrollbar { display: none; }
   button {
     background: none;
     border: 0;
