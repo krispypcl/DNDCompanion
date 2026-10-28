@@ -30,21 +30,30 @@ describe('DetailsBlock', () => {
     const { unmount } = render(DetailsBlock, {
       props: { definition: definition(), editable: false, onchange: () => {} }
     });
-    expect(screen.queryByText('Background')).toBeNull();
+    expect(screen.queryByText('Alignment')).toBeNull();
     unmount();
 
     render(DetailsBlock, { props: { definition: definition(), editable: true, onchange: () => {} } });
-    for (const label of ['Background', 'Alignment', 'Player', 'Initiative bonus', 'Portrait URL']) {
+    for (const label of ['Alignment', 'Gender', 'Age', 'Initiative bonus', 'Portrait URL']) {
       expect(screen.getByLabelText(label), `${label} should be editable`).toBeTruthy();
     }
   });
 
   it('shows a filled detail to a viewer', () => {
     render(DetailsBlock, {
-      props: { definition: definition({ background: 'Criminal' }), editable: false, onchange: () => {} }
+      props: { definition: definition({ alignment: 'Chaotic neutral' }), editable: false, onchange: () => {} }
     });
-    expect(screen.getByText('Background')).toBeTruthy();
-    expect(screen.getByText('Criminal')).toBeTruthy();
+    expect(screen.getByText('Alignment')).toBeTruthy();
+    expect(screen.getByText('Chaotic neutral')).toBeTruthy();
+  });
+
+  // Background moved to the identity line; player was dropped.
+  it('no longer carries background or player', () => {
+    render(DetailsBlock, {
+      props: { definition: definition(), editable: true, onchange: () => {} }
+    });
+    expect(screen.queryByLabelText('Background')).toBeNull();
+    expect(screen.queryByLabelText('Player')).toBeNull();
   });
 
   it('renders the portrait when one is set', () => {

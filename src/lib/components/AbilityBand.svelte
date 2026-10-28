@@ -79,7 +79,9 @@
   .ability {
     background: var(--raised); border: 1px solid var(--line);
     border-radius: var(--r); padding: 0.75rem 0.375rem; text-align: center; min-width: 0;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
   }
+  .ability:hover { border-color: var(--a-edge); background: var(--a-wash); }
   .mod {
     display: block; font-size: 1.5rem; font-weight: 600; line-height: 1;
     color: var(--a-hi); font-variant-numeric: tabular-nums;
@@ -101,7 +103,9 @@
     background: var(--raised); border: 1px solid var(--line-soft);
     border-radius: var(--r-sm); padding: 0.5rem 0.25rem; text-align: center;
     font: inherit; color: inherit; cursor: pointer; min-width: 0;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
   }
+  .save:not(.on):hover { border-color: var(--a-edge); background: var(--a-wash); }
   .save:disabled { cursor: default; }
   .save.on { border-color: var(--a-edge); background: var(--a-wash); }
   .save b { display: block; font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; }

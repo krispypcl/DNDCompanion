@@ -20,9 +20,7 @@
 
   /** One-liners. All free text: an age may be "24" or "unknown". */
   const DETAILS = [
-    { key: 'background', label: 'Background', placeholder: 'Criminal' },
     { key: 'alignment', label: 'Alignment', placeholder: 'Chaotic neutral' },
-    { key: 'player', label: 'Player', placeholder: 'Your name' },
     { key: 'gender', label: 'Gender', placeholder: 'Male' },
     { key: 'age', label: 'Age', placeholder: '24' },
     { key: 'size', label: 'Size', placeholder: 'Medium' },
