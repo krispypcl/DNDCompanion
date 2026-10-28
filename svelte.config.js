@@ -5,10 +5,11 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 export default {
   preprocess: vitePreprocess(),
   kit: {
-    // Static output. `fallback` makes dynamic routes like /s/[id] work on
-    // a plain file host: unknown paths serve the SPA shell and the router
-    // resolves them client-side.
-    adapter: adapter({ fallback: 'index.html', strict: false }),
+    // Static output. GitHub Pages serves 404.html for any path it has no file
+    // for, so that is the SPA shell: a direct hit on /s/<uuid> lands there and
+    // the router resolves it client-side. Using index.html instead gives a
+    // real 404, which breaks every shared sheet link.
+    adapter: adapter({ fallback: '404.html', strict: false }),
     paths: { base: process.env.BASE_PATH ?? '' }
   }
 };

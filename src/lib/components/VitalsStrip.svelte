@@ -1,5 +1,6 @@
 <script lang="ts">
   import CountUp from './CountUp.svelte';
+  import EditableField from './EditableField.svelte';
   import SaveIndicator from './SaveIndicator.svelte';
   import { applyDamage, applyHealing, setDeathSave, setTempHp } from '$lib/rules/hp';
   import { snapshot } from '$lib/stores/undo';
@@ -9,12 +10,18 @@
     definition,
     state: sheetState,
     editable,
-    onchange
+    editDefinition = false,
+    onchange,
+    ondefinition
   }: {
     definition: Definition;
     state: State;
+    /** Owner may move HP and death saves. */
     editable: boolean;
+    /** Owner is in edit mode, so the written numbers themselves may change. */
+    editDefinition?: boolean;
     onchange: (next: State) => void;
+    ondefinition?: (next: Definition) => void;
   } = $props();
 
   let amount = $state(1);
@@ -27,6 +34,10 @@
     snapshot(sheetState, label);
     onchange(next);
   }
+
+  function patchCombat(key: string, value: string | number) {
+    ondefinition?.({ ...definition, combat: { ...definition.combat, [key]: value } });
+  }
 </script>
 
 <header class="vitals">
@@ -34,7 +45,13 @@
     <span class="label">Hit points</span>
     <div class="readout">
       <strong class:bloodied={ratio <= 0.5} class:down><CountUp value={sheetState.hpCurrent} /></strong>
-      <span class="max">/ {hpMax}</span>
+      <span class="max">/ {#if editDefinition}<EditableField
+          value={hpMax}
+          editable={true}
+          type="number"
+          label="Max HP"
+          onchange={(v) => patchCombat('hpMax', Number(v))}
+        />{:else}{hpMax}{/if}</span>
       {#if sheetState.hpTemp > 0}<span class="temp">+{sheetState.hpTemp}</span>{/if}
     </div>
     <div class="bar" aria-hidden="true"><i style:width="{ratio * 100}%"></i></div>
@@ -56,12 +73,32 @@
 
   <div class="stat">
     <span class="label">AC</span>
-    <strong>{definition.combat?.ac ?? '—'}</strong>
+    <strong>
+      {#if editDefinition}
+        <EditableField value={definition.combat?.ac ?? 0} editable={true} type="number" label="AC"
+                       onchange={(v) => patchCombat('ac', Number(v))} />
+      {:else}{definition.combat?.ac ?? '—'}{/if}
+    </strong>
   </div>
 
   <div class="stat">
     <span class="label">Speed</span>
-    <strong>{definition.combat?.speed ?? '—'}<small>ft</small></strong>
+    <strong>
+      {#if editDefinition}
+        <EditableField value={definition.combat?.speed ?? 0} editable={true} type="number" label="Speed"
+                       onchange={(v) => patchCombat('speed', Number(v))} />
+      {:else}{definition.combat?.speed ?? '—'}{/if}<small>ft</small>
+    </strong>
+  </div>
+
+  <div class="stat">
+    <span class="label">Hit dice</span>
+    <strong class="dice">
+      {#if editDefinition}
+        <EditableField value={definition.combat?.hitDice ?? ''} editable={true} label="Hit dice"
+                       placeholder="5d10" onchange={(v) => patchCombat('hitDice', String(v))} />
+      {:else}{definition.combat?.hitDice || '—'}{/if}
+    </strong>
   </div>
 
   {#if down}
@@ -150,6 +187,7 @@
   }
   .controls button:hover { border-color: var(--dim); }
   .stat strong { font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+  .stat .dice { font-size: 1.1rem; }
   .stat small { font-size: 0.7rem; color: var(--dim); margin-left: 0.15rem; }
   .deaths .row { display: flex; align-items: center; gap: 0.3rem; margin-top: 0.25rem; }
   .kind { font-size: 0.7rem; color: var(--dim); width: 2.6rem; }

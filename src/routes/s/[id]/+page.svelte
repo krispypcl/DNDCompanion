@@ -6,7 +6,9 @@
   import EditableField from '$lib/components/EditableField.svelte';
   import EntryLink from '$lib/components/EntryLink.svelte';
   import EquipmentList from '$lib/components/EquipmentList.svelte';
+  import ListEditor from '$lib/components/ListEditor.svelte';
   import RestButtons from '$lib/components/RestButtons.svelte';
+  import SiteHeader from '$lib/components/SiteHeader.svelte';
   import SkillList from '$lib/components/SkillList.svelte';
   import SpellTable from '$lib/components/SpellTable.svelte';
   import Tabs from '$lib/components/Tabs.svelte';
@@ -18,7 +20,17 @@
   import { session } from '$lib/stores/session';
   import { sheetStore } from '$lib/stores/sheet';
   import { canUndo, lastLabel, resetUndo, snapshot, undo } from '$lib/stores/undo';
-  import type { Definition, Sheet, State } from '$lib/types';
+  import type {
+    Definition,
+    Feature,
+    RestKind,
+    Sheet,
+    Spell,
+    State,
+    Tracker,
+    TrackerDirection,
+    TrackerType
+  } from '$lib/types';
 
   const TABS = ['Play', 'Character', 'Spells', 'Notes'];
 
@@ -82,9 +94,87 @@
     if (!definition) return;
     setDefinition({ ...definition, identity: { ...definition.identity, [key]: value } });
   }
+
+  /**
+   * Trackers nest their reset rule, and a max may be a number or a formula.
+   * The editor works on a flat, all-strings row and converts on the way back,
+   * so a max of "4" is stored as 4 and "prof + 1" is stored as text.
+   */
+  type TrackerRow = {
+    id: string;
+    label: string;
+    max: string;
+    die: string;
+    type: string;
+    direction: string;
+    resetOn: string;
+    resetAmount: string;
+    group: string;
+    source: string;
+  };
+
+  const numeric = (v: string) => /^-?\d+$/.test(v.trim());
+  const scalar = (v: string): number | string => (numeric(v) ? Number(v) : v.trim());
+
+  const trackerRows = $derived<TrackerRow[]>(
+    (definition?.trackers ?? []).map((t) => ({
+      id: t.id,
+      label: t.label ?? '',
+      max: String(t.max ?? ''),
+      die: t.die ?? '',
+      type: t.type ?? 'pips',
+      direction: t.direction ?? 'spend',
+      resetOn: t.reset?.on ?? 'manual',
+      resetAmount: String(t.reset?.amount ?? 'full'),
+      group: t.group ?? '',
+      source: t.source ?? ''
+    }))
+  );
+
+  function newId() {
+    return typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `t${Date.now()}${Math.random().toString(36).slice(2, 7)}`;
+  }
+
+  function saveTrackers(rows: TrackerRow[]) {
+    if (!definition) return;
+    const trackers: Tracker[] = rows.map((r) => ({
+      id: r.id || newId(),
+      label: r.label,
+      max: scalar(r.max || '0'),
+      ...(r.die ? { die: r.die } : {}),
+      type: r.type as TrackerType,
+      direction: r.direction as TrackerDirection,
+      reset: {
+        on: r.resetOn as RestKind | 'manual',
+        amount: r.resetAmount.trim() === 'full' ? 'full' : scalar(r.resetAmount || 'full')
+      },
+      ...(r.group ? { group: r.group } : {}),
+      ...(r.source ? { source: r.source } : {})
+    }));
+    setDefinition({ ...definition, trackers });
+  }
+
+  function blankTracker(): TrackerRow {
+    return {
+      id: newId(),
+      label: 'New tracker',
+      max: '1',
+      die: '',
+      type: 'pips',
+      direction: 'spend',
+      resetOn: 'long',
+      resetAmount: 'full',
+      group: '',
+      source: ''
+    };
+  }
 </script>
 
 <svelte:head><title>{sheet?.name ?? 'Character sheet'}</title></svelte:head>
+
+<SiteHeader showBack />
 
 {#if loading}
   <p class="centred">Loading…</p>
@@ -97,7 +187,14 @@
 {:else if loadError}
   <div class="centred"><h1>Could not load</h1><p>{loadError}</p></div>
 {:else if sheet && definition && sheetState}
-  <VitalsStrip {definition} state={sheetState} editable={isOwner} onchange={setState} />
+  <VitalsStrip
+    {definition}
+    state={sheetState}
+    editable={isOwner}
+    editDefinition={editable}
+    onchange={setState}
+    ondefinition={setDefinition}
+  />
 
   <div class="title">
     <div class="who">
@@ -136,9 +233,35 @@
             onchange={setTracker}
           />
           {#if (definition.trackers ?? []).length === 0}
-            <p class="empty">No trackers yet. Add Risk Dice, spell slots or anything else your class uses.</p>
+            <p class="empty">
+              No trackers yet.{#if isOwner} Press Edit to add Risk Dice, spell slots or anything else your class uses.{/if}
+            </p>
           {/if}
         </div>
+        {#if editable}
+          <ListEditor
+            title="Trackers"
+            items={trackerRows}
+            onchange={saveTrackers}
+            blank={blankTracker}
+            columns={[
+              { key: 'label', label: 'Label', width: '22%' },
+              { key: 'max', label: 'Max or formula', width: '16%' },
+              { key: 'die', label: 'Die', width: '8%' },
+              { key: 'type', label: 'Shape', type: 'select', options: ['pips', 'counter', 'gauge'] },
+              { key: 'direction', label: 'Direction', type: 'select', options: ['spend', 'accrue'] },
+              { key: 'resetOn', label: 'Resets on', type: 'select', options: ['manual', 'short', 'long', 'dawn'] },
+              { key: 'resetAmount', label: 'Refill', width: '10%' },
+              { key: 'group', label: 'Group', width: '12%' },
+              { key: 'source', label: 'Source', width: '10%' }
+            ]}
+          />
+          <p class="hint">
+            Max accepts a number or a formula over <code>level</code>, <code>prof</code> and ability
+            modifiers — <code>prof + 1</code>, <code>level / 2</code>. Source <code>homebrew</code> marks
+            an entry as yours and drops the 5e.tools link.
+          </p>
+        {/if}
         <AttackList {definition} {editable} onchange={setDefinition} />
       {:else if tab === 'Character'}
         <AbilityBlock {definition} {editable} onchange={setDefinition} />
@@ -156,8 +279,47 @@
         {:else}
           <p class="empty">No features yet.</p>
         {/each}
+        {#if editable}
+          <ListEditor
+            title="Edit features"
+            items={definition.features ?? []}
+            onchange={(features) => setDefinition({ ...definition, features: features as Feature[] })}
+            blank={() => ({ title: 'New feature', body: '' }) as Feature}
+            columns={[
+              { key: 'title', label: 'Title', width: '26%' },
+              { key: 'body', label: 'Description' },
+              { key: 'source', label: 'Source', width: '12%' }
+            ]}
+          />
+        {/if}
+        <div class="hitdice">
+          <span class="cap">Hit dice</span>
+          <EditableField value={definition.combat?.hitDice ?? ''} editable={editable} label="Hit dice total" placeholder="5d10" onchange={(v) => setDefinition({ ...definition, combat: { ...definition.combat, hitDice: String(v) } })} />
+        </div>
       {:else if tab === 'Spells'}
         <SpellTable {definition} />
+        {#if (definition.spells ?? []).length === 0 && !editable}
+          <p class="empty">
+            No spells yet.{#if isOwner} Press Edit to add them.{/if}
+          </p>
+        {/if}
+        {#if editable}
+          <ListEditor
+            title="Edit spells"
+            items={definition.spells ?? []}
+            onchange={(spells) => setDefinition({ ...definition, spells: spells as Spell[] })}
+            blank={() => ({ name: 'New spell' }) as Spell}
+            columns={[
+              { key: 'name', label: 'Name', width: '18%' },
+              { key: 'time', label: 'Cast time', width: '12%' },
+              { key: 'range', label: 'Range', width: '10%' },
+              { key: 'duration', label: 'Duration', width: '12%' },
+              { key: 'save', label: 'Save / effect', width: '12%' },
+              { key: 'notes', label: 'Notes' },
+              { key: 'source', label: 'Source', width: '10%' }
+            ]}
+          />
+        {/if}
       {:else}
         <EquipmentList {definition} {editable} onchange={setDefinition} />
         <h2>Notes</h2>
@@ -194,5 +356,8 @@
   .feature h3 { margin: 0 0 0.2rem; font-size: 0.95rem; display: flex; gap: 0.3rem; align-items: center; }
   .feature p { margin: 0; font-size: 0.9rem; color: var(--dim); overflow-wrap: anywhere; }
   .empty { color: var(--dim); font-size: 0.9rem; }
+  .hint { color: var(--dim); font-size: 0.78rem; margin: 0.5rem 0 0; line-height: 1.5; }
+  .hint code { background: var(--surface); border-radius: 3px; padding: 0.05rem 0.25rem; font-size: 0.95em; }
+  .hitdice { display: flex; align-items: baseline; gap: 0.6rem; margin: 1.25rem 0 0; }
   .notes :global(textarea), .notes :global(.readout) { width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; }
 </style>
