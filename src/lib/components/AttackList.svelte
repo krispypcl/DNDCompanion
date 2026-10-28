@@ -22,8 +22,6 @@
   }
 </script>
 
-<h2>Attacks</h2>
-
 {#if definition.attacks.length === 0 && !editable}
   <p class="empty">No attacks yet.</p>
 {:else}
@@ -65,7 +63,6 @@
 {#if editable}<button class="add" onclick={add}>Add attack</button>{/if}
 
 <style>
-  h2 { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin: 1.5rem 0 0.6rem; }
   /* Wide tables scroll inside their own container; the page body never does. */
   .scroller { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 30rem; }

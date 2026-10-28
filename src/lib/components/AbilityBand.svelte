@@ -69,8 +69,8 @@
 <style>
   .cap {
     display: block;
-    font-size: 0.625rem; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--dim); font-weight: 600;
+    font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--label); font-weight: 600;
   }
   .saves-cap { margin-top: 1.125rem; }
   .abilities, .saves { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.625rem; }
@@ -89,9 +89,13 @@
     text-transform: uppercase; color: var(--dim); margin-top: 0.375rem;
   }
   .score { display: block; margin-top: 0.125rem; }
-  .score :global(.readout), .score :global(input) {
+  .score :global(.field) {
+    /* Override the variables rather than the padding directly, so the derived
+       height stays in step with it. */
+    --fld-leading: 1.4; --fld-pad-y: 0px;
+    field-sizing: fixed; display: block; width: 100%;
     font-size: 0.6875rem; color: var(--faint); font-variant-numeric: tabular-nums;
-    text-align: center; padding: 0; width: 100%;
+    text-align: center;
   }
   .save {
     background: var(--raised); border: 1px solid var(--line-soft);

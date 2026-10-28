@@ -155,7 +155,7 @@
   dd { margin: 0; font-size: 0.95rem; }
   .num { font-variant-numeric: tabular-nums; }
   .portrait-field { flex: 1 1 100%; min-width: 0; }
-  .portrait-field :global(input), .portrait-field select { width: 100%; }
+  .portrait-field :global(.field), .portrait-field select { width: 100%; }
   select {
     background: var(--bg); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.25rem 0.375rem; font: inherit; font-size: 0.9rem;

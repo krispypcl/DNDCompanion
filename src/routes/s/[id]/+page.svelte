@@ -3,6 +3,7 @@
   import { base } from '$app/paths';
   import AbilityBand from '$lib/components/AbilityBand.svelte';
   import AttackList from '$lib/components/AttackList.svelte';
+  import Currency from '$lib/components/Currency.svelte';
   import DetailsBlock from '$lib/components/DetailsBlock.svelte';
   import EditableField from '$lib/components/EditableField.svelte';
   import EntryLink from '$lib/components/EntryLink.svelte';
@@ -243,8 +244,6 @@
         </p>
       </div>
 
-      <div class="spacer"></div>
-
       <SaveIndicator />
       {#if $canUndo}
         <button class="undo" onclick={doUndo}>Undo {$lastLabel}</button>
@@ -285,11 +284,6 @@
               <AttackList {definition} {editable} onchange={setDefinition} />
             {:else if tab === 'Spells'}
               <SpellTable {definition} />
-              {#if (definition.spells ?? []).length === 0 && !editable}
-                <p class="empty">
-                  No spells yet.{#if isOwner} Press Edit to add them.{/if}
-                </p>
-              {/if}
               {#if editable}
                 <ListEditor
                   title="Edit spells"
@@ -379,10 +373,8 @@
         <div class="defense">
           <div class="defbox">
             <b>
-              {#if editable}
-                <EditableField value={definition.combat?.ac ?? 0} editable={true} type="number"
-                               label="AC" onchange={(v) => patchCombat('ac', Number(v))} />
-              {:else}{definition.combat?.ac ?? '—'}{/if}
+              <EditableField value={definition.combat?.ac} {editable} type="number"
+                             label="AC" onchange={(v) => patchCombat('ac', Number(v))} />
             </b>
             <span class="cap">Armor class</span>
           </div>
@@ -392,20 +384,16 @@
         <div class="stats">
           <div class="statbox">
             <b>
-              {#if editable}
-                <EditableField value={definition.proficiency} editable={true} type="number"
-                               label="Proficiency bonus"
-                               onchange={(v) => setDefinition({ ...definition, proficiency: Number(v) })} />
-              {:else}{sign(definition.proficiency)}{/if}
+              <EditableField value={definition.proficiency} display={sign(definition.proficiency)}
+                             {editable} type="number" label="Proficiency bonus"
+                             onchange={(v) => setDefinition({ ...definition, proficiency: Number(v) })} />
             </b>
             <span class="cap">Prof</span>
           </div>
           <div class="statbox">
             <b>
-              {#if editable}
-                <EditableField value={definition.combat?.speed ?? 0} editable={true} type="number"
-                               label="Speed" onchange={(v) => patchCombat('speed', Number(v))} />
-              {:else}{definition.combat?.speed ?? '—'}{/if}
+              <EditableField value={definition.combat?.speed} {editable} type="number"
+                             label="Speed" onchange={(v) => patchCombat('speed', Number(v))} />
             </b>
             <span class="cap">Speed</span>
           </div>
@@ -428,7 +416,7 @@
         />
         {#if (definition.trackers ?? []).length === 0}
           <p class="empty">
-            No trackers yet.{#if isOwner} Add them under Character.{/if}
+            No trackers yet.{#if isOwner}&nbsp;Add them under Character.{/if}
           </p>
         {/if}
 
@@ -440,6 +428,11 @@
               <b>{passiveScore(definition, skill)}</b>
             </div>
           {/each}
+        </div>
+
+        <div class="money">
+          <h2 class="cap">Currency</h2>
+          <Currency {definition} editable={editable} onchange={setDefinition} />
         </div>
       </section>
     </div>
@@ -457,8 +450,8 @@
     border-radius: var(--r); padding: 1rem; min-width: 0;
   }
   .cap {
-    display: block; font-size: 0.625rem; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--dim); font-weight: 600; margin: 0;
+    display: block; font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--label); font-weight: 600; margin: 0;
   }
 
   .identity { display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
@@ -480,18 +473,17 @@
     color: var(--a); border-radius: var(--r-sm); font-size: 0.6875rem; font-weight: 650;
     padding: 0.0625rem 0.5rem; letter-spacing: 0.02em; white-space: nowrap;
   }
-  .who { min-width: 0; }
+  .who { flex: 1 1 auto; min-width: 0; }
   .who h1 { margin: 0; font-size: 1.375rem; font-weight: 600; letter-spacing: -0.015em; }
   .sub {
     margin: 0.25rem 0 0; color: var(--dim); font-size: 0.8125rem;
     display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline;
   }
   .lvledit { display: inline-flex; gap: 0.3rem; align-items: baseline; }
-  .spacer { flex: 1; }
   .edit {
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font: inherit;
-    font-size: 0.8125rem; cursor: pointer; flex: none;
+    font-size: 0.8125rem; cursor: pointer; flex: none; min-width: 4.5rem;
   }
   .edit[aria-pressed='true'] { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
   .undo {
@@ -529,7 +521,11 @@
     color: var(--a-hi); font-variant-numeric: tabular-nums;
   }
   .defbox .cap { margin-top: 0.4375rem; }
-  .defbox :global(input) { width: 3.5rem; text-align: center; font-size: 1.6875rem; }
+  .defbox :global(.field) {
+    --fld-leading: 1; --fld-pad-y: 0px;
+    field-sizing: fixed;
+    display: block; width: 100%; text-align: center; font-size: 1.6875rem;
+  }
   .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.625rem; margin-top: 0.625rem; }
   .statbox {
     background: var(--raised); border: 1px solid var(--line-soft); border-radius: var(--r-sm);
@@ -537,11 +533,17 @@
   }
   .statbox b { display: block; font-size: 1.0625rem; font-weight: 600; font-variant-numeric: tabular-nums; }
   .statbox .cap { margin-top: 0.1875rem; }
-  .statbox :global(input) { width: 100%; text-align: center; font-size: 1.0625rem; padding: 0; }
+  .statbox :global(.field) {
+    --fld-leading: 1.2; --fld-pad-y: 0px;
+    field-sizing: fixed;
+    display: block; width: 100%; text-align: center; font-size: 1.0625rem;
+  }
   .trk-cap { margin: 1.25rem 0 0.625rem; }
   /* Directly below the trackers. With equal-height rails the slack falls to
      the bottom of the panel, not into a gap above this. */
   .passives { padding-top: 1.25rem; }
+  .money { padding-top: 1.25rem; }
+  .money .cap { margin-bottom: 0.5rem; }
   .passive {
     display: flex; justify-content: space-between; font-size: 0.8125rem;
     padding: 0.375rem 0; color: var(--dim); border-bottom: 1px solid var(--line-soft);
@@ -557,7 +559,7 @@
   .hint { color: var(--faint); font-size: 0.78rem; margin: 0.5rem 0 0; line-height: 1.5; }
   .hint code { background: var(--raised); border-radius: 3px; padding: 0.05rem 0.25rem; font-size: 0.95em; }
   .themerow { display: flex; align-items: center; gap: 1rem; margin: 1.25rem 0; flex-wrap: wrap; }
-  .notes :global(textarea), .notes :global(.readout) { width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .notes :global(.field) { field-sizing: fixed; width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; }
 
   @media (max-width: 860px) {
     .sheet { padding: 0.875rem; }
@@ -565,6 +567,5 @@
     /* On a phone the attacks must come before an 18-row skill list. */
     .rail-skills { order: 3; }
     .identity { gap: 0.75rem; }
-    .spacer { flex-basis: 100%; height: 0; }
   }
 </style>
