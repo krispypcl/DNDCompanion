@@ -1,0 +1,198 @@
+<script lang="ts">
+  import { page } from '$app/state';
+  import { base } from '$app/paths';
+  import AbilityBlock from '$lib/components/AbilityBlock.svelte';
+  import AttackList from '$lib/components/AttackList.svelte';
+  import EditableField from '$lib/components/EditableField.svelte';
+  import EntryLink from '$lib/components/EntryLink.svelte';
+  import EquipmentList from '$lib/components/EquipmentList.svelte';
+  import RestButtons from '$lib/components/RestButtons.svelte';
+  import SkillList from '$lib/components/SkillList.svelte';
+  import SpellTable from '$lib/components/SpellTable.svelte';
+  import Tabs from '$lib/components/Tabs.svelte';
+  import TrackerGroup from '$lib/components/TrackerGroup.svelte';
+  import UndoToast from '$lib/components/UndoToast.svelte';
+  import VitalsStrip from '$lib/components/VitalsStrip.svelte';
+  import { sheetRepo } from '$lib/data/sheets';
+  import { formulaContext } from '$lib/rules/derived';
+  import { session } from '$lib/stores/session';
+  import { sheetStore } from '$lib/stores/sheet';
+  import { canUndo, lastLabel, resetUndo, snapshot, undo } from '$lib/stores/undo';
+  import type { Definition, Sheet, State } from '$lib/types';
+
+  const TABS = ['Play', 'Character', 'Spells', 'Notes'];
+
+  let loading = $state(true);
+  let loadError = $state<string | null>(null);
+  let activeTab = $state(TABS[0]);
+  let editing = $state(false);
+  let refilling = $state(false);
+  let toast = $state<string | null>(null);
+
+  const sheet = $derived($sheetStore.sheet as Sheet | null);
+  const definition = $derived(sheet?.definition as Definition | undefined);
+  const state = $derived(sheet?.state as State | undefined);
+  const isOwner = $derived(Boolean($session.user && sheet && $session.user.id === sheet.owner_id));
+  const editable = $derived(isOwner && editing);
+
+  $effect(() => {
+    const id = page.params.id;
+    if (!id) return;
+    loading = true;
+    loadError = null;
+    resetUndo();
+    sheetRepo
+      .loadSheet(id)
+      .then((found) => {
+        sheetStore.load(found);
+        if (!found) loadError = 'notfound';
+      })
+      .catch((e) => (loadError = e instanceof Error ? e.message : 'Could not load this sheet'))
+      .finally(() => (loading = false));
+  });
+
+  $effect(() => {
+    if (typeof location === 'undefined') return;
+    const wanted = TABS.find((t) => t.toLowerCase() === location.hash.slice(1).toLowerCase());
+    if (wanted) activeTab = wanted;
+  });
+
+  function setState(next: State) { sheetStore.setState(next); }
+  function setDefinition(next: Definition) { sheetStore.setDefinition(next); }
+
+  function setTracker(id: string, value: number) {
+    if (!state) return;
+    snapshot(state, 'Tracker');
+    setState({ ...state, trackers: { ...state.trackers, [id]: value } });
+  }
+
+  function afterRest(label: string) {
+    toast = label;
+    refilling = true;
+    setTimeout(() => (refilling = false), 700);
+  }
+
+  function doUndo() {
+    const entry = undo();
+    if (entry) setState(entry.state);
+    toast = null;
+  }
+
+  function patchIdentity(key: string, value: string | number) {
+    if (!definition) return;
+    setDefinition({ ...definition, identity: { ...definition.identity, [key]: value } });
+  }
+</script>
+
+<svelte:head><title>{sheet?.name ?? 'Character sheet'}</title></svelte:head>
+
+{#if loading}
+  <p class="centred">Loading…</p>
+{:else if loadError === 'notfound'}
+  <div class="centred">
+    <h1>No sheet here</h1>
+    <p>This sheet does not exist, or it has been deleted.</p>
+    <a href="{base}/">Back to your sheets</a>
+  </div>
+{:else if loadError}
+  <div class="centred"><h1>Could not load</h1><p>{loadError}</p></div>
+{:else if sheet && definition && state}
+  <VitalsStrip {definition} {state} editable={isOwner} onchange={setState} />
+
+  <div class="title">
+    <div class="who">
+      <h1><EditableField value={definition.identity.name} editable={editable} label="Name" onchange={(v) => patchIdentity('name', v)} /></h1>
+      <p class="sub">
+        <EditableField value={definition.identity.class} editable={editable} label="Class" placeholder="Class" onchange={(v) => patchIdentity('class', v)} />
+        <EditableField value={definition.identity.subclass} editable={editable} label="Subclass" placeholder="Subclass" onchange={(v) => patchIdentity('subclass', v)} />
+        <span class="lvl">level <EditableField value={definition.identity.level} editable={editable} type="number" label="Level" onchange={(v) => patchIdentity('level', Number(v))} /></span>
+        <EditableField value={definition.identity.ancestry} editable={editable} label="Ancestry" placeholder="Ancestry" onchange={(v) => patchIdentity('ancestry', v)} />
+        <EntryLink name={definition.identity.class ?? ''} source={definition.identity.lookupUrl ? 'override' : undefined} category="classes" override={definition.identity.lookupUrl} />
+      </p>
+    </div>
+    {#if isOwner}
+      <button class="edit" aria-pressed={editing} onclick={() => (editing = !editing)}>
+        {editing ? 'Done' : 'Edit'}
+      </button>
+    {/if}
+  </div>
+
+  <Tabs tabs={TABS} bind:active={activeTab}>
+    {#snippet children(tab)}
+      {#if tab === 'Play'}
+        <div class="row">
+          <RestButtons {definition} {state} editable={isOwner} onchange={setState} onrest={afterRest} />
+          {#if $canUndo}
+            <button class="undo" onclick={doUndo}>Undo {$lastLabel}</button>
+          {/if}
+        </div>
+        <div class="trackers">
+          <TrackerGroup
+            trackers={definition.trackers ?? []}
+            spent={state.trackers}
+            ctx={formulaContext(definition)}
+            editable={isOwner}
+            {refilling}
+            onchange={setTracker}
+          />
+          {#if (definition.trackers ?? []).length === 0}
+            <p class="empty">No trackers yet. Add Risk Dice, spell slots or anything else your class uses.</p>
+          {/if}
+        </div>
+        <AttackList {definition} {editable} onchange={setDefinition} />
+      {:else if tab === 'Character'}
+        <AbilityBlock {definition} {editable} onchange={setDefinition} />
+        <div class="prof-row">
+          <span class="cap">Proficiency bonus</span>
+          <EditableField value={definition.proficiency} editable={editable} type="number" label="Proficiency bonus" onchange={(v) => setDefinition({ ...definition, proficiency: Number(v) })} />
+        </div>
+        <SkillList {definition} {editable} onchange={setDefinition} />
+        <h2>Features</h2>
+        {#each definition.features ?? [] as feature, i (i)}
+          <article class="feature">
+            <h3>{feature.title}<EntryLink name={feature.title} source={feature.source} category="feats" override={feature.lookupUrl} /></h3>
+            <p>{feature.body}</p>
+          </article>
+        {:else}
+          <p class="empty">No features yet.</p>
+        {/each}
+      {:else if tab === 'Spells'}
+        <SpellTable {definition} />
+      {:else}
+        <EquipmentList {definition} {editable} onchange={setDefinition} />
+        <h2>Notes</h2>
+        <div class="notes">
+          <EditableField value={definition.notes} editable={editable} type="textarea" label="Notes" placeholder="Nothing written yet." onchange={(v) => setDefinition({ ...definition, notes: String(v) })} />
+        </div>
+      {/if}
+    {/snippet}
+  </Tabs>
+
+  <UndoToast label={toast} onundo={doUndo} onexpire={() => (toast = null)} />
+{/if}
+
+<style>
+  .centred { max-width: 30rem; margin: 4rem auto; padding: 0 1rem; text-align: center; color: var(--dim); }
+  .centred a { color: var(--accent); }
+  .title { display: flex; align-items: flex-start; gap: 1rem; padding: 1rem 1rem 0.5rem; }
+  .who { min-width: 0; flex: 1; }
+  h1 { margin: 0; font-size: 1.5rem; }
+  .sub { margin: 0.15rem 0 0; color: var(--dim); font-size: 0.9rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: baseline; }
+  .lvl { display: inline-flex; gap: 0.3rem; align-items: baseline; }
+  .edit {
+    background: none; border: 1px solid var(--line); color: var(--text);
+    border-radius: 6px; padding: 0.35rem 0.9rem; font: inherit; cursor: pointer; flex: none;
+  }
+  .edit[aria-pressed='true'] { border-color: var(--accent); color: var(--accent); }
+  .row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+  .undo { background: none; border: 1px solid var(--line); color: var(--dim); border-radius: 6px; padding: 0.4rem 0.8rem; font: inherit; font-size: 0.85rem; cursor: pointer; }
+  .trackers { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 0.6rem; margin-bottom: 1.25rem; }
+  .prof-row { display: flex; align-items: baseline; gap: 0.6rem; margin: 1rem 0; }
+  .cap { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+  h2 { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin: 1.5rem 0 0.6rem; }
+  .feature { border-top: 1px solid var(--line); padding: 0.6rem 0; }
+  .feature h3 { margin: 0 0 0.2rem; font-size: 0.95rem; display: flex; gap: 0.3rem; align-items: center; }
+  .feature p { margin: 0; font-size: 0.9rem; color: var(--dim); overflow-wrap: anywhere; }
+  .empty { color: var(--dim); font-size: 0.9rem; }
+  .notes :global(textarea), .notes :global(.readout) { width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; }
+</style>
