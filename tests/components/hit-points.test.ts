@@ -24,6 +24,14 @@ const definition = (): Definition => ({
 const state = () => ({ ...emptyState(), hpCurrent: 44 });
 
 describe('HitPoints', () => {
+  it('keeps the hit dice beside the heading rather than in a box of its own', () => {
+    const { container } = render(HitPoints, {
+      props: { definition: definition(), state: state(), editable: false, onchange: () => {} }
+    });
+    expect(container.querySelector('.head .dice')?.textContent).toContain('5d10');
+    expect(container.querySelector('.pairs')).toBeNull();
+  });
+
   it('shows the written numbers read-only by default', () => {
     render(HitPoints, {
       props: { definition: definition(), state: state(), editable: false, onchange: () => {} }
@@ -50,7 +58,9 @@ describe('HitPoints', () => {
         onchange: () => {}
       }
     });
-    expect(container.querySelector('.temp')?.textContent).toBe('+11');
+    // The marker carries its own "temp" label for context.
+    expect(container.querySelector('.temp')?.textContent?.trim()).toBe('+11temp');
+    expect(container.querySelector('.temp small')?.textContent).toBe('temp');
     expect((container.querySelector('.tmp') as HTMLElement).style.width).toBe('20%');
     expect((container.querySelector('.cur') as HTMLElement).style.width).toBe('80%');
   });

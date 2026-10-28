@@ -75,8 +75,8 @@
 
 <style>
   .cap {
-    font-size: 0.625rem; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--dim); font-weight: 600; margin: 0 0 0.75rem;
+    font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--label); font-weight: 600; margin: 0 0 0.75rem;
   }
   .group { margin-bottom: 0.875rem; }
   .group:last-child { margin-bottom: 0; }
@@ -86,8 +86,8 @@
     border-bottom: 1px solid var(--line-soft);
   }
   .ab {
-    font-size: 0.625rem; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--dim); font-weight: 600;
+    font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--label); font-weight: 600;
   }
   .abmod { font-size: 0.6875rem; color: var(--dim); font-variant-numeric: tabular-nums; }
   .row { display: flex; align-items: center; gap: 0.5625rem; padding: 0.3125rem 0; font-size: 0.845rem; }

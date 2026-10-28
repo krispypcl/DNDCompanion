@@ -1,6 +1,7 @@
 <script lang="ts">
   let {
     value,
+    display,
     editable,
     type = 'text',
     placeholder = '—',
@@ -8,12 +9,16 @@
     onchange
   }: {
     value: string | number | undefined;
+    /** What to show when not editing, if it differs from the raw value. */
+    display?: string;
     editable: boolean;
     type?: 'text' | 'number' | 'textarea';
     placeholder?: string;
     label?: string;
     onchange: (next: string | number) => void;
   } = $props();
+
+  const empty = $derived(value === '' || value === undefined);
 
   function commit(event: Event) {
     const el = event.target as HTMLInputElement | HTMLTextAreaElement;
@@ -28,39 +33,57 @@
   }
 </script>
 
+<!-- Both states carry `.field`, so one rule in a caller sizes the readout and
+     the input together and toggling edit cannot shift the layout. -->
 {#if !editable}
-  <span class="readout" class:empty={value === '' || value === undefined}>
-    {value === '' || value === undefined ? placeholder : value}
-  </span>
+  <span class="field readout" class:empty>{empty ? placeholder : (display ?? value)}</span>
 {:else if type === 'textarea'}
-  <textarea aria-label={label} value={String(value ?? '')} onchange={commit} rows="6"></textarea>
+  <textarea class="field" aria-label={label} value={String(value ?? '')} onchange={commit} rows="6"
+  ></textarea>
 {:else}
-  <input {type} aria-label={label} value={value ?? ''} onchange={commit} />
+  <input class="field" {type} aria-label={label} value={value ?? ''} onchange={commit} />
 {/if}
 
 <style>
-  /* The two states occupy the same box so toggling edit never reflows the page. */
-  .readout,
-  input,
-  textarea {
+  /* One box for both states: same font, same padding, same 1px border — the
+     read-only one just has nothing to show for it. */
+  .field {
+    /* An input takes its height from the font's own metrics, not line-height,
+       so it comes out taller than a span with the same rules. Deriving an
+       explicit height from these two variables makes both states agree; a
+       caller that changes the padding or leading overrides the variables and
+       the height follows. */
+    --fld-leading: 1.4;
+    --fld-pad-y: 0.15rem;
     font: inherit;
-    padding: 0.15rem 0.3rem;
+    font-size: inherit;
+    line-height: var(--fld-leading);
+    padding: var(--fld-pad-y) 0.3rem;
+    height: calc(var(--fld-leading) * 1em + var(--fld-pad-y) * 2 + 2px);
+    border: 1px solid transparent;
     border-radius: 4px;
     min-width: 0;
-  }
-  .readout {
-    display: inline-block;
-    border: 1px solid transparent;
-  }
-  .empty { color: var(--dim); }
-  input,
-  textarea {
-    background: var(--bg);
-    border: 1px solid var(--line);
+    text-align: inherit;
     color: var(--text);
-    width: 100%;
+    background: none;
+    box-sizing: border-box;
   }
-  input:focus-visible,
-  textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-  textarea { resize: vertical; line-height: 1.5; }
+  .readout { display: inline-block; }
+  .empty { color: var(--dim); }
+  input.field, textarea.field {
+    background: var(--bg);
+    border-color: var(--line);
+    /* Sizes to its content, so an inline input occupies the box the readout
+       did. It overrides an explicit width AND height, so any caller that sets
+       its own size turns it back to `fixed`. */
+    field-sizing: content;
+    min-width: 2.5rem;
+  }
+  input.field:focus-visible,
+  textarea.field:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
+  textarea.field { resize: vertical; line-height: 1.5; display: block; height: auto; }
+  /* Spinners would make a number input wider than its readout. */
+  input[type='number'] { -moz-appearance: textfield; appearance: textfield; }
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 </style>
