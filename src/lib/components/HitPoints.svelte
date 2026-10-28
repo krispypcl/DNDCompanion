@@ -128,8 +128,8 @@
   }
   .dice :global(.field) {
     --fld-leading: 1.2; --fld-pad-y: 0px;
-    field-sizing: content; min-width: 2.25rem; padding-inline: 0.125rem;
-    display: inline-block; text-align: right;
+    field-sizing: content; min-width: 2.5rem; padding-inline: 0.4375rem;
+    display: inline-block; text-align: center;
   }
   .hp-readout { display: flex; align-items: baseline; gap: 0.25rem; margin-top: 0.375rem; }
   .hp-readout strong {
@@ -142,8 +142,8 @@
     --fld-leading: 1.4; --fld-pad-y: 0px;
     /* Sized to the value, so temp HP sits right beside it and only moves if
        the maximum actually gets longer. */
-    field-sizing: content; min-width: 1.5rem; padding-inline: 0.125rem;
-    text-align: left; color: var(--dim);
+    field-sizing: content; min-width: 1.75rem; padding-inline: 0.4375rem;
+    text-align: center; color: var(--dim);
   }
   /* Same weight and size as the maximum beside it, so the two read as one line. */
   .temp { color: var(--dim); font-size: 1rem; font-variant-numeric: tabular-nums; }

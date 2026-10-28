@@ -1,11 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import { render } from '@testing-library/svelte';
-import AttackList from '$lib/components/AttackList.svelte';
+import EntryTable from '$lib/components/EntryTable.svelte';
 import EntryLink from '$lib/components/EntryLink.svelte';
-import EquipmentList from '$lib/components/EquipmentList.svelte';
 import RestButtons from '$lib/components/RestButtons.svelte';
 import SaveIndicator from '$lib/components/SaveIndicator.svelte';
-import SpellTable from '$lib/components/SpellTable.svelte';
 import TrackerGroup from '$lib/components/TrackerGroup.svelte';
 import UndoToast from '$lib/components/UndoToast.svelte';
 import { formulaContext } from '$lib/rules/derived';
@@ -28,8 +26,26 @@ const slots: Tracker[] = [
 ];
 
 describe('every component renders without throwing', () => {
-  test.each([true, false])('AttackList (editable: %s)', (editable) => {
-    const { container } = render(AttackList, { props: { definition: def, editable, onchange: () => {} } });
+  /** The four lists share one table now, so they are covered as one. */
+  const table = (items: Record<string, unknown>[], editable: boolean) =>
+    render(EntryTable, {
+      props: {
+        items,
+        columns: [
+          { key: 'name', label: 'Name', width: '60%' },
+          { key: 'notes', label: 'Notes', width: '40%', muted: true }
+        ],
+        editable,
+        category: 'items' as const,
+        emptyText: 'Nothing here.',
+        addLabel: 'Add',
+        blank: () => ({ name: '' }),
+        onchange: () => {}
+      }
+    });
+
+  test.each([true, false])('EntryTable with rows (editable: %s)', (editable) => {
+    const { container } = table([{ name: 'Revolver', notes: 'Slow' }], editable);
     // In edit mode the name sits in an input's value, not in textContent.
     const shown = editable
       ? [...container.querySelectorAll('input')].map((i) => i.value).join(' ')
@@ -37,17 +53,27 @@ describe('every component renders without throwing', () => {
     expect(shown).toContain('Revolver');
   });
 
-  test.each([true, false])('EquipmentList (editable: %s)', (editable) => {
-    const { container } = render(EquipmentList, { props: { definition: def, editable, onchange: () => {} } });
-    const shown = editable
-      ? [...container.querySelectorAll('input')].map((i) => i.value).join(' ')
-      : (container.textContent ?? '');
-    expect(shown).toContain("Sheriff's Star");
+  test('EntryTable shows its empty line to a viewer', () => {
+    const { container } = table([], false);
+    expect(container.textContent).toContain('Nothing here.');
+    expect(container.querySelector('table')).toBeNull();
   });
 
-  test('SpellTable', () => {
-    const { container } = render(SpellTable, { props: { definition: def } });
-    expect(container.textContent).toContain('Shield');
+  test('EntryTable gives an editor, not an empty line, when editing nothing', () => {
+    const { container } = table([], true);
+    expect(container.textContent).not.toContain('Nothing here.');
+    expect(container.querySelector('table')).toBeTruthy();
+  });
+
+  /** The headers used to resize when the first row arrived. */
+  test('column widths are declared, so headers cannot shift', () => {
+    const { container } = table([], true);
+    const widths = [...container.querySelectorAll('col')].map((c) => (c as HTMLElement).style.width);
+    // The widths are the testable half; that the table honours them with
+    // table-layout: fixed is checked in a browser, since jsdom does not
+    // resolve a component's scoped styles into computed values.
+    expect(widths.slice(0, 2)).toEqual(['60%', '40%']);
+    expect(widths).toHaveLength(3); // plus the remove column while editing
   });
 
   test('TrackerGroup renders groups, counters and gauges together', () => {

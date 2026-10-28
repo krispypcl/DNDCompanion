@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, it, test } from 'vitest';
 import {
   abilityModifier,
   formulaContext,
@@ -6,7 +6,8 @@ import {
   saveBonus,
   skillTotal,
   spellAttackBonus,
-  spellSaveDC
+  spellSaveDC,
+  weightCarried
 } from '$lib/rules/derived';
 import type { Definition } from '$lib/types';
 
@@ -106,5 +107,37 @@ describe('formulaContext', () => {
       wis: 2,
       cha: 4
     });
+  });
+});
+
+describe('weight carried', () => {
+  const withGear = (equipment: Definition['equipment']): Definition =>
+    ({ ...loka, equipment }) as Definition;
+
+  it('counts an item once per unit in the stack', () => {
+    expect(weightCarried(withGear([{ name: 'Revolver', qty: 2, weight: 3 }]))).toBe(6);
+  });
+
+  it('treats a missing quantity as one', () => {
+    expect(weightCarried(withGear([{ name: 'Rope', weight: 10 }]))).toBe(10);
+  });
+
+  it('skips an item with no weight rather than failing the sum', () => {
+    const total = weightCarried(
+      withGear([
+        { name: 'Revolver', qty: 2, weight: 3 },
+        { name: 'Tinderbox', qty: 1 },
+        { name: "Sheriff's Star", qty: 1, weight: 0.5 }
+      ])
+    );
+    expect(total).toBe(6.5);
+  });
+
+  it('is zero for an empty pack', () => {
+    expect(weightCarried(withGear([]))).toBe(0);
+  });
+
+  it('does not leak floating point noise', () => {
+    expect(weightCarried(withGear([{ name: 'a', weight: 0.1 }, { name: 'b', weight: 0.2 }]))).toBe(0.3);
   });
 });

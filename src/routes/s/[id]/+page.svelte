@@ -2,24 +2,22 @@
   import { page } from '$app/state';
   import { base } from '$app/paths';
   import AbilityBand from '$lib/components/AbilityBand.svelte';
-  import AttackList from '$lib/components/AttackList.svelte';
   import Currency from '$lib/components/Currency.svelte';
   import DetailsBlock from '$lib/components/DetailsBlock.svelte';
   import EditableField from '$lib/components/EditableField.svelte';
   import EntryLink from '$lib/components/EntryLink.svelte';
-  import EquipmentList from '$lib/components/EquipmentList.svelte';
   import ListEditor from '$lib/components/ListEditor.svelte';
   import HitPoints from '$lib/components/HitPoints.svelte';
   import RestButtons from '$lib/components/RestButtons.svelte';
   import SaveIndicator from '$lib/components/SaveIndicator.svelte';
   import SkillRail from '$lib/components/SkillRail.svelte';
-  import SpellTable from '$lib/components/SpellTable.svelte';
+  import EntryTable from '$lib/components/EntryTable.svelte';
   import Tabs from '$lib/components/Tabs.svelte';
   import TrackerGroup from '$lib/components/TrackerGroup.svelte';
   import ThemePicker from '$lib/components/ThemePicker.svelte';
   import UndoToast from '$lib/components/UndoToast.svelte';
   import { sheetRepo } from '$lib/data/sheets';
-  import { formulaContext, modifierOf, passiveScore } from '$lib/rules/derived';
+  import { formulaContext, modifierOf, passiveScore, weightCarried } from '$lib/rules/derived';
   import { themeStyle } from '$lib/theme';
   import { session } from '$lib/stores/session';
   import { sheetStore } from '$lib/stores/sheet';
@@ -27,8 +25,10 @@
   import { ABILITIES } from '$lib/types';
   import type {
     Ability,
+    Attack,
     Definition,
     Feature,
+    Item,
     RestKind,
     Sheet,
     Spell,
@@ -54,6 +54,33 @@
   const isOwner = $derived(Boolean($session.user && sheet && $session.user.id === sheet.owner_id));
   const editable = $derived(isOwner && editing);
   const sign = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
+
+  const carried = $derived(definition ? weightCarried(definition) : 0);
+
+  const ATTACK_COLUMNS = [
+    { key: 'name', label: 'Name', width: '34%', placeholder: 'Revolver' },
+    { key: 'bonus', label: 'Hit', width: '13%', numeric: true, placeholder: '+8' },
+    { key: 'damage', label: 'Damage', width: '22%', numeric: true, placeholder: '2d6 + 5' },
+    { key: 'notes', label: 'Notes', width: '31%', muted: true, placeholder: 'Slow mastery, 30/90' }
+  ];
+  const SPELL_COLUMNS = [
+    { key: 'name', label: 'Name', width: '20%', placeholder: 'Shield' },
+    { key: 'time', label: 'Cast time', width: '14%', placeholder: '1 reaction' },
+    { key: 'range', label: 'Range', width: '11%', placeholder: 'Self' },
+    { key: 'duration', label: 'Duration', width: '14%', placeholder: '1 round' },
+    { key: 'save', label: 'Save', width: '12%', placeholder: 'WIS 15' },
+    { key: 'notes', label: 'Notes', width: '29%', muted: true, placeholder: '+5 AC' }
+  ];
+  const ITEM_COLUMNS = [
+    { key: 'name', label: 'Item', width: '60%', placeholder: 'Tinderbox' },
+    { key: 'qty', label: 'Amount', width: '20%', type: 'number' as const, numeric: true, placeholder: '1' },
+    { key: 'weight', label: 'Weight', width: '20%', type: 'number' as const, numeric: true, placeholder: '—' }
+  ];
+  const FEATURE_COLUMNS = [
+    { key: 'title', label: 'Title', width: '26%', placeholder: "Sheriff's Star" },
+    { key: 'body', label: 'Description', width: '58%', placeholder: '+1 AC, 3 charges at dawn' },
+    { key: 'source', label: 'Source', width: '16%', muted: true, placeholder: 'homebrew' }
+  ];
   const initiative = $derived(
     definition ? (definition.combat?.initiative ?? modifierOf(definition, 'dex')) : 0
   );
@@ -277,7 +304,16 @@
         <Tabs tabs={TABS} bind:active={activeTab}>
           {#snippet children(tab)}
             {#if tab === 'Combat'}
-              <AttackList {definition} {editable} onchange={setDefinition} />
+              <EntryTable
+                items={definition.attacks ?? []}
+                columns={ATTACK_COLUMNS}
+                {editable}
+                category="items"
+                emptyText="No attacks yet."
+                addLabel="Add attack"
+                blank={() => ({ name: '' }) as Attack}
+                onchange={(attacks) => setDefinition({ ...definition, attacks: attacks as Attack[] })}
+              />
             {:else if tab === 'Spells'}
               <div class="casting">
                 <div>
@@ -318,51 +354,38 @@
                 </div>
               </div>
 
-              {#if !editable || (definition.spells ?? []).length > 0}
-                <SpellTable {definition} />
-              {/if}
-              {#if editable}
-                <ListEditor
-                  title="Edit spells"
-                  items={definition.spells ?? []}
-                  onchange={(spells) => setDefinition({ ...definition, spells: spells as Spell[] })}
-                  blank={() => ({ name: 'New spell' }) as Spell}
-                  columns={[
-                    { key: 'name', label: 'Name', width: '18%', placeholder: 'Shield' },
-                    { key: 'time', label: 'Cast time', width: '12%', placeholder: '1 reaction' },
-                    { key: 'range', label: 'Range', width: '10%', placeholder: 'Self' },
-                    { key: 'duration', label: 'Duration', width: '12%', placeholder: '1 round' },
-                    { key: 'save', label: 'Save / effect', width: '12%', placeholder: 'WIS 15' },
-                    { key: 'notes', label: 'Notes', placeholder: '+5 AC until your next turn' },
-                    { key: 'source', label: 'Source', width: '10%', placeholder: 'xphb' }
-                  ]}
-                />
-              {/if}
+              <EntryTable
+                items={definition.spells ?? []}
+                columns={SPELL_COLUMNS}
+                {editable}
+                category="spells"
+                emptyText="No spells or abilities recorded."
+                addLabel="Add spell"
+                blank={() => ({ name: '' }) as Spell}
+                onchange={(spells) => setDefinition({ ...definition, spells: spells as Spell[] })}
+              />
             {:else if tab === 'Equipment'}
-              <EquipmentList {definition} {editable} onchange={setDefinition} />
+              <EntryTable
+                items={definition.equipment ?? []}
+                columns={ITEM_COLUMNS}
+                {editable}
+                category="items"
+                emptyText="Nothing carried."
+                addLabel="Add item"
+                blank={() => ({ name: '', qty: 1 }) as Item}
+                onchange={(equipment) => setDefinition({ ...definition, equipment: equipment as Item[] })}
+              />
             {:else if tab === 'Features'}
-              {#each definition.features ?? [] as feature, i (i)}
-                <article class="feature">
-                  <h3>{feature.title}<EntryLink name={feature.title} source={feature.source}
-                                                category="feats" override={feature.lookupUrl} /></h3>
-                  <p>{feature.body}</p>
-                </article>
-              {:else}
-                {#if !editable}<p class="empty">No features yet.</p>{/if}
-              {/each}
-              {#if editable}
-                <ListEditor
-                  title="Edit features"
-                  items={definition.features ?? []}
-                  onchange={(features) => setDefinition({ ...definition, features: features as Feature[] })}
-                  blank={() => ({ title: 'New feature', body: '' }) as Feature}
-                  columns={[
-                    { key: 'title', label: 'Title', width: '26%', placeholder: "Sheriff's Star" },
-                    { key: 'body', label: 'Description', placeholder: '+1 AC, 3 charges that reset at dawn' },
-                    { key: 'source', label: 'Source', width: '12%', placeholder: 'homebrew' }
-                  ]}
-                />
-              {/if}
+              <EntryTable
+                items={definition.features ?? []}
+                columns={FEATURE_COLUMNS}
+                {editable}
+                category="feats"
+                emptyText="No features yet."
+                addLabel="Add feature"
+                blank={() => ({ title: '', body: '' }) as Feature}
+                onchange={(features) => setDefinition({ ...definition, features: features as Feature[] })}
+              />
             {:else if tab === 'Character'}
               <DetailsBlock {definition} {editable} onchange={setDefinition} />
               {#if editable}
@@ -487,6 +510,10 @@
         <div class="money">
           <h2 class="cap">Currency</h2>
           <Currency {definition} editable={editable} onchange={setDefinition} />
+          <div class="carried">
+            <span>Weight carried</span>
+            <b>{carried > 0 ? carried : '—'}</b>
+          </div>
         </div>
       </section>
     </div>
@@ -591,12 +618,15 @@
   .defbox b {
     display: block; font-size: 1.375rem; font-weight: 600; line-height: 1;
     color: var(--a-hi); font-variant-numeric: tabular-nums;
+    /* "30 ft." must not wrap into its own label. */
+    white-space: nowrap;
   }
-  .defbox .cap { margin-top: 0.4375rem; }
+  /* Tighter than a section title: "INSPIRATION" has to fit a third of the rail. */
+  .defbox .cap { margin-top: 0.4375rem; font-size: 0.5875rem; letter-spacing: 0.06em; }
   .defbox :global(.field) {
     --fld-leading: 1; --fld-pad-y: 0px;
     field-sizing: fixed; display: block; margin-inline: auto;
-    width: 3.25rem; text-align: center; font-size: 1.375rem;
+    width: 100%; text-align: center; font-size: 1.375rem; white-space: nowrap;
   }
   .trk { padding-top: 1.25rem; }
   .trk .cap { margin-bottom: 0.625rem; }
@@ -605,6 +635,12 @@
   .passives { padding-top: 1.25rem; }
   .money { padding-top: 1.25rem; }
   .money .cap { margin-bottom: 0.5rem; }
+  .carried {
+    display: flex; justify-content: space-between; font-size: 0.8125rem;
+    color: var(--dim); margin-top: 0.625rem; padding-top: 0.5rem;
+    border-top: 1px solid var(--line-soft);
+  }
+  .carried b { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 600; }
   .passive {
     display: flex; justify-content: space-between; font-size: 0.8125rem;
     padding: 0.375rem 0; color: var(--dim); border-bottom: 1px solid var(--line-soft);
@@ -612,21 +648,21 @@
   .passive:last-child { border-bottom: 0; }
   .passive b { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 600; }
 
-  .feature { border-top: 1px solid var(--line-soft); padding: 0.625rem 0; }
-  .feature:first-child { border-top: 0; }
-  .feature h3 { margin: 0 0 0.2rem; font-size: 0.95rem; display: flex; gap: 0.3rem; align-items: center; }
-  .feature p { margin: 0; font-size: 0.875rem; color: var(--dim); overflow-wrap: anywhere; }
-  /* Matches the notes placeholder: body size, --dim. */
-  .empty { color: var(--dim); margin: 0; }
   .hint { color: var(--faint); font-size: 0.78rem; margin: 0.5rem 0 0; line-height: 1.5; }
   .hint code { background: var(--raised); border-radius: 3px; padding: 0.05rem 0.25rem; font-size: 0.95em; }
   .themerow { display: flex; align-items: center; gap: 1rem; margin: 1.25rem 0; flex-wrap: wrap; }
-  .casting { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+  .casting {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 1rem; margin-bottom: 1.25rem; text-align: center;
+  }
   .casting h3 {
     font-size: 0.6875rem; letter-spacing: 0.1em; text-transform: uppercase;
     color: var(--label); font-weight: 600; margin: 0 0 0.25rem;
   }
-  .casting :global(.field) { font-size: 1.0625rem; font-weight: 600; width: 4rem; field-sizing: fixed; }
+  .casting :global(.field) {
+    font-size: 1.0625rem; font-weight: 600; width: 4rem;
+    field-sizing: fixed; display: inline-block; text-align: center;
+  }
   .castval { margin: 0; font-size: 1.0625rem; font-weight: 600; padding: 0.15rem 0.3rem; border: 1px solid transparent; }
   .casting select {
     background: var(--bg); border: 1px solid var(--line); color: var(--text);
