@@ -57,6 +57,7 @@
   .x { background: none; border: 0; color: var(--dim); cursor: pointer; font-size: 1rem; }
   .x:hover { color: var(--bad); }
   .add { margin-top: 0.6rem; background: none; border: 1px dashed var(--line); color: var(--dim); border-radius: 6px; padding: 0.35rem 0.8rem; font: inherit; font-size: 0.85rem; cursor: pointer; }
-  .empty { color: var(--dim); font-size: 0.9rem; }
+  /* Matches the notes placeholder: body size, --dim. */
+  .empty { color: var(--dim); }
   input::placeholder { color: var(--dim); opacity: 0.65; }
 </style>

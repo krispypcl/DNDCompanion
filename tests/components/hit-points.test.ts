@@ -24,11 +24,11 @@ const definition = (): Definition => ({
 const state = () => ({ ...emptyState(), hpCurrent: 44 });
 
 describe('HitPoints', () => {
-  it('keeps the hit dice beside the heading rather than in a box of its own', () => {
+  it('keeps the hit dice on the hit point line rather than in a box of its own', () => {
     const { container } = render(HitPoints, {
       props: { definition: definition(), state: state(), editable: false, onchange: () => {} }
     });
-    expect(container.querySelector('.head .dice')?.textContent).toContain('5d10');
+    expect(container.querySelector('.hp-readout .dice')?.textContent).toContain('5d10');
     expect(container.querySelector('.pairs')).toBeNull();
   });
 
