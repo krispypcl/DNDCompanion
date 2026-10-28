@@ -30,9 +30,10 @@ describe('Tracker', () => {
   describe.each(['pips', 'counter', 'gauge'] as const)('%s', (type) => {
     it('gives the owner a way to lower the value', async () => {
       const onchange = mount(def({ type }), 1);
+      // 1 spent of 4, so 3 remain: tapping the third pip leaves 2.
       const lower =
         type === 'pips'
-          ? screen.getByLabelText('Risk Dice 4')
+          ? screen.getByLabelText('Risk Dice 3')
           : screen.getByLabelText('Decrease');
       (lower as HTMLButtonElement).click();
       expect(onchange).toHaveBeenCalled();
@@ -84,6 +85,44 @@ describe('Tracker', () => {
     const onchange = mount(def({ type: 'gauge', max: 3 }), 0);
     (screen.getByLabelText('Decrease') as HTMLButtonElement).click();
     expect(onchange).toHaveBeenLastCalledWith(1);
+  });
+
+  describe('pips show what is left', () => {
+    it('fills from the left and empties from the right', () => {
+      mount(def({ max: 4 }), 1); // 3 of 4 remain
+      const on = [1, 2, 3, 4].map((n) =>
+        (screen.getByLabelText(`Risk Dice ${n}`) as HTMLButtonElement)
+          .getAttribute('aria-pressed')
+      );
+      expect(on).toEqual(['true', 'true', 'true', 'false']);
+    });
+
+    it('fills from the left for an accrue tracker too', () => {
+      mount(def({ max: 4, direction: 'accrue' }), 2);
+      const on = [1, 2, 3, 4].map((n) =>
+        (screen.getByLabelText(`Risk Dice ${n}`) as HTMLButtonElement)
+          .getAttribute('aria-pressed')
+      );
+      expect(on).toEqual(['true', 'true', 'false', 'false']);
+    });
+
+    it('leaves n remaining when pip n is tapped', () => {
+      const onchange = mount(def({ max: 4 }), 0); // full
+      (screen.getByLabelText('Risk Dice 2') as HTMLButtonElement).click();
+      expect(onchange).toHaveBeenLastCalledWith(2); // 2 spent, 2 left
+    });
+
+    it('empties on a second tap of the last lit pip', () => {
+      const onchange = mount(def({ max: 4 }), 3); // 1 left
+      (screen.getByLabelText('Risk Dice 1') as HTMLButtonElement).click();
+      expect(onchange).toHaveBeenLastCalledWith(4); // all spent
+    });
+
+    it('restores by tapping a pip beyond what is lit', () => {
+      const onchange = mount(def({ max: 4 }), 3); // 1 left
+      (screen.getByLabelText('Risk Dice 4') as HTMLButtonElement).click();
+      expect(onchange).toHaveBeenLastCalledWith(0); // back to full
+    });
   });
 
   it('reports a bad formula instead of rendering controls', () => {
