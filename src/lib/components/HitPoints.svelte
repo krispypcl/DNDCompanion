@@ -52,36 +52,31 @@
   }
 </script>
 
-<span class="cap">Hit points</span>
+<div class="head">
+  <span class="cap">Hit points</span>
+  <span class="dice">
+    <span class="cap">Hit dice</span>
+    <b>
+      <EditableField value={definition.combat?.hitDice} editable={editDefinition} label="Hit dice"
+                     placeholder="—" onchange={(v) => patchCombat('hitDice', String(v))} />
+    </b>
+  </span>
+</div>
 
-<div class="readout">
+<div class="hp-readout">
   <strong class:bloodied class:down><CountUp value={sheetState.hpCurrent} /></strong>
   <span class="max">/
-    {#if editDefinition}
-      <EditableField value={hpMax} editable={true} type="number" label="Max HP"
-                     onchange={(v) => patchCombat('hpMax', Number(v))} />
-    {:else}{hpMax}{/if}
+    <EditableField value={hpMax} editable={editDefinition} type="number" label="Max HP"
+                   onchange={(v) => patchCombat('hpMax', Number(v))} />
   </span>
   {#if sheetState.hpTemp > 0}
-    <span class="temp" title="Temporary hit points">+{sheetState.hpTemp}</span>
+    <span class="temp">+{sheetState.hpTemp}<small>temp</small></span>
   {/if}
 </div>
 
 <div class="bar" aria-hidden="true">
   <i class="cur" class:bloodied class:down style:width="{pct(sheetState.hpCurrent)}%"></i>
   <i class="tmp" style:width="{pct(sheetState.hpTemp)}%"></i>
-</div>
-
-<div class="pairs">
-  <div class="pair">
-    <span class="cap">Hit dice</span>
-    <b>
-      {#if editDefinition}
-        <EditableField value={definition.combat?.hitDice ?? ''} editable={true} label="Hit dice"
-                       placeholder="5d10" onchange={(v) => patchCombat('hitDice', String(v))} />
-      {:else}{definition.combat?.hitDice || '—'}{/if}
-    </b>
-  </div>
 </div>
 
 {#if down}
@@ -120,21 +115,38 @@
 <style>
   .cap {
     display: block;
-    font-size: 0.625rem; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--dim); font-weight: 600;
+    font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--label); font-weight: 600;
   }
-  .readout { display: flex; align-items: baseline; gap: 0.5rem; margin-top: 0.375rem; }
-  .readout strong {
+  .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+  .dice { text-align: right; }
+  .dice b {
+    display: block; font-size: 1.0625rem; font-weight: 600;
+    font-variant-numeric: tabular-nums; margin-top: 0.125rem;
+  }
+  .dice :global(.field) {
+    --fld-leading: 1.2; --fld-pad-y: 0px;
+    field-sizing: fixed;
+    display: block; text-align: right; width: 4.5rem;
+  }
+  .hp-readout { display: flex; align-items: baseline; gap: 0.5rem; margin-top: 0.375rem; }
+  .hp-readout strong {
     font-size: 2.375rem; line-height: 1; font-weight: 600;
     color: var(--a-hi); font-variant-numeric: tabular-nums;
   }
-  .readout strong.bloodied, .readout strong.down { color: var(--danger); }
+  .hp-readout strong.bloodied, .hp-readout strong.down { color: var(--danger); }
   .max { color: var(--dim); font-size: 1rem; font-variant-numeric: tabular-nums; }
-  .temp {
-    color: var(--dim); font-size: 1.125rem; font-weight: 600;
-    font-variant-numeric: tabular-nums; margin-left: 0.125rem;
+  .max :global(.field) {
+    --fld-leading: 1.4; --fld-pad-y: 0px;
+    field-sizing: fixed; width: 3rem; text-align: left;
   }
-  .max :global(input) { width: 4rem; }
+  /* Same weight and size as the maximum beside it, so the two read as one line. */
+  .temp { color: var(--dim); font-size: 1rem; font-variant-numeric: tabular-nums; }
+  .temp small {
+    font-size: 0.6875rem; letter-spacing: 0.1em; text-transform: uppercase;
+    margin-left: 0.25rem; color: var(--faint);
+  }
+
   .bar {
     height: 6px; background: oklch(20% 0.004 286); border-radius: 3px;
     overflow: hidden; margin: 0.75rem 0 1rem; display: flex;
@@ -143,16 +155,6 @@
   .cur { background: var(--a-mid); }
   .cur.bloodied, .cur.down { background: var(--danger); }
   .tmp { background: var(--dim); }
-  .pairs { display: grid; grid-template-columns: 1fr; gap: 0.625rem; }
-  .pair {
-    background: var(--raised); border: 1px solid var(--line-soft);
-    border-radius: var(--r-sm); padding: 0.5rem 0.625rem; min-width: 0;
-  }
-  .pair b {
-    display: block; font-size: 1.0625rem; font-weight: 600;
-    margin-top: 0.125rem; font-variant-numeric: tabular-nums;
-  }
-  .pair :global(input), .pair :global(.readout) { font-size: 1.0625rem; padding: 0; width: 100%; }
   .deaths { margin-top: 1rem; }
   .drow { display: flex; align-items: center; gap: 0.3125rem; margin-top: 0.3125rem; }
   .kind { font-size: 0.75rem; color: var(--dim); width: 2.75rem; }
@@ -167,14 +169,19 @@
      dissolves it so they lay out in the same row rather than on a line below. */
   .controls :global(.rests) { display: contents; }
   .controls input {
-    width: 3.4rem; background: var(--raised); border: 1px solid var(--line);
-    color: var(--text); border-radius: var(--r-sm); padding: 0.3125rem 0.4375rem;
-    font: inherit; font-size: 0.8125rem;
+    width: 4rem; background: var(--raised); border: 1px solid var(--line);
+    color: var(--text); border-radius: var(--r-sm); padding: 0.5rem 0.5rem;
+    font: inherit; font-size: 0.875rem; text-align: center;
+    -moz-appearance: textfield; appearance: textfield;
   }
-  .controls button {
+  .controls input::-webkit-outer-spin-button,
+  .controls input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .controls button, .controls :global(.rests button) {
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
-    border-radius: var(--r-sm); padding: 0.3125rem 0.75rem;
-    font: inherit; font-size: 0.8125rem; cursor: pointer;
+    border-radius: var(--r-sm); padding: 0.5rem 1rem;
+    font: inherit; font-size: 0.875rem; cursor: pointer; flex: 1 1 auto;
   }
-  .controls button:hover { border-color: var(--a-edge); color: var(--a); }
+  .controls button:hover, .controls :global(.rests button:hover) {
+    border-color: var(--a-edge); color: var(--a);
+  }
 </style>

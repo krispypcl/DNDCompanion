@@ -8,8 +8,6 @@
     onchange
   }: { definition: Definition; editable: boolean; onchange: (next: Definition) => void } = $props();
 
-  const COINS = ['pp', 'gp', 'ep', 'sp', 'cp'] as const;
-
   function patch(index: number, key: keyof Item, value: string) {
     const equipment = definition.equipment.map((it, i) =>
       i === index ? { ...it, [key]: key === 'qty' ? Number(value) : value } : it
@@ -25,26 +23,8 @@
     onchange({ ...definition, equipment: definition.equipment.filter((_, i) => i !== index) });
   }
 
-  function setCoin(coin: string, value: string) {
-    onchange({ ...definition, currency: { ...definition.currency, [coin]: Number(value) } });
-  }
 </script>
 
-<h2>Currency</h2>
-<div class="coins">
-  {#each COINS as coin (coin)}
-    <label>
-      <span>{coin}</span>
-      {#if editable}
-        <input type="number" value={definition.currency?.[coin] ?? 0} onchange={(e) => setCoin(coin, e.currentTarget.value)} />
-      {:else}
-        <strong>{definition.currency?.[coin] ?? 0}</strong>
-      {/if}
-    </label>
-  {/each}
-</div>
-
-<h2>Equipment</h2>
 {#if definition.equipment.length === 0 && !editable}
   <p class="empty">Nothing carried.</p>
 {:else}
@@ -67,12 +47,6 @@
 {#if editable}<button class="add" onclick={add}>Add item</button>{/if}
 
 <style>
-  h2 { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin: 1.5rem 0 0.6rem; }
-  h2:first-child { margin-top: 0; }
-  .coins { display: flex; gap: 0.8rem; flex-wrap: wrap; }
-  label { display: flex; flex-direction: column; gap: 0.1rem; }
-  label span { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); }
-  label strong { font-variant-numeric: tabular-nums; }
   ul { list-style: none; margin: 0; padding: 0; }
   li { display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0; border-bottom: 1px solid var(--line); font-size: 0.9rem; }
   .qty-read { color: var(--dim); font-variant-numeric: tabular-nums; min-width: 2.2rem; }

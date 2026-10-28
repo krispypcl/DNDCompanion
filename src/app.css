@@ -20,6 +20,8 @@
   --text: oklch(99.11% 0 0);
   --dim: oklch(65% 0.006 286);
   --faint: oklch(50% 0.006 286);
+  /* Section titles: brighter than body-dim so they read as headings. */
+  --label: oklch(78% 0.006 286);
 
   --r: 0.5rem;
   --r-sm: 0.375rem;
