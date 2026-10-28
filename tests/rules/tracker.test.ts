@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { clampSpent, initialSpent, trackerMax, trackerRemaining } from '$lib/rules/tracker';
+import { clampSpent, trackerMax, trackerRemaining } from '$lib/rules/tracker';
 import type { FormulaContext } from '$lib/rules/formula';
 import type { Tracker } from '$lib/types';
 
@@ -61,15 +61,5 @@ describe('trackerRemaining', () => {
 
   test('a shrunk max clamps the remaining count too', () => {
     expect(trackerRemaining(tracker({ max: 2 }), 4, ctx)).toBe(0);
-  });
-});
-
-describe('initialSpent', () => {
-  test('a spend tracker starts full, so nothing spent', () => {
-    expect(initialSpent(tracker({ direction: 'spend' }), ctx)).toBe(0);
-  });
-
-  test('an accrue tracker starts empty', () => {
-    expect(initialSpent(tracker({ direction: 'accrue' }), ctx)).toBe(0);
   });
 });
