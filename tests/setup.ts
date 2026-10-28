@@ -17,3 +17,14 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
     dispatchEvent: () => false
   })) as typeof window.matchMedia;
 }
+
+/**
+ * Testing-library only registers its own auto-cleanup when vitest runs with
+ * `globals: true`, which this config does not. Without it, each render leaves
+ * its DOM behind and the next test in the file sees two copies of everything —
+ * so unmount explicitly after every test.
+ */
+import { cleanup } from '@testing-library/svelte';
+import { afterEach } from 'vitest';
+
+afterEach(() => cleanup());
