@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { render } from '@testing-library/svelte';
-import AbilityBlock from '$lib/components/AbilityBlock.svelte';
-import SkillList from '$lib/components/SkillList.svelte';
+import AbilityColumns from '$lib/components/AbilityColumns.svelte';
 import Tracker from '$lib/components/Tracker.svelte';
 import VitalsStrip from '$lib/components/VitalsStrip.svelte';
 import { formulaContext } from '$lib/rules/derived';
@@ -40,8 +39,8 @@ const riskDice: TrackerT = {
 };
 
 describe('the sheet renders real numbers', () => {
-  test('ability block shows scores, modifiers and save bonuses', () => {
-    const { container } = render(AbilityBlock, {
+  test('ability columns show scores, modifiers and save bonuses', () => {
+    const { container } = render(AbilityColumns, {
       props: { definition: loka, editable: false, onchange: () => {} }
     });
     const text = container.textContent ?? '';
@@ -51,8 +50,8 @@ describe('the sheet renders real numbers', () => {
     expect(text).toContain('Save +3');     // CON, not proficient
   });
 
-  test('skill list shows totals and passive scores', () => {
-    const { container } = render(SkillList, {
+  test('skill columns show totals and passive scores', () => {
+    const { container } = render(AbilityColumns, {
       props: { definition: loka, editable: false, onchange: () => {} }
     });
     const text = container.textContent ?? '';
