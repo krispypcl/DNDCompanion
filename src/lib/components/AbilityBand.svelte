@@ -86,7 +86,7 @@
   }
   .name {
     display: block; font-size: 0.625rem; letter-spacing: 0.12em;
-    text-transform: uppercase; color: var(--dim); margin-top: 0.375rem;
+    text-transform: uppercase; color: var(--label); margin-top: 0.375rem;
   }
   .score { display: block; margin-top: 0.125rem; }
   .score :global(.field) {
@@ -94,7 +94,7 @@
        height stays in step with it. */
     --fld-leading: 1.4; --fld-pad-y: 0px;
     field-sizing: fixed; display: block; width: 2.75rem; margin-inline: auto;
-    font-size: 0.6875rem; color: var(--faint); font-variant-numeric: tabular-nums;
+    font-size: 0.6875rem; color: var(--dim); font-variant-numeric: tabular-nums;
     text-align: center;
   }
   .save {
