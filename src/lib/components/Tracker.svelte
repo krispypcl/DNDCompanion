@@ -21,17 +21,18 @@
     onchange: (spent: number) => void;
   } = $props();
 
-  let error = $state<string | null>(null);
-
-  const max = $derived.by(() => {
+  // One derived value carries both results. Assigning to separate $state from
+  // inside a $derived is forbidden in Svelte 5 and throws at render time.
+  const computed = $derived.by(() => {
     try {
-      error = null;
-      return trackerMax(tracker, ctx);
+      return { max: trackerMax(tracker, ctx), error: null as string | null };
     } catch (e) {
-      error = e instanceof FormulaError ? e.message : 'Bad formula';
-      return 0;
+      return { max: 0, error: e instanceof FormulaError ? e.message : 'Bad formula' };
     }
   });
+
+  const max = $derived(computed.max);
+  const error = $derived(computed.error);
 
   const marked = $derived(clampSpent(spent, max));
   const accrue = $derived(tracker.direction === 'accrue');
