@@ -17,7 +17,14 @@
 
   function commit(event: Event) {
     const el = event.target as HTMLInputElement | HTMLTextAreaElement;
-    onchange(type === 'number' ? Number(el.value) : el.value);
+    // An emptied number field reports '' rather than 0: Number('') is 0, which
+    // would make "cleared" indistinguishable from "set to zero". Callers that
+    // want a number still wrap in Number(), which maps '' to 0 as before.
+    if (type === 'number') {
+      onchange(el.value === '' ? '' : Number(el.value));
+      return;
+    }
+    onchange(el.value);
   }
 </script>
 
