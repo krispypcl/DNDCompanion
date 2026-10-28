@@ -6,6 +6,7 @@
     type = 'text',
     placeholder = '—',
     label,
+    rows = 6,
     onchange
   }: {
     value: string | number | undefined;
@@ -15,6 +16,7 @@
     type?: 'text' | 'number' | 'textarea';
     placeholder?: string;
     label?: string;
+    rows?: number;
     onchange: (next: string | number) => void;
   } = $props();
 
@@ -36,9 +38,11 @@
 <!-- Both states carry `.field`, so one rule in a caller sizes the readout and
      the input together and toggling edit cannot shift the layout. -->
 {#if !editable}
-  <span class="field readout" class:empty>{empty ? placeholder : (display ?? value)}</span>
+  <span class="field readout" class:empty={empty && display === undefined}
+    >{display ?? (empty ? placeholder : value)}</span
+  >
 {:else if type === 'textarea'}
-  <textarea class="field" aria-label={label} value={String(value ?? '')} onchange={commit} rows="6"
+  <textarea class="field" aria-label={label} value={String(value ?? '')} onchange={commit} {rows}
   ></textarea>
 {:else}
   <input class="field" {type} aria-label={label} value={value ?? ''} onchange={commit} />

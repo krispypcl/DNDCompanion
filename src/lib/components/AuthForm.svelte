@@ -87,12 +87,19 @@
   .wrap { display: flex; justify-content: center; }
   .stack { width: 100%; max-width: 23rem; }
   .brand {
+    animation: cardIn 0.32s cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
     margin: 0 0 1rem; text-align: center; font-size: 1.25rem;
     font-weight: 600; letter-spacing: -0.01em;
   }
   /* Its own page centres in the viewport; embedded, it sits in the flow. */
   .standalone { min-height: 100dvh; align-items: center; padding: 1.5rem; }
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(8px) scale(0.995); }
+    to { opacity: 1; transform: none; }
+  }
   .card {
+    animation: cardIn 0.32s cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
+    animation-delay: 0.04s;
     width: 100%;
     background: var(--surface);
     border: 1px solid var(--line-soft);
@@ -132,9 +139,10 @@
     font-size: 0.9375rem;
     font-weight: 600;
     cursor: pointer;
-    transition: filter 0.15s ease;
+    transition: filter 0.15s ease, transform 0.08s ease;
   }
   button:hover:not(:disabled) { filter: brightness(1.08); }
+  button:active:not(:disabled) { transform: translateY(1px); }
   button:disabled { opacity: 0.55; cursor: default; }
   .error { color: var(--danger); font-size: 0.85rem; margin: 0; }
   .notice { color: var(--a); font-size: 0.85rem; margin: 0; }

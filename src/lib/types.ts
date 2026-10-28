@@ -69,6 +69,16 @@ export type Spell = LinkableEntry & {
 };
 export type Item = LinkableEntry & { qty?: number; weight?: string; notes?: string };
 
+/** The long-form character writing, kept apart from the one-line details. */
+export type Traits = {
+  allies?: string;
+  appearance?: string;
+  personality?: string;
+  ideals?: string;
+  bonds?: string;
+  flaws?: string;
+};
+
 export type Definition = {
   identity: {
     name: string;
@@ -83,11 +93,28 @@ export type Definition = {
     lookupUrl?: string;
     /** A theme name from src/lib/theme.ts; anything else falls back. */
     theme?: string;
+    /** Descriptive details, all free text: a size is "Medium", an age may be
+        "24" or "unknown", a height may be in feet or centimetres. */
+    gender?: string;
+    age?: string;
+    size?: string;
+    height?: string;
+    weight?: string;
+    faith?: string;
+    skin?: string;
+    eyes?: string;
+    hair?: string;
   };
   abilities: Record<Ability, number>;
   proficiency: number;
   /** Unset for a character who casts nothing, which is most martials. */
   spellcastingAbility?: Ability;
+  /** Written rather than derived: which ability a class feature's DC uses
+      varies by feature, so there is nothing to compute it from. */
+  abilitySaveDc?: number;
+  /** Written too, since a subclass or item may change either. */
+  spellSaveDc?: number;
+  spellAttackBonus?: number;
   combat: { ac: number; speed: number; initiative?: number; hpMax: number; hitDice: string };
   saves: Partial<Record<Ability, boolean>>;
   skills: Partial<Record<SkillName, SkillProficiency>>;
@@ -97,7 +124,9 @@ export type Definition = {
   trackers: Tracker[];
   equipment: Item[];
   currency: Partial<Record<'cp' | 'sp' | 'ep' | 'gp' | 'pp', number>>;
+  traits?: Traits;
   notes: string;
+  backstory?: string;
 };
 
 export type State = {
@@ -108,6 +137,8 @@ export type State = {
   trackers: Record<string, number>;
   deathSaves: { successes: number; failures: number };
   conditions: string[];
+  /** Spent and earned mid-session, so it lives with play state. */
+  inspiration?: number;
 };
 
 export type Sheet = {
@@ -128,5 +159,6 @@ export const emptyState = (): State => ({
   hitDiceUsed: 0,
   trackers: {},
   deathSaves: { successes: 0, failures: 0 },
-  conditions: []
+  conditions: [],
+  inspiration: 0
 });
