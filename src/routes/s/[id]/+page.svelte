@@ -584,7 +584,16 @@
   .hint { color: var(--faint); font-size: 0.78rem; margin: 0.5rem 0 0; line-height: 1.5; }
   .hint code { background: var(--raised); border-radius: 3px; padding: 0.05rem 0.25rem; font-size: 0.95em; }
   .themerow { display: flex; align-items: center; gap: 1rem; margin: 1.25rem 0; flex-wrap: wrap; }
-  .notes :global(.field) { field-sizing: fixed; width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; }
+  /* Every other tab starts its content at the panel's edge; the notes field
+     insets its text by its own padding and border, so pull the box back by
+     exactly that and widen it to match. The text then lines up with the table
+     in Combat, in both states. */
+  .notes { margin: calc(-0.15rem - 1px) calc(-0.3rem - 1px) 0; }
+  .notes :global(.field) {
+    field-sizing: fixed;
+    width: calc(100% + 0.6rem + 2px);
+    white-space: pre-wrap; overflow-wrap: anywhere;
+  }
 
   @media (max-width: 860px) {
     .sheet { padding: 0.875rem; }

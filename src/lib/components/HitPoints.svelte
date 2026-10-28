@@ -52,9 +52,9 @@
   }
 </script>
 
-<div class="meter">
 <span class="cap">Hit points</span>
 
+<div class="meter">
 <div class="hp-readout">
   <strong class:bloodied class:down><CountUp value={sheetState.hpCurrent} /></strong>
   <span class="max">/
@@ -122,13 +122,14 @@
     color: var(--label); font-weight: 600;
   }
   /* Label on the left of its value, sharing the temp marker's baseline. */
-  .dice { margin-left: auto; display: inline-flex; align-items: baseline; gap: 0.4375rem; }
+  .dice { margin-left: auto; display: inline-flex; align-items: baseline; gap: 0.3125rem; }
   .dicenum {
     font-size: 1.0625rem; font-weight: 600; font-variant-numeric: tabular-nums;
   }
   .dice :global(.field) {
     --fld-leading: 1.2; --fld-pad-y: 0px;
-    field-sizing: fixed; display: inline-block; text-align: right; width: 4rem;
+    field-sizing: content; min-width: 2.25rem; padding-inline: 0.125rem;
+    display: inline-block; text-align: right;
   }
   .hp-readout { display: flex; align-items: baseline; gap: 0.25rem; margin-top: 0.375rem; }
   .hp-readout strong {
@@ -139,8 +140,10 @@
   .max { color: var(--dim); font-size: 1rem; font-variant-numeric: tabular-nums; }
   .max :global(.field) {
     --fld-leading: 1.4; --fld-pad-y: 0px;
-    field-sizing: fixed; width: 2.75rem; text-align: left;
-    color: var(--dim);
+    /* Sized to the value, so temp HP sits right beside it and only moves if
+       the maximum actually gets longer. */
+    field-sizing: content; min-width: 1.5rem; padding-inline: 0.125rem;
+    text-align: left; color: var(--dim);
   }
   /* Same weight and size as the maximum beside it, so the two read as one line. */
   .temp { color: var(--dim); font-size: 1rem; font-variant-numeric: tabular-nums; }
@@ -151,7 +154,7 @@
 
   .bar {
     height: 6px; background: oklch(20% 0.004 286); border-radius: 3px;
-    overflow: hidden; margin: 0.75rem 0 1rem; display: flex;
+    overflow: hidden; margin: 0.625rem 0 0; display: flex;
   }
   .bar i { display: block; height: 100%; transition: width 0.35s ease; }
   .cur { background: var(--a-mid); }
@@ -169,7 +172,7 @@
   /* Two groups, not one wrapping row: what changes hit points now, and what
      restores them on a rest. The rule between says which is which. */
   .meter { margin-top: auto; }
-  .actions { padding-top: 1rem; }
+  .actions { padding-top: 0.75rem; }
   .hprow { display: flex; gap: 0.5rem; }
   .restrow { margin-top: 0.625rem; padding-top: 0.625rem; border-top: 1px solid var(--line-soft); }
   .restrow :global(.rests) { display: flex; gap: 0.5rem; }
