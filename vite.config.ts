@@ -6,9 +6,4 @@ export default defineConfig({
   // Read PUBLIC_* at build time without SvelteKit's $env/static/public, which
   // hard-fails a build when the variables are absent (e.g. a CI run with no secrets).
   envPrefix: ['PUBLIC_', 'VITE_'],
-  test: {
-    environment: 'jsdom',
-    include: ['tests/**/*.test.ts'],
-    setupFiles: ['tests/setup.ts']
-  }
 });
