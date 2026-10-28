@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { base } from '$app/paths';
-  import AbilityBlock from '$lib/components/AbilityBlock.svelte';
+  import AbilityColumns from '$lib/components/AbilityColumns.svelte';
   import AttackList from '$lib/components/AttackList.svelte';
   import DetailsBlock from '$lib/components/DetailsBlock.svelte';
   import EditableField from '$lib/components/EditableField.svelte';
@@ -10,7 +10,6 @@
   import ListEditor from '$lib/components/ListEditor.svelte';
   import RestButtons from '$lib/components/RestButtons.svelte';
   import SiteHeader from '$lib/components/SiteHeader.svelte';
-  import SkillList from '$lib/components/SkillList.svelte';
   import SpellTable from '$lib/components/SpellTable.svelte';
   import Tabs from '$lib/components/Tabs.svelte';
   import TrackerGroup from '$lib/components/TrackerGroup.svelte';
@@ -173,7 +172,11 @@
   }
 </script>
 
-<svelte:head><title>{sheet?.name ?? 'Character sheet'}</title></svelte:head>
+<svelte:head>
+  <!-- The definition is the character's name as typed; the row's name is a
+       projection of it, so prefer the definition and fall back. -->
+  <title>{definition?.identity?.name?.trim() || sheet?.name || 'Character sheet'}</title>
+</svelte:head>
 
 <SiteHeader showBack />
 
@@ -266,12 +269,11 @@
         <AttackList {definition} {editable} onchange={setDefinition} />
       {:else if tab === 'Character'}
         <DetailsBlock {definition} {editable} onchange={setDefinition} />
-        <AbilityBlock {definition} {editable} onchange={setDefinition} />
         <div class="prof-row">
           <span class="cap">Proficiency bonus</span>
           <EditableField value={definition.proficiency} editable={editable} type="number" label="Proficiency bonus" onchange={(v) => setDefinition({ ...definition, proficiency: Number(v) })} />
         </div>
-        <SkillList {definition} {editable} onchange={setDefinition} />
+        <AbilityColumns {definition} {editable} onchange={setDefinition} />
         <h2>Features</h2>
         {#each definition.features ?? [] as feature, i (i)}
           <article class="feature">

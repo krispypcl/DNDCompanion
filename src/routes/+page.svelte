@@ -12,6 +12,9 @@
   let loading = $state(false);
   let error = $state<string | null>(null);
   let creating = $state(false);
+  /** id of the sheet awaiting confirmation; deleting is permanent. */
+  let confirming = $state<string | null>(null);
+  let deleting = $state<string | null>(null);
 
   $effect(() => {
     const user = $session.user;
@@ -26,6 +29,20 @@
       .catch((e) => (error = e instanceof Error ? e.message : 'Could not load your sheets'))
       .finally(() => (loading = false));
   });
+
+  async function remove(id: string) {
+    deleting = id;
+    error = null;
+    try {
+      await sheetRepo.deleteSheet(id);
+      sheets = sheets.filter((s) => s.id !== id);
+      confirming = null;
+    } catch (e) {
+      error = e instanceof Error ? e.message : 'Could not delete that sheet';
+    } finally {
+      deleting = null;
+    }
+  }
 
   async function create() {
     const user = $session.user;
@@ -92,6 +109,28 @@
                 {#if sheet.retired}· retired{/if}
               </span>
             </a>
+
+            {#if confirming === sheet.id}
+              <div class="confirm" role="group" aria-label="Confirm deleting {sheet.definition?.identity?.name || sheet.name}">
+                <span>Delete for good?</span>
+                <button
+                  class="danger"
+                  disabled={deleting === sheet.id}
+                  onclick={() => remove(sheet.id)}
+                >
+                  {deleting === sheet.id ? 'Deleting…' : 'Delete'}
+                </button>
+                <button class="ghost" onclick={() => (confirming = null)}>Keep</button>
+              </div>
+            {:else}
+              <button
+                class="trash"
+                aria-label="Delete {sheet.definition?.identity?.name || sheet.name}"
+                onclick={() => (confirming = sheet.id)}
+              >
+                ×
+              </button>
+            {/if}
           </li>
         {/each}
       </ul>
@@ -119,12 +158,30 @@
   button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
   .ghost { background: none; border: 0; color: var(--dim); padding: 0; font-size: 0.85rem; }
   ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
-  li a {
-    display: block; border: 1px solid var(--line); border-radius: 8px;
-    padding: 0.75rem 0.9rem; background: var(--surface); text-decoration: none; color: inherit;
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    padding-right: 0.5rem;
     transition: border-color 0.15s ease;
   }
-  li a:hover { border-color: var(--accent); }
+  li:hover { border-color: var(--accent); }
+  li a {
+    display: block; flex: 1; min-width: 0;
+    padding: 0.75rem 0.9rem; text-decoration: none; color: inherit;
+  }
+  .trash {
+    background: none; border: 0; color: var(--dim); font-size: 1.1rem; line-height: 1;
+    padding: 0.3rem 0.45rem; cursor: pointer; flex: none; border-radius: 5px;
+  }
+  .trash:hover { color: var(--bad); border-color: transparent; }
+  .confirm { display: flex; align-items: center; gap: 0.5rem; flex: none; font-size: 0.82rem; }
+  .confirm span { color: var(--dim); }
+  .danger { border-color: var(--bad); color: var(--bad); padding: 0.25rem 0.6rem; font-size: 0.82rem; }
+  .danger:hover:not(:disabled) { background: var(--bad); color: var(--bg); border-color: var(--bad); }
   .retired a { opacity: 0.6; }
   .meta { display: block; font-size: 0.8rem; color: var(--dim); margin-top: 0.15rem; }
   .dim { color: var(--dim); }
