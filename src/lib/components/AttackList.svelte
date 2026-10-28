@@ -37,16 +37,17 @@
           <tr>
             <td class="name">
               {#if editable}
-                <input value={attack.name} aria-label="Attack name" onchange={(e) => patch(i, 'name', e.currentTarget.value)} />
+                <input value={attack.name} placeholder="Revolver" aria-label="Attack name" onchange={(e) => patch(i, 'name', e.currentTarget.value)} />
               {:else}
                 {attack.name}
               {/if}
               <EntryLink name={attack.name} source={attack.source} category="items" override={attack.lookupUrl} />
             </td>
             {#each (['bonus', 'damage', 'notes'] as const) as key (key)}
+              {@const example = { bonus: '+8', damage: '2d6 + 5', notes: 'Slow mastery, range 30/90' }[key]}
               <td class={key}>
                 {#if editable}
-                  <input value={attack[key] ?? ''} aria-label="{attack.name} {key}" onchange={(e) => patch(i, key, e.currentTarget.value)} />
+                  <input value={attack[key] ?? ''} placeholder={example} aria-label="{attack.name} {key}" onchange={(e) => patch(i, key, e.currentTarget.value)} />
                 {:else}
                   {attack[key] ?? '—'}
                 {/if}
@@ -80,4 +81,5 @@
   .x:hover { color: var(--bad); }
   .add { margin-top: 0.6rem; background: none; border: 1px dashed var(--line); color: var(--dim); border-radius: 6px; padding: 0.35rem 0.8rem; font: inherit; font-size: 0.85rem; cursor: pointer; }
   .empty { color: var(--dim); font-size: 0.9rem; }
+  input::placeholder { color: var(--dim); opacity: 0.65; }
 </style>

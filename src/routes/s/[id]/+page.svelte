@@ -246,15 +246,15 @@
             onchange={saveTrackers}
             blank={blankTracker}
             columns={[
-              { key: 'label', label: 'Label', width: '22%' },
-              { key: 'max', label: 'Max or formula', width: '16%' },
-              { key: 'die', label: 'Die', width: '8%' },
+              { key: 'label', label: 'Label', width: '22%', placeholder: 'Risk Dice' },
+              { key: 'max', label: 'Max or formula', width: '16%', placeholder: '4 or prof + 1' },
+              { key: 'die', label: 'Die', width: '8%', placeholder: 'd8' },
               { key: 'type', label: 'Shape', type: 'select', options: ['pips', 'counter', 'gauge'] },
               { key: 'direction', label: 'Direction', type: 'select', options: ['spend', 'accrue'] },
               { key: 'resetOn', label: 'Resets on', type: 'select', options: ['manual', 'short', 'long', 'dawn'] },
-              { key: 'resetAmount', label: 'Refill', width: '10%' },
-              { key: 'group', label: 'Group', width: '12%' },
-              { key: 'source', label: 'Source', width: '10%' }
+              { key: 'resetAmount', label: 'Refill', width: '10%', placeholder: 'full' },
+              { key: 'group', label: 'Group', width: '12%', placeholder: 'Class' },
+              { key: 'source', label: 'Source', width: '10%', placeholder: 'valdagunslinger' }
             ]}
           />
           <p class="hint">
@@ -288,9 +288,9 @@
             onchange={(features) => setDefinition({ ...definition, features: features as Feature[] })}
             blank={() => ({ title: 'New feature', body: '' }) as Feature}
             columns={[
-              { key: 'title', label: 'Title', width: '26%' },
-              { key: 'body', label: 'Description' },
-              { key: 'source', label: 'Source', width: '12%' }
+              { key: 'title', label: 'Title', width: '26%', placeholder: "Sheriff's Star" },
+              { key: 'body', label: 'Description', placeholder: '+1 AC, 3 charges that reset at dawn' },
+              { key: 'source', label: 'Source', width: '12%', placeholder: 'homebrew' }
             ]}
           />
         {/if}
@@ -312,13 +312,13 @@
             onchange={(spells) => setDefinition({ ...definition, spells: spells as Spell[] })}
             blank={() => ({ name: 'New spell' }) as Spell}
             columns={[
-              { key: 'name', label: 'Name', width: '18%' },
-              { key: 'time', label: 'Cast time', width: '12%' },
-              { key: 'range', label: 'Range', width: '10%' },
-              { key: 'duration', label: 'Duration', width: '12%' },
-              { key: 'save', label: 'Save / effect', width: '12%' },
-              { key: 'notes', label: 'Notes' },
-              { key: 'source', label: 'Source', width: '10%' }
+              { key: 'name', label: 'Name', width: '18%', placeholder: 'Shield' },
+              { key: 'time', label: 'Cast time', width: '12%', placeholder: '1 reaction' },
+              { key: 'range', label: 'Range', width: '10%', placeholder: 'Self' },
+              { key: 'duration', label: 'Duration', width: '12%', placeholder: '1 round' },
+              { key: 'save', label: 'Save / effect', width: '12%', placeholder: 'WIS 15' },
+              { key: 'notes', label: 'Notes', placeholder: '+5 AC until your next turn' },
+              { key: 'source', label: 'Source', width: '10%', placeholder: 'xphb' }
             ]}
           />
         {/if}

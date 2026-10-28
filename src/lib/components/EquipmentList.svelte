@@ -53,7 +53,7 @@
       <li>
         {#if editable}
           <input class="qty" type="number" value={item.qty ?? 1} aria-label="Quantity" onchange={(e) => patch(i, 'qty', e.currentTarget.value)} />
-          <input value={item.name} aria-label="Item name" onchange={(e) => patch(i, 'name', e.currentTarget.value)} />
+          <input value={item.name} placeholder="Tinderbox" aria-label="Item name" onchange={(e) => patch(i, 'name', e.currentTarget.value)} />
           <button class="x" onclick={() => remove(i)} aria-label="Remove {item.name}">×</button>
         {:else}
           <span class="qty-read">{item.qty ?? 1}×</span>
@@ -84,4 +84,5 @@
   .x:hover { color: var(--bad); }
   .add { margin-top: 0.6rem; background: none; border: 1px dashed var(--line); color: var(--dim); border-radius: 6px; padding: 0.35rem 0.8rem; font: inherit; font-size: 0.85rem; cursor: pointer; }
   .empty { color: var(--dim); font-size: 0.9rem; }
+  input::placeholder { color: var(--dim); opacity: 0.65; }
 </style>

@@ -10,6 +10,9 @@
     type?: 'text' | 'number' | 'select';
     options?: string[];
     width?: string;
+    /** An example value. With nine columns on one row the headers alone are
+        not enough to show what belongs in each field. */
+    placeholder?: string;
   };
 
   let {
@@ -58,6 +61,7 @@
                 <input
                   type={col.type === 'number' ? 'number' : 'text'}
                   value={String(item[col.key] ?? '')}
+                  placeholder={col.placeholder ?? ''}
                   aria-label="{title} {i + 1} {col.label}"
                   onchange={(e) => patch(i, col.key, e.currentTarget.value, col.type)}
                 />
@@ -88,6 +92,7 @@
     background: var(--bg); border: 1px solid var(--line); color: var(--text);
     border-radius: 4px; padding: 0.2rem 0.35rem; font: inherit; font-size: 0.85rem; width: 100%;
   }
+  input::placeholder { color: var(--dim); opacity: 0.65; }
   .x { background: none; border: 0; color: var(--dim); cursor: pointer; font-size: 1rem; padding: 0 0.3rem; }
   .x:hover { color: var(--bad); }
   .add {
