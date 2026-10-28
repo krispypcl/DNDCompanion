@@ -57,6 +57,9 @@
     --fld-pad-y: 0.15rem;
     font: inherit;
     font-size: inherit;
+    letter-spacing: inherit;
+    font-variant-numeric: inherit;
+    -webkit-font-smoothing: antialiased;
     line-height: var(--fld-leading);
     padding: var(--fld-pad-y) 0.3rem;
     height: calc(var(--fld-leading) * 1em + var(--fld-pad-y) * 2 + 2px);
