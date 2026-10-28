@@ -1,8 +1,9 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
+  import AuthForm from '$lib/components/AuthForm.svelte';
   import { sheetRepo } from '$lib/data/sheets';
-  import { signOut } from '$lib/data/session';
+  import { signIn, signOut } from '$lib/data/session';
   import { blankDefinition } from '$lib/sample';
   import { session } from '$lib/stores/session';
   import { isConfigured } from '$lib/supabase';
@@ -61,7 +62,7 @@
 
 <svelte:head><title>DND Companion</title></svelte:head>
 
-<main>
+<main class:auth={isConfigured && !$session.loading && !$session.user}>
   <header>
     <h1>DND Companion</h1>
     {#if $session.user}
@@ -77,14 +78,22 @@
   {:else if $session.loading}
     <p class="dim">Loading…</p>
   {:else if !$session.user}
-    <p class="lede">
-      Character sheets for your table. Each sheet has its own link that anyone can
-      open and read; only you can change yours.
-    </p>
-    <div class="cta">
-      <a class="primary" href="{base}/signup">Create an account</a>
-      <a href="{base}/login">Sign in</a>
-    </div>
+    <AuthForm
+      title="Sign in"
+      lede="Character sheets for your table. Each sheet has its own link that anyone can open and read; only you can change yours."
+      submitLabel="Sign in"
+      standalone={false}
+      fields={[
+        { id: 'email', label: 'Email', type: 'email', autocomplete: 'email' },
+        { id: 'password', label: 'Password', type: 'password', autocomplete: 'current-password' }
+      ]}
+      onsubmit={async (v) => {
+        await signIn(v.email, v.password);
+      }}
+    >
+      <a href="{base}/signup">Create an account</a>
+      <a href="{base}/reset">Forgot password</a>
+    </AuthForm>
   {:else}
     <div class="bar">
       <h2>Your characters</h2>
@@ -140,16 +149,16 @@
 
 <style>
   main { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
+  /* Signed out, the page is the sign-in card, so centre it. */
+  main.auth {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; min-height: 82dvh;
+  }
+  main.auth header { justify-content: center; margin-bottom: 0.25rem; }
+  main.auth :global(.card) { text-align: left; }
   header { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
   h1 { font-size: 1.5rem; margin: 0 0 0.5rem; }
   h2 { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin: 0; }
-  .lede { color: var(--dim); max-width: 32rem; }
-  .cta { display: flex; gap: 1rem; align-items: center; margin-top: 1.5rem; }
-  .primary {
-    background: var(--accent); color: #1a1a18; border-radius: 6px;
-    padding: 0.55rem 1.1rem; font-weight: 600; text-decoration: none;
-  }
-  .cta a:not(.primary) { color: var(--dim); }
   .bar { display: flex; align-items: center; justify-content: space-between; margin: 2rem 0 0.75rem; }
   button {
     background: var(--surface); border: 1px solid var(--line); color: var(--text);

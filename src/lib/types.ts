@@ -86,6 +86,8 @@ export type Definition = {
   };
   abilities: Record<Ability, number>;
   proficiency: number;
+  /** Unset for a character who casts nothing, which is most martials. */
+  spellcastingAbility?: Ability;
   combat: { ac: number; speed: number; initiative?: number; hpMax: number; hitDice: string };
   saves: Partial<Record<Ability, boolean>>;
   skills: Partial<Record<SkillName, SkillProficiency>>;

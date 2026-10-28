@@ -28,6 +28,10 @@
     ])
   ) as Record<Ability, SkillName[]>;
 
+  /** Constitution governs no skill in 5e, so it gets no heading rather than an
+      empty one. Driven by the data, not by naming Constitution. */
+  const withSkills = ABILITIES.filter((ability) => grouped[ability].length > 0);
+
   const sign = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 
   /** Cycle: none → proficient → expertise → none. */
@@ -44,7 +48,7 @@
 
 <h2 class="cap">Skills</h2>
 
-{#each ABILITIES as ability (ability)}
+{#each withSkills as ability (ability)}
   <section class="group" aria-label="{ability} skills">
     <header>
       <span class="ab">{ability}</span>
@@ -65,8 +69,6 @@
         <span class="name">{LABELS[skill]}</span>
         <span class="bonus">{sign(skillTotal(definition, skill))}</span>
       </div>
-    {:else}
-      <p class="none">No skills</p>
     {/each}
   </section>
 {/each}
@@ -104,5 +106,4 @@
     padding: 0.125rem 0; color: var(--dim); flex: none;
   }
   .row.prof .bonus { border-color: var(--a-edge); background: var(--a-wash); color: var(--a); }
-  .none { margin: 0.3125rem 0 0; font-size: 0.78rem; color: var(--faint); }
 </style>
