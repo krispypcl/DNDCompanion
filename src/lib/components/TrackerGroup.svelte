@@ -33,6 +33,7 @@
   });
 </script>
 
+<div class="stack">
 {#each groups as group (group.name ?? group.items[0].id)}
   {#if group.name}
     <section class="group">
@@ -63,8 +64,11 @@
     {/each}
   {/if}
 {/each}
+</div>
 
 <style>
+  /* Standalone trackers are siblings in the rail, so the gap lives here. */
+  .stack { display: grid; gap: 0.625rem; }
   .group {
     grid-column: 1 / -1;
     border: 1px solid var(--line);

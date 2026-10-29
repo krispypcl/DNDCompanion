@@ -34,8 +34,8 @@
 <div class="abilities">
   {#each ABILITIES as ability (ability)}
     <div class="ability">
-      <span class="mod">{sign(modifierOf(definition, ability))}</span>
       <span class="name">{NAMES[ability]}</span>
+      <span class="mod">{sign(modifierOf(definition, ability))}</span>
       <span class="score">
         <EditableField
           value={definition.abilities[ability]}
@@ -78,25 +78,29 @@
   .saves { margin-top: 0.625rem; }
   .ability {
     background: var(--raised); border: 1px solid var(--line);
-    border-radius: var(--r); padding: 0.75rem 0.375rem; text-align: center; min-width: 0;
+    border-radius: var(--r); padding: 0.625rem 0.5rem 0.5rem; text-align: center; min-width: 0;
     transition: border-color 0.2s ease, background-color 0.2s ease;
   }
   .ability:hover { border-color: var(--hover-line); background: var(--hover-bg); }
-  .mod {
-    display: block; font-size: 1.5rem; font-weight: 600; line-height: 1;
-    color: var(--a-hi); font-variant-numeric: tabular-nums;
-  }
   .name {
     display: block; font-size: 0.5875rem; letter-spacing: 0.04em;
-    text-transform: uppercase; color: var(--label); margin-top: 0.375rem;
+    text-transform: uppercase; color: var(--label);
   }
-  .score { display: block; margin-top: 0.125rem; }
+  .mod {
+    display: block; font-size: 1.625rem; font-weight: 600; line-height: 1;
+    color: var(--a-hi); font-variant-numeric: tabular-nums; margin-top: 0.3125rem;
+  }
+  /* The score sits in a well below the modifier, the way a sheet prints it. */
+  .score {
+    display: block; margin: 0.375rem -0.125rem -0.125rem;
+    border-top: 1px solid var(--line-soft); padding-top: 0.25rem;
+  }
   .score :global(.field) {
     /* Override the variables rather than the padding directly, so the derived
        height stays in step with it. */
     --fld-leading: 1.4; --fld-pad-y: 0px;
     field-sizing: fixed; display: block; width: 2.75rem; margin-inline: auto;
-    font-size: 0.6875rem; color: var(--dim); font-variant-numeric: tabular-nums;
+    font-size: 0.75rem; color: var(--dim); font-variant-numeric: tabular-nums;
     text-align: center;
   }
   .save {

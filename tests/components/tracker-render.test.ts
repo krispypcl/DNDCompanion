@@ -27,7 +27,7 @@ function mount(tracker: TrackerDef, spent = 0, editable = true) {
 }
 
 describe('Tracker', () => {
-  describe.each(['pips', 'counter', 'gauge'] as const)('%s', (type) => {
+  describe.each(['pips', 'gauge'] as const)('%s', (type) => {
     it('gives the owner a way to lower the value', async () => {
       const onchange = mount(def({ type }), 1);
       // 1 spent of 4, so 3 remain: tapping the third pip leaves 2.
@@ -60,13 +60,13 @@ describe('Tracker', () => {
    * displayed value.
    */
   it('lowers the remaining count on a spend tracker', () => {
-    const onchange = mount(def({ type: 'counter', max: 4 }), 1); // 3 of 4 left
+    const onchange = mount(def({ type: 'gauge', max: 4 }), 1); // 3 of 4 left
     (screen.getByLabelText('Decrease') as HTMLButtonElement).click();
     expect(onchange).toHaveBeenLastCalledWith(2); // 2 spent, so 2 left
   });
 
   it('lowers the remaining count on an accrue tracker', () => {
-    const onchange = mount(def({ type: 'counter', max: 4, direction: 'accrue' }), 3);
+    const onchange = mount(def({ type: 'gauge', max: 4, direction: 'accrue' }), 3);
     (screen.getByLabelText('Decrease') as HTMLButtonElement).click();
     expect(onchange).toHaveBeenLastCalledWith(2);
   });

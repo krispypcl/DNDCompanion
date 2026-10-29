@@ -21,7 +21,7 @@ const def: Definition = {
 const slots: Tracker[] = [
   { id: '1', label: '1st', max: 4, type: 'pips', direction: 'spend', reset: { on: 'long', amount: 'full' }, group: 'Spell Slots' },
   { id: '2', label: '2nd', max: 3, type: 'pips', direction: 'spend', reset: { on: 'long', amount: 'full' }, group: 'Spell Slots' },
-  { id: 'ex', label: 'Exhaustion', max: 6, type: 'counter', direction: 'accrue', reset: { on: 'long', amount: 1 } },
+  { id: 'ex', label: 'Exhaustion', max: 6, type: 'gauge', direction: 'accrue', reset: { on: 'long', amount: 1 } },
   { id: 'g', label: 'Grit', max: 'cha', type: 'gauge', direction: 'spend', reset: { on: 'short', amount: 'full' } }
 ];
 
