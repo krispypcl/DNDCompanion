@@ -352,7 +352,7 @@
         </HitPoints>
       </section>
 
-      <section class="panel">
+      <section class="panel band-abilities">
         <AbilityBand {definition} {editable} onchange={setDefinition} />
       </section>
     </div>
@@ -757,6 +757,8 @@
     gap: 1rem; margin-bottom: 1rem; align-items: stretch;
   }
   .hp { display: flex; flex-direction: column; position: relative; overflow: hidden; }
+  /* A column, so the ability band can push its rows to the bottom. */
+  .band-abilities { display: flex; flex-direction: column; }
 
   .main { display: grid; grid-template-columns: 16.5rem 1fr 18.75rem; gap: 1rem; align-items: stretch; }
   .rail-skills { order: -1; }
