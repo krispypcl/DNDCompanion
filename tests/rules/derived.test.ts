@@ -183,6 +183,13 @@ describe('classes and levels', () => {
     expect(classLine(multi)).toBe('Gunslinger 5 / Fighter 2');
   });
 
+  it('is empty for a character with no class written yet', () => {
+    // The header renders nothing at all in that case, rather than the word
+    // "Class" sitting where a class name belongs.
+    const blank = { ...single, identity: { name: 'New', level: 1 } } as Definition;
+    expect(classLine(blank)).toBe('');
+  });
+
   it('keys class levels by name, case-insensitively', () => {
     expect(classLevels(multi)).toEqual({ gunslinger: 5, fighter: 2 });
   });
