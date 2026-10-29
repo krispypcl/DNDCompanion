@@ -12,12 +12,19 @@
   const HOLD = 560;
   const FADE = 420;
 
+  /** The shell locks scrolling while the splash is up; this gives it back. */
+  const unlock = () => document.documentElement.classList.remove('splashing');
+
   onMount(() => {
     const splash = document.getElementById('splash');
-    if (!splash) return;
+    if (!splash) {
+      unlock();
+      return;
+    }
 
     if (prefersReducedMotion()) {
       splash.remove();
+      unlock();
       return;
     }
 
@@ -26,7 +33,11 @@
     let leave = 0;
     let remove = 0;
     const frame = requestAnimationFrame(() => {
-      leave = window.setTimeout(() => splash.classList.add('out'), HOLD);
+      leave = window.setTimeout(() => {
+        // Scrolling comes back as the splash starts to lift, not after.
+        unlock();
+        splash.classList.add('out');
+      }, HOLD);
       remove = window.setTimeout(() => splash.remove(), HOLD + FADE);
     });
 
@@ -34,6 +45,7 @@
       cancelAnimationFrame(frame);
       clearTimeout(leave);
       clearTimeout(remove);
+      unlock();
     };
   });
 </script>

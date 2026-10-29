@@ -14,6 +14,12 @@
     -->
     <style>
       html, body { margin: 0; background: oklch(12% 0.005 285.823); }
+      /* The app hydrates behind the splash, and a full sheet is taller than
+         the window, so its scrollbar appeared beside a screen with nothing to
+         scroll. The gutter below is reserved either way, so lifting this lock
+         does not reflow the page. */
+      html.splashing { overflow: hidden; }
+      html { scrollbar-gutter: stable; }
       #splash {
         position: fixed;
         inset: 0;
@@ -61,6 +67,9 @@
           }
         }
       } catch (e) {}
+      if (!document.documentElement.hasAttribute('data-known-user')) {
+        document.documentElement.classList.add('splashing');
+      }
     </script>
     %sveltekit.head%
   </head>
