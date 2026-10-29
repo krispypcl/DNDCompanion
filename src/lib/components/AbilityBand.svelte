@@ -35,7 +35,7 @@
   {#each ABILITIES as ability (ability)}
     <div class="ability">
       <span class="mod">{sign(modifierOf(definition, ability))}</span>
-      <span class="name">{ability}</span>
+      <span class="name">{NAMES[ability]}</span>
       <span class="score">
         <EditableField
           value={definition.abilities[ability]}
@@ -61,7 +61,7 @@
       onclick={() => toggleSave(ability)}
     >
       <b>{sign(saveBonus(definition, ability))}</b>
-      <span>{ability}</span>
+      <span>{NAMES[ability]}</span>
     </button>
   {/each}
 </div>
@@ -81,13 +81,13 @@
     border-radius: var(--r); padding: 0.75rem 0.375rem; text-align: center; min-width: 0;
     transition: border-color 0.2s ease, background-color 0.2s ease;
   }
-  .ability:hover { border-color: var(--a-edge); background: var(--a-wash); }
+  .ability:hover { border-color: var(--hover-line); background: var(--hover-bg); }
   .mod {
     display: block; font-size: 1.5rem; font-weight: 600; line-height: 1;
     color: var(--a-hi); font-variant-numeric: tabular-nums;
   }
   .name {
-    display: block; font-size: 0.625rem; letter-spacing: 0.12em;
+    display: block; font-size: 0.5875rem; letter-spacing: 0.04em;
     text-transform: uppercase; color: var(--label); margin-top: 0.375rem;
   }
   .score { display: block; margin-top: 0.125rem; }
@@ -105,13 +105,13 @@
     font: inherit; color: inherit; cursor: pointer; min-width: 0;
     transition: border-color 0.2s ease, background-color 0.2s ease;
   }
-  .save:not(.on):hover { border-color: var(--a-edge); background: var(--a-wash); }
+  .save:not(.on):hover { border-color: var(--hover-line); background: var(--hover-bg); }
   .save:disabled { cursor: default; }
   .save.on { border-color: var(--a-edge); background: var(--a-wash); }
   .save b { display: block; font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
   .save.on b { color: var(--a); }
   .save span {
-    font-size: 0.59rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim);
+    font-size: 0.5375rem; letter-spacing: 0.03em; text-transform: uppercase; color: var(--dim);
   }
   @media (max-width: 860px) {
     .abilities, .saves { grid-template-columns: repeat(3, 1fr); }

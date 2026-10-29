@@ -21,10 +21,6 @@ const definition = (identity: Partial<Definition['identity']> = {}): Definition 
 });
 
 describe('DetailsBlock', () => {
-  it('falls back to the DEX modifier when no initiative bonus is written', () => {
-    render(DetailsBlock, { props: { definition: definition(), editable: false, onchange: () => {} } });
-    expect(screen.getByText('+4')).toBeTruthy();
-  });
 
   it('hides empty details from viewers but offers them all to the owner', () => {
     const { unmount } = render(DetailsBlock, {
@@ -34,7 +30,7 @@ describe('DetailsBlock', () => {
     unmount();
 
     render(DetailsBlock, { props: { definition: definition(), editable: true, onchange: () => {} } });
-    for (const label of ['Alignment', 'Gender', 'Age', 'Initiative bonus', 'Portrait URL']) {
+    for (const label of ['Alignment', 'Gender', 'Age', 'Portrait URL']) {
       expect(screen.getByLabelText(label), `${label} should be editable`).toBeTruthy();
     }
   });
@@ -47,13 +43,29 @@ describe('DetailsBlock', () => {
     expect(screen.getByText('Chaotic neutral')).toBeTruthy();
   });
 
-  // Background moved to the identity line; player was dropped.
-  it('no longer carries background or player', () => {
+  // Background moved to the identity line, player was dropped, and initiative
+  // is edited in the defense module where it is read.
+  it('no longer carries background, player or initiative', () => {
     render(DetailsBlock, {
       props: { definition: definition(), editable: true, onchange: () => {} }
     });
     expect(screen.queryByLabelText('Background')).toBeNull();
     expect(screen.queryByLabelText('Player')).toBeNull();
+    expect(screen.queryByLabelText('Initiative bonus')).toBeNull();
+  });
+
+  it('offers a proficiencies and languages field', () => {
+    render(DetailsBlock, {
+      props: { definition: definition(), editable: true, onchange: () => {} }
+    });
+    expect(screen.getByLabelText('Proficiencies & languages')).toBeTruthy();
+  });
+
+  it('shows a placeholder portrait when none is set, so the row keeps its height', () => {
+    const { container } = render(DetailsBlock, {
+      props: { definition: definition(), editable: false, onchange: () => {} }
+    });
+    expect(container.querySelector('.empty-portrait')).toBeTruthy();
   });
 
   it('renders the portrait when one is set', () => {
@@ -67,14 +79,4 @@ describe('DetailsBlock', () => {
     expect(screen.getByAltText('Portrait of Loka')).toBeTruthy();
   });
 
-  it('clears the initiative override when the field is emptied', () => {
-    const onchange = vi.fn();
-    render(DetailsBlock, {
-      props: { definition: { ...definition(), combat: { ac: 17, speed: 30, hpMax: 44, hitDice: '5d10', initiative: 7 } }, editable: true, onchange }
-    });
-    const field = screen.getByLabelText('Initiative bonus') as HTMLInputElement;
-    field.value = '';
-    field.dispatchEvent(new Event('change', { bubbles: true }));
-    expect((onchange.mock.calls.at(-1)![0] as Definition).combat.initiative).toBeUndefined();
-  });
 });

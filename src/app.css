@@ -48,6 +48,10 @@
   --danger: oklch(58% calc(0.19 * var(--c)) var(--h));
   --danger-wash: oklch(28% calc(0.07 * var(--c)) var(--h));
 
+  /* Hover lightens rather than tinting: a themed hover reads as proficiency. */
+  --hover-bg: oklch(25% 0.004 286);
+  --hover-line: oklch(34% 0.005 286);
+
   /* Names the components already use, pointed at the new ramp so the whole app
      themes at once. They retire as each component is reworked. */
   --accent: var(--a);
