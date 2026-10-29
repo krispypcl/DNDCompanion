@@ -48,6 +48,12 @@ export type Tracker = {
   group?: string;
   source?: string;
   entryId?: string;
+  /**
+   * Which class this tracker belongs to, so `classlevel` in its formula means
+   * that class's level rather than the character's total. Without it a
+   * multiclassed character's class features silently inflate.
+   */
+  class?: string;
 };
 
 export type LinkableEntry = {
@@ -57,7 +63,12 @@ export type LinkableEntry = {
   entryId?: string;
 };
 
-export type Attack = LinkableEntry & { bonus?: string; damage?: string; notes?: string };
+export type Attack = LinkableEntry & {
+  bonus?: string;
+  damage?: string;
+  damageType?: string;
+  notes?: string;
+};
 export type Feature = LinkableEntry & { title: string; body: string };
 export type Spell = LinkableEntry & {
   save?: string;
@@ -71,6 +82,9 @@ export type Spell = LinkableEntry & {
 export type Item = LinkableEntry & { qty?: number; weight?: number; notes?: string };
 
 /** The long-form character writing, kept apart from the one-line details. */
+/** One class a character has levels in. A single-class character has one. */
+export type ClassEntry = { name: string; subclass?: string; level: number };
+
 export type Traits = {
   proficiencies?: string;
   allies?: string;
@@ -95,6 +109,12 @@ export type Definition = {
     lookupUrl?: string;
     /** A theme name from src/lib/theme.ts; anything else falls back. */
     theme?: string;
+    /**
+     * Every class the character has levels in. Authoritative when present;
+     * `class`, `subclass` and `level` above are the older single-class shape
+     * and are kept in step so existing sheets and `level` formulas still work.
+     */
+    classes?: ClassEntry[];
     /** Descriptive details, all free text: a size is "Medium", an age may be
         "24" or "unknown", a height may be in feet or centimetres. */
     gender?: string;
@@ -127,6 +147,7 @@ export type Definition = {
   equipment: Item[];
   currency: Partial<Record<'cp' | 'sp' | 'ep' | 'gp' | 'pp', number>>;
   traits?: Traits;
+  senses?: string;
   notes: string;
   backstory?: string;
 };

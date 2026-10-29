@@ -9,7 +9,9 @@
  *   term   := factor ('/' factor)*          -- floor division
  *   factor := integer | identifier
  *
- * Ability identifiers resolve to MODIFIERS, not scores. Deliberately a real
+ * Ability identifiers resolve to MODIFIERS, not scores. `level` is the whole
+ * character; `classlevel` is the level of the class the tracker belongs to,
+ * which is what a class feature actually scales with. Deliberately a real
  * parser and never `eval`: these strings come from user input.
  */
 
@@ -22,6 +24,8 @@ export class FormulaError extends Error {
 
 export type FormulaContext = {
   level: number;
+  /** The level of the class a tracker belongs to; the total when it has none. */
+  classlevel: number;
   prof: number;
   str: number;
   dex: number;
@@ -29,9 +33,21 @@ export type FormulaContext = {
   int: number;
   wis: number;
   cha: number;
+  /** Lookup used to scope `classlevel` per tracker; not an identifier itself. */
+  classLevels?: Record<string, number>;
 };
 
-const IDENTIFIERS = ['level', 'prof', 'str', 'dex', 'con', 'int', 'wis', 'cha'] as const;
+const IDENTIFIERS = [
+  'level',
+  'classlevel',
+  'prof',
+  'str',
+  'dex',
+  'con',
+  'int',
+  'wis',
+  'cha'
+] as const;
 
 type Token = { kind: 'number'; value: number } | { kind: 'name'; value: string } | { kind: 'op'; value: '+' | '-' | '/' };
 

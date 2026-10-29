@@ -40,6 +40,7 @@
    */
   let ghost = $state<{ left: number; width: number; kind: 'damage' | 'heal' } | null>(null);
   let pulse = $state(0);
+  let struck = $state(false);
   /* Plain variables: reading a $state inside the effect would make the effect
      depend on its own write, and returning a cleanup would cancel the timer
      on the very next run. Both cost the first damage its ghost. */
@@ -61,11 +62,19 @@
       current < previous
         ? { left: to, width: Math.max(from - to, 0.8), kind: 'damage' }
         : { left: from, width: Math.max(to - from, 0.8), kind: 'heal' };
+    const damaged = current < previous;
     previous = current;
     seq += 1;
     pulse = seq;
+    if (damaged) {
+      // Off then on across a frame, so a second hit restarts the animation
+      // instead of being ignored because the class is already set.
+      struck = false;
+      requestAnimationFrame(() => (struck = true));
+      setTimeout(() => (struck = false), 450);
+    }
     clearTimeout(timer);
-    timer = setTimeout(() => (ghost = null), 700);
+    timer = setTimeout(() => (ghost = null), 760);
   });
 
   const hpMax = $derived(definition.combat?.hpMax ?? 0);
@@ -87,6 +96,7 @@
   }
 </script>
 
+<div class="hpwrap" class:struck>
 <span class="cap">Hit points</span>
 
 <div class="meter">
@@ -162,8 +172,34 @@
     {/if}
   </div>
 </div>
+</div>
 
 <style>
+  /* A box of its own, so the jolt moves the module and not the panel. */
+  .hpwrap { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .hpwrap.struck { animation: jolt 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+  @keyframes jolt {
+    0%, 100% { transform: translateX(0); }
+    12% { transform: translateX(-5px); }
+    28% { transform: translateX(4px); }
+    44% { transform: translateX(-3px); }
+    62% { transform: translateX(2px); }
+    80% { transform: translateX(-1px); }
+  }
+  .hpwrap.struck::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--r);
+    background: var(--danger);
+    opacity: 0;
+    pointer-events: none;
+    animation: flash 0.42s ease-out;
+  }
+  @keyframes flash {
+    0% { opacity: 0.22; }
+    100% { opacity: 0; }
+  }
   .cap {
     display: block;
     font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
@@ -204,7 +240,9 @@
     height: 14px; background: oklch(20% 0.004 286); border-radius: 7px;
     overflow: hidden; margin: 0.875rem 0 0; display: flex; position: relative;
   }
-  .bar i { display: block; height: 100%; transition: width 0.35s ease; }
+  /* Eases into place rather than snapping, so the bar is seen to catch up
+     with the ghost the hit left behind. */
+  .bar i { display: block; height: 100%; transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
   .cur { background: var(--a-mid); }
   .cur.bloodied, .cur.down { background: var(--danger); }
   .tmp { background: var(--dim); animation: tempIn 0.4s ease-out; }

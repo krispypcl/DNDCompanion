@@ -9,7 +9,12 @@ import type { Tracker } from '$lib/types';
  */
 
 export function trackerMax(tracker: Tracker, ctx: FormulaContext): number {
-  return Math.max(0, evaluateFormula(tracker.max, ctx));
+  // `classlevel` means this tracker's class, not the character's total. A
+  // multiclassed Gunslinger 5 / Fighter 2 has 5 Risk Dice, not 7.
+  const scoped = tracker.class
+    ? { ...ctx, classlevel: ctx.classLevels?.[tracker.class.trim().toLowerCase()] ?? 0 }
+    : ctx;
+  return Math.max(0, evaluateFormula(tracker.max, scoped));
 }
 
 export function clampSpent(spent: number, max: number): number {

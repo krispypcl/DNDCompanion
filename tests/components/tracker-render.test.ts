@@ -8,7 +8,7 @@ import Tracker from '$lib/components/Tracker.svelte';
 import type { FormulaContext } from '$lib/rules/formula';
 import type { Tracker as TrackerDef } from '$lib/types';
 
-const ctx: FormulaContext = { level: 5, prof: 3, str: 0, dex: 4, con: 2, int: 0, wis: 1, cha: 4 };
+const ctx: FormulaContext = { level: 5, classlevel: 5, prof: 3, str: 0, dex: 4, con: 2, int: 0, wis: 1, cha: 4 };
 
 const def = (over: Partial<TrackerDef> = {}): TrackerDef => ({
   id: 't1',

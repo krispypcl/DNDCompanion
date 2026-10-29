@@ -169,7 +169,8 @@
   .nm { overflow-wrap: anywhere; }
   .muted { color: var(--dim); font-size: 0.85rem; }
   .numeric { font-variant-numeric: tabular-nums; }
-  .rm { padding-right: 0; }
+  /* Centred on the row rather than aligned with the first line of text. */
+  .rm { padding-right: 0; vertical-align: middle; }
   input, select {
     background: var(--bg); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.2rem 0.35rem; font: inherit;
