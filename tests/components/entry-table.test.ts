@@ -35,10 +35,11 @@ const rowNames = () =>
   );
 
 describe('EntryTable', () => {
-  it('marks the checked rows for a reader without offering a control', () => {
+  it('marks the checked rows and leaves the rest blank', () => {
     mount(false);
+    // An unticked row says nothing: a dot there read as a mark of its own.
     const ticks = [...document.querySelectorAll('td.tick')].map((c) => c.textContent?.trim());
-    expect(ticks).toEqual(['✓', '·', '·']);
+    expect(ticks).toEqual(['✓', '', '']);
     expect(document.querySelectorAll('td.tick input').length).toBe(0);
   });
 

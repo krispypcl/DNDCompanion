@@ -111,9 +111,7 @@
                     onchange={(e) => setFlag(i, check.key, e.currentTarget.checked)}
                   />
                 {:else}
-                  <span class:yes={Boolean(item[check.key])} aria-label={item[check.key] ? check.label : ''}
-                    >{item[check.key] ? '✓' : '·'}</span
-                  >
+                  <span class="yes" aria-label={check.label}>{item[check.key] ? '✓' : ''}</span>
                 {/if}
               </td>
             {/if}
@@ -247,11 +245,13 @@
   .mv:hover:not(:disabled) { color: var(--a); }
   .mv:disabled { opacity: 0.3; cursor: default; }
   /* The tick column is the width of the mark and nothing more. */
-  .tick { text-align: center; }
+  .tick { text-align: center; vertical-align: middle; }
   th.tick { color: var(--label); }
-  .tick span { color: var(--faint); }
   .tick span.yes { color: var(--a); font-weight: 600; }
-  .tick input { width: 1rem; height: 1rem; accent-color: var(--a); cursor: pointer; }
+  .tick input {
+    width: 1rem; height: 1rem; accent-color: var(--a); cursor: pointer;
+    display: block; margin: 0 auto;
+  }
   .add {
     margin-top: 0.75rem; background: none; border: 1px dashed var(--line);
     color: var(--dim); border-radius: var(--r-sm); padding: 0.4rem 0.9rem;

@@ -97,6 +97,16 @@
         onchange={(v) => patchIdentity('portraitUrl', String(v))}
       />
     </div>
+    <div class="wide">
+      <dt>Banner URL</dt>
+      <EditableField
+        value={definition.identity.bannerUrl ?? ''}
+        editable={true}
+        label="Banner URL"
+        placeholder="https://… — optional, shown behind the sheet"
+        onchange={(v) => patchIdentity('bannerUrl', String(v))}
+      />
+    </div>
   {/if}
 </section>
 
