@@ -3,6 +3,7 @@
   import { base } from '$app/paths';
   import AbilityBand from '$lib/components/AbilityBand.svelte';
   import ModeToggle from '$lib/components/ModeToggle.svelte';
+  import Banner from '$lib/components/Banner.svelte';
   import CombatActions from '$lib/components/CombatActions.svelte';
   import Currency from '$lib/components/Currency.svelte';
   import DetailsBlock from '$lib/components/DetailsBlock.svelte';
@@ -67,6 +68,8 @@
 
   const carried = $derived(definition ? weightCarried(definition) : 0);
   const classes = $derived(definition ? classList(definition) : []);
+  /** Optional: with no banner the sheet renders exactly as it did before. */
+  const banner = $derived(definition?.identity?.bannerUrl?.trim() ?? '');
   const totalLevel = $derived(definition ? characterLevel(definition) : 1);
 
   const CLASS_COLUMNS = [
@@ -113,13 +116,13 @@
   const SPELL_LEVELS = ['', 'Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] as const;
   const SPELL_COLUMNS = [
     { key: 'name', label: 'Name', width: '17%', placeholder: 'Shield' },
-    { key: 'level', label: 'Level', width: '8%', options: SPELL_LEVELS },
+    { key: 'level', label: 'Level', width: '11%', options: SPELL_LEVELS },
     { key: 'time', label: 'Cast time', width: '11%', placeholder: '1 reaction' },
     { key: 'range', label: 'Range', width: '9%', placeholder: 'Self' },
-    { key: 'components', label: 'Components', short: 'Comps', width: '10%', placeholder: 'V, S, M' },
+    { key: 'components', label: 'Components', short: 'Comp', width: '10%', placeholder: 'V, S, M' },
     { key: 'duration', label: 'Duration', width: '11%', placeholder: '1 round' },
     { key: 'save', label: 'Save', width: '9%', placeholder: 'DEX 13' },
-    { key: 'notes', label: 'Notes', width: '25%', muted: true, placeholder: '+5 AC' }
+    { key: 'notes', label: 'Notes', width: '22%', muted: true, placeholder: '+5 AC' }
   ];
   const ITEM_COLUMNS = [
     { key: 'name', label: 'Item', width: '60%', placeholder: 'Longsword' },
@@ -294,7 +297,8 @@
 {:else if sheet && definition && sheetState}
   <!-- The theme is scoped here, not to :root, so a campaign view can later show
        several characters in their own colours at once. -->
-  <div class="sheet themed" style={themeStyle(definition.identity.theme)}>
+  <div class="sheet themed" class:bannered={banner} style={themeStyle(definition.identity.theme)}>
+    {#if banner}<Banner url={banner} />{/if}
     <header class="identity">
       <div class="portrait" class:has={Boolean(definition.identity.portraitUrl?.trim())}>
         {#if definition.identity.portraitUrl?.trim()}
@@ -710,6 +714,23 @@
   .panel {
     background: var(--surface); border: 1px solid var(--line-soft);
     border-radius: var(--r); padding: 1rem; min-width: 0;
+  }
+  /* With a banner behind it, a module stops being opaque and starts being
+     frosted: the band's colour carries through, the detail does not, and the
+     text keeps the surface it needs. Only with a banner — an ordinary sheet
+     pays none of this. */
+  .bannered .panel {
+    position: relative;
+    z-index: 1;
+    background: color-mix(in oklch, var(--surface) 76%, transparent);
+    backdrop-filter: blur(16px) saturate(1.1);
+    -webkit-backdrop-filter: blur(16px) saturate(1.1);
+    border-color: color-mix(in oklch, var(--line) 70%, transparent);
+  }
+  .bannered .identity { position: relative; z-index: 1; }
+  /* No backdrop-filter, no frost: the module stays readable by being solid. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .bannered .panel { background: var(--surface); }
   }
   .cap {
     display: block; font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
