@@ -112,6 +112,9 @@ export type Definition = {
     player?: string;
     alignment?: string;
     portraitUrl?: string;
+    /** A wide image behind the sheet, shown as a diagonal band. Optional:
+        without it the sheet looks exactly as it did. */
+    bannerUrl?: string;
     lookupUrl?: string;
     /** A theme name from src/lib/theme.ts; anything else falls back. */
     theme?: string;
