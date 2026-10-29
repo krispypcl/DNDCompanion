@@ -2,6 +2,7 @@
   import { page } from '$app/state';
   import { base } from '$app/paths';
   import AbilityBand from '$lib/components/AbilityBand.svelte';
+  import CombatActions from '$lib/components/CombatActions.svelte';
   import Currency from '$lib/components/Currency.svelte';
   import DetailsBlock from '$lib/components/DetailsBlock.svelte';
   import EditableField from '$lib/components/EditableField.svelte';
@@ -57,38 +58,38 @@
   const carried = $derived(definition ? weightCarried(definition) : 0);
 
   const ATTACK_COLUMNS = [
-    { key: 'name', label: 'Name', width: '34%', placeholder: 'Revolver' },
-    { key: 'bonus', label: 'Hit', width: '13%', numeric: true, placeholder: '+8' },
-    { key: 'damage', label: 'Damage', width: '22%', numeric: true, placeholder: '2d6 + 5' },
-    { key: 'notes', label: 'Notes', width: '31%', muted: true, placeholder: 'Slow mastery, 30/90' }
+    { key: 'name', label: 'Name', width: '34%', placeholder: 'Longsword' },
+    { key: 'bonus', label: 'Hit', width: '13%', numeric: true, placeholder: '+5' },
+    { key: 'damage', label: 'Damage', width: '22%', numeric: true, placeholder: '1d8 + 3' },
+    { key: 'notes', label: 'Notes', width: '31%', muted: true, placeholder: 'Versatile (1d10)' }
   ];
   const SPELL_COLUMNS = [
     { key: 'name', label: 'Name', width: '20%', placeholder: 'Shield' },
     { key: 'time', label: 'Cast time', width: '14%', placeholder: '1 reaction' },
     { key: 'range', label: 'Range', width: '11%', placeholder: 'Self' },
     { key: 'duration', label: 'Duration', width: '14%', placeholder: '1 round' },
-    { key: 'save', label: 'Save', width: '12%', placeholder: 'WIS 15' },
+    { key: 'save', label: 'Save', width: '12%', placeholder: 'DEX 13' },
     { key: 'notes', label: 'Notes', width: '29%', muted: true, placeholder: '+5 AC' }
   ];
   const ITEM_COLUMNS = [
-    { key: 'name', label: 'Item', width: '60%', placeholder: 'Tinderbox' },
+    { key: 'name', label: 'Item', width: '60%', placeholder: 'Longsword' },
     { key: 'qty', label: 'Amount', width: '20%', type: 'number' as const, numeric: true, placeholder: '1' },
-    { key: 'weight', label: 'Weight', width: '20%', type: 'number' as const, numeric: true, placeholder: '—' }
+    { key: 'weight', label: 'Weight', width: '20%', type: 'number' as const, numeric: true, placeholder: '3' }
   ];
   const TRACKER_COLUMNS = [
-    { key: 'label', label: 'Label', width: '18%', placeholder: 'Risk Dice' },
-    { key: 'max', label: 'Max', width: '13%', placeholder: '4 or prof + 1' },
-    { key: 'die', label: 'Die', width: '8%', placeholder: 'd8' },
+    { key: 'label', label: 'Label', width: '18%', placeholder: 'Second Wind' },
+    { key: 'max', label: 'Max', width: '13%', placeholder: '1 or prof + 1' },
+    { key: 'die', label: 'Die', width: '8%', placeholder: 'd10' },
     { key: 'type', label: 'Shape', width: '12%', options: ['pips', 'counter', 'gauge'] as const },
     { key: 'direction', label: 'Direction', width: '12%', options: ['spend', 'accrue'] as const },
     { key: 'resetOn', label: 'Resets on', width: '13%', options: ['manual', 'short', 'long', 'dawn'] as const },
     { key: 'resetAmount', label: 'Refill', width: '10%', placeholder: 'full' },
-    { key: 'source', label: 'Source', width: '14%', muted: true, placeholder: 'valdagunslinger' }
+    { key: 'source', label: 'Source', width: '14%', muted: true, placeholder: 'phb' }
   ];
   const FEATURE_COLUMNS = [
-    { key: 'title', label: 'Title', width: '26%', placeholder: "Sheriff's Star" },
-    { key: 'body', label: 'Description', width: '58%', placeholder: '+1 AC, 3 charges at dawn' },
-    { key: 'source', label: 'Source', width: '16%', muted: true, placeholder: 'homebrew' }
+    { key: 'title', label: 'Title', width: '26%', placeholder: 'Second Wind' },
+    { key: 'body', label: 'Description', width: '58%', placeholder: 'Regain 1d10 + level hit points' },
+    { key: 'source', label: 'Source', width: '16%', muted: true, placeholder: 'phb' }
   ];
   const initiative = $derived(
     definition ? (definition.combat?.initiative ?? modifierOf(definition, 'dex')) : 0
@@ -142,7 +143,7 @@
     setDefinition({ ...definition, identity: { ...definition.identity, [key]: value } });
   }
 
-  function patchCombat(key: string, value: string | number) {
+  function patchCombat(key: string, value: string | number | undefined) {
     if (!definition) return;
     setDefinition({ ...definition, combat: { ...definition.combat, [key]: value } });
   }
@@ -255,21 +256,21 @@
       <div class="who">
         <h1>
           <EditableField value={definition.identity.name} {editable} label="Name"
-                         hint="Character name"
+                         hint="Character"
                          onchange={(v) => patchIdentity('name', v)} />
         </h1>
         <p class="sub">
           <EditableField value={definition.identity.class} {editable} label="Class"
-                         placeholder="Class" hint="Gunslinger"
+                         placeholder="Class" hint="Fighter"
                          onchange={(v) => patchIdentity('class', v)} />
           <EditableField value={definition.identity.subclass} {editable} label="Subclass"
-                         placeholder="Subclass" hint="White Hat"
+                         placeholder="Subclass" hint="Champion"
                          onchange={(v) => patchIdentity('subclass', v)} />
           <EditableField value={definition.identity.ancestry} {editable} label="Ancestry"
-                         placeholder="Ancestry" hint="Tiefling (Glasya)"
+                         placeholder="Ancestry" hint="Human"
                          onchange={(v) => patchIdentity('ancestry', v)} />
           <EditableField value={definition.identity.background} {editable} label="Background"
-                         placeholder="Background" hint="Criminal"
+                         placeholder="Background" hint="Soldier"
                          onchange={(v) => patchIdentity('background', v)} />
           {#if editable}
             <span class="lvledit">level
@@ -358,7 +359,7 @@
                 <div>
                   <h3>Spell save DC</h3>
                   <EditableField value={definition.spellSaveDc ?? ''} {editable} type="number"
-                                 label="Spell save DC" placeholder="15"
+                                 label="Spell save DC" placeholder="13"
                                  onchange={(v) => setDefinition({ ...definition, spellSaveDc: v === '' ? undefined : Number(v) })} />
                 </div>
                 <div>
@@ -366,7 +367,7 @@
                   <EditableField value={definition.spellAttackBonus ?? ''}
                                  display={definition.spellAttackBonus != null ? sign(definition.spellAttackBonus) : undefined}
                                  {editable} type="number"
-                                 label="Spell attack bonus" placeholder="7"
+                                 label="Spell attack bonus" placeholder="5"
                                  onchange={(v) => setDefinition({ ...definition, spellAttackBonus: v === '' ? undefined : Number(v) })} />
                 </div>
               </div>
@@ -439,7 +440,7 @@
             {:else}
               <div class="notes">
                 <EditableField value={definition.backstory ?? ''} {editable} type="textarea"
-                               rows={16} label="Backstory"
+                               label="Backstory"
                                placeholder="Nothing written yet."
                                onchange={(v) => setDefinition({ ...definition, backstory: String(v) })} />
               </div>
@@ -456,9 +457,18 @@
               <EditableField value={definition.combat?.ac} {editable} type="number"
                              label="AC" onchange={(v) => patchCombat('ac', Number(v))} />
             </b>
-            <span class="cap">AC</span>
+            <span class="cap">Armor Class</span>
           </div>
-          <div class="defbox"><b>{sign(initiative)}</b><span class="cap">Initiative</span></div>
+          <div class="defbox">
+            <b>
+              <EditableField value={definition.combat?.initiative ?? ''}
+                             display={definition.combat?.initiative == null ? sign(initiative) : undefined}
+                             {editable} type="number" label="Initiative"
+                             placeholder={sign(initiative)} hint={String(modifierOf(definition, 'dex'))}
+                             onchange={(v) => patchCombat('initiative', v === '' ? undefined : Number(v))} />
+            </b>
+            <span class="cap">Initiative</span>
+          </div>
           <div class="defbox">
             <b>
               <EditableField value={definition.proficiency} display={sign(definition.proficiency)}
@@ -481,12 +491,12 @@
           <div class="defbox">
             <b>
               <EditableField value={definition.abilitySaveDc ?? ''} {editable} type="number"
-                             label="Ability save DC" placeholder="15"
+                             label="Ability save DC" placeholder="13"
                              onchange={(v) => setDefinition({ ...definition, abilitySaveDc: v === '' ? undefined : Number(v) })} />
             </b>
             <span class="cap">Save DC</span>
           </div>
-          <div class="defbox">
+          <div class="defbox themed-num">
             <b>
               <EditableField value={sheetState.inspiration ?? 0} {editable} type="number"
                              label="Inspiration"
@@ -530,6 +540,8 @@
             <b>{carried > 0 ? carried : '—'}</b>
           </div>
         </div>
+
+        <CombatActions />
       </section>
     </div>
   </div>
@@ -566,7 +578,7 @@
 
   .identity { display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
   .portrait {
-    width: 4.5rem; height: 4.5rem; border-radius: var(--r); border: 1px solid var(--a-edge);
+    width: 6rem; aspect-ratio: 1; border-radius: var(--r); border: 1px solid var(--a-edge);
     flex: none; display: flex; align-items: flex-end; justify-content: center;
     position: relative; overflow: visible;
     background: linear-gradient(150deg, oklch(32% calc(0.05 * var(--c)) var(--h)),
@@ -584,14 +596,14 @@
     padding: 0.0625rem 0.5rem; letter-spacing: 0.02em; white-space: nowrap;
   }
   .who { flex: 1 1 auto; min-width: 0; }
-  .who h1 { margin: 0; font-size: 1.375rem; font-weight: 600; letter-spacing: -0.015em; }
+  .who h1 { margin: 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.015em; }
   .sub :global(input.field) { min-width: 5.5rem; }
   .sub {
-    margin: 0.25rem 0 0; color: var(--dim); font-size: 0.8125rem;
+    margin: 0.3125rem 0 0; color: var(--dim); font-size: 0.875rem;
     display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline;
   }
   .lvledit { display: inline-flex; gap: 0.3rem; align-items: baseline; }
-  .lvledit :global(.field) { text-align: center; }
+  .lvledit :global(.field) { text-align: left; }
   .edit {
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font: inherit;
@@ -633,10 +645,14 @@
     min-height: 4.125rem;
     transition: border-color 0.2s ease, background-color 0.2s ease;
   }
-  .defbox:hover { border-color: var(--a-edge); background: var(--a-wash); }
+  .defbox:hover { border-color: var(--hover-line); background: var(--hover-bg); }
+  /* Inspiration is the one number here that is spent, so it keeps the theme.
+     The field sets its own colour, so the rule has to reach inside it. */
+  .defbox.themed-num b,
+  .defbox.themed-num :global(.field) { color: var(--a-hi); }
   .defbox b {
     display: block; font-size: 1.375rem; font-weight: 600; line-height: 1;
-    color: var(--a-hi); font-variant-numeric: tabular-nums;
+    color: var(--text); font-variant-numeric: tabular-nums;
     /* "30 ft." must not wrap into its own label. */
     white-space: nowrap;
   }
@@ -692,7 +708,7 @@
   .notes { margin: calc(-0.15rem - 1px) calc(-0.3rem - 1px) 0; }
   .notes :global(.field) {
     field-sizing: fixed;
-    width: calc(100% + 0.6rem + 2px);
+    width: 100%;
     white-space: pre-wrap; overflow-wrap: anywhere;
   }
 

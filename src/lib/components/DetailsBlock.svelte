@@ -5,7 +5,6 @@
    * is about casting rather than about the person.
    */
   import EditableField from './EditableField.svelte';
-  import { abilityModifier } from '$lib/rules/derived';
   import type { Definition, Traits } from '$lib/types';
 
   let {
@@ -20,29 +19,33 @@
 
   /** One-liners. All free text: an age may be "24" or "unknown". */
   const DETAILS = [
-    { key: 'alignment', label: 'Alignment', placeholder: 'Chaotic neutral' },
+    { key: 'alignment', label: 'Alignment', placeholder: 'Lawful good' },
     { key: 'gender', label: 'Gender', placeholder: 'Male' },
-    { key: 'age', label: 'Age', placeholder: '24' },
+    { key: 'age', label: 'Age', placeholder: '22' },
     { key: 'size', label: 'Size', placeholder: 'Medium' },
-    { key: 'height', label: 'Height', placeholder: '5’5″' },
-    { key: 'weight', label: 'Weight', placeholder: '140 lb' },
+    { key: 'height', label: 'Height', placeholder: '6’0″' },
+    { key: 'weight', label: 'Weight', placeholder: '180 lb' },
     { key: 'faith', label: 'Faith', placeholder: 'None' },
-    { key: 'skin', label: 'Skin', placeholder: 'Red' },
-    { key: 'eyes', label: 'Eyes', placeholder: 'Amber' },
-    { key: 'hair', label: 'Hair', placeholder: 'Brown, slicked back' }
+    { key: 'skin', label: 'Skin', placeholder: 'Tan' },
+    { key: 'eyes', label: 'Eyes', placeholder: 'Brown' },
+    { key: 'hair', label: 'Hair', placeholder: 'Black' }
   ] as const;
 
   const WRITING: { key: keyof Traits; label: string; placeholder: string }[] = [
-    { key: 'appearance', label: 'Character appearance', placeholder: 'Scars, bearing, what people notice first.' },
+    { key: 'appearance', label: 'Character appearance', placeholder: 'Build, bearing, what people notice first.' },
     { key: 'personality', label: 'Personality traits', placeholder: 'How they behave at the table.' },
     { key: 'ideals', label: 'Ideals', placeholder: 'What they believe in.' },
     { key: 'bonds', label: 'Bonds', placeholder: 'Who and what they will not abandon.' },
     { key: 'flaws', label: 'Flaws', placeholder: 'What gets them into trouble.' },
-    { key: 'allies', label: 'Allies & organizations', placeholder: 'Who they can call on.' }
+    { key: 'allies', label: 'Allies & organizations', placeholder: 'Who they can call on.' },
+    {
+      key: 'proficiencies',
+      label: 'Proficiencies & languages',
+      placeholder: 'Armour, weapons, tools, saving throws, languages.'
+    }
   ];
 
   const portrait = $derived(definition.identity.portraitUrl?.trim() ?? '');
-  const dexMod = $derived(abilityModifier(definition.abilities?.dex ?? 10));
   const traits = $derived(definition.traits ?? {});
   const shownDetails = $derived(DETAILS.filter((f) => editable || definition.identity[f.key]));
   const shownWriting = $derived(WRITING.filter((f) => editable || traits[f.key]));
@@ -59,6 +62,15 @@
 <section class="details">
   {#if portrait}
     <img class="portrait" src={portrait} alt="Portrait of {definition.identity.name}" />
+  {:else}
+    <!-- A placeholder keeps the row the same height whether or not there is art. -->
+    <div class="portrait empty-portrait" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="26" height="26">
+        <circle cx="12" cy="9" r="4" fill="none" stroke="currentColor" stroke-width="1.5" />
+        <path d="M4.5 20a7.5 7.5 0 0 1 15 0" fill="none" stroke="currentColor" stroke-width="1.5"
+              stroke-linecap="round" />
+      </svg>
+    </div>
   {/if}
 
   <dl>
@@ -76,27 +88,6 @@
         </dd>
       </div>
     {/each}
-
-    <div>
-      <dt>Initiative</dt>
-      <dd>
-        <EditableField
-          value={definition.combat?.initiative ?? ''}
-          display={definition.combat?.initiative == null
-            ? dexMod >= 0 ? `+${dexMod}` : String(dexMod)
-            : undefined}
-          {editable}
-          type="number"
-          label="Initiative bonus"
-          placeholder={String(dexMod)}
-          onchange={(v) =>
-            onchange({
-              ...definition,
-              combat: { ...definition.combat, initiative: v === '' ? undefined : Number(v) }
-            })}
-        />
-      </dd>
-    </div>
 
     <div>
       <dt>Ability save DC</dt>
@@ -158,7 +149,7 @@
   }
   .portrait {
     width: 5.5rem;
-    height: 5.5rem;
+    aspect-ratio: 1;
     object-fit: cover;
     border-radius: var(--r);
     border: 1px solid var(--line);
@@ -184,6 +175,7 @@
   dd { margin: 0; font-size: 0.9375rem; }
   dd :global(.field) { width: 100%; field-sizing: fixed; }
   /* The URL is long and reads left to right; the writing below is prose. */
+  .empty-portrait { display: grid; place-items: center; color: var(--faint); background: var(--raised); }
   .wide { flex: 1 1 100%; min-width: 0; text-align: left; }
   .wide :global(.field) { width: 100%; field-sizing: fixed; }
 

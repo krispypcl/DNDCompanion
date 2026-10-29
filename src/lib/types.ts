@@ -71,6 +71,7 @@ export type Item = LinkableEntry & { qty?: number; weight?: number; notes?: stri
 
 /** The long-form character writing, kept apart from the one-line details. */
 export type Traits = {
+  proficiencies?: string;
   allies?: string;
   appearance?: string;
   personality?: string;
