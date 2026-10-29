@@ -59,6 +59,9 @@
   --bad: var(--danger);
 }
 
+/* Lets a height animate to and from `auto`, which the disclosure panels use. */
+:root { interpolate-size: allow-keywords; }
+
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
 body {

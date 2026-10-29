@@ -110,6 +110,7 @@
           {editable}
           type="textarea"
           rows={4}
+          grow={true}
           label={field.label}
           placeholder={field.placeholder}
           onchange={(v) => patchTrait(field.key, String(v))}
@@ -131,7 +132,7 @@
   /* A fixed square. Stretching it to the row made the empty placeholder, which
      has no intrinsic size, come out rectangular. */
   .portrait {
-    align-self: flex-start;
+    align-self: center;
     width: 5.5rem;
     height: 5.5rem;
     flex: none;
