@@ -108,13 +108,18 @@
     { key: 'damageType', label: 'Type', width: '14%', placeholder: 'slashing' },
     { key: 'notes', label: 'Notes', width: '21%', muted: true, placeholder: 'Versatile (1d10)' }
   ];
+  /** Blank first: a new row has no level yet, and defaulting it to Cantrip
+      would put a level on a spell nobody has written one for. */
+  const SPELL_LEVELS = ['', 'Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] as const;
   const SPELL_COLUMNS = [
-    { key: 'name', label: 'Name', width: '20%', placeholder: 'Shield' },
-    { key: 'time', label: 'Cast time', width: '14%', placeholder: '1 reaction' },
-    { key: 'range', label: 'Range', width: '11%', placeholder: 'Self' },
-    { key: 'duration', label: 'Duration', width: '14%', placeholder: '1 round' },
-    { key: 'save', label: 'Save', width: '12%', placeholder: 'DEX 13' },
-    { key: 'notes', label: 'Notes', width: '29%', muted: true, placeholder: '+5 AC' }
+    { key: 'name', label: 'Name', width: '18%', placeholder: 'Shield' },
+    { key: 'level', label: 'Level', width: '9%', options: SPELL_LEVELS },
+    { key: 'time', label: 'Cast time', width: '12%', placeholder: '1 reaction' },
+    { key: 'range', label: 'Range', width: '10%', placeholder: 'Self' },
+    { key: 'components', label: 'Components', width: '15%', placeholder: 'V, S, M' },
+    { key: 'duration', label: 'Duration', width: '12%', placeholder: '1 round' },
+    { key: 'save', label: 'Save', width: '10%', placeholder: 'DEX 13' },
+    { key: 'notes', label: 'Notes', width: '14%', muted: true, placeholder: '+5 AC' }
   ];
   const ITEM_COLUMNS = [
     { key: 'name', label: 'Item', width: '60%', placeholder: 'Longsword' },
@@ -129,8 +134,7 @@
     { key: 'direction', label: 'Direction', width: '12%', options: ['spend', 'accrue'] as const },
     { key: 'resetOn', label: 'Resets on', width: '13%', options: ['manual', 'short', 'long', 'dawn'] as const },
     { key: 'resetAmount', label: 'Refill', width: '9%', placeholder: 'full' },
-    { key: 'class', label: 'Class', width: '12%', placeholder: 'Fighter' },
-    { key: 'source', label: 'Source', width: '12%', muted: true, placeholder: 'phb' }
+    { key: 'source', label: 'Source', width: '14%', muted: true, placeholder: 'phb' }
   ];
   const FEATURE_COLUMNS = [
     { key: 'title', label: 'Title', width: '26%', placeholder: 'Second Wind' },
@@ -424,6 +428,7 @@
               <EntryTable
                 items={definition.spells ?? []}
                 columns={SPELL_COLUMNS}
+                check={{ key: 'prepared', label: 'Prepared' }}
                 {editable}
                 category="spells"
                 emptyText="No spells or abilities recorded."

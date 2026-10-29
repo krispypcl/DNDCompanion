@@ -71,6 +71,9 @@ export type Attack = LinkableEntry & {
 };
 export type Feature = LinkableEntry & { title: string; body: string };
 export type Spell = LinkableEntry & {
+  /** 'Cantrip' or '1'–'10', as written: a free-form string so a homebrew
+      level above ninth is not a schema change. */
+  level?: string;
   save?: string;
   time?: string;
   range?: string;

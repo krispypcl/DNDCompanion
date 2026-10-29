@@ -247,7 +247,7 @@
   .cur.bloodied, .cur.down { background: var(--danger); }
   .tmp { background: var(--temp); animation: tempIn 0.4s ease-out; }
   @keyframes tempIn {
-    from { filter: brightness(1.9); }
+    from { filter: brightness(var(--temp-flash)); }
     to { filter: none; }
   }
   .ghost {
@@ -256,7 +256,7 @@
     pointer-events: none;
   }
   .ghost.damage { background: var(--danger); }
-  .ghost.heal { background: var(--a-hi); }
+  .ghost.heal { background: var(--heal); }
   @keyframes ghostOut {
     0% { opacity: 0.95; }
     35% { opacity: 0.95; }

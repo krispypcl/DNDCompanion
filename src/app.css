@@ -90,6 +90,14 @@
   --hover-bg: oklch(25% 0.004 286);
   --hover-line: oklch(34% 0.005 286);
 
+  /* Healing leaves a brighter stretch than the bar it fills. In light mode
+     the accent's bright end is its deepest shade, so this is its own colour
+     rather than --a-hi: a heal should read as a lift either way. */
+  --heal: oklch(86% calc(0.115 * var(--c)) var(--h));
+  /* Temporary hit points flash by brightening against a dark bar, and by
+     deepening against a light one. */
+  --temp-flash: 1.9;
+
   /* The portrait well: a faint wash of the character's colour, which is the
      one surface drawn from the accent rather than from a neutral. */
   --portrait-from: oklch(32% calc(0.05 * var(--c)) var(--h));
@@ -131,6 +139,9 @@
 
   --portrait-from: oklch(93% calc(0.05 * var(--c)) var(--h));
   --portrait-to: oklch(97.5% calc(0.02 * var(--c)) var(--h));
+
+  --heal: oklch(72% calc(0.12 * var(--c)) var(--h));
+  --temp-flash: 0.72;
 }
 
 /* Flipping modes recolours everything at once; without this it snaps. The
