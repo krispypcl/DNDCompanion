@@ -6,9 +6,14 @@ import {
   saveBonus,
   skillTotal,
   spellAttackBonus,
+  characterLevel,
+  classLevels,
+  classLine,
+  classList,
   spellSaveDC,
   weightCarried
 } from '$lib/rules/derived';
+import { trackerMax } from '$lib/rules/tracker';
 import type { Definition } from '$lib/types';
 
 /** Loka Sibbs at level 5, taken from the real sheet. */
@@ -99,6 +104,9 @@ describe('formulaContext', () => {
   test('exposes level, proficiency and ability modifiers', () => {
     expect(formulaContext(loka)).toEqual({
       level: 5,
+      // Defaults to the total; trackerMax narrows it to the tracker's class.
+      classlevel: 5,
+      classLevels: { gunslinger: 5 },
       prof: 3,
       str: 1,
       dex: 4,
@@ -139,5 +147,77 @@ describe('weight carried', () => {
 
   it('does not leak floating point noise', () => {
     expect(weightCarried(withGear([{ name: 'a', weight: 0.1 }, { name: 'b', weight: 0.2 }]))).toBe(0.3);
+  });
+});
+
+describe('classes and levels', () => {
+  const single = { ...loka, identity: { ...loka.identity, class: 'Gunslinger', subclass: 'White Hat', level: 5 } } as Definition;
+  const multi = {
+    ...loka,
+    identity: {
+      ...loka.identity,
+      classes: [
+        { name: 'Gunslinger', subclass: 'White Hat', level: 5 },
+        { name: 'Fighter', level: 2 }
+      ]
+    }
+  } as Definition;
+
+  it('reads a sheet written before multiclassing as one class', () => {
+    expect(classList(single)).toEqual([
+      { name: 'Gunslinger', subclass: 'White Hat', level: 5 }
+    ]);
+    expect(characterLevel(single)).toBe(5);
+  });
+
+  it('sums levels across classes', () => {
+    expect(characterLevel(multi)).toBe(7);
+  });
+
+  it('reads a single class the way a player says it', () => {
+    expect(classLine(single)).toBe('White Hat Gunslinger');
+  });
+
+  it('reads a multiclass with the levels that matter', () => {
+    expect(classLine(multi)).toBe('Gunslinger 5 / Fighter 2');
+  });
+
+  it('keys class levels by name, case-insensitively', () => {
+    expect(classLevels(multi)).toEqual({ gunslinger: 5, fighter: 2 });
+  });
+});
+
+describe('classlevel in a tracker formula', () => {
+  const multi = {
+    ...loka,
+    identity: {
+      ...loka.identity,
+      classes: [
+        { name: 'Gunslinger', level: 5 },
+        { name: 'Fighter', level: 2 }
+      ]
+    }
+  } as Definition;
+  const ctx = formulaContext(multi);
+  const tracker = (over: Record<string, unknown> = {}) =>
+    ({ id: 't', label: 'T', max: 'classlevel', type: 'pips', direction: 'spend',
+       reset: { on: 'short', amount: 'full' }, ...over }) as never;
+
+  // The whole point: a class feature must not inflate when you multiclass.
+  it('scopes classlevel to the tracker own class', () => {
+    expect(trackerMax(tracker({ class: 'Gunslinger' }), ctx)).toBe(5);
+    expect(trackerMax(tracker({ class: 'fighter' }), ctx)).toBe(2);
+  });
+
+  it('falls back to the character total when the tracker names no class', () => {
+    expect(trackerMax(tracker(), ctx)).toBe(7);
+  });
+
+  it('reads a class the character does not have as zero, not as the total', () => {
+    expect(trackerMax(tracker({ class: 'Druid' }), ctx)).toBe(0);
+  });
+
+  it('still treats level as the character total', () => {
+    expect(trackerMax(tracker({ max: 'level', class: 'Gunslinger' }), ctx)).toBe(7);
   });
 });
