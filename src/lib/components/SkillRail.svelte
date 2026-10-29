@@ -69,6 +69,7 @@
           class:expert={prof?.expertise}
           disabled={!editable}
           aria-label="{LABELS[skill]} proficiency"
+          title={prof?.expertise ? 'Expertise' : prof?.proficient ? 'Proficient' : 'Not proficient'}
           onclick={() => cycle(skill)}
         ></button>
         <span class="name">{LABELS[skill]}</span>
@@ -109,8 +110,13 @@
   .dot:disabled { cursor: default; }
   .dot { transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease; }
   .dot:not(:disabled):hover { transform: scale(1.25); }
-  .dot.on { background: var(--a); border-color: var(--a); }
-  .dot.expert { box-shadow: 0 0 0 2px var(--a-edge); }
+  /* Half filled for proficiency, filled for expertise: the shape says which,
+     without a legend and without colour doing the work on its own. */
+  .dot.on {
+    border-color: var(--a);
+    background-image: linear-gradient(90deg, var(--a) 0 50%, transparent 50% 100%);
+  }
+  .dot.expert { background-image: none; background-color: var(--a); }
   .name { flex: 1; color: var(--dim); min-width: 0; overflow-wrap: anywhere; line-height: 1.3; }
   .row.prof .name { color: var(--text); font-weight: 600; }
   .bonus {
