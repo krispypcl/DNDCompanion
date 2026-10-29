@@ -62,4 +62,9 @@
     font: inherit;
     cursor: pointer;
   }
+  /* On a phone the other two messages run the width of the screen, so this
+     clears the save word as well as the undo toast beneath it. */
+  @media (max-width: 700px) {
+    .stale-banner { bottom: calc(8rem + env(safe-area-inset-bottom, 0px)); }
+  }
 </style>

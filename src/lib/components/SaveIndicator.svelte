@@ -1,77 +1,77 @@
 <script lang="ts">
   /**
-   * The state of the autosave, as a dot of fixed size.
+   * The state of the autosave, in words, in the bottom corner.
    *
-   * It used to be a word, which changed width as it changed state — and on a
-   * phone "Not saved" appearing in the controls row pushed the buttons onto a
-   * second line and shoved the whole sheet down. A status that moves the page
-   * every time you type is worse than no status. This one occupies the same
-   * space in every state, including when there is nothing to say, so the row
-   * is laid out once and never again.
+   * It began as a word in the header, where its changing width pushed the
+   * controls onto a second line on a phone and shoved the sheet down. Then it
+   * was a coloured dot, which does not move anything but asks the reader to
+   * know what the colour means — and the accent is the character's own, so a
+   * red character would report a red "saved".
    *
-   * The words still exist for anyone who needs them: as the title, as live
-   * text for a screen reader, and — when something has actually gone wrong —
-   * in SaveAlert, which floats over the sheet instead of displacing it.
+   * Floating in the corner, it can say the word and still move nothing. The
+   * colour is deliberately neutral: the sentence carries the meaning, not the
+   * hue. A write that actually failed also raises SaveAlert, which is harder
+   * to miss than a corner.
    */
+  import { fly } from 'svelte/transition';
   import { sheetStore } from '$lib/stores/sheet';
+  import { prefersReducedMotion } from '$lib/motion';
 
   const LABELS: Record<string, string> = {
     idle: '',
     saving: 'Saving…',
     saved: 'Saved',
-    unsaved: 'Not saved yet',
+    unsaved: 'Not saved',
     stale: 'Changed elsewhere',
     error: 'Error'
   };
 
-  /** `unsaved` means both "queued" and "gave up", told apart by the message. */
-  const failed = $derived(
-    $sheetStore.status === 'stale' ||
-      $sheetStore.status === 'error' ||
-      ($sheetStore.status === 'unsaved' && Boolean($sheetStore.message))
-  );
-  const label = $derived(
-    failed && $sheetStore.message ? $sheetStore.message : LABELS[$sheetStore.status]
-  );
+  /** Saved is good news and short-lived; everything else stays up. */
+  const SETTLE_MS = 1800;
+  let settled = $state(false);
+
+  $effect(() => {
+    const status = $sheetStore.status;
+    if (status !== 'saved') {
+      settled = false;
+      return;
+    }
+    settled = false;
+    const timer = setTimeout(() => (settled = true), SETTLE_MS);
+    return () => clearTimeout(timer);
+  });
+
+  const shown = $derived($sheetStore.status !== 'idle' && !settled);
+  const label = $derived(LABELS[$sheetStore.status] ?? '');
+  const motion = $derived(prefersReducedMotion() ? 0 : 180);
 </script>
 
-<span
-  class="dot {$sheetStore.status}"
-  class:failed
-  title={label}
-  role="status"
-  aria-live="polite"
->
-  <span class="sr">{label}</span>
-</span>
+{#if shown}
+  <p class="saveword" role="status" aria-live="polite" transition:fly={{ y: 8, duration: motion }}>
+    {label}
+  </p>
+{/if}
 
 <style>
-  .dot {
-    /* Reserved whatever the state, so the row is measured once. */
-    display: inline-block;
-    flex: none;
-    width: 0.5rem;
-    height: 0.5rem;
-    border-radius: 50%;
-    background: transparent;
-    transition: background-color 0.3s ease;
-  }
-  .saving { background: var(--dim); animation: breathe 1.1s ease-in-out infinite; }
-  .saved { background: var(--a); }
-  .unsaved { background: var(--label); }
-  .failed { background: var(--danger); }
-
-  @keyframes breathe {
-    0%, 100% { opacity: 0.35; }
-    50% { opacity: 1; }
+  .saveword {
+    position: fixed;
+    z-index: 40;
+    right: 1rem;
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    margin: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    padding: 0.3125rem 0.625rem;
+    /* No accent here on purpose: the word says what happened. */
+    color: var(--dim);
+    font-size: 0.75rem;
+    pointer-events: none;
   }
 
-  .sr {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
+  /* A phone's other messages run the width of the screen, so this clears
+     them rather than landing on top. */
+  @media (max-width: 700px) {
+    .saveword { bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px)); }
   }
 </style>
