@@ -102,24 +102,24 @@
   }
 
   const ATTACK_COLUMNS = [
-    { key: 'name', label: 'Name', width: '34%', placeholder: 'Longsword' },
-    { key: 'bonus', label: 'Hit', width: '13%', numeric: true, placeholder: '+5' },
-    { key: 'damage', label: 'Damage', width: '18%', numeric: true, placeholder: '1d8 + 3' },
-    { key: 'damageType', label: 'Type', width: '14%', placeholder: 'slashing' },
-    { key: 'notes', label: 'Notes', width: '21%', muted: true, placeholder: 'Versatile (1d10)' }
+    { key: 'name', label: 'Name', width: '24%', placeholder: 'Longsword' },
+    { key: 'bonus', label: 'Hit', width: '9%', numeric: true, placeholder: '+5' },
+    { key: 'damage', label: 'Damage', width: '14%', numeric: true, placeholder: '1d8 + 3' },
+    { key: 'damageType', label: 'Type', width: '12%', placeholder: 'slashing' },
+    { key: 'notes', label: 'Notes', width: '41%', muted: true, placeholder: 'Versatile (1d10)' }
   ];
   /** Blank first: a new row has no level yet, and defaulting it to Cantrip
       would put a level on a spell nobody has written one for. */
   const SPELL_LEVELS = ['', 'Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] as const;
   const SPELL_COLUMNS = [
-    { key: 'name', label: 'Name', width: '18%', placeholder: 'Shield' },
-    { key: 'level', label: 'Level', width: '9%', options: SPELL_LEVELS },
-    { key: 'time', label: 'Cast time', width: '12%', placeholder: '1 reaction' },
-    { key: 'range', label: 'Range', width: '10%', placeholder: 'Self' },
-    { key: 'components', label: 'Components', width: '15%', placeholder: 'V, S, M' },
-    { key: 'duration', label: 'Duration', width: '12%', placeholder: '1 round' },
-    { key: 'save', label: 'Save', width: '10%', placeholder: 'DEX 13' },
-    { key: 'notes', label: 'Notes', width: '14%', muted: true, placeholder: '+5 AC' }
+    { key: 'name', label: 'Name', width: '17%', placeholder: 'Shield' },
+    { key: 'level', label: 'Level', width: '8%', options: SPELL_LEVELS },
+    { key: 'time', label: 'Cast time', width: '11%', placeholder: '1 reaction' },
+    { key: 'range', label: 'Range', width: '9%', placeholder: 'Self' },
+    { key: 'components', label: 'Components', short: 'Comps', width: '10%', placeholder: 'V, S, M' },
+    { key: 'duration', label: 'Duration', width: '11%', placeholder: '1 round' },
+    { key: 'save', label: 'Save', width: '9%', placeholder: 'DEX 13' },
+    { key: 'notes', label: 'Notes', width: '25%', muted: true, placeholder: '+5 AC' }
   ];
   const ITEM_COLUMNS = [
     { key: 'name', label: 'Item', width: '60%', placeholder: 'Longsword' },
@@ -428,7 +428,7 @@
               <EntryTable
                 items={definition.spells ?? []}
                 columns={SPELL_COLUMNS}
-                check={{ key: 'prepared', label: 'Prepared' }}
+                check={{ key: 'prepared', label: 'Prepared', short: 'Prep' }}
                 {editable}
                 category="spells"
                 emptyText="No spells or abilities recorded."
