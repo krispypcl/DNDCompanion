@@ -26,6 +26,8 @@ describe('Banner', () => {
   it('crops rather than stretches, whatever shape the image is', () => {
     expect(source).toMatch(/object-fit: cover/);
     expect(source).not.toMatch(/object-fit: fill/);
+    // And is pushed past the frame, so the photograph's own edges stay out.
+    expect(source).toMatch(/scale\(1\.\d+\)/);
   });
 
   it('belongs to the page, not the window, and lags it as it scrolls', () => {
@@ -33,7 +35,9 @@ describe('Banner', () => {
     // behind rather than following the reader down the page.
     expect(source).toMatch(/position: absolute/);
     expect(source).not.toMatch(/position: (fixed|sticky)/);
-    expect(sheet).toMatch(/\.sheet \{[^}]*position: relative/);
+    // Nothing above it is positioned, so it resolves against the page itself
+    // and runs the full width rather than the sheet's centred column.
+    expect(sheet).not.toMatch(/\.sheet \{[^}]*position: relative/);
     // Held down by a quarter of the page's travel: that is the lag.
     expect(source).toMatch(/scrollY \* 0\.25/);
     expect(source).toMatch(/translate3d\(0, var\(--drift, 0px\), 0\)/);
@@ -79,6 +83,25 @@ describe('Banner', () => {
     for (const rule of rules) {
       const selector = rule.slice(rule.lastIndexOf('\n', rule.indexOf('{')), rule.indexOf('{'));
       expect(selector, rule.trim().slice(0, 60)).toContain('.bannered');
+    }
+  });
+
+  it('keeps what floats over the sheet out of the header', () => {
+    // The header sits above the banner, which makes it a stacking context of
+    // its own: an alert rendered inside it cannot rise over the modules, no
+    // matter what z-index it asks for. Both floating things live at the
+    // sheet's root instead.
+    const header = sheet.slice(sheet.indexOf('<header class="identity"'), sheet.indexOf('</header>'));
+    expect(header).toContain('<SaveIndicator />');
+    expect(header).not.toContain('<StaleBanner');
+    expect(header).not.toContain('<UndoToast');
+    expect(sheet).toMatch(/<UndoToast[\s\S]*?\/>\s*<StaleBanner \/>/);
+
+    for (const f of ['UndoToast', 'StaleBanner']) {
+      const css = readFileSync(`src/lib/components/${f}.svelte`, 'utf8');
+      const declared = [...css.matchAll(/z-index:\s*(\d+)/g)].map((m) => Number(m[1]));
+      // One answer each, and above the modules' own order.
+      expect(declared, f).toEqual([40]);
     }
   });
 
