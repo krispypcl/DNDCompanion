@@ -52,7 +52,19 @@
 
 <div class="wrap" class:standalone>
   <div class="stack">
-    {#if standalone}<p class="brand">DND Companion</p>{/if}
+    {#if standalone}
+      <!-- The same mark the splash shows, so arriving and signing in are
+           plainly the same place. -->
+      <div class="brand">
+        <svg viewBox="0 0 48 48" width="40" height="40" aria-hidden="true">
+          <polygon points="24 3 43 14 43 34 24 45 5 34 5 14" fill="none" stroke="currentColor"
+                   stroke-width="1.5" stroke-linejoin="round" />
+          <polygon points="24 12 34 29 14 29" fill="none" stroke="currentColor"
+                   stroke-width="1.5" stroke-linejoin="round" />
+        </svg>
+        <p>DND Companion</p>
+      </div>
+    {/if}
 
     <section class="card">
       {#if title}<h1>{title}</h1>{/if}
@@ -88,7 +100,12 @@
   .stack { width: 100%; max-width: 23rem; }
   .brand {
     animation: cardIn 0.32s cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
-    margin: 0 0 1rem; text-align: center; font-size: 1.25rem;
+    margin: 0 0 1rem;
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  }
+  .brand svg { color: var(--text); }
+  .brand p {
+    margin: 0; text-align: center; font-size: 1.25rem;
     font-weight: 600; letter-spacing: -0.01em;
   }
   /* Its own page centres in the viewport; embedded, it sits in the flow. */
