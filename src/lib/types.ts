@@ -86,7 +86,10 @@ export type Item = LinkableEntry & { qty?: number; weight?: number; notes?: stri
 export type ClassEntry = { name: string; subclass?: string; level: number };
 
 export type Traits = {
+  /** Armour, weapons, tools and saving throws. Languages are separate: a
+      sheet written before they were split keeps both here. */
   proficiencies?: string;
+  languages?: string;
   allies?: string;
   appearance?: string;
   personality?: string;

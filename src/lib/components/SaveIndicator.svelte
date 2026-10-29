@@ -63,7 +63,7 @@
   }
   .stale-banner button {
     background: var(--accent);
-    color: #1a1a18;
+    color: var(--on-accent);
     border: 0;
     border-radius: 5px;
     padding: 0.35rem 0.7rem;

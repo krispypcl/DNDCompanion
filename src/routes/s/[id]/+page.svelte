@@ -2,6 +2,7 @@
   import { page } from '$app/state';
   import { base } from '$app/paths';
   import AbilityBand from '$lib/components/AbilityBand.svelte';
+  import ModeToggle from '$lib/components/ModeToggle.svelte';
   import CombatActions from '$lib/components/CombatActions.svelte';
   import Currency from '$lib/components/Currency.svelte';
   import DetailsBlock from '$lib/components/DetailsBlock.svelte';
@@ -341,6 +342,7 @@
         </button>
       {/if}
       <a class="back" href="{base}/">Back</a>
+      <ModeToggle />
     </header>
 
     <div class="band">
@@ -627,19 +629,37 @@
         </div>
 
         <div class="profs">
-          <h2 class="cap">Proficiencies &amp; languages</h2>
+          <h2 class="cap">Proficiencies</h2>
           <EditableField
             value={definition.traits?.proficiencies ?? ''}
             {editable}
             type="textarea"
             rows={4}
-            label="Proficiencies & languages"
+            label="Proficiencies"
             placeholder="—"
-            hint="Armour, weapons, tools, saving throws, languages."
+            hint="Armour, weapons, tools, saving throws."
             onchange={(v) =>
               setDefinition({
                 ...definition,
                 traits: { ...(definition.traits ?? {}), proficiencies: String(v) }
+              })}
+          />
+        </div>
+
+        <div class="profs">
+          <h2 class="cap">Languages</h2>
+          <EditableField
+            value={definition.traits?.languages ?? ''}
+            {editable}
+            type="textarea"
+            rows={2}
+            label="Languages"
+            placeholder="—"
+            hint="Common, Thieves' cant, Deep Speech."
+            onchange={(v) =>
+              setDefinition({
+                ...definition,
+                traits: { ...(definition.traits ?? {}), languages: String(v) }
               })}
           />
         </div>
@@ -696,8 +716,7 @@
     width: 6rem; aspect-ratio: 1; border-radius: var(--r); border: 1px solid var(--a-edge);
     flex: none; display: flex; align-items: flex-end; justify-content: center;
     position: relative; overflow: visible;
-    background: linear-gradient(150deg, oklch(32% calc(0.05 * var(--c)) var(--h)),
-                                        oklch(18% calc(0.02 * var(--c)) var(--h)));
+    background: linear-gradient(150deg, var(--portrait-from), var(--portrait-to));
   }
   .portrait img {
     position: absolute; inset: 0; width: 100%; height: 100%;

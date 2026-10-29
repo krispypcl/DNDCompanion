@@ -2,6 +2,7 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import AuthForm from '$lib/components/AuthForm.svelte';
+  import ModeToggle from '$lib/components/ModeToggle.svelte';
   import { sheetRepo } from '$lib/data/sheets';
   import { signIn, signOut } from '$lib/data/session';
   import { blankDefinition } from '$lib/sample';
@@ -90,9 +91,12 @@
 <main>
   <header>
     <h1>DND Companion</h1>
-    {#if $session.user}
-      <button class="ghost" onclick={() => signOut()}>Sign out</button>
-    {/if}
+    <div class="tools">
+      <ModeToggle />
+      {#if $session.user}
+        <button class="ghost" onclick={() => signOut()}>Sign out</button>
+      {/if}
+    </div>
   </header>
 
   {#if !isConfigured}
@@ -163,6 +167,7 @@
 <style>
   main { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
   header { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+  .tools { display: flex; align-items: center; gap: 0.5rem; flex: none; }
   h1 { font-size: 1.5rem; margin: 0 0 0.5rem; }
   h2 { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin: 0; }
   .bar { display: flex; align-items: center; justify-content: space-between; margin: 2rem 0 0.75rem; }

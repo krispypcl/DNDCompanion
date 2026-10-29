@@ -237,7 +237,7 @@
   }
 
   .bar {
-    height: 14px; background: oklch(20% 0.004 286); border-radius: 7px;
+    height: 14px; background: var(--track); border-radius: 7px;
     overflow: hidden; margin: 0.875rem 0 0; display: flex; position: relative;
   }
   /* Eases into place rather than snapping, so the bar is seen to catch up
@@ -245,7 +245,7 @@
   .bar i { display: block; height: 100%; transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
   .cur { background: var(--a-mid); }
   .cur.bloodied, .cur.down { background: var(--danger); }
-  .tmp { background: var(--dim); animation: tempIn 0.4s ease-out; }
+  .tmp { background: var(--temp); animation: tempIn 0.4s ease-out; }
   @keyframes tempIn {
     from { filter: brightness(1.9); }
     to { filter: none; }
