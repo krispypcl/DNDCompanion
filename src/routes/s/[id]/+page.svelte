@@ -12,6 +12,7 @@
   import HitPoints from '$lib/components/HitPoints.svelte';
   import RestButtons from '$lib/components/RestButtons.svelte';
   import SaveIndicator from '$lib/components/SaveIndicator.svelte';
+  import StaleBanner from '$lib/components/StaleBanner.svelte';
   import SkillRail from '$lib/components/SkillRail.svelte';
   import EntryTable from '$lib/components/EntryTable.svelte';
   import Tabs from '$lib/components/Tabs.svelte';
@@ -691,6 +692,7 @@
   </div>
 
   <UndoToast label={toast} onundo={doUndo} onexpire={() => (toast = null)} />
+  <StaleBanner />
 {/if}
 
 <style>
@@ -710,7 +712,9 @@
 
   .centred { max-width: 30rem; margin: 4rem auto; padding: 0 1rem; text-align: center; color: var(--dim); }
   .centred a { color: var(--a); }
-  .sheet { padding: 1.5rem; max-width: 110rem; margin: 0 auto; position: relative; }
+  /* Not positioned: the banner inside it is meant to escape this column and
+     run the width of the page. */
+  .sheet { padding: 1.5rem; max-width: 110rem; margin: 0 auto; }
   .panel {
     background: var(--surface); border: 1px solid var(--line-soft);
     border-radius: var(--r); padding: 1rem; min-width: 0;

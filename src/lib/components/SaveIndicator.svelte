@@ -1,4 +1,7 @@
 <script lang="ts">
+  /** The one-word state of the autosave, beside the sheet's controls. The
+      alert that a write was refused lives in StaleBanner: it floats over the
+      page, and the header is a stacking context of its own. */
   import { sheetStore } from '$lib/stores/sheet';
 
   const LABELS: Record<string, string> = {
@@ -15,13 +18,6 @@
   <span class="indicator {$sheetStore.status}" role="status" title={$sheetStore.message ?? ''}>
     {LABELS[$sheetStore.status]}
   </span>
-{/if}
-
-{#if $sheetStore.status === 'stale'}
-  <div class="stale-banner" role="alert">
-    <span>{$sheetStore.message}</span>
-    <button onclick={() => location.reload()}>Reload</button>
-  </div>
 {/if}
 
 <style>
@@ -44,30 +40,5 @@
     0% { opacity: 1; }
     70% { opacity: 1; }
     100% { opacity: 0.35; }
-  }
-  .stale-banner {
-    position: fixed;
-    inset-inline: 0;
-    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
-    margin-inline: auto;
-    width: min(28rem, calc(100% - 2rem));
-    background: var(--surface);
-    border: 1px solid var(--accent);
-    border-radius: 8px;
-    padding: 0.7rem 0.9rem;
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 0.875rem;
-  }
-  .stale-banner button {
-    background: var(--accent);
-    color: var(--on-accent);
-    border: 0;
-    border-radius: 5px;
-    padding: 0.35rem 0.7rem;
-    font: inherit;
-    cursor: pointer;
   }
 </style>

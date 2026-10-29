@@ -27,6 +27,10 @@
 <style>
   .toast {
     position: fixed;
+    /* Above the modules: a bannered sheet gives its panels a stacking order
+       so they sit over the banner, and anything floating over the sheet has
+       to clear that. Below the splash, which is 60. */
+    z-index: 40;
     inset-inline: 0;
     bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
     margin-inline: auto;
@@ -40,7 +44,6 @@
     justify-content: space-between;
     gap: 1rem;
     font-size: 0.875rem;
-    z-index: 20;
   }
   button {
     background: none;
