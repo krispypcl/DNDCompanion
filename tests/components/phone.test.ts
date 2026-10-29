@@ -78,6 +78,19 @@ describe('splash', () => {
     expect(shell.indexOf('data-known-user')).toBeLessThan(shell.indexOf('<body'));
   });
 
+  it('holds the page still while it is up', () => {
+    const shell = source('src/app.html');
+    // The app hydrates behind the splash; without this its scrollbar shows up
+    // beside a screen that has nothing to scroll.
+    expect(shell).toMatch(/html\.splashing \{ overflow: hidden; \}/);
+    // The gutter is reserved either way, so lifting the lock cannot reflow.
+    expect(shell).toMatch(/scrollbar-gutter: stable/);
+    expect(shell).toMatch(/classList\.add\('splashing'\)/);
+
+    const component = source('src/lib/components/Splash.svelte');
+    expect(component).toMatch(/classList\.remove\('splashing'\)/);
+  });
+
   it('shows the mark in white', () => {
     expect(source('src/app.html')).toMatch(/#splash svg \{ color: oklch\(99/);
   });
