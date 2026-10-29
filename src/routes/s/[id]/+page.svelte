@@ -710,7 +710,7 @@
 
   .centred { max-width: 30rem; margin: 4rem auto; padding: 0 1rem; text-align: center; color: var(--dim); }
   .centred a { color: var(--a); }
-  .sheet { padding: 1.5rem; max-width: 110rem; margin: 0 auto; }
+  .sheet { padding: 1.5rem; max-width: 110rem; margin: 0 auto; position: relative; }
   .panel {
     background: var(--surface); border: 1px solid var(--line-soft);
     border-radius: var(--r); padding: 1rem; min-width: 0;
@@ -728,6 +728,15 @@
     border-color: color-mix(in oklch, var(--line) 70%, transparent);
   }
   .bannered .identity { position: relative; z-index: 1; }
+  /**
+   * The class line is secondary text, and secondary text is a mid grey. Over
+   * a photograph that is unreadable at any tint which still shows the
+   * photograph: dim grey needs a backdrop darker than the banner can be and
+   * still be seen. So on a sheet with a banner it is not secondary any more.
+   * Measured over a deliberately bright test image rather than guessed.
+   */
+  .bannered .sub { color: var(--text); }
+  .bannered .sub :global(.field.readout.empty) { color: var(--label); }
   /* No backdrop-filter, no frost: the module stays readable by being solid. */
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .bannered .panel { background: var(--surface); }
@@ -759,6 +768,10 @@
   .who h1 { margin: 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.015em; }
   .sub :global(input.field) { min-width: 5.5rem; }
   .sub {
+    /* The name sits inside an editable field, whose padding and border push
+       its first letter in. This puts the class line under that letter rather
+       than under the field's edge. */
+    padding-left: calc(0.3rem + 1px);
     margin: 0.3125rem 0 0; color: var(--dim); font-size: 0.875rem;
     display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline;
   }

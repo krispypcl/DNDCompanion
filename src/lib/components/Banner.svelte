@@ -1,13 +1,9 @@
 <script lang="ts">
   /**
-   * The character's banner, behind the whole sheet rather than as a strip at
-   * the top: a diagonal band that enters below the top-left corner and leaves
-   * at about the middle of the ability band's height. It shows in the gaps
-   * between modules, and the modules over it frost rather than hide it.
-   *
-   * The layer is fixed, so the sheet slides over a stationary image, and the
-   * image drifts against that slide at a quarter speed. The sheet is the
-   * thing being read; the banner moves just enough to sit behind it.
+   * The character's banner: the whole top of the sheet, cut off along a
+   * curve that sweeps down from the left. It belongs to the page rather than
+   * to the window, so it scrolls away with the header it sits behind, while
+   * the image inside drifts at three quarters of the page's speed.
    */
   import { onMount } from 'svelte';
   import { prefersReducedMotion } from '$lib/motion';
@@ -21,9 +17,10 @@
     let queued = false;
     const follow = () => {
       queued = false;
-      // A quarter of the page's travel, capped: past a screen or so of
-      // scrolling the band is long gone and there is nothing left to drift.
-      drift = Math.min(window.scrollY * 0.25, 260);
+      /* The layer travels up with the page; holding the image down by a
+         quarter of that is what makes it lag behind. Capped, because once
+         the banner has scrolled past there is nothing left to lag. */
+      drift = Math.min(window.scrollY * 0.25, 220);
     };
     const onScroll = () => {
       if (queued) return;
@@ -36,51 +33,60 @@
   });
 </script>
 
+<!-- The curve is in fractions of the layer's own box, so it keeps its shape
+     at any width without a media query to redraw it. -->
+<svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    <clipPath id="banner-curve" clipPathUnits="objectBoundingBox">
+      <path d="M0,0 H1 V0.74 C0.70,0.99 0.33,0.33 0,0.17 Z" />
+    </clipPath>
+  </defs>
+</svg>
+
 <div class="slash" aria-hidden="true">
-  <!-- object-fit: cover crops the image to the band. It is never stretched:
-       a banner with the wrong proportions loses its edges instead of its
-       shape. -->
+  <!-- object-fit: cover crops to the layer. The image is never stretched: a
+       banner of the wrong proportions loses its edges, not its shape. -->
   <img src={url} alt="" style:--drift="{drift}px" />
   <!-- Earns its keep twice: it holds the contrast the text needs, and its
-       gradient softens the band's long edges so they do not read as a cut. -->
+       gradients keep the curve from ending on a hard line. -->
   <div class="tint"></div>
 </div>
 
 <style>
+  .defs { position: absolute; width: 0; height: 0; overflow: hidden; }
   .slash {
-    position: fixed;
-    inset: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 22rem;
     z-index: 0;
     pointer-events: none;
     overflow: hidden;
-    /* Enters 36px below the top-left corner and leaves with its lower edge
-       at about 272px, the middle of the ability band's height. Pixels rather
-       than percentages: the band is placed against the modules near the top
-       of the page, which do not move when the window gets taller. */
-    clip-path: polygon(0 36px, 100% 152px, 100% 272px, 0 156px);
+    clip-path: url(#banner-curve);
   }
   img {
     position: absolute;
-    inset: -10% 0 -10%;
+    inset: -22% 0;
     width: 100%;
-    height: 120%;
+    height: 144%;
     object-fit: cover;
-    transform: translate3d(0, calc(var(--drift, 0px) * -1), 0);
+    transform: translate3d(0, var(--drift, 0px), 0);
     will-change: transform;
   }
   /**
    * Three gradients, each with a job.
    *
-   * Down the page: feathers the band's long edges, so it ends in a fade
-   * rather than on a cut.
+   * Down the page: holds the image back at the very top, where the name sits,
+   * and softens the curve where it crosses the modules.
    *
    * Across: the name and the class line live at the left, and they are the
    * hardest text on the sheet to protect — dim grey on a mid-grey photograph
-   * is unreadable at any tint that still shows the photograph. So the band is
-   * held near the page colour on the left and opens up as it travels right,
-   * away from the text and into the gaps between modules.
+   * is unreadable at any tint that still shows the photograph. So the image
+   * is held near the page colour on the left and opens up as it travels
+   * right, away from the text.
    *
-   * The ends: fades the band out at both edges of the window.
+   * The ends: fades it out at both edges of the sheet.
    */
   .tint {
     position: absolute;
@@ -88,29 +94,43 @@
     background:
       linear-gradient(
         to bottom,
-        var(--bg) 0%,
-        color-mix(in oklch, var(--bg) 58%, transparent) 30%,
-        color-mix(in oklch, var(--bg) 54%, transparent) 70%,
+        color-mix(in oklch, var(--bg) 62%, transparent) 0%,
+        color-mix(in oklch, var(--bg) 54%, transparent) 20%,
+        color-mix(in oklch, var(--bg) 34%, transparent) 52%,
+        color-mix(in oklch, var(--bg) 30%, transparent) 88%,
         var(--bg) 100%
       ),
       linear-gradient(
         to right,
         var(--bg) 0%,
-        color-mix(in oklch, var(--bg) 88%, transparent) 26%,
-        color-mix(in oklch, var(--bg) 34%, transparent) 62%,
-        color-mix(in oklch, var(--bg) 26%, transparent) 100%
+        color-mix(in oklch, var(--bg) 70%, transparent) 26%,
+        color-mix(in oklch, var(--bg) 26%, transparent) 62%,
+        color-mix(in oklch, var(--bg) 18%, transparent) 100%
       ),
-      linear-gradient(to right, var(--bg) 0%, transparent 10%, transparent 88%, var(--bg) 100%);
+      linear-gradient(to right, var(--bg) 0%, transparent 8%, transparent 90%, var(--bg) 100%);
   }
 
   /**
-   * A phone is one column, so a band across the header would sit behind the
-   * name and the class line with nowhere to escape to — the left-to-right
-   * relief that saves them on a laptop has no room here. It runs below them
-   * instead, across the hit points, where it is read through the frost.
+   * A phone is one column, so the sideways relief that protects the name on a
+   * laptop has no room. The curve is shallower and the layer shorter, so the
+   * image clears the header and is read through the frost of the hit points.
    */
   @media (max-width: 700px) {
-    .slash { clip-path: polygon(0 214px, 100% 292px, 100% 420px, 0 338px); }
+    .slash { height: 26rem; }
+    /* One column, so the header text runs the full width and the sideways
+       relief has nowhere to put it. The tint stays even across instead. */
+    .tint {
+      background:
+        linear-gradient(
+          to bottom,
+          color-mix(in oklch, var(--bg) 78%, transparent) 0%,
+          color-mix(in oklch, var(--bg) 74%, transparent) 26%,
+          color-mix(in oklch, var(--bg) 40%, transparent) 60%,
+          color-mix(in oklch, var(--bg) 34%, transparent) 90%,
+          var(--bg) 100%
+        ),
+        linear-gradient(to right, var(--bg) 0%, transparent 10%, transparent 90%, var(--bg) 100%);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
