@@ -61,7 +61,6 @@
       onclick={() => toggleSave(ability)}
     >
       <b>{sign(saveBonus(definition, ability))}</b>
-      <span>{NAMES[ability]}</span>
     </button>
   {/each}
 </div>
@@ -83,8 +82,8 @@
   }
   .ability:hover { border-color: var(--hover-line); background: var(--hover-bg); }
   .name {
-    display: block; font-size: 0.5875rem; letter-spacing: 0.04em;
-    text-transform: uppercase; color: var(--label);
+    display: block; font-size: 0.78rem; letter-spacing: 0;
+    text-transform: none; color: var(--dim); font-weight: 600;
   }
   .mod {
     display: block; font-size: 1.625rem; font-weight: 600; line-height: 1;
@@ -105,7 +104,7 @@
   }
   .save {
     background: var(--raised); border: 1px solid var(--line-soft);
-    border-radius: var(--r-sm); padding: 0.5rem 0.25rem; text-align: center;
+    border-radius: var(--r-sm); padding: 0.4375rem 0.25rem; text-align: center;
     font: inherit; color: inherit; cursor: pointer; min-width: 0;
     transition: border-color 0.2s ease, background-color 0.2s ease;
   }
@@ -114,9 +113,6 @@
   .save.on { border-color: var(--a-edge); background: var(--a-wash); }
   .save b { display: block; font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
   .save.on b { color: var(--a); }
-  .save span {
-    font-size: 0.5375rem; letter-spacing: 0.03em; text-transform: uppercase; color: var(--dim);
-  }
   @media (max-width: 860px) {
     .abilities, .saves { grid-template-columns: repeat(3, 1fr); }
   }

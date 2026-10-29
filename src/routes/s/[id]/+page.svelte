@@ -17,7 +17,15 @@
   import ThemePicker from '$lib/components/ThemePicker.svelte';
   import UndoToast from '$lib/components/UndoToast.svelte';
   import { sheetRepo } from '$lib/data/sheets';
-  import { formulaContext, modifierOf, passiveScore, weightCarried } from '$lib/rules/derived';
+  import {
+    characterLevel,
+    classLine,
+    classList,
+    formulaContext,
+    modifierOf,
+    passiveScore,
+    weightCarried
+  } from '$lib/rules/derived';
   import { themeStyle } from '$lib/theme';
   import { session } from '$lib/stores/session';
   import { sheetStore } from '$lib/stores/sheet';
@@ -26,6 +34,7 @@
   import type {
     Ability,
     Attack,
+    ClassEntry,
     Definition,
     Feature,
     Item,
@@ -56,12 +65,47 @@
   const sign = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 
   const carried = $derived(definition ? weightCarried(definition) : 0);
+  const classes = $derived(definition ? classList(definition) : []);
+  const totalLevel = $derived(definition ? characterLevel(definition) : 1);
+
+  const CLASS_COLUMNS = [
+    { key: 'name', label: 'Class', width: '45%', placeholder: 'Class' },
+    { key: 'subclass', label: 'Subclass', width: '35%', placeholder: 'Subclass' },
+    { key: 'level', label: 'Level', width: '20%', type: 'number' as const, numeric: true, placeholder: '1' }
+  ];
+
+  /**
+   * Classes are the source; the older single-class fields and the character
+   * level are kept in step so existing sheets, the sheet list and `level`
+   * formulas all keep working.
+   */
+  function saveClasses(rows: ClassEntry[]) {
+    if (!definition) return;
+    const list = rows.map((r) => ({
+      name: String(r.name ?? ''),
+      ...(r.subclass ? { subclass: String(r.subclass) } : {}),
+      level: Number(r.level) || 0
+    }));
+    const total = list.reduce((sum, c) => sum + c.level, 0);
+    const [first] = list;
+    setDefinition({
+      ...definition,
+      identity: {
+        ...definition.identity,
+        classes: list,
+        class: first?.name ?? definition.identity.class,
+        subclass: first?.subclass,
+        level: total || definition.identity.level
+      }
+    });
+  }
 
   const ATTACK_COLUMNS = [
     { key: 'name', label: 'Name', width: '34%', placeholder: 'Longsword' },
     { key: 'bonus', label: 'Hit', width: '13%', numeric: true, placeholder: '+5' },
-    { key: 'damage', label: 'Damage', width: '22%', numeric: true, placeholder: '1d8 + 3' },
-    { key: 'notes', label: 'Notes', width: '31%', muted: true, placeholder: 'Versatile (1d10)' }
+    { key: 'damage', label: 'Damage', width: '18%', numeric: true, placeholder: '1d8 + 3' },
+    { key: 'damageType', label: 'Type', width: '14%', placeholder: 'slashing' },
+    { key: 'notes', label: 'Notes', width: '21%', muted: true, placeholder: 'Versatile (1d10)' }
   ];
   const SPELL_COLUMNS = [
     { key: 'name', label: 'Name', width: '20%', placeholder: 'Shield' },
@@ -77,14 +121,15 @@
     { key: 'weight', label: 'Weight', width: '20%', type: 'number' as const, numeric: true, placeholder: '3' }
   ];
   const TRACKER_COLUMNS = [
-    { key: 'label', label: 'Label', width: '18%', placeholder: 'Second Wind' },
-    { key: 'max', label: 'Max', width: '13%', placeholder: '1 or prof + 1' },
-    { key: 'die', label: 'Die', width: '8%', placeholder: 'd10' },
+    { key: 'label', label: 'Label', width: '16%', placeholder: 'Second Wind' },
+    { key: 'max', label: 'Max', width: '12%', placeholder: '1 or classlevel' },
+    { key: 'die', label: 'Die', width: '7%', placeholder: 'd10' },
     { key: 'type', label: 'Shape', width: '12%', options: ['pips', 'gauge'] as const },
     { key: 'direction', label: 'Direction', width: '12%', options: ['spend', 'accrue'] as const },
     { key: 'resetOn', label: 'Resets on', width: '13%', options: ['manual', 'short', 'long', 'dawn'] as const },
-    { key: 'resetAmount', label: 'Refill', width: '10%', placeholder: 'full' },
-    { key: 'source', label: 'Source', width: '14%', muted: true, placeholder: 'phb' }
+    { key: 'resetAmount', label: 'Refill', width: '9%', placeholder: 'full' },
+    { key: 'class', label: 'Class', width: '12%', placeholder: 'Fighter' },
+    { key: 'source', label: 'Source', width: '12%', muted: true, placeholder: 'phb' }
   ];
   const FEATURE_COLUMNS = [
     { key: 'title', label: 'Title', width: '26%', placeholder: 'Second Wind' },
@@ -250,7 +295,7 @@
         {#if definition.identity.portraitUrl?.trim()}
           <img src={definition.identity.portraitUrl.trim()} alt="" />
         {/if}
-        <span class="lvl">LV {definition.identity.level ?? 1}</span>
+        <span class="lvl">LV {totalLevel}</span>
       </div>
 
       <div class="who">
@@ -260,19 +305,18 @@
                          onchange={(v) => patchIdentity('name', v)} />
         </h1>
         <p class="sub">
-          <EditableField value={definition.identity.class} {editable} label="Class"
-                         placeholder="Class"
-                         onchange={(v) => patchIdentity('class', v)} />
-          <EditableField value={definition.identity.subclass} {editable} label="Subclass"
-                         placeholder="Subclass"
-                         onchange={(v) => patchIdentity('subclass', v)} />
+          <span class="classline" class:none={!classLine(definition)}>
+            {classLine(definition) || 'Class'}
+          </span>
           <EditableField value={definition.identity.ancestry} {editable} label="Ancestry"
                          placeholder="Ancestry"
                          onchange={(v) => patchIdentity('ancestry', v)} />
           <EditableField value={definition.identity.background} {editable} label="Background"
                          placeholder="Background"
                          onchange={(v) => patchIdentity('background', v)} />
-          {#if editable}
+          {#if editable && classes.length > 1}
+            <span class="lvltotal">level {totalLevel}</span>
+          {:else if editable}
             <span class="lvledit">level
               <EditableField value={definition.identity.level} editable={true} type="number"
                              label="Level" placeholder="5"
@@ -385,9 +429,9 @@
               />
               {#if editable}
                 <p class="hint">
-                  Anything you can use goes here, spell or not — the Sheriff&rsquo;s Star charges
-                  as much as a cantrip. Source <code>homebrew</code> marks an entry as yours and
-                  drops the 5e.tools link.
+                  Anything you can cast or activate goes here, spell or not — an item&rsquo;s
+                  charges belong here as much as a cantrip does. Source <code>homebrew</code>
+                  marks an entry as yours and drops the 5e.tools link.
                 </p>
               {/if}
             {:else if tab === 'Equipment'}
@@ -437,12 +481,32 @@
               />
               {#if editable}
                 <p class="hint">
-                  Max accepts a number or a formula over <code>level</code>, <code>prof</code> and
-                  ability modifiers — <code>prof + 1</code>, <code>level / 2</code>. Source
-                  <code>homebrew</code> marks an entry as yours and drops the 5e.tools link.
+                  Max accepts a number or a formula over <code>level</code>,
+                  <code>classlevel</code>, <code>prof</code> and ability modifiers —
+                  <code>prof + 1</code>, <code>classlevel / 2</code>. Name the class on a
+                  feature that scales with it, or multiclassing will inflate it.
                 </p>
               {/if}
             {:else if tab === 'Character'}
+              <h3 class="sub-h">Classes</h3>
+              <EntryTable
+                items={classes}
+                columns={CLASS_COLUMNS}
+                {editable}
+                category="classes"
+                emptyText="No class yet."
+                addLabel="Add class"
+                blank={() => ({ name: '', level: 1 }) as ClassEntry}
+                onchange={(rows) => saveClasses(rows as ClassEntry[])}
+              />
+              {#if editable}
+                <p class="hint">
+                  A multiclass character has a row per class. Character level is the sum, and a
+                  tracker that uses <code>classlevel</code> follows the class you name on it
+                  rather than the total.
+                </p>
+              {/if}
+              <h3 class="sub-h details-h">Details</h3>
               <DetailsBlock {definition} {editable} onchange={setDefinition} />
               {#if editable}
                 <div class="themerow">
@@ -577,6 +641,19 @@
               })}
           />
         </div>
+
+        <div class="profs">
+          <h2 class="cap">Senses</h2>
+          <EditableField
+            value={definition.senses ?? ''}
+            {editable}
+            type="textarea"
+            rows={3}
+            label="Senses"
+            placeholder="Darkvision 60 ft., blindsight, tremorsense."
+            onchange={(v) => setDefinition({ ...definition, senses: String(v) })}
+          />
+        </div>
       </section>
     </div>
   </div>
@@ -639,6 +716,14 @@
   }
   .lvledit { display: inline-flex; gap: 0.3rem; align-items: baseline; }
   .lvledit :global(.field) { text-align: left; width: 2.75rem; field-sizing: fixed; }
+  .lvltotal { color: var(--dim); }
+  .classline { color: var(--text); }
+  .classline.none { color: var(--dim); }
+  .sub-h {
+    font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--label); font-weight: 600; margin: 0 0 0.625rem;
+  }
+  .details-h { margin-top: 1.75rem; }
   .edit {
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font: inherit;
@@ -665,7 +750,7 @@
     display: grid; grid-template-columns: minmax(16rem, 1fr) 2.05fr;
     gap: 1rem; margin-bottom: 1rem; align-items: stretch;
   }
-  .hp { display: flex; flex-direction: column; }
+  .hp { display: flex; flex-direction: column; position: relative; overflow: hidden; }
 
   .main { display: grid; grid-template-columns: 16.5rem 1fr 18.75rem; gap: 1rem; align-items: stretch; }
   .rail-skills { order: -1; }

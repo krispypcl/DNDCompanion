@@ -40,7 +40,7 @@
 </script>
 
 <details class="actions">
-  <summary><span class="cap">In combat</span></summary>
+  <summary><span class="cap">General actions</span></summary>
   {#each GROUPS as group (group.label)}
     <section>
       <h3>{group.label}</h3>

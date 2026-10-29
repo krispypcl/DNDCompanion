@@ -3,7 +3,7 @@ import { clampSpent, trackerMax, trackerRemaining } from '$lib/rules/tracker';
 import type { FormulaContext } from '$lib/rules/formula';
 import type { Tracker } from '$lib/types';
 
-const ctx: FormulaContext = { level: 5, prof: 3, str: 1, dex: 4, con: 3, int: -1, wis: 2, cha: 4 };
+const ctx: FormulaContext = { level: 5, classlevel: 5, prof: 3, str: 1, dex: 4, con: 3, int: -1, wis: 2, cha: 4 };
 
 const tracker = (over: Partial<Tracker> = {}): Tracker => ({
   id: 't',

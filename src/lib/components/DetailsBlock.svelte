@@ -134,7 +134,9 @@
     height: auto;
     width: auto;
     aspect-ratio: 1;
-    min-width: 5.5rem;
+    min-width: 4rem;
+    max-width: 5.5rem;
+    max-height: 5.5rem;
     object-fit: cover;
     border-radius: var(--r);
     border: 1px solid var(--line);

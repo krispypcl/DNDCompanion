@@ -4,7 +4,7 @@ import { FormulaError, evaluateFormula, type FormulaContext } from '$lib/rules/f
 // Loka at level 5: proficiency +3, DEX 18 (+4), CHA 18 (+4), INT 9 (-1).
 const ctx: FormulaContext = {
   level: 5,
-  prof: 3,
+  classlevel: 5, prof: 3,
   str: 1,
   dex: 4,
   con: 3,
