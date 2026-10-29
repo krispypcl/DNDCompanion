@@ -93,11 +93,11 @@ describe('Banner', () => {
     // sheet's root instead.
     const header = sheet.slice(sheet.indexOf('<header class="identity"'), sheet.indexOf('</header>'));
     expect(header).toContain('<SaveIndicator />');
-    expect(header).not.toContain('<StaleBanner');
+    expect(header).not.toContain('<SaveAlert');
     expect(header).not.toContain('<UndoToast');
-    expect(sheet).toMatch(/<UndoToast[\s\S]*?\/>\s*<StaleBanner \/>/);
+    expect(sheet).toMatch(/<UndoToast[\s\S]*?\/>\s*<SaveAlert \/>/);
 
-    for (const f of ['UndoToast', 'StaleBanner']) {
+    for (const f of ['UndoToast', 'SaveAlert']) {
       const css = readFileSync(`src/lib/components/${f}.svelte`, 'utf8');
       const declared = [...css.matchAll(/z-index:\s*(\d+)/g)].map((m) => Number(m[1]));
       // One answer each, and above the modules' own order.

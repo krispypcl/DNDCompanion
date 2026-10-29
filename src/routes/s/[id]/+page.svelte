@@ -12,7 +12,7 @@
   import HitPoints from '$lib/components/HitPoints.svelte';
   import RestButtons from '$lib/components/RestButtons.svelte';
   import SaveIndicator from '$lib/components/SaveIndicator.svelte';
-  import StaleBanner from '$lib/components/StaleBanner.svelte';
+  import SaveAlert from '$lib/components/SaveAlert.svelte';
   import SkillRail from '$lib/components/SkillRail.svelte';
   import EntryTable from '$lib/components/EntryTable.svelte';
   import Tabs from '$lib/components/Tabs.svelte';
@@ -341,17 +341,23 @@
         </p>
       </div>
 
-      <SaveIndicator />
-      {#if $canUndo}
-        <button class="undo" onclick={doUndo}>Undo {$lastLabel}</button>
-      {/if}
-      {#if isOwner}
-        <button class="edit" aria-pressed={editing} onclick={() => (editing = !editing)}>
-          {editing ? 'Done' : 'Edit'}
-        </button>
-      {/if}
-      <a class="back" href="{base}/">Back</a>
-      <ModeToggle />
+      <!-- One group, so they wrap together: loose in the header the status
+           dot was left stranded at the end of the name's line on a phone. -->
+      <div class="controls">
+        <SaveIndicator />
+        {#if isOwner}
+          <button class="edit" aria-pressed={editing} onclick={() => (editing = !editing)}>
+            {editing ? 'Done' : 'Edit'}
+          </button>
+        {/if}
+        <a class="back" href="{base}/">Back</a>
+        <ModeToggle />
+        <!-- Last, because it comes and goes: ahead of the others it moved
+             them sideways the moment anything became undoable. -->
+        {#if $canUndo}
+          <button class="undo" onclick={doUndo}>Undo <span class="what">{$lastLabel}</span></button>
+        {/if}
+      </div>
     </header>
 
     <div class="band">
@@ -692,7 +698,7 @@
   </div>
 
   <UndoToast label={toast} onundo={doUndo} onexpire={() => (toast = null)} />
-  <StaleBanner />
+  <SaveAlert />
 {/if}
 
 <style>
@@ -769,6 +775,7 @@
     padding: 0.0625rem 0.5rem; letter-spacing: 0.02em; white-space: nowrap;
   }
   .who { flex: 1 1 auto; min-width: 0; }
+  .controls { display: flex; align-items: center; gap: 0.5rem; flex: none; }
   .who h1 { margin: 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.015em; }
   .sub :global(input.field) { min-width: 5.5rem; }
   .sub {
@@ -801,12 +808,16 @@
   .edit[aria-pressed='true'] { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
   .edit, .undo, .back { transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease; }
   .edit:active, .undo:active, .back:active { transform: translateY(1px); }
+  /* A surface of its own: it sits over the banner, where an outline with
+     nothing behind it was hard to pick out, and it is the one control here
+     that appears because something just happened. */
   .undo {
-    background: none; border: 1px solid var(--line); color: var(--dim);
+    background: var(--a-wash); border: 1px solid var(--a-edge); color: var(--a);
     border-radius: var(--r-sm); padding: 0.375rem 0.75rem; font: inherit;
     font-size: 0.8125rem; cursor: pointer; flex: none;
+    transition: background-color 0.18s ease, border-color 0.18s ease;
   }
-  .undo:hover { border-color: var(--a-edge); color: var(--a); }
+  .undo:hover { border-color: var(--a); background: var(--a-edge); color: var(--text); }
   .back {
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font-size: 0.8125rem;
@@ -921,6 +932,10 @@
   }
 
   @media (max-width: 700px) {
+    /* Just "Undo" here: with the action named as well it is wide enough to
+       wrap onto a second row, which grows the header and pushes the sheet
+       down — the thing this row is arranged to avoid. */
+    .undo .what { display: none; }
     /* The header ran to a third of the screen before a single hit point was
        visible. The portrait gives most of that back. */
     .portrait { width: 4rem; }
