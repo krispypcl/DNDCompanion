@@ -3,6 +3,7 @@
  * the ability it is scored off. Asserting the DOM nesting is what makes the
  * visual alignment a guarantee rather than a coincidence of two grids.
  */
+import { readFileSync } from 'node:fs';
 import { render, screen } from '@testing-library/svelte';
 import { describe, expect, it, vi } from 'vitest';
 import SkillRail from '$lib/components/SkillRail.svelte';
@@ -112,6 +113,38 @@ describe('AbilityColumns', () => {
     (screen.getByLabelText('Athletics proficiency') as HTMLButtonElement).click();
     const next = onchange.mock.calls.at(-1)![0] as Definition;
     expect(next.skills.athletics).toEqual({ proficient: true });
+  });
+
+  it('says which of the three states a skill is in', () => {
+    // Half filled for proficiency, filled for expertise: the classes carry
+    // the shape, and the title says it in words for anyone hovering.
+    const states: [Record<string, unknown>, RegExp | null, string][] = [
+      [{}, null, 'Not proficient'],
+      [{ proficient: true }, /\bon\b/, 'Proficient'],
+      [{ proficient: true, expertise: true }, /expert/, 'Expertise']
+    ];
+    for (const [skills, cls, title] of states) {
+      const { unmount } = render(SkillRail, {
+        props: {
+          definition: { ...loka, skills: { athletics: skills } } as Definition,
+          editable: true,
+          onchange: () => {}
+        }
+      });
+      const dot = screen.getByLabelText('Athletics proficiency') as HTMLButtonElement;
+      expect(dot.title, title).toBe(title);
+      if (cls) expect(dot.className, title).toMatch(cls);
+      else expect(dot.className, title).not.toMatch(/\bon\b/);
+      if (title !== 'Expertise') expect(dot.className, title).not.toMatch(/expert/);
+      unmount();
+    }
+  });
+
+  it('draws proficiency as half a circle and expertise as a whole one', () => {
+    const css = readFileSync('src/lib/components/SkillRail.svelte', 'utf8');
+    const on = css.slice(css.indexOf('.dot.on {'), css.indexOf('.name {'));
+    expect(on).toMatch(/linear-gradient\(90deg[^)]*\) 0 50%, transparent 50%/);
+    expect(on).toMatch(/\.dot\.expert \{[^}]*background-color: var\(--a\)/);
   });
 
   it('gives a viewer no working controls', () => {
