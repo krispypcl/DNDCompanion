@@ -10,6 +10,7 @@ import {
   classLevels,
   classLine,
   classList,
+  saveExtra,
   spellSaveDC,
   weightCarried
 } from '$lib/rules/derived';
@@ -219,5 +220,43 @@ describe('classlevel in a tracker formula', () => {
 
   it('still treats level as the character total', () => {
     expect(trackerMax(tracker({ max: 'level', class: 'Gunslinger' }), ctx)).toBe(7);
+  });
+});
+
+describe('saving throw bonuses', () => {
+  const base = { ...loka, saves: { dex: true } } as Definition;
+
+  it('is modifier plus proficiency with no bonuses', () => {
+    expect(saveBonus(base, 'dex')).toBe(7); // DEX 4 + prof 3
+    expect(saveBonus(base, 'str')).toBe(1); // not proficient
+    expect(saveExtra(base, 'dex')).toBe(0);
+  });
+
+  it('adds a bonus that applies to every save', () => {
+    const cloaked = { ...base, saveBonusAll: 1 } as Definition;
+    expect(saveBonus(cloaked, 'dex')).toBe(8);
+    expect(saveBonus(cloaked, 'str')).toBe(2);
+    expect(saveExtra(cloaked, 'str')).toBe(1);
+  });
+
+  it('adds a bonus for one ability on top of the global one', () => {
+    const both = { ...base, saveBonusAll: 1, saveBonuses: { con: 2 } } as Definition;
+    expect(saveBonus(both, 'con')).toBe(3 + 0 + 1 + 2); // CON mod 3, not proficient
+    expect(saveBonus(both, 'dex')).toBe(8); // global only
+    expect(saveExtra(both, 'con')).toBe(3);
+  });
+
+  it('takes a negative bonus as written', () => {
+    expect(saveBonus({ ...base, saveBonusAll: -1 } as Definition, 'dex')).toBe(6);
+  });
+
+  it('ignores a bonus that is not a number rather than returning NaN', () => {
+    const junk = { ...base, saveBonusAll: 'x', saveBonuses: { dex: null } } as unknown as Definition;
+    expect(saveBonus(junk, 'dex')).toBe(7);
+  });
+
+  // A sheet saved before this existed has neither field.
+  it('is unchanged for a sheet with no bonus fields', () => {
+    expect(saveBonus(loka, 'dex')).toBe(7);
   });
 });
