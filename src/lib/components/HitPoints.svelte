@@ -33,6 +33,41 @@
 
   let amount = $state(1);
 
+  /**
+   * A damage or heal leaves a ghost on the bar: the stretch that was lost or
+   * gained, in the colour of what happened, fading out. Without it the bar
+   * just arrives at a new length and you cannot tell how far it moved.
+   */
+  let ghost = $state<{ left: number; width: number; kind: 'damage' | 'heal' } | null>(null);
+  let pulse = $state(0);
+  /* Plain variables: reading a $state inside the effect would make the effect
+     depend on its own write, and returning a cleanup would cancel the timer
+     on the very next run. Both cost the first damage its ghost. */
+  let previous = -1;
+  let seq = 0;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
+  $effect(() => {
+    const current = sheetState.hpCurrent;
+    const span = barTotal;
+    if (previous === -1 || span === 0) {
+      previous = current;
+      return;
+    }
+    if (current === previous) return;
+    const from = pct(previous);
+    const to = pct(current);
+    ghost =
+      current < previous
+        ? { left: to, width: Math.max(from - to, 0.8), kind: 'damage' }
+        : { left: from, width: Math.max(to - from, 0.8), kind: 'heal' };
+    previous = current;
+    seq += 1;
+    pulse = seq;
+    clearTimeout(timer);
+    timer = setTimeout(() => (ghost = null), 700);
+  });
+
   const hpMax = $derived(definition.combat?.hpMax ?? 0);
   const ratio = $derived(hpMax > 0 ? Math.min(1, sheetState.hpCurrent / hpMax) : 0);
   /* Temp HP sits beyond the maximum, so the bar is scaled to both and the
@@ -56,7 +91,11 @@
 
 <div class="meter">
 <div class="hp-readout">
-  <strong class:bloodied class:down><CountUp value={sheetState.hpCurrent} /></strong>
+  {#key pulse}
+    <strong class:bloodied class:down class:beat={pulse > 0}>
+      <CountUp value={sheetState.hpCurrent} />
+    </strong>
+  {/key}
   <span class="max">/
     <EditableField value={hpMax} editable={editDefinition} type="number" label="Max HP"
                    onchange={(v) => patchCombat('hpMax', Number(v))} />
@@ -76,7 +115,14 @@
 
 <div class="bar" aria-hidden="true">
   <i class="cur" class:bloodied class:down style:width="{pct(sheetState.hpCurrent)}%"></i>
-  <i class="tmp" style:width="{pct(sheetState.hpTemp)}%"></i>
+  {#key sheetState.hpTemp}
+    <i class="tmp" style:width="{pct(sheetState.hpTemp)}%"></i>
+  {/key}
+  {#if ghost}
+    {#key pulse}
+      <i class="ghost {ghost.kind}" style:left="{ghost.left}%" style:width="{ghost.width}%"></i>
+    {/key}
+  {/if}
 </div>
 </div>
 
@@ -155,16 +201,37 @@
   }
 
   .bar {
-    height: 10px; background: oklch(20% 0.004 286); border-radius: 5px;
-    overflow: hidden; margin: 0.75rem 0 0; display: flex;
+    height: 14px; background: oklch(20% 0.004 286); border-radius: 7px;
+    overflow: hidden; margin: 0.875rem 0 0; display: flex; position: relative;
   }
   .bar i { display: block; height: 100%; transition: width 0.35s ease; }
   .cur { background: var(--a-mid); }
   .cur.bloodied, .cur.down { background: var(--danger); }
-  .tmp { background: var(--dim); }
+  .tmp { background: var(--dim); animation: tempIn 0.4s ease-out; }
+  @keyframes tempIn {
+    from { filter: brightness(1.9); }
+    to { filter: none; }
+  }
+  .ghost {
+    position: absolute; top: 0; bottom: 0;
+    animation: ghostOut 0.7s ease-out forwards;
+    pointer-events: none;
+  }
+  .ghost.damage { background: var(--danger); }
+  .ghost.heal { background: var(--a-hi); }
+  @keyframes ghostOut {
+    0% { opacity: 0.95; }
+    35% { opacity: 0.95; }
+    100% { opacity: 0; }
+  }
+  .beat { animation: beat 0.45s cubic-bezier(0.2, 0.8, 0.3, 1); }
+  @keyframes beat {
+    0% { transform: scale(1); }
+    35% { transform: scale(1.07); }
+    100% { transform: scale(1); }
+  }
   /* Side by side, so the row is the height the rest buttons were. */
-  .deaths { display: flex; gap: 1.25rem; align-items: center; justify-content: center;
-            padding: 0.5rem 0; }
+  .deaths { display: flex; gap: 1.25rem; align-items: center; justify-content: center; }
   .drow { display: flex; align-items: center; gap: 0.375rem; }
   .kind {
     font-size: 0.5875rem; letter-spacing: 0.08em; text-transform: uppercase;
@@ -181,7 +248,12 @@
   .meter { margin-top: auto; }
   .actions { padding-top: 0.75rem; }
   .hprow { display: flex; gap: 0.5rem; }
-  .restrow { margin-top: 0.625rem; padding-top: 0.625rem; border-top: 1px solid var(--line-soft); }
+  /* Fixed height, so swapping rests for death saves cannot resize the module. */
+  .restrow {
+    margin-top: 0.625rem; padding-top: 0.625rem; border-top: 1px solid var(--line-soft);
+    min-height: 3.125rem; display: flex; align-items: center;
+  }
+  .restrow > :global(*) { flex: 1; }
   .restrow :global(.rests) { display: flex; gap: 0.5rem; }
   .restrow :global(.rests button) { flex: 1 1 0; }
   .hprow input {

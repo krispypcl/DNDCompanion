@@ -37,12 +37,7 @@
     { key: 'ideals', label: 'Ideals', placeholder: 'What they believe in.' },
     { key: 'bonds', label: 'Bonds', placeholder: 'Who and what they will not abandon.' },
     { key: 'flaws', label: 'Flaws', placeholder: 'What gets them into trouble.' },
-    { key: 'allies', label: 'Allies & organizations', placeholder: 'Who they can call on.' },
-    {
-      key: 'proficiencies',
-      label: 'Proficiencies & languages',
-      placeholder: 'Armour, weapons, tools, saving throws, languages.'
-    }
+    { key: 'allies', label: 'Allies & organizations', placeholder: 'Who they can call on.' }
   ];
 
   const portrait = $derived(definition.identity.portraitUrl?.trim() ?? '');
@@ -89,20 +84,6 @@
       </div>
     {/each}
 
-    <div>
-      <dt>Ability save DC</dt>
-      <dd>
-        <EditableField
-          value={definition.abilitySaveDc ?? ''}
-          {editable}
-          type="number"
-          label="Ability save DC"
-          placeholder="8 + prof + mod"
-          onchange={(v) =>
-            onchange({ ...definition, abilitySaveDc: v === '' ? undefined : Number(v) })}
-        />
-      </dd>
-    </div>
   </dl>
 
   {#if editable}
@@ -143,26 +124,33 @@
     display: flex;
     flex-wrap: wrap;
     gap: 1rem 1.5rem;
-    align-items: flex-start;
+    align-items: stretch;
     padding-bottom: 1.25rem;
     border-bottom: 1px solid var(--line-soft);
   }
+  /* Square, and as tall as the two rows of details beside it. */
   .portrait {
-    width: 5.5rem;
+    align-self: stretch;
+    height: auto;
+    width: auto;
     aspect-ratio: 1;
+    min-width: 5.5rem;
     object-fit: cover;
     border-radius: var(--r);
     border: 1px solid var(--line);
     flex: none;
   }
+  /* Ten details, two rows of five. */
   dl {
     margin: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+    grid-template-columns: repeat(5, 1fr);
     gap: 0.75rem 1.25rem;
     flex: 1 1 18rem;
     min-width: 0;
   }
+  @media (max-width: 900px) { dl { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 560px) { dl { grid-template-columns: repeat(2, 1fr); } }
   dl > div { text-align: center; }
   dt {
     font-size: 0.6875rem;

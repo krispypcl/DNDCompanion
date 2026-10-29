@@ -80,7 +80,7 @@
     { key: 'label', label: 'Label', width: '18%', placeholder: 'Second Wind' },
     { key: 'max', label: 'Max', width: '13%', placeholder: '1 or prof + 1' },
     { key: 'die', label: 'Die', width: '8%', placeholder: 'd10' },
-    { key: 'type', label: 'Shape', width: '12%', options: ['pips', 'counter', 'gauge'] as const },
+    { key: 'type', label: 'Shape', width: '12%', options: ['pips', 'gauge'] as const },
     { key: 'direction', label: 'Direction', width: '12%', options: ['spend', 'accrue'] as const },
     { key: 'resetOn', label: 'Resets on', width: '13%', options: ['manual', 'short', 'long', 'dawn'] as const },
     { key: 'resetAmount', label: 'Refill', width: '10%', placeholder: 'full' },
@@ -256,21 +256,21 @@
       <div class="who">
         <h1>
           <EditableField value={definition.identity.name} {editable} label="Name"
-                         hint="Character"
+                         placeholder="Character name"
                          onchange={(v) => patchIdentity('name', v)} />
         </h1>
         <p class="sub">
           <EditableField value={definition.identity.class} {editable} label="Class"
-                         placeholder="Class" hint="Fighter"
+                         placeholder="Class"
                          onchange={(v) => patchIdentity('class', v)} />
           <EditableField value={definition.identity.subclass} {editable} label="Subclass"
-                         placeholder="Subclass" hint="Champion"
+                         placeholder="Subclass"
                          onchange={(v) => patchIdentity('subclass', v)} />
           <EditableField value={definition.identity.ancestry} {editable} label="Ancestry"
-                         placeholder="Ancestry" hint="Human"
+                         placeholder="Ancestry"
                          onchange={(v) => patchIdentity('ancestry', v)} />
           <EditableField value={definition.identity.background} {editable} label="Background"
-                         placeholder="Background" hint="Soldier"
+                         placeholder="Background"
                          onchange={(v) => patchIdentity('background', v)} />
           {#if editable}
             <span class="lvledit">level
@@ -332,6 +332,7 @@
                 blank={() => ({ name: '' }) as Attack}
                 onchange={(attacks) => setDefinition({ ...definition, attacks: attacks as Attack[] })}
               />
+              <CombatActions />
             {:else if tab === 'Spells'}
               <div class="casting">
                 <div>
@@ -382,6 +383,13 @@
                 blank={() => ({ name: '' }) as Spell}
                 onchange={(spells) => setDefinition({ ...definition, spells: spells as Spell[] })}
               />
+              {#if editable}
+                <p class="hint">
+                  Anything you can use goes here, spell or not — the Sheriff&rsquo;s Star charges
+                  as much as a cantrip. Source <code>homebrew</code> marks an entry as yours and
+                  drops the 5e.tools link.
+                </p>
+              {/if}
             {:else if tab === 'Equipment'}
               <EntryTable
                 items={definition.equipment ?? []}
@@ -393,6 +401,12 @@
                 blank={() => ({ name: '', qty: 1 }) as Item}
                 onchange={(equipment) => setDefinition({ ...definition, equipment: equipment as Item[] })}
               />
+              {#if editable}
+                <p class="hint">
+                  Weight is per item, so an amount of two counts twice in the total. Leave it blank
+                  for anything whose weight does not matter.
+                </p>
+              {/if}
             {:else if tab === 'Features'}
               <EntryTable
                 items={definition.features ?? []}
@@ -404,6 +418,12 @@
                 blank={() => ({ title: '', body: '' }) as Feature}
                 onchange={(features) => setDefinition({ ...definition, features: features as Feature[] })}
               />
+              {#if editable}
+                <p class="hint">
+                  Class features, feats and anything an item grants. Source <code>homebrew</code>
+                  marks an entry as yours and drops the 5e.tools link.
+                </p>
+              {/if}
             {:else if tab === 'Trackers'}
               <EntryTable
                 items={trackerRows}
@@ -541,7 +561,22 @@
           </div>
         </div>
 
-        <CombatActions />
+        <div class="profs">
+          <h2 class="cap">Proficiencies &amp; languages</h2>
+          <EditableField
+            value={definition.traits?.proficiencies ?? ''}
+            {editable}
+            type="textarea"
+            rows={4}
+            label="Proficiencies & languages"
+            placeholder="Armour, weapons, tools, saving throws, languages."
+            onchange={(v) =>
+              setDefinition({
+                ...definition,
+                traits: { ...(definition.traits ?? {}), proficiencies: String(v) }
+              })}
+          />
+        </div>
       </section>
     </div>
   </div>
@@ -603,7 +638,7 @@
     display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline;
   }
   .lvledit { display: inline-flex; gap: 0.3rem; align-items: baseline; }
-  .lvledit :global(.field) { text-align: left; }
+  .lvledit :global(.field) { text-align: left; width: 2.75rem; field-sizing: fixed; }
   .edit {
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font: inherit;
@@ -673,6 +708,12 @@
   .passives .cap:first-child { margin-bottom: 0.625rem; }
   .money { padding-top: 1.25rem; }
   .money .cap { margin-bottom: 0.5rem; }
+  .profs { padding-top: 1.25rem; }
+  .profs .cap { margin-bottom: 0.5rem; }
+  .profs :global(.field) {
+    width: 100%; field-sizing: fixed; display: block;
+    white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.8125rem;
+  }
   .carried {
     display: flex; justify-content: space-between; font-size: 0.8125rem;
     color: var(--dim); margin-top: 0.625rem; padding-top: 0.5rem;

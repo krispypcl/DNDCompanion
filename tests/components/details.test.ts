@@ -45,21 +45,18 @@ describe('DetailsBlock', () => {
 
   // Background moved to the identity line, player was dropped, and initiative
   // is edited in the defense module where it is read.
-  it('no longer carries background, player or initiative', () => {
+  it('no longer carries background, player, initiative, save DC or proficiencies', () => {
     render(DetailsBlock, {
       props: { definition: definition(), editable: true, onchange: () => {} }
     });
     expect(screen.queryByLabelText('Background')).toBeNull();
     expect(screen.queryByLabelText('Player')).toBeNull();
     expect(screen.queryByLabelText('Initiative bonus')).toBeNull();
+    // Ability save DC is edited in the defense module; proficiencies in the rail.
+    expect(screen.queryByLabelText('Ability save DC')).toBeNull();
+    expect(screen.queryByLabelText('Proficiencies & languages')).toBeNull();
   });
 
-  it('offers a proficiencies and languages field', () => {
-    render(DetailsBlock, {
-      props: { definition: definition(), editable: true, onchange: () => {} }
-    });
-    expect(screen.getByLabelText('Proficiencies & languages')).toBeTruthy();
-  });
 
   it('shows a placeholder portrait when none is set, so the row keeps its height', () => {
     const { container } = render(DetailsBlock, {
