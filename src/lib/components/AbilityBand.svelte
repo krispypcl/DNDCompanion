@@ -30,11 +30,15 @@
     return parts.join(' + ');
   }
 
-  /** An empty field clears the bonus rather than writing a zero. */
+  /** Zero is the default, so an emptied field reads as 0. It is dropped from
+      the stored object rather than written as a 0, which keeps a sheet that
+      has no bonuses free of six pointless keys; `saveExtra` reads a missing
+      one as zero either way. */
   function setBonus(ability: Ability, raw: number | string) {
     const next = { ...(definition.saveBonuses ?? {}) };
-    if (raw === '' || Number.isNaN(Number(raw))) delete next[ability];
-    else next[ability] = Number(raw);
+    const value = raw === '' ? 0 : Number(raw);
+    if (!Number.isFinite(value) || value === 0) delete next[ability];
+    else next[ability] = value;
     onchange({ ...definition, saveBonuses: next });
   }
 
@@ -82,12 +86,10 @@
            mode does not move the band. -->
       <span class="bonus">
         <EditableField
-          value={definition.saveBonuses?.[ability] ?? ''}
+          value={saveExtra(definition, ability)}
           {editable}
           type="number"
-          display={saveExtra(definition, ability) !== 0
-            ? sign(saveExtra(definition, ability))
-            : '—'}
+          display={sign(saveExtra(definition, ability))}
           label="{NAMES[ability]} saving throw bonus"
           onchange={(v) => setBonus(ability, v)}
         />
@@ -103,8 +105,14 @@
     color: var(--label); font-weight: 600;
   }
   .abilities, .saves { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.625rem; }
-  .abilities { margin-top: 0.625rem; }
-  .saves { margin-top: 0.625rem; }
+  /* The title stays at the top of the module and the two rows sit at its
+     foot, so the band lines up with the hit point module beside it. */
+  .abilities { margin-top: auto; padding-top: 0.625rem; }
+  .saves {
+    margin-top: 0.875rem;
+    padding-top: 0.875rem;
+    border-top: 1px solid var(--line-soft);
+  }
   .ability {
     background: var(--raised); border: 1px solid var(--line);
     border-radius: var(--r); padding: 0.625rem 0.5rem 0.5rem; text-align: center; min-width: 0;

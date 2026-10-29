@@ -43,10 +43,10 @@ describe('AbilityBand', () => {
     expect(cell?.querySelector('.bonus')?.textContent?.trim()).toBe('+2');
   });
 
-  it('shows a dash where nothing was written, so the row keeps its shape', () => {
+  it('reads an unwritten bonus as zero rather than as nothing', () => {
     render(AbilityBand, { props: props(definition(), false) });
     const cell = screen.getByLabelText('Wisdom saving throw proficiency').closest('.save');
-    expect(cell?.querySelector('.bonus')?.textContent?.trim()).toBe('—');
+    expect(cell?.querySelector('.bonus')?.textContent?.trim()).toBe('+0');
   });
 
   it('offers a bonus field per ability and no global one', () => {
@@ -55,10 +55,11 @@ describe('AbilityBand', () => {
       expect(screen.getByLabelText(`${name} saving throw bonus`), name).toBeTruthy();
     }
     expect((screen.getByLabelText('Dexterity saving throw bonus') as HTMLInputElement).value).toBe('1');
+    expect((screen.getByLabelText('Wisdom saving throw bonus') as HTMLInputElement).value).toBe('0');
     expect(screen.queryByLabelText(/all saves/i)).toBeNull();
   });
 
-  it('clears a bonus rather than writing a zero when the field is emptied', () => {
+  it('takes an emptied field as zero and leaves no key behind', () => {
     let next: Definition | null = null;
     render(AbilityBand, {
       props: {
@@ -78,5 +79,11 @@ describe('AbilityBand', () => {
     const source = readFileSync('src/lib/components/AbilityBand.svelte', 'utf8');
     const score = source.slice(source.indexOf('.score {'), source.indexOf('.score :global'));
     expect(score).not.toMatch(/border-top/);
+  });
+
+  it('rules off the saving throws from the abilities above them', () => {
+    const source = readFileSync('src/lib/components/AbilityBand.svelte', 'utf8');
+    const saves = source.slice(source.indexOf('.saves {'), source.indexOf('.ability {'));
+    expect(saves).toMatch(/border-top: 1px solid/);
   });
 });
