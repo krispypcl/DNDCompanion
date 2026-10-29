@@ -1,17 +1,32 @@
 <script lang="ts">
   /**
-   * Someone else's write landed first and this tab's was refused. It floats
-   * over the sheet, so it is rendered at the sheet's root rather than inside
-   * the header: a header that sits above the banner is a stacking context,
-   * and an alert inside one cannot rise above the modules.
+   * Something was written and did not land: another tab got there first, or
+   * the save failed outright. The sheet still shows what was typed, so this
+   * says so where it cannot be missed and cannot displace anything — a save
+   * that quietly did not happen is the one failure worth interrupting for.
+   *
+   * It floats at the sheet's root rather than in the header, which sits above
+   * the banner and is therefore a stacking context of its own: an alert
+   * inside one cannot rise over the modules whatever z-index it asks for.
    */
   import { sheetStore } from '$lib/stores/sheet';
+
+  // `unsaved` is also the ordinary "queued" state; only the one carrying a
+  // message is a failure.
+  const stale = $derived($sheetStore.status === 'stale');
+  const shown = $derived(
+    stale ||
+      $sheetStore.status === 'error' ||
+      ($sheetStore.status === 'unsaved' && Boolean($sheetStore.message))
+  );
 </script>
 
-{#if $sheetStore.status === 'stale'}
+{#if shown}
   <div class="stale-banner" role="alert">
-    <span>{$sheetStore.message}</span>
-    <button onclick={() => location.reload()}>Reload</button>
+    <span>{$sheetStore.message ?? 'Could not save'}</span>
+    {#if stale}
+      <button onclick={() => location.reload()}>Reload</button>
+    {/if}
   </div>
 {/if}
 
