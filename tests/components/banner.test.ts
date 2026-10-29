@@ -28,11 +28,31 @@ describe('Banner', () => {
     expect(source).not.toMatch(/object-fit: fill/);
   });
 
-  it('is fixed to the window, and drifts against the page rather than with it', () => {
-    expect(source).toMatch(/position: fixed/);
+  it('belongs to the page, not the window, and lags it as it scrolls', () => {
+    // Anchored to the sheet, so it scrolls away with the header it sits
+    // behind rather than following the reader down the page.
+    expect(source).toMatch(/position: absolute/);
+    expect(source).not.toMatch(/position: (fixed|sticky)/);
+    expect(sheet).toMatch(/\.sheet \{[^}]*position: relative/);
+    // Held down by a quarter of the page's travel: that is the lag.
     expect(source).toMatch(/scrollY \* 0\.25/);
-    // A fixed layer that captured clicks would break every control under it.
+    expect(source).toMatch(/translate3d\(0, var\(--drift, 0px\), 0\)/);
+    // A layer over the sheet that captured clicks would break every control.
     expect(source).toMatch(/pointer-events: none/);
+  });
+
+  it('is the whole top of the sheet, cut off along a curve', () => {
+    const { container } = render(Banner, { props: { url: 'https://example.test/b.png' } });
+    const path = container.querySelector('clipPath path')!;
+    expect(container.querySelector('clipPath')?.getAttribute('clipPathUnits'))
+      .toBe('objectBoundingBox');
+    const d = path.getAttribute('d')!;
+    // Starts at the top corners — the banner is the whole upper portion,
+    // not a band with a gap above it.
+    expect(d).toMatch(/^M0,0 H1/);
+    // And comes back along a cubic rather than a straight edge.
+    expect(d).toMatch(/C/);
+    expect(source).toMatch(/clip-path: url\(#banner-curve\)/);
   });
 
   it('holds still for anyone who asked for less movement', () => {
