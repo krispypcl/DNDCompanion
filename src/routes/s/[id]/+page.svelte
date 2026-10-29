@@ -301,7 +301,7 @@
       <div class="who">
         <h1>
           <EditableField value={definition.identity.name} {editable} label="Name"
-                         placeholder="Character name"
+                         placeholder="Character Name"
                          onchange={(v) => patchIdentity('name', v)} />
         </h1>
         <p class="sub">
@@ -488,7 +488,6 @@
                 </p>
               {/if}
             {:else if tab === 'Character'}
-              <h3 class="sub-h">Classes</h3>
               <EntryTable
                 items={classes}
                 columns={CLASS_COLUMNS}
@@ -633,7 +632,8 @@
             type="textarea"
             rows={4}
             label="Proficiencies & languages"
-            placeholder="Armour, weapons, tools, saving throws, languages."
+            placeholder="—"
+            hint="Armour, weapons, tools, saving throws, languages."
             onchange={(v) =>
               setDefinition({
                 ...definition,
@@ -650,7 +650,8 @@
             type="textarea"
             rows={3}
             label="Senses"
-            placeholder="Darkvision 60 ft., blindsight, tremorsense."
+            placeholder="—"
+            hint="Darkvision 60 ft., blindsight, tremorsense."
             onchange={(v) => setDefinition({ ...definition, senses: String(v) })}
           />
         </div>
@@ -715,7 +716,12 @@
     display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline;
   }
   .lvledit { display: inline-flex; gap: 0.3rem; align-items: baseline; }
-  .lvledit :global(.field) { text-align: left; width: 2.75rem; field-sizing: fixed; }
+  /* Must out-specify `.sub :global(input.field)` below, whose min-width was
+     holding this open at 5.5rem however narrow the width was set. */
+  .sub .lvledit :global(input.field) {
+    text-align: left; field-sizing: fixed;
+    width: 2.5rem; min-width: 0;
+  }
   .lvltotal { color: var(--dim); }
   .classline { color: var(--text); }
   .classline.none { color: var(--dim); }

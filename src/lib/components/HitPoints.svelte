@@ -177,7 +177,7 @@
 <style>
   /* A box of its own, so the jolt moves the module and not the panel. */
   .hpwrap { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-  .hpwrap.struck { animation: jolt 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+  .struck .bar { animation: jolt 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
   @keyframes jolt {
     0%, 100% { transform: translateX(0); }
     12% { transform: translateX(-5px); }

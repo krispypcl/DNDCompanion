@@ -46,7 +46,13 @@
     >{display ?? (empty ? placeholder : value)}</span
   >
 {:else if type === 'textarea'}
-  <textarea class="field" aria-label={label} value={String(value ?? '')} onchange={commit} {rows}
+  <textarea
+    class="field"
+    aria-label={label}
+    placeholder={hint ?? (placeholder === '—' ? '' : placeholder)}
+    value={String(value ?? '')}
+    onchange={commit}
+    {rows}
   ></textarea>
 {:else}
   <input
