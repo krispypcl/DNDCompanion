@@ -9,6 +9,7 @@
   import EntryLink from '$lib/components/EntryLink.svelte';
   import HitPoints from '$lib/components/HitPoints.svelte';
   import RestButtons from '$lib/components/RestButtons.svelte';
+  import SaveBonuses from '$lib/components/SaveBonuses.svelte';
   import SaveIndicator from '$lib/components/SaveIndicator.svelte';
   import SkillRail from '$lib/components/SkillRail.svelte';
   import EntryTable from '$lib/components/EntryTable.svelte';
@@ -507,6 +508,9 @@
               {/if}
               <h3 class="sub-h details-h">Details</h3>
               <DetailsBlock {definition} {editable} onchange={setDefinition} />
+
+              <h3 class="sub-h details-h">Saving throw bonuses</h3>
+              <SaveBonuses {definition} {editable} onchange={setDefinition} />
               {#if editable}
                 <div class="themerow">
                   <span class="cap">Character theme</span>

@@ -22,9 +22,22 @@ export function modifierOf(def: Definition, ability: Ability): number {
   return abilityModifier(def.abilities[ability] ?? 10);
 }
 
+/**
+ * Flat bonuses on a saving throw, beyond the ability modifier and
+ * proficiency: one that applies to every save, plus one for this ability.
+ * Kept separate from the total so the sheet can mark a number that is not
+ * simply modifier plus proficiency.
+ */
+export function saveExtra(def: Definition, ability: Ability): number {
+  const all = Number(def.saveBonusAll) || 0;
+  const one = Number(def.saveBonuses?.[ability]) || 0;
+  return all + one;
+}
+
 export function saveBonus(def: Definition, ability: Ability): number {
   const base = modifierOf(def, ability);
-  return def.saves?.[ability] ? base + def.proficiency : base;
+  const prof = def.saves?.[ability] ? def.proficiency : 0;
+  return base + prof + saveExtra(def, ability);
 }
 
 export function skillTotal(def: Definition, skill: SkillName): number {
