@@ -92,12 +92,12 @@ describe('Banner', () => {
     // matter what z-index it asks for. Both floating things live at the
     // sheet's root instead.
     const header = sheet.slice(sheet.indexOf('<header class="identity"'), sheet.indexOf('</header>'));
-    expect(header).toContain('<SaveIndicator />');
+    expect(header).not.toContain('<SaveIndicator');
     expect(header).not.toContain('<SaveAlert');
     expect(header).not.toContain('<UndoToast');
     expect(sheet).toMatch(/<UndoToast[\s\S]*?\/>\s*<SaveAlert \/>/);
 
-    for (const f of ['UndoToast', 'SaveAlert']) {
+    for (const f of ['UndoToast', 'SaveAlert', 'SaveIndicator']) {
       const css = readFileSync(`src/lib/components/${f}.svelte`, 'utf8');
       const declared = [...css.matchAll(/z-index:\s*(\d+)/g)].map((m) => Number(m[1]));
       // One answer each, and above the modules' own order.

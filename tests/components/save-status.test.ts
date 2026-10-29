@@ -34,40 +34,47 @@ const setStatus = (status: string, message: string | null = null) =>
   fake.set({ sheet: null, status, message });
 
 describe('save indicator', () => {
-  it('is in the document in every state, including when idle', () => {
-    for (const status of STATES) {
+  it('says what happened, in words', () => {
+    // A coloured dot asked the reader to know what the colour meant, and the
+    // accent is the character's own — a red character reporting a red
+    // "saved" is worse than no indicator.
+    for (const [status, word] of [
+      ['saving', 'Saving…'],
+      ['saved', 'Saved'],
+      ['unsaved', 'Not saved'],
+      ['stale', 'Changed elsewhere']
+    ]) {
       setStatus(status);
       const { container, unmount } = render(SaveIndicator);
-      const dot = container.querySelector('.dot');
-      expect(dot, status).toBeTruthy();
-      expect(dot!.className, status).toContain(status);
+      expect(container.querySelector('.saveword')?.textContent?.trim(), status).toBe(word);
       unmount();
     }
   });
 
-  it('says nothing that takes up room', () => {
-    // A fixed box, and the words only where they cost no layout.
-    const css = indicator.slice(indicator.indexOf('.dot {'), indicator.indexOf('.saving {'));
-    expect(css).toMatch(/width: 0\.5rem/);
-    expect(css).toMatch(/height: 0\.5rem/);
-    expect(css).not.toMatch(/min-width|padding/);
-    expect(indicator).toMatch(/class="sr"/);
-    expect(indicator).toMatch(/title=\{label\}/);
+  it('says nothing at all when there is nothing to say', () => {
+    setStatus('idle');
+    const { container } = render(SaveIndicator);
+    expect(container.querySelector('.saveword')).toBeNull();
   });
 
-  it('names the state for anyone who cannot see a colour', () => {
+  it('floats in the corner, so a word costs the header nothing', () => {
+    const css = indicator.slice(indicator.indexOf('.saveword {'), indicator.indexOf('@media'));
+    expect(css).toMatch(/position: fixed/);
+    expect(css).toMatch(/right: 1rem/);
+    expect(css).toMatch(/bottom:/);
+    // Neutral on purpose: the sentence carries the meaning, not the hue.
+    expect(css).toMatch(/color: var\(--dim\)/);
+    expect(css).not.toMatch(/var\(--a[-)]|var\(--danger\)/);
+    // And it cannot swallow a tap meant for what is underneath.
+    expect(css).toMatch(/pointer-events: none/);
+  });
+
+  it('is announced, not just shown', () => {
     setStatus('saving');
     const { container } = render(SaveIndicator);
-    expect(container.querySelector('.sr')?.textContent).toBe('Saving…');
-    expect(container.querySelector('.dot')?.getAttribute('title')).toBe('Saving…');
-    expect(container.querySelector('.dot')?.getAttribute('role')).toBe('status');
-  });
-
-  it('shows the message itself when a save has failed', () => {
-    setStatus('unsaved', 'Could not save');
-    const { container } = render(SaveIndicator);
-    expect(container.querySelector('.dot')?.className).toContain('failed');
-    expect(container.querySelector('.sr')?.textContent).toBe('Could not save');
+    const el = container.querySelector('.saveword')!;
+    expect(el.getAttribute('role')).toBe('status');
+    expect(el.getAttribute('aria-live')).toBe('polite');
   });
 });
 
@@ -95,17 +102,29 @@ describe('save alert', () => {
 });
 
 describe('the controls row', () => {
-  it('keeps the undo button last, where it cannot move the others', () => {
+  it('keeps undo in place whether or not there is anything to undo', () => {
     const row = sheet.slice(sheet.indexOf('<div class="controls">'), sheet.indexOf('</header>'));
-    expect(row.indexOf('SaveIndicator')).toBeLessThan(row.indexOf('class="edit"'));
-    expect(row.indexOf('ModeToggle')).toBeLessThan(row.indexOf('class="undo"'));
-    // And is short enough on a phone not to wrap the row onto two lines.
-    expect(sheet).toMatch(/\.undo \.what \{ display: none; \}/);
+    // Always rendered, so the row is laid out once; inert until it is useful.
+    expect(row).toMatch(/<button\s+class="undo"\s+disabled=\{!\$canUndo\}/);
+    expect(row).not.toMatch(/\{#if \$canUndo\}/);
+    // First, where it has always been.
+    expect(row.indexOf('class="undo"')).toBeLessThan(row.indexOf('class="edit"'));
+    expect(row.indexOf('class="edit"')).toBeLessThan(row.indexOf('ModeToggle'));
+    // One word, in both states: the muting is the context.
+    expect(row).toMatch(/>Undo<\/button/);
   });
 
-  it('gives the undo button a surface, since it sits over the banner', () => {
+  it('mutes the undo button rather than hiding it', () => {
     const css = sheet.slice(sheet.indexOf('  .undo {'), sheet.indexOf('  .back {'));
+    expect(css).toMatch(/\.undo:disabled \{[^}]*color: var\(--faint\)/);
+    expect(css).toMatch(/\.undo:disabled \{[^}]*cursor: default/);
+    // Lit, it has a surface of its own: it sits over the banner.
     expect(css).toMatch(/background: var\(--a-wash\)/);
-    expect(css).not.toMatch(/background: none/);
+  });
+
+  it('keeps the status out of the header entirely', () => {
+    const header = sheet.slice(sheet.indexOf('<header class="identity"'), sheet.indexOf('</header>'));
+    expect(header).not.toContain('SaveIndicator');
+    expect(sheet).toMatch(/<SaveAlert \/>[\s\S]*<SaveIndicator \/>/);
   });
 });
