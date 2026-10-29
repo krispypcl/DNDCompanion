@@ -4,9 +4,60 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <link rel="icon" href="%sveltekit.assets%/favicon.svg" />
+    <!--
+      The splash is in the document itself, with its own styles, because this
+      shell carries no stylesheet: app.css arrives with the bundle. Anything
+      rendered by the app can only appear after hydration has painted, which
+      is why the app used to flash past before the splash faded in. This paints
+      on the first frame; src/lib/components/Splash.svelte takes it away once
+      the app is up.
+    -->
+    <style>
+      html, body { margin: 0; background: oklch(12% 0.005 285.823); }
+      #splash {
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        display: grid;
+        place-items: center;
+        align-content: center;
+        gap: 0.875rem;
+        background: oklch(12% 0.005 285.823);
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        /* If the bundle never arrives, do not hold the screen for ever. */
+        animation: splash-giveup 0.4s ease-in 10s forwards;
+      }
+      #splash svg { color: oklch(76% 0.06075 255); }
+      #splash span {
+        font-size: 0.75rem;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: oklch(65% 0.006 286);
+      }
+      #splash.out {
+        pointer-events: none;
+        animation: splash-out 0.42s ease-in forwards;
+      }
+      @keyframes splash-out { to { opacity: 0; visibility: hidden; } }
+      @keyframes splash-giveup { to { opacity: 0; visibility: hidden; } }
+      @media (prefers-reduced-motion: reduce) {
+        #splash.out { animation-duration: 0.01ms; }
+      }
+    </style>
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover">
+    <div id="splash" aria-hidden="true">
+      <!-- A plain twenty-sided outline: the shape of the hobby, not anyone's logo. -->
+      <svg viewBox="0 0 48 48" width="48" height="48">
+        <polygon points="24 3 43 14 43 34 24 45 5 34 5 14" fill="none" stroke="currentColor"
+                 stroke-width="1.5" stroke-linejoin="round" />
+        <polygon points="24 12 34 29 14 29" fill="none" stroke="currentColor"
+                 stroke-width="1.5" stroke-linejoin="round" />
+      </svg>
+      <span>DND Companion</span>
+    </div>
     <div style="display: contents">%sveltekit.body%</div>
   </body>
 </html>
