@@ -80,29 +80,6 @@
 </div>
 </div>
 
-{#if down}
-  <div class="deaths">
-    <span class="cap">Death saves</span>
-    {#each (['successes', 'failures'] as const) as kind (kind)}
-      <div class="drow">
-        <span class="kind">{kind === 'successes' ? 'Saves' : 'Fails'}</span>
-        {#each [1, 2, 3] as n (n)}
-          <button
-            class="pip"
-            class:fail={kind === 'failures'}
-            aria-pressed={sheetState.deathSaves[kind] >= n}
-            aria-label="{kind} {n}"
-            disabled={!editable}
-            onclick={() =>
-              act('Death save',
-                  setDeathSave(sheetState, kind, sheetState.deathSaves[kind] >= n ? n - 1 : n))}
-          ></button>
-        {/each}
-      </div>
-    {/each}
-  </div>
-{/if}
-
 <div class="actions">
   {#if editable}
     <div class="hprow">
@@ -112,7 +89,32 @@
       <button onclick={() => act('Temp HP', setTempHp(sheetState, amount))}>Temp</button>
     </div>
   {/if}
-  <div class="restrow">{@render children?.()}</div>
+  <div class="restrow">
+    {#if down}
+      <!-- At zero there is no resting, so death saves take this space. -->
+      <div class="deaths">
+        {#each (['successes', 'failures'] as const) as kind (kind)}
+          <div class="drow">
+            <span class="kind">{kind === 'successes' ? 'Saves' : 'Fails'}</span>
+            {#each [1, 2, 3] as n (n)}
+              <button
+                class="pip"
+                class:fail={kind === 'failures'}
+                aria-pressed={sheetState.deathSaves[kind] >= n}
+                aria-label="{kind} {n}"
+                disabled={!editable}
+                onclick={() =>
+                  act('Death save',
+                      setDeathSave(sheetState, kind, sheetState.deathSaves[kind] >= n ? n - 1 : n))}
+              ></button>
+            {/each}
+          </div>
+        {/each}
+      </div>
+    {:else}
+      {@render children?.()}
+    {/if}
+  </div>
 </div>
 
 <style>
@@ -160,9 +162,14 @@
   .cur { background: var(--a-mid); }
   .cur.bloodied, .cur.down { background: var(--danger); }
   .tmp { background: var(--dim); }
-  .deaths { margin-top: 1rem; }
-  .drow { display: flex; align-items: center; gap: 0.3125rem; margin-top: 0.3125rem; }
-  .kind { font-size: 0.75rem; color: var(--dim); width: 2.75rem; }
+  /* Side by side, so the row is the height the rest buttons were. */
+  .deaths { display: flex; gap: 1.25rem; align-items: center; justify-content: center;
+            padding: 0.5rem 0; }
+  .drow { display: flex; align-items: center; gap: 0.375rem; }
+  .kind {
+    font-size: 0.5875rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--label); font-weight: 600;
+  }
   .pip {
     width: 0.95rem; height: 0.95rem; border-radius: 50%;
     border: 1px solid var(--faint); background: transparent; padding: 0; cursor: pointer;

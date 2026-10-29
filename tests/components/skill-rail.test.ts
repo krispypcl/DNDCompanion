@@ -82,7 +82,8 @@ describe('AbilityColumns', () => {
     const headings = Array.from(container.querySelectorAll('.group .ab')).map((n) =>
       n.textContent?.trim()
     );
-    expect(headings).toEqual(['str', 'dex', 'int', 'wis', 'cha']); // con governs none
+    // Whole words, not abbreviations; Constitution governs no skill.
+    expect(headings).toEqual(['Strength', 'Dexterity', 'Intelligence', 'Wisdom', 'Charisma']);
   });
 
   it('orders skills alphabetically within a group', () => {

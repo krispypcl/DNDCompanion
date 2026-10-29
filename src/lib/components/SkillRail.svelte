@@ -10,6 +10,11 @@
     onchange
   }: { definition: Definition; editable: boolean; onchange: (next: Definition) => void } = $props();
 
+  const NAMES: Record<Ability, string> = {
+    str: 'Strength', dex: 'Dexterity', con: 'Constitution',
+    int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma'
+  };
+
   const LABELS: Record<SkillName, string> = {
     acrobatics: 'Acrobatics', animalHandling: 'Animal Handling', arcana: 'Arcana',
     athletics: 'Athletics', deception: 'Deception', history: 'History',
@@ -51,7 +56,7 @@
 {#each withSkills as ability (ability)}
   <section class="group" aria-label="{ability} skills">
     <header>
-      <span class="ab">{ability}</span>
+      <span class="ab">{NAMES[ability]}</span>
       <span class="abmod">{sign(modifierOf(definition, ability))}</span>
     </header>
 
@@ -95,7 +100,7 @@
     padding: 0.3125rem 0.25rem; margin: 0 -0.25rem; font-size: 0.845rem;
     border-radius: var(--r-sm); transition: background-color 0.15s ease;
   }
-  .row:hover { background: oklch(20% 0.004 286); }
+  .row:hover { background: var(--hover-bg); }
   .dot {
     width: 0.5625rem; height: 0.5625rem; border-radius: 50%;
     border: 1.5px solid var(--faint); background: none; padding: 0; flex: none; cursor: pointer;

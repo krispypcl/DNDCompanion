@@ -112,7 +112,9 @@
             <a href="{base}/s/{sheet.id}">
               <strong>{sheet.definition?.identity?.name || sheet.name}</strong>
               <span class="meta">
-                {sheet.definition?.identity?.class ?? 'No class'}
+                {[sheet.definition?.identity?.subclass, sheet.definition?.identity?.class]
+                  .filter(Boolean)
+                  .join(' ') || 'No class'}
                 {#if sheet.definition?.identity?.level}· level {sheet.definition.identity.level}{/if}
                 {#if sheet.retired}· retired{/if}
               </span>
