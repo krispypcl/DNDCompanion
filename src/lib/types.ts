@@ -140,9 +140,7 @@ export type Definition = {
   combat: { ac: number; speed: number; initiative?: number; hpMax: number; hitDice: string };
   /** Proficiency only; the flat bonuses below are separate. */
   saves: Partial<Record<Ability, boolean>>;
-  /** Added to every saving throw: a Cloak of Protection, an aura. */
-  saveBonusAll?: number;
-  /** Added to one saving throw on top of the global bonus. */
+  /** A flat bonus on one saving throw, beyond modifier and proficiency. */
   saveBonuses?: Partial<Record<Ability, number>>;
   skills: Partial<Record<SkillName, SkillProficiency>>;
   attacks: Attack[];

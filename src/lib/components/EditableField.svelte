@@ -8,6 +8,7 @@
     hint,
     label,
     rows = 6,
+    grow = false,
     onchange
   }: {
     value: string | number | undefined;
@@ -21,10 +22,25 @@
     hint?: string;
     label?: string;
     rows?: number;
+    /** Let a textarea follow its content instead of scrolling inside `rows`. */
+    grow?: boolean;
     onchange: (next: string | number) => void;
   } = $props();
 
   const empty = $derived(value === '' || value === undefined);
+
+  /** `rows` is the floor; beyond that the box follows the text, so a long
+      answer is all on screen rather than hidden behind an inner scrollbar. */
+  function autosize(node: HTMLTextAreaElement, enabled: boolean) {
+    if (!enabled) return;
+    const fit = () => {
+      node.style.height = 'auto';
+      node.style.height = `${node.scrollHeight}px`;
+    };
+    fit();
+    node.addEventListener('input', fit);
+    return { destroy: () => node.removeEventListener('input', fit) };
+  }
 
   function commit(event: Event) {
     const el = event.target as HTMLInputElement | HTMLTextAreaElement;
@@ -53,6 +69,7 @@
     value={String(value ?? '')}
     onchange={commit}
     {rows}
+    use:autosize={grow}
   ></textarea>
 {:else}
   <input
@@ -93,7 +110,13 @@
     box-sizing: border-box;
     transition: border-color 0.18s ease, background-color 0.18s ease;
   }
-  .readout { display: inline-block; }
+  .readout {
+    display: inline-block;
+    /* The shared height is a floor here, not a cap: a fixed height made long
+       text overflow the box and overlap what followed it. */
+    height: auto;
+    min-height: calc(var(--fld-leading) * 1em + var(--fld-pad-y) * 2 + 2px);
+  }
   .empty { color: var(--dim); }
   input.field, textarea.field {
     background: var(--bg);

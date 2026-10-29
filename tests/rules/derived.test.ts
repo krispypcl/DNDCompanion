@@ -232,26 +232,25 @@ describe('saving throw bonuses', () => {
     expect(saveExtra(base, 'dex')).toBe(0);
   });
 
-  it('adds a bonus that applies to every save', () => {
-    const cloaked = { ...base, saveBonusAll: 1 } as Definition;
-    expect(saveBonus(cloaked, 'dex')).toBe(8);
-    expect(saveBonus(cloaked, 'str')).toBe(2);
-    expect(saveExtra(cloaked, 'str')).toBe(1);
+  it('adds a bonus on the ability it was written for, and only there', () => {
+    const cloaked = { ...base, saveBonuses: { con: 2 } } as Definition;
+    expect(saveBonus(cloaked, 'con')).toBe(3 + 2); // CON mod 3, not proficient
+    expect(saveExtra(cloaked, 'con')).toBe(2);
+    expect(saveBonus(cloaked, 'dex')).toBe(7); // untouched
+    expect(saveExtra(cloaked, 'dex')).toBe(0);
   });
 
-  it('adds a bonus for one ability on top of the global one', () => {
-    const both = { ...base, saveBonusAll: 1, saveBonuses: { con: 2 } } as Definition;
-    expect(saveBonus(both, 'con')).toBe(3 + 0 + 1 + 2); // CON mod 3, not proficient
-    expect(saveBonus(both, 'dex')).toBe(8); // global only
-    expect(saveExtra(both, 'con')).toBe(3);
+  it('stacks a bonus with proficiency', () => {
+    const both = { ...base, saveBonuses: { dex: 1 } } as Definition;
+    expect(saveBonus(both, 'dex')).toBe(4 + 3 + 1);
   });
 
   it('takes a negative bonus as written', () => {
-    expect(saveBonus({ ...base, saveBonusAll: -1 } as Definition, 'dex')).toBe(6);
+    expect(saveBonus({ ...base, saveBonuses: { dex: -1 } } as Definition, 'dex')).toBe(6);
   });
 
   it('ignores a bonus that is not a number rather than returning NaN', () => {
-    const junk = { ...base, saveBonusAll: 'x', saveBonuses: { dex: null } } as unknown as Definition;
+    const junk = { ...base, saveBonuses: { dex: null } } as unknown as Definition;
     expect(saveBonus(junk, 'dex')).toBe(7);
   });
 

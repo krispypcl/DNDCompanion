@@ -23,15 +23,12 @@ export function modifierOf(def: Definition, ability: Ability): number {
 }
 
 /**
- * Flat bonuses on a saving throw, beyond the ability modifier and
- * proficiency: one that applies to every save, plus one for this ability.
- * Kept separate from the total so the sheet can mark a number that is not
- * simply modifier plus proficiency.
+ * A flat bonus on one saving throw, beyond the ability modifier and
+ * proficiency. Kept apart from the total so the sheet can show what was
+ * written separately from what it works out to.
  */
 export function saveExtra(def: Definition, ability: Ability): number {
-  const all = Number(def.saveBonusAll) || 0;
-  const one = Number(def.saveBonuses?.[ability]) || 0;
-  return all + one;
+  return Number(def.saveBonuses?.[ability]) || 0;
 }
 
 export function saveBonus(def: Definition, ability: Ability): number {
