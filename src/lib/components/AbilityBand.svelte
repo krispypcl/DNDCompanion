@@ -2,7 +2,7 @@
   /** Abilities and saving throws. The modifier is the hero number and the
       score sits under it, because the modifier is what you use every round. */
   import EditableField from './EditableField.svelte';
-  import { modifierOf, saveBonus } from '$lib/rules/derived';
+  import { modifierOf, saveBonus, saveExtra } from '$lib/rules/derived';
   import { ABILITIES, type Ability, type Definition } from '$lib/types';
 
   let {
@@ -20,6 +20,14 @@
 
   function setScore(ability: Ability, score: number) {
     onchange({ ...definition, abilities: { ...definition.abilities, [ability]: score } });
+  }
+
+  function breakdown(ability: Ability) {
+    const extra = saveExtra(definition, ability);
+    const parts = [`${NAMES[ability]} modifier`];
+    if (definition.saves?.[ability]) parts.push('proficiency');
+    if (extra !== 0) parts.push(`bonus ${sign(extra)}`);
+    return parts.join(' + ');
   }
 
   function toggleSave(ability: Ability) {
@@ -55,9 +63,11 @@
     <button
       class="save"
       class:on={definition.saves?.[ability]}
+      class:boosted={saveExtra(definition, ability) !== 0}
       disabled={!editable}
       aria-pressed={Boolean(definition.saves?.[ability])}
       aria-label="{NAMES[ability]} saving throw proficiency"
+      title={breakdown(ability)}
       onclick={() => toggleSave(ability)}
     >
       <b>{sign(saveBonus(definition, ability))}</b>
@@ -113,6 +123,16 @@
   .save.on { border-color: var(--a-edge); background: var(--a-wash); }
   .save b { display: block; font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
   .save.on b { color: var(--a); }
+  /* A number that is not simply modifier plus proficiency says so. */
+  .save.boosted { position: relative; }
+  .save.boosted::after {
+    content: '';
+    position: absolute; top: 0.25rem; right: 0.25rem;
+    width: 0.25rem; height: 0.25rem; border-radius: 50%;
+    background: var(--a);
+  }
+
+
   @media (max-width: 860px) {
     .abilities, .saves { grid-template-columns: repeat(3, 1fr); }
   }
