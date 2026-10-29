@@ -29,10 +29,10 @@ const props = (def: Definition, editable: boolean) => ({
 });
 
 describe('AbilityBand', () => {
-  it('puts abilities and saving throws under one heading', () => {
+  it('gives each half its own heading', () => {
     render(AbilityBand, { props: props(definition(), false) });
-    expect(screen.getByText(/abilities & saving throws/i)).toBeTruthy();
-    expect(screen.queryByText(/^saving throws$/i)).toBeNull();
+    expect(screen.getByText(/^abilities$/i)).toBeTruthy();
+    expect(screen.getByText(/^saving throws$/i)).toBeTruthy();
   });
 
   it('folds a written bonus into the total and shows what was written', () => {
@@ -81,9 +81,11 @@ describe('AbilityBand', () => {
     expect(score).not.toMatch(/border-top/);
   });
 
-  it('rules off the saving throws from the abilities above them', () => {
+  it('separates the two halves by space rather than by a rule', () => {
     const source = readFileSync('src/lib/components/AbilityBand.svelte', 'utf8');
-    const saves = source.slice(source.indexOf('.saves {'), source.indexOf('.ability {'));
-    expect(saves).toMatch(/border-top: 1px solid/);
+    const block = source.slice(source.indexOf('.abilities {'), source.indexOf('.ability {'));
+    expect(block).not.toMatch(/border-top/);
+    // The abilities sit at the top, the saving throws are pushed to the foot.
+    expect(block).toMatch(/\.saves-cap \{[^}]*margin-top: auto/);
   });
 });

@@ -50,7 +50,7 @@
   }
 </script>
 
-<span class="cap">Abilities &amp; saving throws</span>
+<span class="cap">Abilities</span>
 <div class="abilities">
   {#each ABILITIES as ability (ability)}
     <div class="ability">
@@ -69,6 +69,7 @@
   {/each}
 </div>
 
+<span class="cap saves-cap">Saving throws</span>
 <div class="saves">
   {#each ABILITIES as ability (ability)}
     <div class="save" class:on={definition.saves?.[ability]}>
@@ -105,14 +106,12 @@
     color: var(--label); font-weight: 600;
   }
   .abilities, .saves { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.625rem; }
-  /* The title stays at the top of the module and the two rows sit at its
-     foot, so the band lines up with the hit point module beside it. */
-  .abilities { margin-top: auto; padding-top: 0.625rem; }
-  .saves {
-    margin-top: 0.875rem;
-    padding-top: 0.875rem;
-    border-top: 1px solid var(--line-soft);
-  }
+  /* Each half owns its title. The abilities sit at the top of the module and
+     the saving throws at the foot, so the space between them is the gap
+     rather than a rule. */
+  .abilities { margin-top: 0.625rem; }
+  .saves-cap { margin-top: auto; padding-top: 1rem; }
+  .saves { margin-top: 0.625rem; }
   .ability {
     background: var(--raised); border: 1px solid var(--line);
     border-radius: var(--r); padding: 0.625rem 0.5rem 0.5rem; text-align: center; min-width: 0;
