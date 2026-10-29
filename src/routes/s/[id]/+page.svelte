@@ -305,9 +305,11 @@
                          onchange={(v) => patchIdentity('name', v)} />
         </h1>
         <p class="sub">
-          <span class="classline" class:none={!classLine(definition)}>
-            {classLine(definition) || 'Class'}
-          </span>
+          <!-- The class is written on the Character tab, not here, so with
+               none written there is nothing to label and nothing to press. -->
+          {#if classLine(definition)}
+            <span class="classline">{classLine(definition)}</span>
+          {/if}
           <EditableField value={definition.identity.ancestry} {editable} label="Ancestry"
                          placeholder="Ancestry"
                          onchange={(v) => patchIdentity('ancestry', v)} />
@@ -724,7 +726,6 @@
   }
   .lvltotal { color: var(--dim); }
   .classline { color: var(--text); }
-  .classline.none { color: var(--dim); }
   .sub-h {
     font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
     color: var(--label); font-weight: 600; margin: 0 0 0.625rem;
