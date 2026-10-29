@@ -29,7 +29,8 @@ export type SkillName = keyof typeof SKILLS;
 
 export type SkillProficiency = { proficient?: boolean; expertise?: boolean };
 
-export type TrackerType = 'pips' | 'counter' | 'gauge';
+/** `counter` was a third shape; it is read as a gauge now. */
+export type TrackerType = 'pips' | 'gauge';
 export type TrackerDirection = 'spend' | 'accrue';
 export type RestKind = 'short' | 'long' | 'dawn';
 

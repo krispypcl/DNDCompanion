@@ -78,7 +78,7 @@
 
   {#if error}
     <p class="error" role="alert">Formula error: {error}</p>
-  {:else if tracker.type === 'pips' && max <= 12}
+  {:else if tracker.type === 'pips' && max <= 12 && max > 0}
     <div class="pips">
       {#each Array(max) as _, i (i)}
         <button
@@ -93,18 +93,16 @@
       {/each}
     </div>
   {:else}
-    <!-- A gauge shows the bar instead of repeating the number, which the
-         heading already carries. Both shapes share the same stepper: a gauge
-         used to render the bar alone and could never be changed. -->
-    {#if tracker.type === 'gauge'}
+    <!-- A gauge: the bar between its two controls, which is where you reach
+         for them. The heading already carries the number. -->
+    <div class="gaugerow">
+      <button class="step" disabled={!editable} onclick={() => stepRemaining(-1)}
+              aria-label="Decrease">−</button>
       <div class="gauge" aria-hidden="true">
         <i style:width="{max > 0 ? (remaining / max) * 100 : 0}%"></i>
       </div>
-    {/if}
-    <div class="counter" class:spread={tracker.type === 'gauge'}>
-      <button disabled={!editable} onclick={() => stepRemaining(-1)} aria-label="Decrease">−</button>
-      {#if tracker.type !== 'gauge'}<span class="value">{remaining}</span>{/if}
-      <button disabled={!editable} onclick={() => stepRemaining(1)} aria-label="Increase">+</button>
+      <button class="step" disabled={!editable} onclick={() => stepRemaining(1)}
+              aria-label="Increase">+</button>
     </div>
   {/if}
 
@@ -143,19 +141,21 @@
     60%  { transform: scale(1.18); }
     to   { transform: scale(1); }
   }
-  .counter { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.4rem; }
-  .counter.spread { justify-content: space-between; }
-  .counter button {
-    width: 1.8rem; height: 1.8rem;
+  .gaugerow { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
+  .step {
+    width: 1.5rem; height: 1.5rem; flex: none;
     border: 1px solid var(--line);
     background: var(--bg);
     color: var(--text);
-    border-radius: 5px;
-    font-size: 1rem;
+    border-radius: var(--r-sm);
+    font-size: 0.9rem; line-height: 1;
+    display: grid; place-items: center;
     cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
   }
-  .value { font-variant-numeric: tabular-nums; font-size: 1.1rem; min-width: 2ch; text-align: center; }
-  .gauge { height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; margin-top: 0.5rem; }
+  .step:not(:disabled):hover { border-color: var(--a-edge); color: var(--a); }
+  .step:disabled { cursor: default; opacity: 0.5; }
+  .gauge { flex: 1; height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
   .gauge i { display: block; height: 100%; background: var(--accent); transition: width 0.3s ease; }
   .desc { margin: 0.4rem 0 0; font-size: 0.78rem; color: var(--dim); }
   .error { margin: 0.4rem 0 0; font-size: 0.78rem; color: var(--bad); }

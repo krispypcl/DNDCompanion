@@ -81,7 +81,7 @@
 <style>
   .cap {
     font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
-    color: var(--label); font-weight: 600; margin: 0 0 0.75rem;
+    color: var(--label); font-weight: 600; margin: 0 0 0.875rem;
   }
   .group { margin-bottom: 0.875rem; }
   .group:last-child { margin-bottom: 0; }
@@ -90,9 +90,10 @@
     padding-bottom: 0.3125rem; margin-bottom: 0.1875rem;
     border-bottom: 1px solid var(--line-soft);
   }
+  /* Sentence case and smaller: a group heading, not another section title. */
   .ab {
-    font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
-    color: var(--label); font-weight: 600;
+    font-size: 0.78rem; letter-spacing: 0; text-transform: none;
+    color: var(--dim); font-weight: 600;
   }
   .abmod { font-size: 0.6875rem; color: var(--dim); font-variant-numeric: tabular-nums; }
   .row {
