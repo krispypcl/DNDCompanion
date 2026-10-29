@@ -54,4 +54,10 @@
   input::-webkit-outer-spin-button,
   input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   strong { border: 1px solid transparent; padding: 0.1875rem 0.125rem; }
+
+  @media (max-width: 700px) {
+    /* 15px is under the threshold at which a phone zooms in on focus, and
+       both states move together so the row keeps its height. */
+    strong, input { font-size: 1rem; }
+  }
 </style>

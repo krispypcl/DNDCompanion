@@ -165,4 +165,16 @@
   @media (max-width: 860px) {
     .abilities, .saves { grid-template-columns: repeat(3, 1fr); }
   }
+  /* Both carry a zero vertical padding on a laptop, which leaves a 19px
+     target. A phone needs something a finger can find. */
+  @media (max-width: 700px) {
+    .score :global(.field), .bonus :global(.field) {
+      --fld-pad-y: 0.3rem;
+      /* 0.75rem on a laptop; a phone would zoom in on the field and the
+         number is too small to read at arm's length anyway. */
+      font-size: 1rem;
+      width: 3.5rem;
+    }
+    .toggle { padding: 0.125rem 0; }
+  }
 </style>

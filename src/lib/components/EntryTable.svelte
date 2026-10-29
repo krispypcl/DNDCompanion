@@ -77,7 +77,7 @@
       <tbody>
         {#each items as item, i (i)}
           <tr>
-            <td class="name">
+            <td class="name" data-label={nameCol.label}>
               {#if editable}
                 <input
                   value={nameOf(item)}
@@ -100,7 +100,8 @@
             </td>
 
             {#each rest as col (col.key)}
-              <td class:muted={col.muted} class:numeric={col.numeric} class:fold={col.muted}>
+              <td data-label={col.label} class:muted={col.muted} class:numeric={col.numeric}
+                  class:fold={col.muted}>
                 {#if editable && col.options}
                   <select
                     value={String(item[col.key] ?? col.options[0])}
@@ -201,10 +202,47 @@
   }
   .fold-under { display: none; font-size: 0.78rem; color: var(--dim); font-weight: 400; }
   @media (max-width: 700px) {
-    /* Read-only, the secondary column folds under the name. While editing it
-       stays a column, because a hidden column cannot be typed into. */
+    /* Read-only, the secondary column folds under the name. */
     table:not(.editing) { min-width: 0; }
     table:not(.editing) .fold { display: none; }
     table:not(.editing) .fold-under { display: block; margin-top: 0.15rem; }
+
+    /* Editing, the table stops being a table. Six columns of inputs in 390px
+       is what made the whole page shrink to fit: the browser zooms out rather
+       than scroll, and the sheet arrives misaligned. Each entry becomes a
+       card instead, one labelled field per line, nothing wider than the
+       screen. */
+    table.editing,
+    table.editing tbody,
+    table.editing tr,
+    table.editing td { display: block; width: auto; min-width: 0; }
+    table.editing { border-collapse: separate; }
+    table.editing thead,
+    table.editing colgroup { display: none; }
+    table.editing tr {
+      position: relative;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--r);
+      padding: 0.625rem 2.25rem 0.75rem 0.75rem;
+      margin-bottom: 0.625rem;
+    }
+    table.editing td { border: 0; padding: 0.3125rem 0 0; }
+    table.editing td::before {
+      content: attr(data-label);
+      display: block;
+      font-size: 0.625rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--label);
+      font-weight: 600;
+      margin-bottom: 0.1875rem;
+    }
+    table.editing td.name { padding-top: 0; }
+    /* The remove button sits in the card's corner rather than in a column. */
+    table.editing td.rm { position: absolute; top: 0.375rem; right: 0.25rem; padding: 0; }
+    table.editing td.rm::before { content: none; }
+    table.editing .x { font-size: 1.25rem; padding: 0.25rem 0.5rem; }
+    /* Under 16px, a phone zooms in when a field takes focus. */
+    table.editing input, table.editing select { font-size: 16px; padding: 0.4rem 0.5rem; }
   }
 </style>
