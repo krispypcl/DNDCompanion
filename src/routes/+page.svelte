@@ -7,7 +7,14 @@
   import { blankDefinition } from '$lib/sample';
   import { session } from '$lib/stores/session';
   import { isConfigured } from '$lib/supabase';
+  import { rise } from '$lib/motion';
   import type { Sheet } from '$lib/types';
+
+  /** Which of the three faces of this page is showing; signing in or out
+      swaps one for another, and the swap is worth animating. */
+  const view = $derived(
+    !isConfigured ? 'list' : $session.loading ? 'loading' : $session.user ? 'list' : 'auth'
+  );
 
   let sheets = $state<Sheet[]>([]);
   let loading = $state(false);
@@ -62,7 +69,9 @@
 
 <svelte:head><title>DND Companion</title></svelte:head>
 
-{#if isConfigured && !$session.loading && !$session.user}
+{#key view}
+<div class="swap" in:rise={{ y: 10, duration: 240, delay: 30 }}>
+{#if view === 'auth'}
   <AuthForm
     name="Sign in"
     submitLabel="Sign in"
@@ -148,6 +157,8 @@
   {/if}
 </main>
 {/if}
+</div>
+{/key}
 
 <style>
   main { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1rem 4rem; }

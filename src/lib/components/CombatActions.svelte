@@ -41,15 +41,19 @@
 
 <details class="actions">
   <summary><span class="cap">General actions</span></summary>
-  {#each GROUPS as group (group.label)}
-    <section>
-      <h3>{group.label}</h3>
-      {#if group.note}<p class="note">{group.note}</p>{/if}
-      <ul>
-        {#each group.items as item (item)}<li>{item}</li>{/each}
-      </ul>
-    </section>
-  {/each}
+  <!-- A wrapper so browsers without ::details-content still have something to
+       animate when the panel opens. -->
+  <div class="inner">
+    {#each GROUPS as group (group.label)}
+      <section>
+        <h3>{group.label}</h3>
+        {#if group.note}<p class="note">{group.note}</p>{/if}
+        <ul>
+          {#each group.items as item (item)}<li>{item}</li>{/each}
+        </ul>
+      </section>
+    {/each}
+  </div>
 </details>
 
 <style>
@@ -72,6 +76,28 @@
     transition: transform 0.2s ease;
   }
   details[open] summary::after { transform: rotate(-135deg) translateY(-1px); }
+
+  /* Unfolding. Where ::details-content exists the height animates both ways;
+     elsewhere the open state is animated and closing snaps, which is the
+     direction nobody watches. */
+  .actions::details-content {
+    block-size: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition:
+      block-size 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.26s ease,
+      content-visibility 0.32s allow-discrete;
+  }
+  .actions[open]::details-content { block-size: auto; opacity: 1; }
+
+  @supports not selector(::details-content) {
+    .actions[open] .inner { animation: unfold 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  }
+  @keyframes unfold {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: none; }
+  }
   .cap {
     font-size: 0.6875rem;
     letter-spacing: 0.12em;

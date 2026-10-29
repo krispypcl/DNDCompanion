@@ -1,4 +1,5 @@
 /** DetailsBlock: the written details that are not numbers. */
+import { readFileSync } from 'node:fs';
 import { render, screen } from '@testing-library/svelte';
 import { describe, expect, it, vi } from 'vitest';
 import DetailsBlock from '$lib/components/DetailsBlock.svelte';
@@ -76,4 +77,16 @@ describe('DetailsBlock', () => {
     expect(screen.getByAltText('Portrait of Loka')).toBeTruthy();
   });
 
+  it('lets a long answer grow instead of running over what follows', () => {
+    // jsdom does no layout, so the guarantee is checked where it is written:
+    // the readout takes the shared height as a floor, and the textarea the
+    // owner types into follows its content.
+    const field = readFileSync('src/lib/components/EditableField.svelte', 'utf8');
+    const readout = field.slice(field.indexOf('.readout {'), field.indexOf('input.field'));
+    expect(readout).toMatch(/min-height:/);
+    expect(readout).toMatch(/height: auto/);
+
+    const block = readFileSync('src/lib/components/DetailsBlock.svelte', 'utf8');
+    expect(block).toMatch(/grow=\{true\}/);
+  });
 });

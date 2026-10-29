@@ -186,11 +186,11 @@
     62% { transform: translateX(2px); }
     80% { transform: translateX(-1px); }
   }
-  .hpwrap.struck::after {
+  .struck .bar::after {
     content: '';
     position: absolute;
     inset: 0;
-    border-radius: var(--r);
+    border-radius: inherit;
     background: var(--danger);
     opacity: 0;
     pointer-events: none;
