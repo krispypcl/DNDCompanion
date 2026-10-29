@@ -31,6 +31,15 @@ saturation carries through. The ramp is declared on `.themed`, not only on
 `:root`: a custom property is substituted where it is declared, so a ramp on
 `:root` alone would never follow a hue set deeper in the page.
 
+Dark is the default and light is a second set of the same tokens, chosen per
+device and written to the document by `src/app.html` before the first paint,
+so a light-mode reader never gets a dark frame. The accent ramp inverts with
+it: `--a-hi` is the brightest shade in the dark and the deepest in the light,
+because in both cases it is the one carrying the most emphasis.
+`tests/theme-contrast.test.ts` recomputes every ramp from `app.css` and
+checks each pair a reader has to resolve against all eight presets and a
+maximum-chroma custom colour.
+
 Switching a sheet into edit mode moves nothing: both states render the same
 `EditableField`, whose two halves share a box. There is a Playwright check
 for this — it measures every panel before and after the switch.
