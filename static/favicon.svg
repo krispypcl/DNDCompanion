@@ -1,1 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect width="16" height="16" rx="3" fill="%23262624"/><path d="M4 11.5 8 4l4 7.5z" fill="%23f0eee6"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <rect width="48" height="48" rx="10" fill="#0d0d0f" />
+  <g fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linejoin="round">
+    <polygon points="24 7 40 16 40 32 24 41 8 32 8 16" />
+    <polygon points="24 15 32 29 16 29" />
+  </g>
+</svg>

@@ -27,7 +27,10 @@
         /* If the bundle never arrives, do not hold the screen for ever. */
         animation: splash-giveup 0.4s ease-in 10s forwards;
       }
-      #splash svg { color: oklch(76% 0.06075 255); }
+      #splash svg { color: oklch(99.11% 0 0); }
+      /* Signed in, there is nothing to wait for: the sheets open straight
+         away. The script below decides before the first paint. */
+      html[data-known-user] #splash { display: none; }
       #splash span {
         font-size: 0.75rem;
         letter-spacing: 0.22em;
@@ -45,6 +48,20 @@
         #splash.out { animation-duration: 0.01ms; }
       }
     </style>
+    <script>
+      /* Supabase keeps the session in localStorage under sb-<ref>-auth-token.
+         Its presence is enough to say "this person has been here"; the app
+         still verifies the session itself. Runs before the body paints, so a
+         returning user never sees the splash at all. */
+      try {
+        for (var i = 0; i < localStorage.length; i++) {
+          if (/^sb-.*-auth-token$/.test(localStorage.key(i))) {
+            document.documentElement.setAttribute('data-known-user', '');
+            break;
+          }
+        }
+      } catch (e) {}
+    </script>
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover">

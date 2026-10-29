@@ -849,8 +849,23 @@
   @media (max-width: 860px) {
     .sheet { padding: 0.875rem; }
     .band, .main { grid-template-columns: 1fr; }
+    /* Proficiencies, languages and senses are long free text; at 13px they
+       are both hard to read and small enough that a phone zooms in on focus. */
+    .profs :global(.field) { font-size: 1rem; }
     /* On a phone the attacks must come before an 18-row skill list. */
     .rail-skills { order: 3; }
     .identity { gap: 0.75rem; }
+  }
+
+  @media (max-width: 700px) {
+    /* The header ran to a third of the screen before a single hit point was
+       visible. The portrait gives most of that back. */
+    .portrait { width: 4rem; }
+    .sheet { padding: 0.75rem; }
+    .band, .main { gap: 0.75rem; }
+    .panel { padding: 0.875rem; }
+    /* Six abilities over three columns leaves the names cramped; two rows of
+       three with room to breathe reads better at this width. */
+    .defense { gap: 0.4375rem; }
   }
 </style>

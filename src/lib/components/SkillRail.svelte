@@ -119,4 +119,16 @@
     padding: 0.125rem 0; color: var(--text); font-weight: 600; flex: none;
   }
   .row.prof .bonus { border-color: var(--a-edge); background: var(--a-wash); color: var(--a); }
+
+  /* The dot is 9px across. That is fine to look at and impossible to tap, so
+     on a phone it keeps its size and gets a finger-sized hit area around it. */
+  @media (max-width: 700px) {
+    .dot { position: relative; }
+    .dot:not(:disabled)::after {
+      content: '';
+      position: absolute;
+      inset: -0.75rem;
+    }
+    .row { padding-block: 0.1875rem; }
+  }
 </style>

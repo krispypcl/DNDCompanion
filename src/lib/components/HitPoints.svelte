@@ -313,4 +313,8 @@
   .hprow button:hover, .restrow :global(.rests button:hover) {
     border-color: var(--a-edge); color: var(--a);
   }
+
+  @media (max-width: 700px) {
+    .hprow input { font-size: 16px; }
+  }
 </style>

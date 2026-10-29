@@ -110,6 +110,13 @@
     box-sizing: border-box;
     transition: border-color 0.18s ease, background-color 0.18s ease;
   }
+  /* Under 16px a phone zooms in when a field takes focus, which on a sheet
+     full of small numbers means zooming on every tap. The floor applies to
+     the readout as well, so the two states still measure the same. */
+  @media (max-width: 700px) {
+    .field { font-size: max(1em, 16px); --fld-pad-y: 0.3rem; }
+  }
+
   .readout {
     display: inline-block;
     /* The shared height is a floor here, not a cap: a fixed height made long
