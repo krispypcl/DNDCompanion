@@ -344,7 +344,14 @@
       <!-- One group, so they wrap together: loose in the header the status
            dot was left stranded at the end of the name's line on a phone. -->
       <div class="controls">
-        <SaveIndicator />
+        <!-- Always here, so the row is laid out once: muted and inert until
+             there is something to undo, and lit when there is. -->
+        <button
+          class="undo"
+          disabled={!$canUndo}
+          title={$canUndo ? `Undo ${$lastLabel}` : 'Nothing to undo'}
+          onclick={doUndo}>Undo</button
+        >
         {#if isOwner}
           <button class="edit" aria-pressed={editing} onclick={() => (editing = !editing)}>
             {editing ? 'Done' : 'Edit'}
@@ -352,11 +359,6 @@
         {/if}
         <a class="back" href="{base}/">Back</a>
         <ModeToggle />
-        <!-- Last, because it comes and goes: ahead of the others it moved
-             them sideways the moment anything became undoable. -->
-        {#if $canUndo}
-          <button class="undo" onclick={doUndo}>Undo <span class="what">{$lastLabel}</span></button>
-        {/if}
       </div>
     </header>
 
@@ -699,6 +701,8 @@
 
   <UndoToast label={toast} onundo={doUndo} onexpire={() => (toast = null)} />
   <SaveAlert />
+  <!-- Floating, so saying a word costs the header nothing. -->
+  <SaveIndicator />
 {/if}
 
 <style>
@@ -809,15 +813,19 @@
   .edit, .undo, .back { transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease; }
   .edit:active, .undo:active, .back:active { transform: translateY(1px); }
   /* A surface of its own: it sits over the banner, where an outline with
-     nothing behind it was hard to pick out, and it is the one control here
-     that appears because something just happened. */
+     nothing behind it was hard to pick out. Muted while there is nothing to
+     undo — which is the state it spends most of its life in. */
   .undo {
     background: var(--a-wash); border: 1px solid var(--a-edge); color: var(--a);
     border-radius: var(--r-sm); padding: 0.375rem 0.75rem; font: inherit;
     font-size: 0.8125rem; cursor: pointer; flex: none;
-    transition: background-color 0.18s ease, border-color 0.18s ease;
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
   }
-  .undo:hover { border-color: var(--a); background: var(--a-edge); color: var(--text); }
+  .undo:hover:not(:disabled) { border-color: var(--a); background: var(--a-edge); color: var(--text); }
+  .undo:disabled {
+    background: none; border-color: var(--line-soft); color: var(--faint);
+    cursor: default;
+  }
   .back {
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font-size: 0.8125rem;
@@ -932,10 +940,6 @@
   }
 
   @media (max-width: 700px) {
-    /* Just "Undo" here: with the action named as well it is wide enough to
-       wrap onto a second row, which grows the header and pushes the sheet
-       down — the thing this row is arranged to avoid. */
-    .undo .what { display: none; }
     /* The header ran to a third of the screen before a single hit point was
        visible. The portrait gives most of that back. */
     .portrait { width: 4rem; }
