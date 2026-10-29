@@ -54,6 +54,13 @@
 
 <style>
   .defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+  /**
+   * No positioned ancestor, so this resolves against the initial containing
+   * block: the full width of the page at its very top, rather than the
+   * sheet's own column, which is centred and stops at 110rem. Deliberately
+   * not 100vw — that counts the scrollbar's width and would put a horizontal
+   * scrollbar on every bannered sheet.
+   */
   .slash {
     position: absolute;
     top: 0;
@@ -71,7 +78,11 @@
     width: 100%;
     height: 144%;
     object-fit: cover;
-    transform: translate3d(0, var(--drift, 0px), 0);
+    /* Pushed past the frame so the photograph's own edges never show: cover
+       alone can leave them in view when the image and the layer are close in
+       proportion. The drift is applied before the scale, so it stays a
+       quarter of the page's travel rather than a quarter times 1.14. */
+    transform: translate3d(0, var(--drift, 0px), 0) scale(1.14);
     will-change: transform;
   }
   /**
