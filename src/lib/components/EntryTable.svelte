@@ -27,6 +27,7 @@
   let {
     items,
     columns,
+    check,
     editable,
     blank,
     onchange,
@@ -36,6 +37,8 @@
   }: {
     items: T[];
     columns: Column[];
+    /** A tick in the first column, ahead of the name: prepared spells. */
+    check?: { key: string; label: string };
     editable: boolean;
     blank: () => T;
     onchange: (next: T[]) => void;
@@ -53,6 +56,20 @@
     onchange(items.map((item, i) => (i === index ? { ...item, [key]: value } : item)));
   }
 
+  function setFlag(index: number, key: string, value: boolean) {
+    onchange(items.map((item, i) => (i === index ? { ...item, [key]: value } : item)));
+  }
+
+  /** Order is the list's own order, so moving a row is a swap. The rail reads
+      the same array, which is why a tracker moves there too. */
+  function move(index: number, by: number) {
+    const to = index + by;
+    if (to < 0 || to >= items.length) return;
+    const next = [...items];
+    [next[index], next[to]] = [next[to], next[index]];
+    onchange(next);
+  }
+
   const text = (v: unknown) => (v === undefined || v === null || v === '' ? '—' : String(v));
   const nameOf = (item: T) => String(item[nameCol.key] ?? '');
 </script>
@@ -63,20 +80,38 @@
   <div class="scroller">
     <table class:editing={editable}>
       <colgroup>
+        {#if check}<col style:width="2.5rem" />{/if}
         {#each columns as col (col.key)}<col style:width={col.width} />{/each}
-        {#if editable}<col style:width="2.25rem" />{/if}
+        {#if editable}<col style:width="5rem" />{/if}
       </colgroup>
       <thead>
         <tr>
+          {#if check}<th class="tick" title={check.label}><span class="sr">{check.label}</span>✓</th>{/if}
           {#each columns as col (col.key)}
             <th class:fold={col.muted}>{col.label}</th>
           {/each}
-          {#if editable}<th><span class="sr">Remove</span></th>{/if}
+          {#if editable}<th><span class="sr">Order and remove</span></th>{/if}
         </tr>
       </thead>
       <tbody>
         {#each items as item, i (i)}
           <tr>
+            {#if check}
+              <td class="tick" data-label={check.label}>
+                {#if editable}
+                  <input
+                    type="checkbox"
+                    checked={Boolean(item[check.key])}
+                    aria-label="{nameOf(item) || `Row ${i + 1}`} {check.label.toLowerCase()}"
+                    onchange={(e) => setFlag(i, check.key, e.currentTarget.checked)}
+                  />
+                {:else}
+                  <span class:yes={Boolean(item[check.key])} aria-label={item[check.key] ? check.label : ''}
+                    >{item[check.key] ? '✓' : '·'}</span
+                  >
+                {/if}
+              </td>
+            {/if}
             <td class="name" data-label={nameCol.label}>
               {#if editable}
                 <input
@@ -124,6 +159,18 @@
 
             {#if editable}
               <td class="rm">
+                <button
+                  class="mv"
+                  disabled={i === 0}
+                  aria-label="Move {nameOf(item) || `row ${i + 1}`} up"
+                  onclick={() => move(i, -1)}>↑</button
+                >
+                <button
+                  class="mv"
+                  disabled={i === items.length - 1}
+                  aria-label="Move {nameOf(item) || `row ${i + 1}`} down"
+                  onclick={() => move(i, 1)}>↓</button
+                >
                 <button class="x" aria-label="Remove {nameOf(item) || `row ${i + 1}`}"
                         onclick={() => onchange(items.filter((_, n) => n !== i))}>×</button>
               </td>
@@ -151,6 +198,9 @@
   }
   th {
     text-align: left;
+    /* Fixed columns do not grow for a long heading, so it wraps rather than
+       running into the next one. */
+    overflow-wrap: anywhere;
     font-size: 0.65rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -183,11 +233,20 @@
   input[type='number'] { -moz-appearance: textfield; appearance: textfield; }
   input[type='number']::-webkit-outer-spin-button,
   input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  .x {
+  .x, .mv {
     background: none; border: 0; color: var(--dim); cursor: pointer;
     font-size: 1rem; padding: 0 0.2rem; line-height: 1;
   }
   .x:hover { color: var(--danger); }
+  .mv { font-size: 0.8125rem; }
+  .mv:hover:not(:disabled) { color: var(--a); }
+  .mv:disabled { opacity: 0.3; cursor: default; }
+  /* The tick column is the width of the mark and nothing more. */
+  .tick { text-align: center; }
+  th.tick { color: var(--label); }
+  .tick span { color: var(--faint); }
+  .tick span.yes { color: var(--a); font-weight: 600; }
+  .tick input { width: 1rem; height: 1rem; accent-color: var(--a); cursor: pointer; }
   .add {
     margin-top: 0.75rem; background: none; border: 1px dashed var(--line);
     color: var(--dim); border-radius: var(--r-sm); padding: 0.4rem 0.9rem;
@@ -220,10 +279,9 @@
     table.editing thead,
     table.editing colgroup { display: none; }
     table.editing tr {
-      position: relative;
       border: 1px solid var(--line-soft);
       border-radius: var(--r);
-      padding: 0.625rem 2.25rem 0.75rem 0.75rem;
+      padding: 0.625rem 0.75rem 0.5rem;
       margin-bottom: 0.625rem;
     }
     table.editing td { border: 0; padding: 0.3125rem 0 0; }
@@ -238,10 +296,20 @@
       margin-bottom: 0.1875rem;
     }
     table.editing td.name { padding-top: 0; }
-    /* The remove button sits in the card's corner rather than in a column. */
-    table.editing td.rm { position: absolute; top: 0.375rem; right: 0.25rem; padding: 0; }
+    /* Order and remove sit together at the foot of the card, where three
+       buttons fit without crowding the first field. */
+    table.editing td.rm {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.25rem;
+      padding-top: 0.5rem;
+      margin-top: 0.375rem;
+      border-top: 1px solid var(--line-soft);
+    }
     table.editing td.rm::before { content: none; }
-    table.editing .x { font-size: 1.25rem; padding: 0.25rem 0.5rem; }
+    table.editing .x, table.editing .mv { font-size: 1.125rem; padding: 0.25rem 0.625rem; }
+    /* The tick reads as a field of its own here, label and all. */
+    table.editing td.tick { text-align: left; }
     /* Under 16px, a phone zooms in when a field takes focus. */
     table.editing input, table.editing select { font-size: 16px; padding: 0.4rem 0.5rem; }
   }
