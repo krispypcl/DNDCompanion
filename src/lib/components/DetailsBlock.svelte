@@ -128,15 +128,13 @@
     padding-bottom: 1.25rem;
     border-bottom: 1px solid var(--line-soft);
   }
-  /* Square, and as tall as the two rows of details beside it. */
+  /* A fixed square. Stretching it to the row made the empty placeholder, which
+     has no intrinsic size, come out rectangular. */
   .portrait {
-    align-self: stretch;
-    height: auto;
-    width: auto;
-    aspect-ratio: 1;
-    min-width: 4rem;
-    max-width: 5.5rem;
-    max-height: 5.5rem;
+    align-self: flex-start;
+    width: 5.5rem;
+    height: 5.5rem;
+    flex: none;
     object-fit: cover;
     border-radius: var(--r);
     border: 1px solid var(--line);
