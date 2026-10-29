@@ -13,6 +13,9 @@
   type Column = {
     key: string;
     label: string;
+    /** A heading for a column too narrow for its name. The name is still what
+        the field is called, and still what a screen reader announces. */
+    short?: string;
     /** Required: fixed layout is what stops the headers moving. */
     width: string;
     type?: 'text' | 'number';
@@ -38,7 +41,7 @@
     items: T[];
     columns: Column[];
     /** A tick in the first column, ahead of the name: prepared spells. */
-    check?: { key: string; label: string };
+    check?: { key: string; label: string; short?: string };
     editable: boolean;
     blank: () => T;
     onchange: (next: T[]) => void;
@@ -86,9 +89,11 @@
       </colgroup>
       <thead>
         <tr>
-          {#if check}<th class="tick" title={check.label}><span class="sr">{check.label}</span>✓</th>{/if}
+          {#if check}<th class="tick" title={check.label}>{check.short ?? check.label}</th>{/if}
           {#each columns as col (col.key)}
-            <th class:fold={col.muted}>{col.label}</th>
+            <th class:fold={col.muted} title={col.short ? col.label : undefined}>
+              {col.short ?? col.label}
+            </th>
           {/each}
           {#if editable}<th><span class="sr">Order and remove</span></th>{/if}
         </tr>
