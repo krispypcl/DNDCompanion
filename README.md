@@ -98,3 +98,18 @@ view and retired characters. The tables and their policies already ship in
 `supabase/migrations/0001_init.sql`, so it needs no migration against live
 data. Profiles are a dependency of it: the library has to show who wrote an
 entry, and `auth.users` is not readable by other users.
+
+### Deferred
+
+Asked for, designed enough to start, and parked:
+
+- **Cards instead of tables for the middle modules on a phone.** Editing
+  already stacks into cards under 700px; this is the reading view catching
+  up, and deciding what each card shows at a glance.
+- **A conditions and effects module.** `State` already carries a
+  `conditions: string[]`, written by nothing and read by nothing, so this
+  needs no migration either — only a decision about whether a condition is
+  free text or a list with the rules attached.
+- **Confirm password when creating an account.** A second field on
+  `/signup` that has to match before the form submits. Worth pairing with
+  a minimum length, since Supabase's own default is six characters.
