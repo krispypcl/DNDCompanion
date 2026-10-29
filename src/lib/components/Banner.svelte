@@ -37,8 +37,15 @@
      at any width without a media query to redraw it. -->
 <svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
   <defs>
+    <!-- One continuous sweep, falling from left to right. An earlier shape
+         doubled back on itself and left a kink above the hit points. -->
     <clipPath id="banner-curve" clipPathUnits="objectBoundingBox">
-      <path d="M0,0 H1 V0.74 C0.70,0.99 0.33,0.33 0,0.17 Z" />
+      <path d="M0,0 H1 V0.70 C0.74,0.78 0.40,0.46 0,0.30 Z" />
+    </clipPath>
+    <!-- The same fractions read far steeper in a tall narrow box, so a phone
+         gets its own, much gentler. -->
+    <clipPath id="banner-curve-phone" clipPathUnits="objectBoundingBox">
+      <path d="M0,0 H1 V0.46 C0.70,0.56 0.34,0.34 0,0.26 Z" />
     </clipPath>
   </defs>
 </svg>
@@ -127,7 +134,7 @@
    * image clears the header and is read through the frost of the hit points.
    */
   @media (max-width: 700px) {
-    .slash { height: 26rem; }
+    .slash { height: 26rem; clip-path: url(#banner-curve-phone); }
     /* One column, so the header text runs the full width and the sideways
        relief has nowhere to put it. The tint stays even across instead. */
     .tint {
