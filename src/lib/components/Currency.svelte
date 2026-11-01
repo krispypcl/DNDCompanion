@@ -45,6 +45,9 @@
     display: block; width: 100%; text-align: center; font-size: 0.9375rem;
     font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 0.1875rem;
     box-sizing: border-box;
+    /* One height for both: an input takes its from the font's own metrics, a
+       <strong> from its line-height, and they differed by three pixels. */
+    line-height: 1.4; height: calc(1.4em + 0.375rem + 2px);
   }
   input {
     background: var(--bg); border: 1px solid var(--line); color: var(--text);

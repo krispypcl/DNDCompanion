@@ -82,7 +82,14 @@ export type Spell = LinkableEntry & {
   notes?: string;
   prepared?: boolean;
 };
-export type Item = LinkableEntry & { qty?: number; weight?: number; notes?: string };
+export type Item = LinkableEntry & {
+  qty?: number;
+  weight?: number;
+  /** Written as the player likes ("15 gp", "priceless"), so it is text and
+      is never summed. */
+  value?: string;
+  notes?: string;
+};
 
 /** The long-form character writing, kept apart from the one-line details. */
 /** One class a character has levels in. A single-class character has one. */
@@ -160,8 +167,13 @@ export type Definition = {
   currency: Partial<Record<'cp' | 'sp' | 'ep' | 'gp' | 'pp', number>>;
   traits?: Traits;
   senses?: string;
+  /** Left empty once the sheet's text lives in `Sheet.texts`; read only by
+      sheets saved before that, and by a database that has no table for it. */
   notes: string;
   backstory?: string;
+  /** Blur this writing until it is hovered (or tapped). Not secret — it
+      hides nothing from anyone, it only keeps a screen from showing it. */
+  hoverReveal?: Partial<Record<TextKey, boolean>>;
 };
 
 export type State = {
@@ -176,6 +188,27 @@ export type State = {
   inspiration?: number;
 };
 
+/** The two long-form writings. They live apart from the definition so that
+    one of them can be private: a sheet's own row is readable by anyone with
+    its link, and a hidden field in a readable row is not hidden. */
+export type TextKey = 'notes' | 'backstory';
+export const TEXT_KEYS: TextKey[] = ['notes', 'backstory'];
+
+export type TextEntry = {
+  body: string;
+  /** Anyone with the link may read it; otherwise only the owner can. */
+  isPublic: boolean;
+  /** When this copy was last saved, for the same lost-update guard the rest of
+      the sheet has. Null until it has been saved once. */
+  updatedAt: string | null;
+};
+export type SheetTexts = Record<TextKey, TextEntry>;
+
+export const blankTexts = (): SheetTexts => ({
+  notes: { body: '', isPublic: true, updatedAt: null },
+  backstory: { body: '', isPublic: true, updatedAt: null }
+});
+
 export type Sheet = {
   id: string;
   owner_id: string;
@@ -186,6 +219,12 @@ export type Sheet = {
   state: State;
   created_at: string;
   updated_at: string;
+  /**
+   * Notes and backstory, with who may read them. Null when the database has
+   * not been given the table for them yet, in which case both are still in
+   * the definition and neither can be made private.
+   */
+  texts?: SheetTexts | null;
 };
 
 export const emptyState = (): State => ({

@@ -19,6 +19,18 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
 }
 
 /**
+ * jsdom has no layout, so nothing ever resizes; Svelte's size bindings still
+ * ask for an observer.
+ */
+if (typeof window !== 'undefined' && !('ResizeObserver' in window)) {
+  (window as unknown as { ResizeObserver: unknown }).ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
+
+/**
  * Testing-library only registers its own auto-cleanup when vitest runs with
  * `globals: true`, which this config does not. Without it, each render leaves
  * its DOM behind and the next test in the file sees two copies of everything —

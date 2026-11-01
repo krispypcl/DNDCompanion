@@ -6,7 +6,7 @@
    */
   import CountUp from './CountUp.svelte';
   import EditableField from './EditableField.svelte';
-  import { applyDamage, applyHealing, setDeathSave, setTempHp } from '$lib/rules/hp';
+  import { applyDamage, applyHealing, hitSeverity, setDeathSave, setTempHp } from '$lib/rules/hp';
   import { snapshot } from '$lib/stores/undo';
   import type { Definition, State } from '$lib/types';
 
@@ -41,12 +41,15 @@
   let ghost = $state<{ left: number; width: number; kind: 'damage' | 'heal' } | null>(null);
   let pulse = $state(0);
   let struck = $state(false);
+  /** How hard the last hit was, as inline variables the shake reads. */
+  let blow = $state('');
   /* Plain variables: reading a $state inside the effect would make the effect
      depend on its own write, and returning a cleanup would cancel the timer
      on the very next run. Both cost the first damage its ghost. */
   let previous = -1;
   let seq = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let settle: ReturnType<typeof setTimeout> | undefined;
 
   $effect(() => {
     const current = sheetState.hpCurrent;
@@ -63,15 +66,30 @@
         ? { left: to, width: Math.max(from - to, 0.8), kind: 'damage' }
         : { left: from, width: Math.max(to - from, 0.8), kind: 'heal' };
     const damaged = current < previous;
+    const lost = previous - current;
     previous = current;
     seq += 1;
     pulse = seq;
     if (damaged) {
+      // A heavier blow moves the gauge further, longer and with more weight:
+      // sideways, then up and down, then a lean, then a thickening. A scratch
+      // keeps the small nudge it always had.
+      const sev = hitSeverity(lost, hpMax);
+      const ms = Math.round(380 + sev * 520);
+      blow = [
+        `--amp:${(2.5 + sev * 9.5).toFixed(2)}px`,
+        `--lift:${(sev * sev * 5).toFixed(2)}px`,
+        `--tilt:${(sev * 1.4).toFixed(2)}deg`,
+        `--swell:${(1 + sev * 0.7).toFixed(2)}`,
+        `--flash:${(0.2 + sev * 0.5).toFixed(2)}`,
+        `--dur:${ms}ms`
+      ].join(';');
       // Off then on across a frame, so a second hit restarts the animation
       // instead of being ignored because the class is already set.
       struck = false;
       requestAnimationFrame(() => (struck = true));
-      setTimeout(() => (struck = false), 450);
+      clearTimeout(settle);
+      settle = setTimeout(() => (struck = false), ms + 40);
     }
     clearTimeout(timer);
     timer = setTimeout(() => (ghost = null), 760);
@@ -96,7 +114,7 @@
   }
 </script>
 
-<div class="hpwrap" class:struck>
+<div class="hpwrap" class:struck style={blow}>
 <span class="cap">Hit points</span>
 
 <div class="meter">
@@ -145,46 +163,54 @@
       <button onclick={() => act('Temp HP', setTempHp(sheetState, amount))}>Temp</button>
     </div>
   {/if}
-  <div class="restrow">
-    {#if down}
-      <!-- At zero there is no resting, so death saves take this space. -->
-      <div class="deaths">
-        {#each (['successes', 'failures'] as const) as kind (kind)}
-          <div class="drow">
-            <span class="kind">{kind === 'successes' ? 'Saves' : 'Fails'}</span>
-            {#each [1, 2, 3] as n (n)}
-              <button
-                class="pip"
-                class:fail={kind === 'failures'}
-                aria-pressed={sheetState.deathSaves[kind] >= n}
-                aria-label="{kind} {n}"
-                disabled={!editable}
-                onclick={() =>
-                  act('Death save',
-                      setDeathSave(sheetState, kind, sheetState.deathSaves[kind] >= n ? n - 1 : n))}
-              ></button>
-            {/each}
-          </div>
-        {/each}
-      </div>
-    {:else}
-      {@render children?.()}
-    {/if}
-  </div>
+  <!-- A visitor can neither rest nor spend: the row is only there for the
+       owner, or to show death saves when the character is down. -->
+  {#if down || editable}
+    <div class="restrow">
+      {#if down}
+        <!-- At zero there is no resting, so death saves take this space. -->
+        <div class="deaths">
+          {#each (['successes', 'failures'] as const) as kind (kind)}
+            <div class="drow">
+              <span class="kind">{kind === 'successes' ? 'Saves' : 'Fails'}</span>
+              {#each [1, 2, 3] as n (n)}
+                <button
+                  class="pip"
+                  class:fail={kind === 'failures'}
+                  aria-pressed={sheetState.deathSaves[kind] >= n}
+                  aria-label="{kind} {n}"
+                  disabled={!editable}
+                  onclick={() =>
+                    act('Death save',
+                        setDeathSave(sheetState, kind, sheetState.deathSaves[kind] >= n ? n - 1 : n))}
+                ></button>
+              {/each}
+            </div>
+          {/each}
+        </div>
+      {:else}
+        {@render children?.()}
+      {/if}
+    </div>
+  {/if}
 </div>
 </div>
 
 <style>
   /* A box of its own, so the jolt moves the module and not the panel. */
   .hpwrap { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-  .struck .bar { animation: jolt 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+  /* The variables come from how hard the hit was; the fallbacks are the
+     gentle nudge a one-point scratch gets. */
+  .struck .bar {
+    animation: jolt var(--dur, 420ms) cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  }
   @keyframes jolt {
-    0%, 100% { transform: translateX(0); }
-    12% { transform: translateX(-5px); }
-    28% { transform: translateX(4px); }
-    44% { transform: translateX(-3px); }
-    62% { transform: translateX(2px); }
-    80% { transform: translateX(-1px); }
+    0%, 100% { transform: translate(0, 0) rotate(0) scaleY(1); }
+    10% { transform: translate(calc(var(--amp, 5px) * -1), calc(var(--lift, 0px) * -1)) rotate(calc(var(--tilt, 0deg) * -1)) scaleY(var(--swell, 1)); }
+    24% { transform: translate(var(--amp, 5px), var(--lift, 0px)) rotate(var(--tilt, 0deg)) scaleY(calc(1 + (var(--swell, 1) - 1) * 0.6)); }
+    40% { transform: translate(calc(var(--amp, 5px) * -0.7), calc(var(--lift, 0px) * -0.5)) rotate(calc(var(--tilt, 0deg) * -0.6)) scaleY(calc(1 + (var(--swell, 1) - 1) * 0.3)); }
+    58% { transform: translate(calc(var(--amp, 5px) * 0.45), calc(var(--lift, 0px) * 0.3)) rotate(calc(var(--tilt, 0deg) * 0.3)); }
+    78% { transform: translate(calc(var(--amp, 5px) * -0.2), 0) rotate(0); }
   }
   .struck .bar::after {
     content: '';
@@ -194,11 +220,20 @@
     background: var(--danger);
     opacity: 0;
     pointer-events: none;
-    animation: flash 0.42s ease-out;
+    animation: flash var(--dur, 420ms) ease-out;
   }
   @keyframes flash {
-    0% { opacity: 0.22; }
+    0% { opacity: var(--flash, 0.22); }
     100% { opacity: 0; }
+  }
+  /* A heavy blow also kicks the number, which the gauge alone undersold. */
+  /* On the line, not the number: the number already has its own animation. */
+  .struck .hp-readout { animation: kick var(--dur, 420ms) cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+  @keyframes kick {
+    0%, 100% { transform: translateX(0); }
+    14% { transform: translateX(calc(var(--amp, 5px) * 0.45)); }
+    32% { transform: translateX(calc(var(--amp, 5px) * -0.4)); }
+    54% { transform: translateX(calc(var(--amp, 5px) * 0.2)); }
   }
   .cap {
     display: block;

@@ -42,3 +42,25 @@ export function setDeathSave(
 ): State {
   return { ...state, deathSaves: { ...state.deathSaves, [kind]: clamp(count, 0, 3) } };
 }
+
+/**
+ * How hurt a character looks, from 0 (fine) to 1 (at zero hit points). It
+ * begins below half health and grows from there, so the screen starts to
+ * show it at the same moment the number turns red.
+ */
+export function hurtLevel(current: number, max: number): number {
+  if (!(max > 0)) return 0;
+  const ratio = clamp(current / max, 0, 1);
+  return ratio < 0.5 ? clamp((0.5 - ratio) / 0.5, 0, 1) : 0;
+}
+
+/**
+ * How hard a hit landed, from 0 to 1: the share of the maximum it took. A
+ * 3-point scratch on a 90-point character and a 45-point blow should not
+ * move the gauge the same way.
+ */
+export function hitSeverity(lost: number, max: number): number {
+  if (!(max > 0) || !(lost > 0)) return 0;
+  // Half the maximum in one hit is as hard as the gauge ever shakes.
+  return clamp(lost / (max * 0.5), 0, 1);
+}

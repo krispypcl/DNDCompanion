@@ -31,11 +31,15 @@
   }
 </script>
 
-<div class="rests">
-  {#each Object.keys(LABELS) as RestKind[] as kind (kind)}
-    <button disabled={!editable} onclick={() => rest(kind)}>{LABELS[kind]}</button>
-  {/each}
-</div>
+<!-- Resting is the owner's call. To anyone else the buttons are not dimmed,
+     they are absent: there is nothing here a visitor can do. -->
+{#if editable}
+  <div class="rests">
+    {#each Object.keys(LABELS) as RestKind[] as kind (kind)}
+      <button onclick={() => rest(kind)}>{LABELS[kind]}</button>
+    {/each}
+  </div>
+{/if}
 
 <style>
   .rests { display: flex; gap: 0.4rem; flex-wrap: wrap; }
