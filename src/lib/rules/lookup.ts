@@ -25,6 +25,8 @@ export type LookupCategory =
   | 'feats'
   | 'backgrounds'
   | 'classes'
+  /** A subclass opens on its class's page with the subclass already chosen. */
+  | 'subclasses'
   | 'conditionsdiseases'
   /** Anything: a tracker, or a feature that may be a feat or a class feature. */
   | 'any';
@@ -34,10 +36,11 @@ export type LookupCategory =
 const IN_CATEGORY: Record<LookupCategory, string | null> = {
   spells: 'sp',
   items: 'itm',
-  races: 'race',
+  races: 'species',
   feats: null,
   backgrounds: 'bg',
   classes: 'class',
+  subclasses: 'subclass',
   conditionsdiseases: 'con',
   any: null
 };

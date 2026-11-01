@@ -73,7 +73,8 @@
     cursor: zoom-out;
   }
   img {
-    width: min(calc(100vw - var(--gap) * 2), calc((100dvh - var(--gap) * 2) * var(--ratio)));
+    /* 92% of the room left by the margin: large, with space to breathe. */
+    width: calc(min(calc(100vw - var(--gap) * 2), calc((100dvh - var(--gap) * 2) * var(--ratio))) * 0.92);
     aspect-ratio: var(--ratio); height: auto; object-fit: contain;
     cursor: default; opacity: 0; transition: opacity 0.15s ease;
     border-radius: var(--r); box-shadow: 0 20px 60px rgb(0 0 0 / 0.5);
