@@ -3,7 +3,8 @@
   import { base } from '$app/paths';
   import AuthForm from '$lib/components/AuthForm.svelte';
   import ModeToggle from '$lib/components/ModeToggle.svelte';
-  import { sheetRepo } from '$lib/data/sheets';
+  import { sheetName, sheetRepo } from '$lib/data/sheets';
+  import { MAX_BYTES, importSheet } from '$lib/exchange';
   import { signIn, signOut } from '$lib/data/session';
   import { blankDefinition } from '$lib/sample';
   import { session } from '$lib/stores/session';
@@ -24,6 +25,10 @@
   /** id of the sheet awaiting confirmation; deleting is permanent. */
   let confirming = $state<string | null>(null);
   let deleting = $state<string | null>(null);
+  let importing = $state(false);
+  let picker = $state<HTMLInputElement>();
+  /** What the last import had to leave out, shown beside the new sheet. */
+  let notice = $state<string | null>(null);
 
   $effect(() => {
     const user = $session.user;
@@ -50,6 +55,61 @@
       error = e instanceof Error ? e.message : 'Could not delete that sheet';
     } finally {
       deleting = null;
+    }
+  }
+
+  /**
+   * A file made by Export. It always becomes a new sheet: bringing a backup in
+   * never overwrites a character that is already here.
+   */
+  async function importFile(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    const user = $session.user;
+    if (!file || !user) return;
+    error = null;
+    notice = null;
+    if (file.size > MAX_BYTES) {
+      error = 'That file is too large to be a character sheet.';
+      return;
+    }
+    importing = true;
+    try {
+      const result = importSheet(await file.text());
+      if (!result.ok) {
+        error = result.error;
+        return;
+      }
+      const { definition, state, texts } = result.value;
+      // Where the writing goes depends on whether the database can keep it
+      // private: in its own rows if so, in the sheet as before if not.
+      const separate = await sheetRepo.textsAvailable();
+      const stored = separate
+        ? definition
+        : { ...definition, notes: texts.notes.body, backstory: texts.backstory.body };
+      const sheet = await sheetRepo.createSheet(user.id, sheetName(stored), stored, state);
+      if (separate) {
+        for (const key of ['notes', 'backstory'] as const) {
+          const t = texts[key];
+          if (t.body === '' && t.isPublic) continue;
+          try {
+            await sheetRepo.saveText(sheet.id, user.id, key, t.body, t.isPublic, null);
+          } catch (e) {
+            error = `The sheet was imported, but its ${key} could not be saved: ${e instanceof Error ? e.message : 'unknown error'}`;
+          }
+        }
+      }
+      if (error || result.warnings.length) {
+        sheets = [...sheets, sheet];
+        notice = `Imported \u201c${sheetName(stored)}\u201d. ${result.warnings.join(' ')}`.trim();
+        return;
+      }
+      await goto(`${base}/s/${sheet.id}`);
+    } catch (e) {
+      error = e instanceof Error ? e.message : 'Could not import that file';
+    } finally {
+      importing = false;
     }
   }
 
@@ -109,10 +169,28 @@
   {:else}
     <div class="bar">
       <h2>Your characters</h2>
-      <button onclick={create} disabled={creating}>{creating ? 'Creating…' : 'New sheet'}</button>
+      <div class="actions">
+        <!-- Visually hidden, not display: none: some phones will not open the
+             file picker for an input that is not rendered. -->
+        <input
+          bind:this={picker}
+          class="file"
+          type="file"
+          accept=".txt,text/plain"
+          aria-label="Import a sheet file"
+          tabindex="-1"
+          onchange={importFile}
+        />
+        <button class="ghost" onclick={() => picker?.click()} disabled={importing}
+                title="Bring back a sheet saved with Export">
+          {importing ? 'Importing…' : 'Import'}
+        </button>
+        <button onclick={create} disabled={creating}>{creating ? 'Creating…' : 'New sheet'}</button>
+      </div>
     </div>
 
     {#if error}<p class="warn" role="alert">{error}</p>{/if}
+    {#if notice}<p class="note" role="status">{notice}</p>{/if}
 
     {#if loading}
       <p class="dim">Loading…</p>
@@ -171,6 +249,12 @@
   h1 { font-size: 1.5rem; margin: 0 0 0.5rem; }
   h2 { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin: 0; }
   .bar { display: flex; align-items: center; justify-content: space-between; margin: 2rem 0 0.75rem; }
+  .actions { display: flex; gap: 0.5rem; }
+  .file {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0;
+    clip-path: inset(50%); pointer-events: none;
+  }
+  .note { color: var(--dim); font-size: 0.875rem; }
   button {
     background: var(--surface); border: 1px solid var(--line); color: var(--text);
     border-radius: 6px; padding: 0.4rem 0.9rem; font: inherit; font-size: 0.875rem; cursor: pointer;
