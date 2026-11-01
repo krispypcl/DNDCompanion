@@ -64,6 +64,17 @@ describe('lookupName', () => {
     expect(lookupName('Cloak of Elvenkind [attuned]')).toBe('Cloak of Elvenkind');
   });
 
+  test('keeps a variant the book names in brackets, for species and the like', () => {
+    expect(lookupName('Tiefling (Glasya)', 'races')).toBe('Tiefling (Glasya)');
+    expect(lookupName('Elf (High)', 'races')).toBe('Elf (High)');
+    expect(lookupName('Tiefling (Glasya) (+1 CHA)', 'races')).toBe('Tiefling (Glasya)');
+    expect(lookupName('Revolver (silvered)', 'items')).toBe('Revolver');
+  });
+
+  test('a species link searches for the variant itself', () => {
+    expect(query(lookupUrl('Tiefling (Glasya)', undefined, 'races'))).toBe('Tiefling (Glasya) in:species');
+  });
+
   test('keeps names that are the book’s own', () => {
     expect(lookupName("Melf's Acid Arrow")).toBe("Melf's Acid Arrow");
     expect(lookupName('Bigby’s Hand')).toBe('Bigby’s Hand');

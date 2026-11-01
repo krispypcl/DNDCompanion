@@ -48,10 +48,16 @@ const IN_CATEGORY: Record<LookupCategory, string | null> = {
 /** Sources that describe content with no page to link to. */
 const UNLINKABLE = new Set(['homebrew', 'custom', 'none']);
 
+/** Where the books themselves name a variant in brackets: "Tiefling
+    (Glasya)", "Elf (High)", "Dragonborn (Gold)". There, a bracket is part of
+    the name and stays — unless it holds a number, which is the player's. */
+const NAMED_VARIANTS = new Set<LookupCategory>(['races', 'classes', 'subclasses', 'backgrounds']);
+
 /** The name as the book has it: no bonuses, counts or notes in brackets. */
-export function lookupName(name: string): string {
+export function lookupName(name: string, category: LookupCategory = 'any'): string {
+  const keepWords = NAMED_VARIANTS.has(category);
   return name
-    .replace(/\([^)]*\)|\[[^\]]*\]|\{[^}]*\}/g, ' ')
+    .replace(/\([^)]*\)|\[[^\]]*\]|\{[^}]*\}/g, (group) => (keepWords && !/[\d+\-−×]/.test(group) ? group : ' '))
     .replace(/(^|\s)[+-]\s?\d+(?=\s|$)/g, ' ')
     .replace(/(^|\s)[x×]\s?\d+(?=\s|$)/gi, ' ')
     .replace(/(^|\s)\d+\s?[x×](?=\s|$)/gi, ' ')
@@ -71,7 +77,7 @@ export function lookupUrl(
 
   const src = source?.trim().toLowerCase();
   if (src && UNLINKABLE.has(src)) return null;
-  const clean = lookupName(name ?? '');
+  const clean = lookupName(name ?? '', category);
   if (!clean) return null;
 
   const parts = [clean];
