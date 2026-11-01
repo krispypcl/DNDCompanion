@@ -29,6 +29,11 @@
   let box: HTMLDivElement | undefined = $state();
   /** The text this editor last reported, so its own saves never reload it. */
   let said = '';
+  /** The editing box the text was last put into. Leaving edit mode destroys
+      the box and entering it makes a new, empty one, which must be filled
+      even though the text has not changed — or it reads as a blank page, and
+      saving that blank page would erase the writing. */
+  let filled: HTMLDivElement | null = null;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let blank = $state(true);
 
@@ -36,6 +41,7 @@
     if (!box) return;
     box.innerHTML = isEmptyText(text) ? '' : toHtml(text);
     said = text;
+    filled = box;
     blank = isEmptyText(text);
   }
 
@@ -44,11 +50,12 @@
   // the caret to the start.
   $effect(() => {
     if (!editable || !box) return;
-    if (value !== said) load(value);
+    if (box !== filled || value !== said) load(value);
   });
 
   function report() {
-    if (!box) return;
+    // Never save from a box that was not filled with the writing first.
+    if (!box || box !== filled) return;
     clearTimeout(timer);
     const text = fromHtml(box);
     blank = isEmptyText(box.textContent ?? '') && !box.querySelector('li');
