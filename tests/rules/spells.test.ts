@@ -1,31 +1,45 @@
 import { describe, expect, it } from 'vitest';
-import { UNLEVELLED, spellGroupTitle, spellRank } from '$lib/rules/spells';
+import { CUSTOM, SPELL_TYPES, UNLEVELLED, spellGroup, spellLevel, spellRank, spellTypeLabel } from '$lib/rules/spells';
 
-describe('spell order', () => {
-  it('puts cantrips first, then ascending levels, then the unlevelled', () => {
-    const levels = ['3', '', 'Cantrip', '1', '10', '2'];
-    const sorted = [...levels].sort((a, b) => spellRank(a) - spellRank(b));
-    expect(sorted).toEqual(['Cantrip', '1', '2', '3', '10', '']);
+describe('spell types', () => {
+  it('suggests cantrip and the ten levels', () => {
+    expect(SPELL_TYPES[0]).toBe('Cantrip');
+    expect(SPELL_TYPES[1]).toBe('1st level');
+    expect(SPELL_TYPES.at(-1)).toBe('10th level');
+    expect(SPELL_TYPES).toHaveLength(11);
   });
 
-  it('reads what was typed, not only what the picker offers', () => {
-    expect(spellRank(' cantrip ')).toBe(0);
-    expect(spellRank('0')).toBe(0);
-    expect(spellRank(' 4 ')).toBe(4);
-    expect(spellRank(undefined)).toBe(UNLEVELLED);
-    expect(spellRank('one')).toBe(UNLEVELLED);
-    expect(spellRank('2.5')).toBe(UNLEVELLED);
+  it('reads a level however it was written', () => {
+    for (const t of ['3', ' 3 ', '3rd level', '3rd-level', '3rd level spell', 'Level 3', 'lvl 3', '3 level']) {
+      expect(spellLevel(t), t).toBe(3);
+    }
+    expect(spellLevel('Cantrip')).toBe(0);
+    expect(spellLevel('cantrips')).toBe(0);
+    expect(spellLevel('0')).toBe(0);
+    expect(spellLevel('Ritual')).toBeNull();
+    expect(spellLevel('2.5')).toBeNull();
   });
 
-  it('names the groups', () => {
-    expect(spellGroupTitle(0)).toBe('Cantrips');
-    expect(spellGroupTitle(1)).toBe('1st level');
-    expect(spellGroupTitle(2)).toBe('2nd level');
-    expect(spellGroupTitle(3)).toBe('3rd level');
-    expect(spellGroupTitle(4)).toBe('4th level');
-    expect(spellGroupTitle(11)).toBe('11th level');
-    expect(spellGroupTitle(12)).toBe('12th level');
-    expect(spellGroupTitle(21)).toBe('21st level');
-    expect(spellGroupTitle(UNLEVELLED)).toBe('No level yet');
+  it('orders cantrips, levels, the player’s own types, then the untyped', () => {
+    const types = ['Ritual', '3', '', 'Cantrip', '1st level', '10', 'Innate'];
+    const sorted = [...types].sort((a, b) => spellRank(a) - spellRank(b));
+    expect(sorted.slice(0, 4)).toEqual(['Cantrip', '1st level', '3', '10']);
+    expect(spellRank('Ritual')).toBe(CUSTOM);
+    expect(spellRank('')).toBe(UNLEVELLED);
+  });
+
+  it('names the groups, folding case for the player’s own', () => {
+    expect(spellGroup('Cantrip')).toBe('Cantrips');
+    expect(spellGroup('2')).toBe('2nd level');
+    expect(spellGroup('11')).toBe('11th level');
+    expect(spellGroup('ritual')).toBe('Ritual');
+    expect(spellGroup('RITUAL')).toBe('Ritual');
+    expect(spellGroup('')).toBe('No type yet');
+  });
+
+  it('shows an old bare number as a level', () => {
+    expect(spellTypeLabel('3')).toBe('3rd level');
+    expect(spellTypeLabel('cantrip')).toBe('Cantrip');
+    expect(spellTypeLabel('Innate')).toBe('Innate');
   });
 });
