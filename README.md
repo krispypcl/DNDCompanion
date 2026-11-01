@@ -33,9 +33,15 @@ Pages.
 
 ## Running it locally
 
+Create a `.env` with your Supabase project's URL and anon key:
+
+```
+PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
 ```bash
 npm install
-touch .env   # your Supabase project URL and anon key
 npm run dev
 ```
 

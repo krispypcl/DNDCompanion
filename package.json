@@ -19,7 +19,6 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/svelte": "^5.2.6",
     "@types/node": "^26.6.5",
-    "@types/pg": "^8.23.1",
     "jsdom": "^25.0.1",
     "svelte": "^5.16.0",
     "svelte-check": "^4.1.1",
@@ -28,7 +27,6 @@
     "vitest": "^2.1.8"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.47.10",
-    "pg": "^8.13.1"
+    "@supabase/supabase-js": "^2.47.10"
   }
 }

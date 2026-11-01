@@ -32,9 +32,11 @@ describe('TextPanel', () => {
       expect(screen.queryByText(/page 1 of/i)).toBeNull();
     });
 
-    it('has no page controls for a one-page book', () => {
+    it('shows the page controls even for a one-page book, so every writing looks the same', () => {
       mount({ owner: false });
-      expect(screen.queryByText(/page 1 of/i)).toBeNull();
+      expect(screen.getByText('Page 1 of 1')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Previous page' })).toHaveProperty('disabled', true);
+      expect(screen.getByRole('button', { name: 'Next page' })).toHaveProperty('disabled', true);
     });
 
     it('can turn the pages of a longer one', async () => {
