@@ -46,8 +46,8 @@
   .edge i {
     display: block; width: 100%; height: 100%;
     /* Always red, whatever the character's theme. Chroma climbs with the
-       wound: a dull, almost brown red at first, a vivid one at the end. */
-    --red: oklch(calc(46% + var(--hurt) * 8%) calc(0.06 + var(--hurt) * 0.18) 27);
+       wound: a dull, almost brown red at first, a deep, darker one at the end. */
+    --red: oklch(calc(40% - var(--hurt) * 4%) calc(0.05 + var(--hurt) * 0.12) 25);
     background: linear-gradient(
       to right,
       var(--red) 0%,

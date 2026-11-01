@@ -6,7 +6,7 @@ import { spellGroup, spellRank } from '$lib/rules/spells';
 
 const columns = [
   { key: 'name', label: 'Name', width: '60%' },
-  { key: 'level', label: 'Type', width: '20%' },
+  { key: 'level', label: 'Level', width: '20%' },
   { key: 'notes', label: 'Notes', width: '20%', wide: true }
 ];
 const groupBy = {
@@ -42,7 +42,7 @@ describe('grouped table', () => {
       '# Cantrips', 'Light',
       '# 1st level', 'Shield', 'Magic Missile',
       '# 3rd level', 'Fireball',
-      '# No type yet', 'Mystery'
+      '# No level yet', 'Mystery'
     ]);
   });
 
@@ -124,6 +124,6 @@ describe('grouped table', () => {
     mount(false);
     const mystery = [...document.querySelectorAll('tbody tr')].find((r) => r.textContent?.includes('Mystery'))!;
     expect(mystery.querySelector('td[data-label="Notes"]')?.hasAttribute('data-empty')).toBe(true);
-    expect(mystery.querySelector('td[data-label="Type"]')?.hasAttribute('data-empty')).toBe(true);
+    expect(mystery.querySelector('td[data-label="Level"]')?.hasAttribute('data-empty')).toBe(true);
   });
 });

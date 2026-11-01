@@ -53,4 +53,12 @@
   .share:active { transform: translateY(1px); }
   .share.done { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
   .share svg { display: block; }
+  /* The links of the chain rock against each other once. */
+  .share:hover:not(.done) svg { animation: rock 0.5s cubic-bezier(0.3, 0.7, 0.4, 1); }
+  @keyframes rock {
+    0%, 100% { transform: rotate(0); }
+    35% { transform: rotate(-14deg); }
+    70% { transform: rotate(6deg); }
+  }
+  @media (prefers-reduced-motion: reduce) { .share:hover svg { animation: none; } }
 </style>

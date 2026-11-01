@@ -72,8 +72,8 @@ describe('every component renders without throwing', () => {
     // The widths are the testable half; that the table honours them with
     // table-layout: fixed is checked in a browser, since jsdom does not
     // resolve a component's scoped styles into computed values.
-    expect(widths.slice(0, 2)).toEqual(['60%', '40%']);
-    expect(widths).toHaveLength(3); // plus the remove column while editing
+    expect(widths.slice(1, 3)).toEqual(['60%', '40%']);
+    expect(widths).toHaveLength(4); // plus the handle and remove columns while editing
   });
 
   test('TrackerGroup renders groups, counters and gauges together', () => {

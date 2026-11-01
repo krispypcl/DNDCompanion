@@ -119,4 +119,7 @@
   }
   @media (prefers-reduced-motion: reduce) { .indicator.ready { transition: none; } }
   section { padding: 1rem 0 0; }
+  /* The writing tabs fill the rest of the card, so a page has the whole
+     height to be written on and its page controls sit at the foot. */
+  section:has(:global(.book)) { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
 </style>

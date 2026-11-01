@@ -6,6 +6,7 @@
   import { sheetName, sheetRepo } from '$lib/data/sheets';
   import { MAX_BYTES, importSheet } from '$lib/exchange';
   import { signIn, signOut } from '$lib/data/session';
+  import { friendlyDate } from '$lib/rules/dates';
   import { blankDefinition } from '$lib/sample';
   import { session } from '$lib/stores/session';
   import { isConfigured } from '$lib/supabase';
@@ -208,6 +209,9 @@
                   .join(' ') || 'No class'}
                 {#if sheet.definition?.identity?.level}· level {sheet.definition.identity.level}{/if}
                 {#if sheet.retired}· retired{/if}
+                <span class="dates">
+                  · created {friendlyDate(sheet.created_at)} · updated {friendlyDate(sheet.updated_at)}
+                </span>
               </span>
             </a>
 
@@ -304,6 +308,7 @@
   .danger:hover:not(:disabled) { background: var(--bad); color: var(--bg); border-color: var(--bad); }
   .retired a { opacity: 0.6; }
   .meta { display: block; font-size: 0.8rem; color: var(--dim); margin-top: 0.15rem; }
+  .dates { color: var(--faint); }
   .dim { color: var(--dim); }
   .warn { color: var(--accent); font-size: 0.9rem; }
   code { font-size: 0.85em; }

@@ -4,16 +4,18 @@
     checked,
     label,
     title,
+    disabled = false,
     onchange
   }: {
     checked: boolean;
     label: string;
     title?: string;
+    disabled?: boolean;
     onchange: (next: boolean) => void;
   } = $props();
 </script>
 
-<button class="switch" role="switch" aria-checked={checked} {title} onclick={() => onchange(!checked)}>
+<button class="switch" role="switch" aria-checked={checked} {title} {disabled} onclick={() => onchange(!checked)}>
   <span class="label">{label}</span>
   <span class="track" aria-hidden="true"><span class="knob"></span></span>
 </button>
@@ -25,7 +27,8 @@
     font: inherit; font-size: 0.8125rem; color: var(--dim);
     transition: color 0.18s ease;
   }
-  .switch:hover, .switch[aria-checked='true'] { color: var(--text); }
+  .switch:hover:not(:disabled), .switch[aria-checked='true'] { color: var(--text); }
+  .switch:disabled { cursor: default; opacity: 0.5; }
   .track {
     position: relative; width: 2.125rem; height: 1.25rem; flex: none;
     border-radius: 999px; background: var(--track); border: 1px solid var(--line);

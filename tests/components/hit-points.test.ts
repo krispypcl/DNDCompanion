@@ -165,3 +165,32 @@ describe('death saves', () => {
     expect(container.querySelector('.reveal.veiled')).not.toBeNull();
   });
 });
+
+describe('death save cover', () => {
+  const down = () => ({ ...state(), hpCurrent: 0, deathSaves: { successes: 2, failures: 1 } });
+
+  it('covers itself again once the pointer leaves, even after a save was marked', async () => {
+    const onchange = vi.fn();
+    const { container } = render(HitPoints, { props: { definition: definition(), state: down(), editable: true, onchange } });
+    const veil = container.querySelector('.reveal') as HTMLElement;
+    await fireEvent.pointerEnter(veil, { pointerType: 'mouse' });
+    expect(veil.classList.contains('veiled')).toBe(false);
+    const pip = screen.getByRole('button', { name: 'successes 3' });
+    // A mouse press focuses the button it lands on; that must not hold it open.
+    await fireEvent.pointerDown(pip, { pointerType: 'mouse' });
+    pip.focus();
+    await fireEvent.click(pip);
+    expect(onchange).toHaveBeenCalledTimes(1);
+    await fireEvent.pointerLeave(veil, { pointerType: 'mouse' });
+    expect(veil.classList.contains('veiled')).toBe(true);
+  });
+
+  it('covers itself again when a tap lands elsewhere', async () => {
+    const { container } = render(HitPoints, { props: { definition: definition(), state: down(), editable: true, onchange: vi.fn() } });
+    const veil = container.querySelector('.reveal') as HTMLElement;
+    await fireEvent.click(screen.getByRole('button', { name: 'failures 1' }));
+    expect(veil.classList.contains('veiled')).toBe(false);
+    await fireEvent.pointerDown(document.body);
+    expect(veil.classList.contains('veiled')).toBe(true);
+  });
+});
