@@ -79,7 +79,7 @@
   }
 
   const many = $derived(pages.length > 1);
-  const showNav = $derived(many || editable);
+
 </script>
 
 {#if locked}
@@ -109,9 +109,10 @@
   {/key}
 </div>
 
-{#if showNav}
-  <div class="pager" class:reading={!editable}>
-    <div class="turns" class:hidden={!many}>
+<!-- Always there, even for a single page: Notes and Backstory look the same
+     whatever has been written in them. -->
+<div class="pager" class:reading={!editable}>
+    <div class="turns">
       <button class="nav" aria-label="Previous page" disabled={current === 0} onclick={() => go(current - 1)}>
         <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="m14.5 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg>
       </button>
@@ -141,7 +142,6 @@
       </div>
     {/if}
   </div>
-{/if}
 {/if}
 
 <style>
@@ -178,7 +178,6 @@
   .turns { display: inline-flex; align-items: center; gap: 0.5rem; }
   /* Reading, the arrows are all there is, so they sit in the middle. */
   .pager.reading { justify-content: center; }
-  .turns.hidden { visibility: hidden; }
   .count { font-size: 0.78rem; color: var(--dim); font-variant-numeric: tabular-nums; min-width: 6.5rem; text-align: center; }
   .nav {
     display: inline-grid; place-items: center; width: 1.875rem; height: 1.875rem;
