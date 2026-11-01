@@ -115,7 +115,10 @@ export type Definition = {
     subclass?: string;
     level: number;
     ancestry?: string;
+    /** The book the species and background are from, for their 5e.tools links. */
+    ancestrySource?: string;
     background?: string;
+    backgroundSource?: string;
     player?: string;
     alignment?: string;
     portraitUrl?: string;

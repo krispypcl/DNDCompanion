@@ -125,6 +125,25 @@
   {/if}
 
   {#if editable}
+    <!-- The books the species and background come from: with one written,
+         their 5e.tools links in the header go straight to the entry. -->
+    <div class="wide sources">
+      {#each [
+        { key: 'ancestrySource', label: 'Species source' },
+        { key: 'backgroundSource', label: 'Background source' }
+      ] as const as field (field.key)}
+        <div>
+          <dt>{field.label}</dt>
+          <EditableField
+            value={definition.identity[field.key] ?? ''}
+            editable={true}
+            label={field.label}
+            placeholder="xphb"
+            onchange={(v) => patchIdentity(field.key, String(v).trim())}
+          />
+        </div>
+      {/each}
+    </div>
     <!-- Both accept the link as it was copied: a Drive, Dropbox, OneDrive or
          Imgur page is turned into the picture's own address when drawn. A
          preview beside the field says whether it actually loads. -->
@@ -244,6 +263,7 @@
   .empty-portrait { display: grid; place-items: center; color: var(--faint); background: var(--raised); }
   .wide { flex: 1 1 100%; min-width: 0; text-align: left; }
   .wide :global(.field) { width: 100%; field-sizing: fixed; }
+  .sources { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem 1.25rem; }
   .urlrow { display: flex; align-items: center; gap: 0.625rem; }
   .urlfield { flex: 1 1 auto; min-width: 0; }
   .banner {

@@ -74,3 +74,39 @@ describe('rolling from the attacks table', () => {
     expect(total).toBeLessThanOrEqual(7);
   });
 });
+
+import SkillRail from '$lib/components/SkillRail.svelte';
+import { diceRequest } from '$lib/stores/dice';
+import { get } from 'svelte/store';
+
+describe('rolling a skill', () => {
+  const definition = {
+    identity: { name: 'X', level: 1 }, abilities: { str: 10, dex: 16, con: 10, int: 10, wis: 10, cha: 10 },
+    proficiency: 2, combat: { ac: 10, speed: 30, hpMax: 10, hitDice: '1d8' }, saves: {},
+    skills: { stealth: { proficient: true } }, attacks: [], features: [], spells: [], trackers: [], equipment: [], currency: {}, notes: ''
+  };
+
+  it('makes each skill bonus a button that rolls it, for the owner', async () => {
+    const onroll = vi.fn();
+    render(SkillRail, { props: { definition: definition as never, editable: false, onchange: () => {}, onroll } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Roll Stealth +5' }));
+    expect(onroll).toHaveBeenCalledWith('Stealth check', 5);
+  });
+
+  it('leaves them as numbers for anyone else', () => {
+    render(SkillRail, { props: { definition: definition as never, editable: false, onchange: () => {} } });
+    expect(screen.queryByRole('button', { name: /^Roll/ })).toBeNull();
+  });
+
+  it('is rolled once: a tray that appears later does not roll it again', async () => {
+    requestRoll({ dice: { 20: 1 }, modifier: 5, mode: 'normal' }, 'Stealth check');
+    const first = render(DiceRoller);
+    await new Promise((r) => setTimeout(r, 500));
+    expect(first.container.querySelector('.said')!.textContent).toMatch(/Stealth check/);
+    expect(get(diceRequest)).toBeNull();
+    first.unmount();
+    const again = render(DiceRoller);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(again.container.querySelector('.result')).toBeNull();
+  });
+});

@@ -7,8 +7,15 @@
   let {
     definition,
     editable,
-    onchange
-  }: { definition: Definition; editable: boolean; onchange: (next: Definition) => void } = $props();
+    onchange,
+    onroll
+  }: {
+    definition: Definition;
+    editable: boolean;
+    onchange: (next: Definition) => void;
+    /** Rolls the skill in the dice roller. Only the owner gets this. */
+    onroll?: (label: string, bonus: number) => void;
+  } = $props();
 
   const NAMES: Record<Ability, string> = {
     str: 'Strength', dex: 'Dexterity', con: 'Constitution',
@@ -73,7 +80,14 @@
           onclick={() => cycle(skill)}
         ></button>
         <span class="name">{LABELS[skill]}</span>
-        <span class="bonus">{sign(skillTotal(definition, skill))}</span>
+        {#if onroll}
+          {@const total = skillTotal(definition, skill)}
+          <button class="bonus roll" title="Roll {LABELS[skill]}: d20 {sign(total)}"
+                  aria-label="Roll {LABELS[skill]} {sign(total)}"
+                  onclick={() => onroll(`${LABELS[skill]} check`, total)}>{sign(total)}</button>
+        {:else}
+          <span class="bonus">{sign(skillTotal(definition, skill))}</span>
+        {/if}
       </div>
     {/each}
   </section>
@@ -125,6 +139,15 @@
     padding: 0.125rem 0; color: var(--text); font-weight: 600; flex: none;
   }
   .row.prof .bonus { border-color: var(--a-edge); background: var(--a-wash); color: var(--a); }
+  /* A bonus that rolls: the same box, with the hit and damage buttons' states. */
+  button.bonus {
+    font: inherit; font-size: 0.8125rem; font-weight: 600; font-variant-numeric: tabular-nums;
+    background: none; cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
+  }
+  button.bonus:hover { border-color: var(--a); color: var(--a); background: var(--a-wash); border-style: dashed; }
+  button.bonus:active { transform: translateY(1px); }
+  .row.prof button.bonus { background: var(--a-wash); }
 
   /* The dot is 9px across. That is fine to look at and impossible to tap, so
      on a phone it keeps its size and gets a finger-sized hit area around it. */

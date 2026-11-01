@@ -82,7 +82,7 @@ const BLOCK = new Set(['DIV', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI', 'UL
 
 /** A typed character that would read as a mark is escaped. */
 function escapeText(s: string): string {
-  return s.replace(/ /g, ' ').replace(/[\\*~]/g, (c) => `\\${c}`).replace(/__/g, '\\_\\_');
+  return s.replace(/[\u200b\ufeff]/g, '').replace(/\u00a0/g, ' ').replace(/[\\*~]/g, (c) => `\\${c}`).replace(/__/g, '\\_\\_');
 }
 
 /** The marks for a run of inline content. */
@@ -130,7 +130,11 @@ export function fromHtml(root: HTMLElement): string {
   let current = '';
   let open = false;
   const flush = () => {
-    if (open) lines.push(...current.split('\n').map(plainLine));
+    // Loose content with nothing in it — an empty text node, an emptied <b>,
+    // a stray <br> — is what the browser leaves behind after formatting, not
+    // a line the writer wrote. Counting it added a blank line above the
+    // first line whenever that line was made bold.
+    if (open && current.trim() !== '') lines.push(...current.split('\n').map(plainLine));
     current = '';
     open = false;
   };
