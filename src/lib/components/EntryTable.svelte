@@ -6,6 +6,9 @@
    *
    * The layout is fixed and the widths declared, so the columns do not resize
    * when the first row is added to an empty list.
+   *
+   * On a phone the table stops being a table: each entry is a card, whether
+   * reading or editing, so nothing is ever wider than the screen.
    */
   import EntryLink from './EntryLink.svelte';
   import type { LookupCategory } from '$lib/rules/lookup';
@@ -23,8 +26,19 @@
     options?: readonly string[];
     placeholder?: string;
     numeric?: boolean;
-    /** Reads as secondary, and folds under the name on a narrow screen. */
+    /** Reads as secondary. */
     muted?: boolean;
+    /** Long prose (notes, a description): takes a full line of its card. */
+    wide?: boolean;
+  };
+
+  /** Keep rows in groups, in a fixed order of groups. Within a group the
+      list's own order stands, so a row can still be placed by hand. */
+  type Grouping<R> = {
+    /** The column the groups come from. Its cell is redundant on a card. */
+    key: string;
+    rank: (item: R) => number;
+    title: (rank: number) => string;
   };
 
   let {
@@ -36,7 +50,8 @@
     onchange,
     category,
     emptyText,
-    addLabel
+    addLabel,
+    groupBy
   }: {
     items: T[];
     columns: Column[];
@@ -49,10 +64,28 @@
     category: LookupCategory;
     emptyText: string;
     addLabel: string;
+    groupBy?: Grouping<T>;
   } = $props();
 
   const [nameCol, ...rest] = $derived(columns);
-  const folded = $derived(rest.find((c) => c.muted));
+
+  type Row = { item: T; index: number; rank: number };
+
+  /** What is shown, in order. `index` stays the row's place in `items`, so
+      every edit and every key refers to the data and not to the screen. */
+  const view = $derived.by<Row[]>(() => {
+    const rows = items.map((item, index) => ({ item, index, rank: groupBy ? groupBy.rank(item) : 0 }));
+    // Array sort is stable, so equal ranks keep the order they were placed in.
+    return groupBy ? [...rows].sort((a, b) => a.rank - b.rank) : rows;
+  });
+
+  /** One group on its own is just a list; headings only mean something when
+      there is more than one to tell apart. */
+  const showHeadings = $derived(
+    Boolean(groupBy) && view.length > 0 && view.some((r) => r.rank !== view[0].rank)
+  );
+
+  const span = $derived(columns.length + (check ? 1 : 0) + (editable ? 1 : 0));
 
   function patch(index: number, key: string, raw: string, type?: string) {
     const value = type === 'number' ? (raw === '' ? undefined : Number(raw)) : raw;
@@ -63,25 +96,41 @@
     onchange(items.map((item, i) => (i === index ? { ...item, [key]: value } : item)));
   }
 
+  /** The neighbour a row would trade places with: next on screen, and in the
+      same group, since groups are not the reader's to rearrange. */
+  function neighbour(pos: number, by: number): Row | null {
+    const other = view[pos + by];
+    if (!other) return null;
+    return !groupBy || other.rank === view[pos].rank ? other : null;
+  }
+
   /** Order is the list's own order, so moving a row is a swap. The rail reads
       the same array, which is why a tracker moves there too. */
-  function move(index: number, by: number) {
-    const to = index + by;
-    if (to < 0 || to >= items.length) return;
+  function move(pos: number, by: number) {
+    const other = neighbour(pos, by);
+    if (!other) return;
     const next = [...items];
-    [next[index], next[to]] = [next[to], next[index]];
+    const here = view[pos].index;
+    [next[here], next[other.index]] = [next[other.index], next[here]];
     onchange(next);
   }
 
-  const text = (v: unknown) => (v === undefined || v === null || v === '' ? '—' : String(v));
+  const isEmpty = (v: unknown) => v === undefined || v === null || v === '';
+  const text = (v: unknown) => (isEmpty(v) ? '—' : String(v));
   const nameOf = (item: T) => String(item[nameCol.key] ?? '');
+  const heading = (pos: number): string | null => {
+    if (!groupBy || !showHeadings) return null;
+    const here = view[pos];
+    if (pos > 0 && view[pos - 1].rank === here.rank) return null;
+    return groupBy.title(here.rank);
+  };
 </script>
 
 {#if items.length === 0 && !editable}
   <p class="empty">{emptyText}</p>
 {:else}
   <div class="scroller">
-    <table class:editing={editable}>
+    <table class:editing={editable} class:headed={showHeadings}>
       <colgroup>
         {#if check}<col style:width="2.5rem" />{/if}
         {#each columns as col (col.key)}<col style:width={col.width} />{/each}
@@ -91,7 +140,7 @@
         <tr>
           {#if check}<th class="tick" title={check.label}>{check.short ?? check.label}</th>{/if}
           {#each columns as col (col.key)}
-            <th class:fold={col.muted} title={col.short ? col.label : undefined}>
+            <th title={col.short ? col.label : undefined}>
               {col.short ?? col.label}
             </th>
           {/each}
@@ -99,16 +148,20 @@
         </tr>
       </thead>
       <tbody>
-        {#each items as item, i (i)}
+        {#each view as { item, index }, pos (index)}
+          {@const title = heading(pos)}
+          {#if title !== null}
+            <tr class="group"><th colspan={span} scope="colgroup">{title}</th></tr>
+          {/if}
           <tr>
             {#if check}
-              <td class="tick" data-label={check.label}>
+              <td class="tick" data-label={check.label} data-empty={!editable && !item[check.key] ? '' : undefined}>
                 {#if editable}
                   <input
                     type="checkbox"
                     checked={Boolean(item[check.key])}
-                    aria-label="{nameOf(item) || `Row ${i + 1}`} {check.label.toLowerCase()}"
-                    onchange={(e) => setFlag(i, check.key, e.currentTarget.checked)}
+                    aria-label="{nameOf(item) || `Row ${index + 1}`} {check.label.toLowerCase()}"
+                    onchange={(e) => setFlag(index, check.key, e.currentTarget.checked)}
                   />
                 {:else}
                   <span class="yes" aria-label={check.label}>{item[check.key] ? '✓' : ''}</span>
@@ -120,8 +173,8 @@
                 <input
                   value={nameOf(item)}
                   placeholder={nameCol.placeholder ?? ''}
-                  aria-label="{nameCol.label} {i + 1}"
-                  onchange={(e) => patch(i, nameCol.key, e.currentTarget.value)}
+                  aria-label="{nameCol.label} {index + 1}"
+                  onchange={(e) => patch(index, nameCol.key, e.currentTarget.value)}
                 />
               {:else}
                 <span class="nm">{text(item[nameCol.key])}</span>
@@ -131,20 +184,18 @@
                   {category}
                   override={item.lookupUrl as string | undefined}
                 />
-                {#if folded && item[folded.key]}
-                  <span class="fold-under">{item[folded.key]}</span>
-                {/if}
               {/if}
             </td>
 
             {#each rest as col (col.key)}
               <td data-label={col.label} class:muted={col.muted} class:numeric={col.numeric}
-                  class:fold={col.muted}>
+                  class:wide={col.wide} class:grouped={groupBy?.key === col.key}
+                  data-empty={!editable && isEmpty(item[col.key]) ? '' : undefined}>
                 {#if editable && col.options}
                   <select
                     value={String(item[col.key] ?? col.options[0])}
-                    aria-label="{nameOf(item) || `Row ${i + 1}`} {col.label}"
-                    onchange={(e) => patch(i, col.key, e.currentTarget.value)}
+                    aria-label="{nameOf(item) || `Row ${index + 1}`} {col.label}"
+                    onchange={(e) => patch(index, col.key, e.currentTarget.value)}
                   >
                     {#each col.options as option (option)}<option>{option}</option>{/each}
                   </select>
@@ -153,8 +204,8 @@
                     type={col.type === 'number' ? 'number' : 'text'}
                     value={item[col.key] ?? ''}
                     placeholder={col.placeholder ?? ''}
-                    aria-label="{nameOf(item) || `Row ${i + 1}`} {col.label}"
-                    onchange={(e) => patch(i, col.key, e.currentTarget.value, col.type)}
+                    aria-label="{nameOf(item) || `Row ${index + 1}`} {col.label}"
+                    onchange={(e) => patch(index, col.key, e.currentTarget.value, col.type)}
                   />
                 {:else}{text(item[col.key])}{/if}
               </td>
@@ -164,18 +215,18 @@
               <td class="rm">
                 <button
                   class="mv"
-                  disabled={i === 0}
-                  aria-label="Move {nameOf(item) || `row ${i + 1}`} up"
-                  onclick={() => move(i, -1)}>↑</button
+                  disabled={!neighbour(pos, -1)}
+                  aria-label="Move {nameOf(item) || `row ${index + 1}`} up"
+                  onclick={() => move(pos, -1)}>↑</button
                 >
                 <button
                   class="mv"
-                  disabled={i === items.length - 1}
-                  aria-label="Move {nameOf(item) || `row ${i + 1}`} down"
-                  onclick={() => move(i, 1)}>↓</button
+                  disabled={!neighbour(pos, 1)}
+                  aria-label="Move {nameOf(item) || `row ${index + 1}`} down"
+                  onclick={() => move(pos, 1)}>↓</button
                 >
-                <button class="x" aria-label="Remove {nameOf(item) || `row ${i + 1}`}"
-                        onclick={() => onchange(items.filter((_, n) => n !== i))}>×</button>
+                <button class="x" aria-label="Remove {nameOf(item) || `row ${index + 1}`}"
+                        onclick={() => onchange(items.filter((_, n) => n !== index))}>×</button>
               </td>
             {/if}
           </tr>
@@ -219,6 +270,15 @@
     overflow-wrap: anywhere;
   }
   tr:last-child td { border-bottom: 0; }
+  /* A heading for the rows under it: spells by level. Quiet, and accent
+     coloured so the eye finds the breaks without a rule between them. */
+  tr.group th {
+    padding: 0.875rem 0 0.3125rem;
+    color: var(--a);
+    letter-spacing: 0.12em;
+    border-bottom: 1px solid var(--a-edge);
+  }
+  tr.group:first-child th { padding-top: 0.25rem; }
   .name { font-weight: 600; }
   .nm { overflow-wrap: anywhere; }
   .muted { color: var(--dim); font-size: 0.85rem; }
@@ -264,12 +324,70 @@
     position: absolute; width: 1px; height: 1px; overflow: hidden;
     clip-path: inset(50%); white-space: nowrap;
   }
-  .fold-under { display: none; font-size: 0.78rem; color: var(--dim); font-weight: 400; }
+
   @media (max-width: 700px) {
-    /* Read-only, the secondary column folds under the name. */
+    /* Reading, an entry is a card: the name on top, the facts under it in a
+       grid with their labels, the prose on a line of its own. Anything blank
+       is left out rather than shown as a dash. */
     table:not(.editing) { min-width: 0; }
-    table:not(.editing) .fold { display: none; }
-    table:not(.editing) .fold-under { display: block; margin-top: 0.15rem; }
+
+    table:not(.editing),
+    table:not(.editing) tbody,
+    table:not(.editing) tr,
+    table:not(.editing) td,
+    table:not(.editing) tr.group th { display: block; width: auto; min-width: 0; }
+    table:not(.editing) { border-collapse: separate; }
+    table:not(.editing) thead,
+    table:not(.editing) colgroup { display: none; }
+
+    table:not(.editing) tr:not(.group) {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(5.25rem, 1fr));
+      gap: 0.4375rem 0.75rem;
+      border: 1px solid var(--line-soft);
+      background: var(--raised);
+      border-radius: var(--r);
+      padding: 0.6875rem 0.8125rem 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+    table:not(.editing) td { border: 0; padding: 0; }
+    table:not(.editing) td[data-empty],
+    table.headed:not(.editing) td.grouped { display: none; }
+    table:not(.editing) td.name,
+    table:not(.editing) td.wide { grid-column: 1 / -1; }
+    table:not(.editing) td.name {
+      font-size: 1rem;
+      display: flex; align-items: center; gap: 0.375rem; flex-wrap: wrap;
+      /* Room for the badge in the corner. */
+      padding-right: 4.5rem;
+    }
+    table:not(.editing) td.name::before { content: none; }
+    table:not(.editing) td::before {
+      content: attr(data-label);
+      display: block;
+      font-size: 0.5875rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--label);
+      font-weight: 600;
+      margin-bottom: 0.0625rem;
+    }
+    table:not(.editing) td.wide { color: var(--dim); font-size: 0.875rem; line-height: 1.5; }
+    table:not(.editing) td.wide.muted { font-size: 0.875rem; }
+    /* The tick becomes a badge in the card's corner. */
+    table:not(.editing) td.tick {
+      position: absolute; top: 0.6875rem; right: 0.8125rem; text-align: right;
+    }
+    table:not(.editing) td.tick::before { content: none; }
+    table:not(.editing) td.tick .yes::after {
+      content: ' Prepared';
+      font-size: 0.625rem; letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    /* Always visible on a touch screen, where there is no hover to find it. */
+    table:not(.editing) tr.group { margin: 0.75rem 0 0.5rem; }
+    table:not(.editing) tr.group:first-child { margin-top: 0; }
+    table:not(.editing) tr.group th { padding: 0 0 0.25rem; }
 
     /* Editing, the table stops being a table. Six columns of inputs in 390px
        is what made the whole page shrink to fit: the browser zooms out rather
@@ -279,16 +397,20 @@
     table.editing,
     table.editing tbody,
     table.editing tr,
-    table.editing td { display: block; width: auto; min-width: 0; }
+    table.editing td,
+    table.editing tr.group th { display: block; width: auto; min-width: 0; }
     table.editing { border-collapse: separate; }
     table.editing thead,
     table.editing colgroup { display: none; }
-    table.editing tr {
+    table.editing tr:not(.group) {
       border: 1px solid var(--line-soft);
       border-radius: var(--r);
       padding: 0.625rem 0.75rem 0.5rem;
       margin-bottom: 0.625rem;
     }
+    table.editing tr.group { margin: 0.75rem 0 0.5rem; }
+    table.editing tr.group:first-child { margin-top: 0; }
+    table.editing tr.group th { padding: 0 0 0.25rem; }
     table.editing td { border: 0; padding: 0.3125rem 0 0; }
     table.editing td::before {
       content: attr(data-label);
