@@ -104,7 +104,7 @@ describe('TextPanel', () => {
       const remove = screen.getByRole('button', { name: 'Remove page' });
       await fireEvent.click(remove);
       expect(props.onbody).not.toHaveBeenCalled();
-      expect(remove.textContent).toMatch(/remove this page\?/i);
+      expect(remove.textContent).toMatch(/remove it\?/i);
       await fireEvent.click(remove);
       expect(props.onbody).toHaveBeenCalledWith('B');
     });
