@@ -5,15 +5,18 @@
     name,
     source,
     category,
-    override
+    override,
+    parent
   }: {
     name: string;
     source?: string;
     category: LookupCategory;
     override?: string;
+    /** For a subclass: its class. */
+    parent?: { name: string; source?: string };
   } = $props();
 
-  const href = $derived(lookupUrl(name, source, category, override));
+  const href = $derived(lookupUrl(name, source, category, override, parent));
   const homebrew = $derived(!href && isHomebrew(source));
 </script>
 

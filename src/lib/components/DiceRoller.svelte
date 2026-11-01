@@ -9,7 +9,7 @@
    */
   import { tick } from 'svelte';
   import InfoTip from './InfoTip.svelte';
-  import { diceRequest } from '$lib/stores/dice';
+  import { diceRequest, takeRoll } from '$lib/stores/dice';
   import { DIE_SIDES, addDie, diceCount, formula, hasD20, roll, type Mode, type Pool, type Roll, type Sides } from '$lib/rules/dice';
   import { prefersReducedMotion } from '$lib/motion';
 
@@ -40,6 +40,7 @@
     const req = $diceRequest;
     if (!req || req.id === handled) return;
     handled = req.id;
+    takeRoll(req.id);
     pool = { ...req.pool, mode: pool.mode };
     open = true;
     go(req.label);

@@ -218,6 +218,15 @@
     if (pool) requestRoll(pool, `${attack.name || 'Attack'} ${kind === 'hit' ? 'to hit' : 'damage'}`);
   }
 
+  /** A skill, pressed: the Combat tab comes up, and the roll is made there. */
+  function rollSkill(label: string, bonus: number) {
+    if (activeTab !== 'Combat') {
+      activeTab = 'Combat';
+      if (typeof location !== 'undefined') history.replaceState(null, '', '#combat');
+    }
+    requestRoll({ dice: { 20: 1 }, modifier: bonus, mode: 'normal' }, label);
+  }
+
   /** Keeps the public note of which writings are private in step. */
   function markPrivate(key: TextKey, on: boolean) {
     if (!definition) return;
@@ -424,6 +433,7 @@
               <span class="classline">{classLine(definition)}</span>
               {#if classes[0]?.subclass?.trim()}
                 <EntryLink name={classes[0].subclass} source={classes[0].source}
+                           parent={{ name: classes[0].name, source: classes[0].source }}
                            category="subclasses" override={definition.identity.lookupUrl} />
               {:else}
                 <EntryLink name={classes[0]?.name ?? definition.identity.class ?? ''}
@@ -436,13 +446,13 @@
             <EditableField value={definition.identity.ancestry} {editable} label="Ancestry"
                            placeholder="Ancestry"
                            onchange={(v) => patchIdentity('ancestry', v)} />
-            <EntryLink name={definition.identity.ancestry ?? ''} category="races" />
+            <EntryLink name={definition.identity.ancestry ?? ''} source={definition.identity.ancestrySource} category="races" />
           </span>
           <span class="ident">
             <EditableField value={definition.identity.background} {editable} label="Background"
                            placeholder="Background"
                            onchange={(v) => patchIdentity('background', v)} />
-            <EntryLink name={definition.identity.background ?? ''} category="backgrounds" />
+            <EntryLink name={definition.identity.background ?? ''} source={definition.identity.backgroundSource} category="backgrounds" />
           </span>
         </p>
       </div>
@@ -500,7 +510,8 @@
 
     <div class="main">
       <section class="panel rail-skills">
-        <SkillRail {definition} {editable} onchange={setDefinition} />
+        <SkillRail {definition} {editable} onchange={setDefinition}
+                   onroll={isOwner ? rollSkill : undefined} />
       </section>
 
       <section class="panel centre">

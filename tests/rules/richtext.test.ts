@@ -74,3 +74,20 @@ describe('fromHtml', () => {
     }
   });
 });
+
+describe('what the browser leaves behind', () => {
+  it('adds no blank line for an empty text node or emptied tag before the first line', () => {
+    const el = document.createElement('div');
+    el.appendChild(document.createTextNode(''));
+    el.insertAdjacentHTML('beforeend', '<b></b><div><b>First</b> line</div><div>Second</div>');
+    expect(fromHtml(el)).toBe('**First** line\nSecond');
+  });
+
+  it('ignores a stray break between blocks and zero-width spaces', () => {
+    expect(from('<div><b>Bold​</b></div><br><div>next</div>')).toBe('**Bold**\nnext');
+  });
+
+  it('still keeps a blank line the writer made', () => {
+    expect(from('<div>a</div><div><br></div><div>b</div>')).toBe('a\n\nb');
+  });
+});

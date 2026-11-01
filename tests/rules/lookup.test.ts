@@ -9,33 +9,33 @@ const query = (url: string | null) => {
 };
 
 describe('lookupUrl', () => {
-  test('goes through 5e.tools search, which opens the best match', () => {
-    expect(query(lookupUrl('Fireball', 'xphb', 'spells'))).toBe('Fireball in:sp source:xphb');
+  test('with a book, goes straight to the entry, as 5e.tools builds its own links', () => {
+    expect(lookupUrl('Tiefling (Glasya)', 'mtf', 'races')).toBe('https://5e.tools/races.html#tiefling%20(glasya)_mtf');
+    expect(lookupUrl('Fireball', 'xphb', 'spells')).toBe('https://5e.tools/spells.html#fireball_xphb');
+    expect(lookupUrl('Longsword', 'XPHB', 'items')).toBe('https://5e.tools/items.html#longsword_xphb');
+    expect(lookupUrl('Fighter', 'xphb', 'classes')).toBe('https://5e.tools/classes.html#fighter_xphb');
+    expect(lookupUrl('Artisan', 'xphb', 'backgrounds')).toBe('https://5e.tools/backgrounds.html#artisan_xphb');
+    expect(lookupUrl("Melf's Acid Arrow", 'phb', 'spells')).toBe("https://5e.tools/spells.html#melf's%20acid%20arrow_phb");
   });
 
-  test('narrows by category for items, classes, backgrounds, species and conditions', () => {
-    expect(query(lookupUrl('Longsword', 'xphb', 'items'))).toBe('Longsword in:itm source:xphb');
-    expect(query(lookupUrl('Fighter', 'xphb', 'classes'))).toBe('Fighter in:class source:xphb');
-    expect(query(lookupUrl('Artisan', 'xphb', 'backgrounds'))).toBe('Artisan in:bg source:xphb');
-    expect(query(lookupUrl('Tiefling', 'xphb', 'races'))).toBe('Tiefling in:species source:xphb');
+  test('opens a subclass on its class page with the subclass chosen', () => {
+    expect(lookupUrl('White Hat', 'valdagunslinger', 'subclasses', undefined, { name: 'Gunslinger', source: 'valdagunslinger' })).toBe(
+      'https://5e.tools/classes.html#gunslinger_valdagunslinger,state:sub_white%20hat_valdagunslinger=b1'
+    );
+  });
+
+  test('without a book, searches by name and opens the best match', () => {
+    expect(query(lookupUrl('Rope', undefined, 'items'))).toBe('Rope in:itm');
+    expect(query(lookupUrl('Tiefling (Glasya)', '  ', 'races'))).toBe('Tiefling (Glasya) in:species');
     expect(query(lookupUrl('Champion', undefined, 'subclasses'))).toBe('Champion in:subclass');
   });
 
-  test('does not narrow a feature, which may be a feat or a class feature', () => {
+  test('searches for a feature even with a book, since it may be a feat or a class feature', () => {
     expect(query(lookupUrl('Second Wind', 'xphb', 'feats'))).toBe('Second Wind source:xphb');
   });
 
-  test('puts the source last, since 5e.tools reads the rest of the query as the source', () => {
-    expect(query(lookupUrl('Shield', 'phb', 'spells'))!.endsWith('source:phb')).toBe(true);
-  });
-
-  test('still links with no source, by name alone', () => {
-    expect(query(lookupUrl('Rope', undefined, 'items'))).toBe('Rope in:itm');
-    expect(query(lookupUrl('Rope', '  ', 'items'))).toBe('Rope in:itm');
-  });
-
   test('leaves out what is the player’s, not the book’s', () => {
-    expect(query(lookupUrl('Revolver (+1)', 'xphb', 'items'))).toBe('Revolver in:itm source:xphb');
+    expect(lookupUrl('Revolver (+1)', 'xphb', 'items')).toBe('https://5e.tools/items.html#revolver_xphb');
   });
 
   test('an override wins over name and source', () => {
@@ -69,10 +69,6 @@ describe('lookupName', () => {
     expect(lookupName('Elf (High)', 'races')).toBe('Elf (High)');
     expect(lookupName('Tiefling (Glasya) (+1 CHA)', 'races')).toBe('Tiefling (Glasya)');
     expect(lookupName('Revolver (silvered)', 'items')).toBe('Revolver');
-  });
-
-  test('a species link searches for the variant itself', () => {
-    expect(query(lookupUrl('Tiefling (Glasya)', undefined, 'races'))).toBe('Tiefling (Glasya) in:species');
   });
 
   test('keeps names that are the book’s own', () => {

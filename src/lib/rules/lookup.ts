@@ -1,18 +1,23 @@
 /**
- * Links to an entry on 5e.tools.
+ * Links to an entry on 5e.tools, two ways.
  *
- * Every link goes through 5e.tools' own search, with its "lucky" switch,
- * which opens the best match directly:
+ * With a book (source) and a page that is certain — spells, items, species,
+ * backgrounds, classes and subclasses, conditions — the link goes straight
+ * to the entry, built the way 5e.tools builds its own:
+ *
+ *   https://5e.tools/races.html#tiefling%20(glasya)_mtf
+ *
+ * Otherwise it goes through 5e.tools' search with its "lucky" switch, which
+ * opens the best match: for an entry with no book written, and for features,
+ * which may be feats or class features on different pages.
  *
  *   https://5e.tools/search.html?q=<name> in:<category> source:<source>&lucky
  *
- * A page link (spells.html#fireball_xphb) has to match the entry's name and
- * book exactly and lives on a page that depends on what the entry is; a class
- * feature like Second Wind is not on the feats page at all. The search
- * forgives all of that: it matches the name loosely, narrows by category and
- * book when they are known, and still finds something when the book is not.
+ * The search leaves out "legacy" books (the 2014 Player's Handbook, Mordenkainen's
+ * Tome of Foes and the rest) unless a reader has switched them on, which is
+ * why anything with a book written gets the direct link.
  *
- * Before searching, the name is stripped of what is the player's and not the
+ * Either way the name is first stripped of what is the player's and not the
  * book's: "(+1)", "+2", "x3", "[attuned]".
  */
 
@@ -45,6 +50,19 @@ const IN_CATEGORY: Record<LookupCategory, string | null> = {
   any: null
 };
 
+/** The page each kind of entry lives on, where that is certain. */
+const PAGE: Partial<Record<LookupCategory, string>> = {
+  spells: 'spells.html',
+  items: 'items.html',
+  races: 'races.html',
+  backgrounds: 'backgrounds.html',
+  classes: 'classes.html',
+  conditionsdiseases: 'conditionsdiseases.html'
+};
+
+/** 5e.tools' own hash encoding: lower case, URI-encoded, lower case again. */
+const hashPart = (s: string) => encodeURIComponent(s.toLowerCase()).toLowerCase();
+
 /** Sources that describe content with no page to link to. */
 const UNLINKABLE = new Set(['homebrew', 'custom', 'none']);
 
@@ -71,7 +89,9 @@ export function lookupUrl(
   name: string,
   source: string | undefined,
   category: LookupCategory,
-  override?: string
+  override?: string,
+  /** For a subclass: its class, and the class's book. */
+  parent?: { name: string; source?: string }
 ): string | null {
   if (override?.trim()) return override.trim();
 
@@ -79,6 +99,17 @@ export function lookupUrl(
   if (src && UNLINKABLE.has(src)) return null;
   const clean = lookupName(name ?? '', category);
   if (!clean) return null;
+
+  if (src) {
+    const page = PAGE[category];
+    if (page) return `${LOOKUP_BASE}/${page}#${hashPart(clean)}_${hashPart(src)}`;
+    // A subclass is its class's page, with the subclass chosen.
+    const parentName = parent ? lookupName(parent.name, 'classes') : '';
+    if (category === 'subclasses' && parentName) {
+      const parentSrc = (parent?.source?.trim() || src).toLowerCase();
+      return `${LOOKUP_BASE}/classes.html#${hashPart(parentName)}_${hashPart(parentSrc)},state:sub_${hashPart(clean)}_${hashPart(src)}=b1`;
+    }
+  }
 
   const parts = [clean];
   const cat = IN_CATEGORY[category];
