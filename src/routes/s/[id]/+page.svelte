@@ -37,6 +37,8 @@
     weightCarried
   } from '$lib/rules/derived';
   import { downloadText } from '$lib/download';
+  import { parseRoll } from '$lib/rules/dice';
+  import { requestRoll } from '$lib/stores/dice';
   import { friendlyDate, latest } from '$lib/rules/dates';
   import { exportFileName, exportSheet } from '$lib/exchange';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
@@ -136,8 +138,10 @@
 
   const ATTACK_COLUMNS = [
     { key: 'name', label: 'Name', width: '24%', placeholder: 'Longsword' },
-    { key: 'bonus', label: 'Hit', width: '9%', numeric: true, placeholder: '+5' },
-    { key: 'damage', label: 'Damage', width: '14%', numeric: true, placeholder: '1d8 + 3' },
+    { key: 'bonus', label: 'Hit', width: '9%', numeric: true, placeholder: '+5',
+      canPress: (v: unknown) => parseRoll(v, 'hit') !== null, pressVerb: 'Roll' },
+    { key: 'damage', label: 'Damage', width: '14%', numeric: true, placeholder: '1d8 + 3',
+      canPress: (v: unknown) => parseRoll(v, 'damage') !== null, pressVerb: 'Roll' },
     { key: 'damageType', label: 'Type', width: '12%', placeholder: 'slashing' },
     { key: 'notes', label: 'Notes', width: '41%', muted: true, wide: true, placeholder: 'Versatile (1d10)' }
   ];
@@ -206,6 +210,37 @@
   });
 
   function setState(next: State) { sheetStore.setState(next); }
+
+  /** An attack's hit or damage, tapped: rolled in the dice tray. */
+  function rollAttack(key: string, attack: Attack) {
+    const kind = key === 'bonus' ? 'hit' : 'damage';
+    const pool = parseRoll(key === 'bonus' ? attack.bonus : attack.damage, kind);
+    if (pool) requestRoll(pool, `${attack.name || 'Attack'} ${kind === 'hit' ? 'to hit' : 'damage'}`);
+  }
+
+  /** Keeps the public note of which writings are private in step. */
+  function markPrivate(key: TextKey, on: boolean) {
+    if (!definition) return;
+    const flags = { ...(definition.privateText ?? {}) };
+    if (on) flags[key] = true;
+    else delete flags[key];
+    const next: Definition = { ...definition, privateText: flags };
+    if (Object.keys(flags).length === 0) delete next.privateText;
+    setDefinition(next);
+  }
+
+  // A writing made private before visitors could be told so has no note on
+  // the public row yet. The owner's own visit writes it.
+  $effect(() => {
+    if (!isOwner || !sheet?.texts || !definition) return;
+    for (const key of ['notes', 'backstory'] as TextKey[]) {
+      const wanted = !sheet.texts[key].isPublic;
+      if (Boolean(definition.privateText?.[key]) !== wanted) {
+        markPrivate(key, wanted);
+        return;
+      }
+    }
+  });
   function setDefinition(next: Definition) { sheetStore.setDefinition(next); }
 
   function setTracker(id: string, value: number) {
@@ -331,8 +366,12 @@
       {editable}
       owner={isOwner}
       isPublic={sheet?.texts ? sheet.texts[key].isPublic : null}
+      locked={!isOwner && Boolean(definition.privateText?.[key])}
       onbody={(body) => sheetStore.setText(key, { body })}
-      onpublic={(isPublic) => sheetStore.setText(key, { isPublic })}
+      onpublic={(isPublic) => {
+        sheetStore.setText(key, { isPublic });
+        markPrivate(key, !isPublic);
+      }}
     />
   {/if}
 {/snippet}
@@ -466,6 +505,8 @@
                 columns={ATTACK_COLUMNS}
                 {editable}
                 category="items"
+                links={false}
+                onpress={isOwner ? rollAttack : undefined}
                 emptyText="No attacks yet."
                 addLabel="Add attack"
                 blank={() => ({ name: '' }) as Attack}

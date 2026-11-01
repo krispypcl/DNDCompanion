@@ -25,6 +25,13 @@ describe('TextPanel', () => {
       expect(screen.getByText('Nothing written yet.')).toBeTruthy();
     });
 
+    it('is told a private writing is private, not shown it as empty', () => {
+      mount({ owner: false, value: '', locked: true, label: 'Backstory' });
+      expect(screen.getByRole('note').textContent).toMatch(/private/i);
+      expect(screen.queryByText('Nothing written yet.')).toBeNull();
+      expect(screen.queryByText(/page 1 of/i)).toBeNull();
+    });
+
     it('has no page controls for a one-page book', () => {
       mount({ owner: false });
       expect(screen.queryByText(/page 1 of/i)).toBeNull();
@@ -43,9 +50,16 @@ describe('TextPanel', () => {
   });
 
   describe('for the owner', () => {
-    it('has one switch, private, and nothing else', async () => {
-      const { props } = mount();
+    it('shows no private switch while reading', () => {
+      mount();
+      expect(screen.queryByRole('switch')).toBeNull();
+    });
+
+    it('has the private switch beside Add page while editing', async () => {
+      const { props, container } = mount({ editable: true });
       const priv = screen.getByRole('switch', { name: /private/i });
+      expect(container.querySelector('.edits')!.contains(priv)).toBe(true);
+      expect(priv.nextElementSibling?.textContent).toMatch(/add page/i);
       expect(priv.getAttribute('aria-checked')).toBe('false');
       expect(screen.queryByText(/reveal on hover/i)).toBeNull();
       await fireEvent.click(priv);
@@ -53,17 +67,17 @@ describe('TextPanel', () => {
     });
 
     it('shows a private writing as private and can make it public again', async () => {
-      const { props } = mount({ isPublic: false });
+      const { props } = mount({ isPublic: false, editable: true });
       const priv = screen.getByRole('switch', { name: /private/i });
       expect(priv.getAttribute('aria-checked')).toBe('true');
       await fireEvent.click(priv);
       expect(props.onpublic).toHaveBeenCalledWith(true);
     });
 
-    it('shows the switch as unavailable, and why, when the database cannot keep private text', () => {
-      mount({ isPublic: null });
-      expect((screen.getByRole('switch') as HTMLButtonElement).disabled).toBe(true);
-      expect(screen.getByText(/database update/i)).toBeTruthy();
+    it('offers no switch when the database cannot keep private text', () => {
+      mount({ isPublic: null, editable: true });
+      expect(screen.queryByRole('switch')).toBeNull();
+      expect(screen.queryByText(/database update/i)).toBeNull();
     });
 
     it('adds a page after the current one', async () => {

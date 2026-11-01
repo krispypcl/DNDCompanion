@@ -86,9 +86,11 @@
       // Where the writing goes depends on whether the database can keep it
       // private: in its own rows if so, in the sheet as before if not.
       const separate = await sheetRepo.textsAvailable();
+      // Without the table for it, nothing can be private, so nothing is marked so.
+      const { privateText: _p, ...open } = definition;
       const stored = separate
         ? definition
-        : { ...definition, notes: texts.notes.body, backstory: texts.backstory.body };
+        : { ...open, notes: texts.notes.body, backstory: texts.backstory.body };
       const sheet = await sheetRepo.createSheet(user.id, sheetName(stored), stored, state);
       if (separate) {
         for (const key of ['notes', 'backstory'] as const) {

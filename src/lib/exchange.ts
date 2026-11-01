@@ -425,6 +425,11 @@ export function importSheet(input: string): ImportResult {
       ? { body: readPages(s.lines), isPublic: s.visibility !== 'private' }
       : { body: '', isPublic: true };
   }
+  // The note visitors read is taken from the writing's own marker, never
+  // from the file's copy of it, so the two cannot disagree.
+  delete definition.privateText;
+  const privateKeys = TEXT_KEYS.filter((k) => !texts[k].isPublic);
+  if (privateKeys.length) definition.privateText = Object.fromEntries(privateKeys.map((k) => [k, true]));
 
   const warnings: string[] = [];
   if (tally.dropped > 0) {

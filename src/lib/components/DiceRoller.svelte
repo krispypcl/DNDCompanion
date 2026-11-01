@@ -1,9 +1,16 @@
 <script lang="ts">
   /**
    * A dice tray for the owner's own rolls. Tap dice into the pool, set a
-   * modifier, choose advantage or disadvantage, roll. Nothing is saved or
-   * shown to anyone else: it is a tray, not a record.
+   * modifier, choose advantage or disadvantage, roll. An attack's hit or
+   * damage, tapped in the table above, arrives here already rolled. Nothing
+   * is saved or shown to anyone else: it is a tray, not a record.
+   *
+   * Folded away like General actions; whether it was left open is
+   * remembered on this device.
    */
+  import { onMount, tick } from 'svelte';
+  import InfoTip from './InfoTip.svelte';
+  import { diceRequest } from '$lib/stores/dice';
   import { DIE_SIDES, addDie, diceCount, formula, hasD20, roll, type Mode, type Pool, type Roll, type Sides } from '$lib/rules/dice';
   import { prefersReducedMotion } from '$lib/motion';
 
@@ -23,9 +30,41 @@
     { mode: 'advantage', label: 'Adv.' }
   ];
 
-  function go() {
+  const OPEN_KEY = 'dice-roller-open';
+  let open = $state(false);
+  let tray: HTMLDetailsElement | undefined = $state();
+  onMount(() => {
+    try {
+      open = localStorage.getItem(OPEN_KEY) === '1';
+    } catch {
+      /* private window: start folded */
+    }
+  });
+  function remember() {
+    try {
+      localStorage.setItem(OPEN_KEY, open ? '1' : '0');
+    } catch {
+      /* nothing to remember it in */
+    }
+  }
+
+  // An attack tapped in the table: take its roll, keep the chosen advantage,
+  // open the tray and roll it where it can be seen.
+  let handled = 0;
+  $effect(() => {
+    const req = $diceRequest;
+    if (!req || req.id === handled) return;
+    handled = req.id;
+    pool = { ...req.pool, mode: pool.mode };
+    open = true;
+    remember();
+    go(req.label);
+    tick().then(() => tray?.scrollIntoView?.({ block: 'nearest', behavior: prefersReducedMotion() ? 'auto' : 'smooth' }));
+  });
+
+  function go(label?: string) {
     if (diceCount(pool) === 0) return;
-    const result = roll($state.snapshot(pool) as Pool);
+    const result = { ...roll($state.snapshot(pool) as Pool), ...(label ? { label } : {}) };
     if (last) history = [last, ...history].slice(0, 6);
     last = result;
     seq += 1;
@@ -50,8 +89,9 @@
   const flicker = (sides: number, tick: number) => 1 + ((Math.floor(Math.random() * sides) + tick) % sides);
 </script>
 
-<section class="tray" aria-label="Dice roller">
-  <h3 class="cap">Dice</h3>
+<details class="tray" bind:this={tray} bind:open ontoggle={remember}>
+  <summary><span class="cap">Dice Roller</span></summary>
+  <div class="inner">
 
   <div class="dice" role="group" aria-label="Add dice">
     {#each DIE_SIDES as sides (sides)}
@@ -66,6 +106,12 @@
         {/if}
       </div>
     {/each}
+    <InfoTip label="How to use the dice roller">
+      Tap a die to add it to the roll; tap again for more of the same. The small − on its
+      corner takes one away. Set a modifier with − and +. Advantage and disadvantage roll each
+      d20 twice and keep the higher or lower; other dice are rolled once. In the attacks table,
+      tap a Hit or Damage value to roll it here straight away.
+    </InfoTip>
   </div>
 
   <div class="controls">
@@ -86,11 +132,11 @@
 
   <div class="go">
     <span class="formula" aria-live="polite">
-      {formula(pool) || 'Tap dice to add them'}
+      {formula(pool) || '—'}
       {#if pool.mode !== 'normal' && !hasD20(pool) && diceCount(pool) > 0}<small>(no d20 to apply it to)</small>{/if}
     </span>
     {#if !empty}<button class="clear" onclick={clear}>Clear</button>{/if}
-    <button class="roll" disabled={diceCount(pool) === 0} onclick={go}>Roll</button>
+    <button class="roll" disabled={diceCount(pool) === 0} onclick={() => go()}>Roll</button>
   </div>
 
   {#if last}
@@ -110,7 +156,7 @@
             <span class="modval">{last.pool.modifier > 0 ? '+' : '−'}{Math.abs(last.pool.modifier)}</span>
           {/if}
         </div>
-        <p class="said">{last.formula}{isCrit(last) ? ' · natural 20' : isFumble(last) ? ' · natural 1' : ''}</p>
+        <p class="said">{last.label ? `${last.label} · ` : ''}{last.formula}{isCrit(last) ? ' · natural 20' : isFumble(last) ? ' · natural 1' : ''}</p>
       </div>
     {/key}
   {/if}
@@ -118,20 +164,42 @@
   {#if history.length}
     <ol class="history" aria-label="Earlier rolls">
       {#each history as h (h)}
-        <li><b>{h.total}</b> <span>{h.formula}</span></li>
+        <li><b>{h.total}</b> <span>{h.label ? `${h.label} · ` : ''}{h.formula}</span></li>
       {/each}
     </ol>
   {/if}
-</section>
+  </div>
+</details>
 
 <style>
   .tray { padding-top: 1.25rem; }
+  summary {
+    cursor: pointer; list-style: none; display: flex; align-items: center; gap: 0.375rem;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::after {
+    content: ''; width: 0.4rem; height: 0.4rem;
+    border-right: 1.5px solid var(--dim); border-bottom: 1.5px solid var(--dim);
+    transform: rotate(45deg) translateY(-1px); transition: transform 0.2s ease;
+  }
+  details[open] summary::after { transform: rotate(-135deg) translateY(-1px); }
+  /* Unfolds the same way as General actions. */
+  .tray::details-content {
+    block-size: 0; opacity: 0; overflow: hidden;
+    transition: block-size 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.26s ease,
+      content-visibility 0.32s allow-discrete;
+  }
+  .tray[open]::details-content { block-size: auto; opacity: 1; overflow: visible; }
+  @supports not selector(::details-content) {
+    .tray[open] .inner { animation: land 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  }
+  .inner { padding-top: 0.875rem; }
   .cap {
-    margin: 0 0 0.625rem; font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
+    font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
     color: var(--label); font-weight: 600;
   }
   button { font: inherit; cursor: pointer; }
-  .dice { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+  .dice { display: flex; flex-wrap: wrap; gap: 0.375rem; align-items: center; }
   .die { position: relative; display: inline-flex; }
   .add {
     position: relative; min-width: 3rem; padding: 0.4375rem 0.625rem;

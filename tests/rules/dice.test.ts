@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_DICE, addDie, fairRng, formula, roll, type Pool } from '$lib/rules/dice';
+import { MAX_DICE, addDie, fairRng, formula, parseRoll, roll, type Pool } from '$lib/rules/dice';
 
 const empty = (): Pool => ({ dice: {}, modifier: 0, mode: 'normal' });
 /** Hands out the given faces in order. */
@@ -53,5 +53,30 @@ describe('dice', () => {
       seen.add(v);
     }
     expect(seen.size).toBe(6);
+  });
+});
+
+
+describe('parseRoll', () => {
+  it('reads an attack bonus as a d20 plus it', () => {
+    expect(parseRoll('+7', 'hit')).toEqual({ dice: { 20: 1 }, modifier: 7, mode: 'normal' });
+    expect(parseRoll('-1', 'hit')!.modifier).toBe(-1);
+    expect(parseRoll('5', 'hit')!.modifier).toBe(5);
+    expect(parseRoll('+7 (finesse)', 'hit')).toBeNull();
+  });
+
+  it('reads damage as its dice and modifier, ignoring words', () => {
+    expect(parseRoll('2d6+1', 'damage')).toEqual({ dice: { 6: 2 }, modifier: 1, mode: 'normal' });
+    expect(parseRoll('1d8 + 3 piercing', 'damage')).toEqual({ dice: { 8: 1 }, modifier: 3, mode: 'normal' });
+    expect(parseRoll('2d6 + 1d4 - 1', 'damage')).toEqual({ dice: { 6: 2, 4: 1 }, modifier: -1, mode: 'normal' });
+    expect(parseRoll('d12', 'damage')).toEqual({ dice: { 12: 1 }, modifier: 0, mode: 'normal' });
+    expect(parseRoll('1d10 (versatile 1d12)', 'damage')).toEqual({ dice: { 10: 1 }, modifier: 0, mode: 'normal' });
+  });
+
+  it('refuses what the tray cannot roll', () => {
+    expect(parseRoll('1d3', 'damage')).toBeNull();
+    expect(parseRoll('5', 'damage')).toBeNull();
+    expect(parseRoll('', 'damage')).toBeNull();
+    expect(parseRoll('—', 'hit')).toBeNull();
   });
 });

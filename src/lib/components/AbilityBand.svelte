@@ -81,6 +81,9 @@
         title={breakdown(ability)}
         onclick={() => toggleSave(ability)}
       >
+        <!-- The same mark as a skill's, but only ever empty or full: there
+             is no expertise in a saving throw. -->
+        <i class="dot" class:on={definition.saves?.[ability]} aria-hidden="true"></i>
         <b>{sign(saveBonus(definition, ability))}</b>
       </button>
       <!-- A flat bonus from an item or aura. Always rendered, so entering edit
@@ -144,6 +147,15 @@
   }
   .save:not(.on):hover { border-color: var(--hover-line); background: var(--hover-bg); }
   .save.on { border-color: var(--a-edge); background: var(--a-wash); }
+  .save { position: relative; }
+  .dot {
+    position: absolute; top: 0.4375rem; left: 0.4375rem;
+    width: 0.5625rem; height: 0.5625rem; border-radius: 50%;
+    border: 1.5px solid var(--faint); background: transparent;
+    transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+  }
+  .dot.on { border-color: var(--a); background: var(--a); }
+  .toggle:not(:disabled):hover .dot { transform: scale(1.25); }
   .toggle {
     display: block; width: 100%; padding: 0; border: 0; background: none;
     font: inherit; color: inherit; cursor: pointer;
