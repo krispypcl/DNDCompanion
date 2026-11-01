@@ -140,3 +140,24 @@ describe('TextPanel', () => {
     });
   });
 });
+
+describe('TextPanel editing again', () => {
+  it('fills the page every time edit mode is entered, and never saves a blank over the writing', async () => {
+    const onbody = vi.fn();
+    const props = { label: 'Notes', value: 'Keep **this**', editable: true, owner: true, isPublic: true, onbody, onpublic: vi.fn() };
+    const view = render(TextPanel, { props });
+    const page = () => view.container.querySelector('[contenteditable]') as HTMLElement;
+    expect(page().textContent).toBe('Keep this');
+    await fireEvent.blur(page());
+    await view.rerender({ ...props, editable: false });
+    await view.rerender({ ...props, editable: true });
+    expect(page().textContent).toBe('Keep this');
+    await fireEvent.blur(page());
+    await view.rerender({ ...props, editable: false });
+    await view.rerender({ ...props, editable: true });
+    expect(page().textContent).toBe('Keep this');
+    await fireEvent.input(page());
+    await fireEvent.blur(page());
+    expect(onbody).not.toHaveBeenCalledWith('');
+  });
+});
