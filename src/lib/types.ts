@@ -171,9 +171,6 @@ export type Definition = {
       sheets saved before that, and by a database that has no table for it. */
   notes: string;
   backstory?: string;
-  /** Blur this writing until it is hovered (or tapped). Not secret — it
-      hides nothing from anyone, it only keeps a screen from showing it. */
-  hoverReveal?: Partial<Record<TextKey, boolean>>;
 };
 
 export type State = {

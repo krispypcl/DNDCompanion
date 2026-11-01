@@ -1,12 +1,12 @@
-/** Notes and backstory: who may read them, and whether the screen shows them. */
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+/** Notes and backstory: who may read them, and their pages. */
+import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 import TextPanel from '$lib/components/TextPanel.svelte';
 
 const mount = (over: Record<string, unknown> = {}) => {
   const props = {
     label: 'Backstory', value: 'The long story', editable: false, owner: true,
-    isPublic: true, hover: false, onbody: vi.fn(), onpublic: vi.fn(), onhover: vi.fn(), ...over
+    isPublic: true, onbody: vi.fn(), onpublic: vi.fn(), ...over
   };
   const view = render(TextPanel, { props });
   return { props, ...view };
@@ -17,84 +17,83 @@ describe('TextPanel', () => {
     it('shows the text and none of the controls', () => {
       mount({ owner: false });
       expect(screen.getByText('The long story')).toBeTruthy();
-      expect(screen.queryByRole('group', { name: /options/i })).toBeNull();
-      expect(screen.queryByText('Private')).toBeNull();
+      expect(screen.queryByRole('switch')).toBeNull();
     });
 
     it('shows a private writing as unwritten: the database sends nothing, so there is nothing', () => {
-      mount({ owner: false, value: '', isPublic: true });
+      mount({ owner: false, value: '' });
       expect(screen.getByText('Nothing written yet.')).toBeTruthy();
+    });
+
+    it('has no page controls for a one-page book', () => {
+      mount({ owner: false });
+      expect(screen.queryByText(/page 1 of/i)).toBeNull();
+    });
+
+    it('can turn the pages of a longer one', async () => {
+      mount({ owner: false, value: 'First\fSecond' });
+      expect(screen.getByText('Page 1 of 2')).toBeTruthy();
+      expect(screen.getByText('First')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Previous page' })).toHaveProperty('disabled', true);
+      await fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
+      expect(screen.getByText('Second')).toBeTruthy();
+      expect(screen.getByText('Page 2 of 2')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Next page' })).toHaveProperty('disabled', true);
     });
   });
 
   describe('for the owner', () => {
-    it('can make it private, and says who can read it', async () => {
+    it('has one switch, private, and nothing else', async () => {
       const { props } = mount();
-      const priv = screen.getByRole('button', { name: /private/i });
-      expect(priv.getAttribute('aria-pressed')).toBe('false');
-      expect(screen.getByRole('status').textContent).toMatch(/anyone with the link/i);
+      const priv = screen.getByRole('switch', { name: /private/i });
+      expect(priv.getAttribute('aria-checked')).toBe('false');
+      expect(screen.queryByText(/reveal on hover/i)).toBeNull();
       await fireEvent.click(priv);
       expect(props.onpublic).toHaveBeenCalledWith(false);
     });
 
     it('shows a private writing as private and can make it public again', async () => {
       const { props } = mount({ isPublic: false });
-      const priv = screen.getByRole('button', { name: /private/i });
-      expect(priv.getAttribute('aria-pressed')).toBe('true');
-      expect(screen.getByRole('status').textContent).toMatch(/only you/i);
+      const priv = screen.getByRole('switch', { name: /private/i });
+      expect(priv.getAttribute('aria-checked')).toBe('true');
       await fireEvent.click(priv);
       expect(props.onpublic).toHaveBeenCalledWith(true);
     });
 
     it('offers no private switch when the database cannot keep one', () => {
       mount({ isPublic: null });
-      expect(screen.queryByRole('button', { name: /private/i })).toBeNull();
-      expect(screen.getByRole('button', { name: /reveal on hover/i })).toBeTruthy();
+      expect(screen.queryByRole('switch')).toBeNull();
     });
 
-    it('can turn reveal-on-hover on', async () => {
-      const { props } = mount();
-      await fireEvent.click(screen.getByRole('button', { name: /reveal on hover/i }));
-      expect(props.onhover).toHaveBeenCalledWith(true);
+    it('adds a page after the current one', async () => {
+      const { props } = mount({ editable: true, value: 'A\fB' });
+      await fireEvent.click(screen.getByRole('button', { name: 'Add page' }));
+      expect(props.onbody).toHaveBeenCalledWith('A\f\fB');
     });
 
-    it('has both switches in edit mode as well, so nothing moves when editing starts', () => {
-      const { container } = mount({ editable: true });
-      expect(container.querySelectorAll('.opt')).toHaveLength(2);
-      expect(container.querySelector('textarea')).not.toBeNull();
-    });
-  });
-
-  describe('reveal on hover', () => {
-    it('veils the text, and lets a tap hold it open', async () => {
-      const { container } = mount({ hover: true, owner: false });
-      const reveal = container.querySelector('.reveal') as HTMLElement;
-      expect(reveal.classList.contains('veiled')).toBe(true);
-      await fireEvent.click(reveal);
-      expect(reveal.classList.contains('veiled')).toBe(false);
-      await fireEvent.click(reveal);
-      expect(reveal.classList.contains('veiled')).toBe(true);
+    it('writes into the page being shown', async () => {
+      const { props, container } = mount({ editable: true, value: 'A\fB' });
+      await fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
+      const area = container.querySelector('textarea')!;
+      area.value = 'Changed';
+      await fireEvent.change(area);
+      expect(props.onbody).toHaveBeenCalledWith('A\fChanged');
     });
 
-    it('can be opened from the keyboard', async () => {
-      const { container } = mount({ hover: true, owner: false });
-      const reveal = container.querySelector('.reveal') as HTMLElement;
-      expect(reveal.tabIndex).toBe(0);
-      await fireEvent.keyDown(reveal, { key: 'Enter' });
-      expect(reveal.getAttribute('aria-pressed')).toBe('true');
-      await fireEvent.keyDown(reveal, { key: 'Escape' });
-      expect(reveal.getAttribute('aria-pressed')).toBe('false');
+    it('asks once before removing a page with writing on it', async () => {
+      const { props } = mount({ editable: true, value: 'A\fB' });
+      const remove = screen.getByRole('button', { name: 'Remove page' });
+      await fireEvent.click(remove);
+      expect(props.onbody).not.toHaveBeenCalled();
+      expect(remove.textContent).toMatch(/remove this page\?/i);
+      await fireEvent.click(remove);
+      expect(props.onbody).toHaveBeenCalledWith('B');
     });
 
-    it('never veils the editor: you cannot write what you cannot see', () => {
-      const { container } = mount({ hover: true, editable: true });
-      expect(container.querySelector('.reveal')).toBeNull();
-      expect(container.querySelector('textarea')).not.toBeNull();
-    });
-
-    it('is not there at all when off', () => {
-      const { container } = mount({ hover: false });
-      expect(container.querySelector('.reveal')).toBeNull();
+    it('removes a blank page straight away', async () => {
+      const { props } = mount({ editable: true, value: '\fB' });
+      await fireEvent.click(screen.getByRole('button', { name: 'Remove page' }));
+      expect(props.onbody).toHaveBeenCalledWith('B');
     });
   });
 });

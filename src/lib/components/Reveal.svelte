@@ -1,30 +1,50 @@
 <script lang="ts">
   /**
    * Blurs what is inside until it is hovered, focused, or — where there is no
-   * hover, on a phone — tapped. It is for a screen that other people can see,
-   * not for secrecy: the text is all still on the page. Anything that must be
-   * kept from a reader is made private, which the database enforces.
+   * hover, on a phone — tapped. Used on death saves, which are the table's
+   * moment of suspense: the result is there, but it has to be looked at.
+   *
+   * What is inside can be pressed. While it is veiled, the first tap only
+   * lifts the veil, so nobody marks a death save they could not see.
    */
   let {
     enabled,
+    cue = 'Hover to reveal',
+    tapCue = 'Tap to reveal',
     children
   }: {
     enabled: boolean;
+    cue?: string;
+    tapCue?: string;
     children: import('svelte').Snippet;
   } = $props();
 
-  /** A tap (or click) holds it open; leaving or tapping again lets it go. */
+  /** A tap (or click on the veil itself) holds it open. */
   let pinned = $state(false);
+  let hovering = $state(false);
+  let focused = $state(false);
+  const open = $derived(pinned || hovering || focused);
 
-  function toggle() {
-    if (enabled) pinned = !pinned;
+  function capture(event: MouseEvent) {
+    if (!enabled) return;
+    if (!open) {
+      // The first press only reveals.
+      event.preventDefault();
+      event.stopPropagation();
+      pinned = true;
+    }
+  }
+
+  function onclick(event: MouseEvent) {
+    // A press on the veil's own surface, not on a control inside it, lets go.
+    if (enabled && event.target === event.currentTarget) pinned = !pinned;
   }
 
   function onkey(event: KeyboardEvent) {
-    if (!enabled) return;
+    if (!enabled || event.target !== event.currentTarget) return;
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      toggle();
+      pinned = !pinned;
     } else if (event.key === 'Escape') {
       pinned = false;
     }
@@ -36,18 +56,23 @@
 </script>
 
 {#if enabled}
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
   <div
     class="reveal"
-    class:veiled={!pinned}
-    role="button"
+    class:veiled={!open}
+    role="group"
     tabindex="0"
-    aria-pressed={pinned}
-    aria-label="Hidden until hovered. Press to keep it showing."
-    onclick={toggle}
+    aria-label={open ? undefined : 'Hidden. Hover, focus or tap to reveal.'}
+    onclickcapture={capture}
+    {onclick}
     onkeydown={onkey}
+    onpointerenter={(e) => { if (e.pointerType === 'mouse') hovering = true; }}
+    onpointerleave={(e) => { if (e.pointerType === 'mouse') hovering = false; }}
+    onfocusin={() => (focused = true)}
+    onfocusout={() => (focused = false)}
   >
     <div class="inner">{@render children()}</div>
-    <span class="cue" aria-hidden="true"></span>
+    <span class="cue" aria-hidden="true" data-cue={cue} data-tap={tapCue}></span>
   </div>
 {:else}
   {@render children()}
@@ -55,25 +80,15 @@
 
 <style>
   .reveal { position: relative; cursor: pointer; border-radius: var(--r-sm); outline-offset: 2px; }
-  .inner { transition: filter 0.28s ease, opacity 0.28s ease; }
-  .veiled .inner { filter: blur(7px); opacity: 0.8; user-select: none; }
-  /* Hover lifts it, but only where hovering is a thing: on a touch screen a
-     tap leaves :hover stuck on, and it would never go back. */
-  @media (hover: hover) {
-    .veiled:hover .inner { filter: none; opacity: 1; user-select: auto; }
-  }
-  .veiled:focus-visible .inner,
-  .veiled:focus-within .inner { filter: none; opacity: 1; }
-
+  .inner { transition: filter 0.3s ease, opacity 0.3s ease; }
+  .veiled .inner { filter: blur(6px); opacity: 0.7; user-select: none; }
   .cue {
     position: absolute; inset: 0; display: grid; place-items: center;
-    pointer-events: none; opacity: 1; transition: opacity 0.2s ease;
-    font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase;
-    color: var(--dim); font-weight: 600;
+    pointer-events: none; opacity: 0; transition: opacity 0.2s ease;
+    font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text); font-weight: 600;
   }
-  .cue::before { content: 'Hover to read'; }
-  @media (hover: none) { .cue::before { content: 'Tap to read'; } }
-  .reveal:not(.veiled) .cue,
-  .veiled:focus-within .cue { opacity: 0; }
-  @media (hover: hover) { .veiled:hover .cue { opacity: 0; } }
+  .veiled .cue { opacity: 1; }
+  .cue::before { content: attr(data-cue); }
+  @media (hover: none) { .cue::before { content: attr(data-tap); } }
 </style>

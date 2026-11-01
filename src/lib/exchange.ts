@@ -12,6 +12,7 @@
  * that is the wrong shape is left out and counted rather than let through.
  */
 import { blankDefinition } from '$lib/sample';
+import { PAGE_BREAK, joinPages, splitPages } from '$lib/rules/pages';
 import {
   ABILITIES,
   SKILLS,
@@ -54,12 +55,22 @@ export type ImportResult =
 
 // ── Writing ────────────────────────────────────────────────────────────────
 
-const MARK = /^===== (DEFINITION|STATE|NOTES|BACKSTORY|SUMMARY|END)(?: \[(private|shared)\])? =====$/;
+const MARK = /^===== (DEFINITION|STATE|NOTES|BACKSTORY|SUMMARY|PAGE|END)(?: \[(private|shared)\])? =====$/;
 
 /** A line of someone's writing that looks like a marker, or like an escape,
     gets a backslash, and loses it again on the way back in. */
 const escapeLine = (line: string) => (line.startsWith('=====') || line.startsWith('\\') ? `\\${line}` : line);
 const unescapeLine = (line: string) => (line.startsWith('\\') ? line.slice(1) : line);
+
+/** Lines of one writing section, with page markers already turned into breaks. */
+function readPages(lines: string[]): string {
+  const pages: string[][] = [[]];
+  for (const line of lines) {
+    if (line === PAGE_BREAK) pages.push([]);
+    else pages[pages.length - 1].push(unescapeLine(line));
+  }
+  return joinPages(pages.map((p) => p.join('\n')));
+}
 
 export function exportSheet(input: ExportInput, now: Date = new Date()): string {
   const { definition, state } = input;
@@ -106,7 +117,12 @@ export function exportSheet(input: ExportInput, now: Date = new Date()): string 
   for (const key of TEXT_KEYS) {
     const text = texts[key];
     out.push(`===== ${key.toUpperCase()} [${text.isPublic ? 'shared' : 'private'}] =====`);
-    if (text.body !== '') out.push(...text.body.split('\n').map(escapeLine));
+    // Pages are separated by a marker line of their own, so the file reads
+    // like the book it is.
+    splitPages(text.body).forEach((page, i) => {
+      if (i > 0) out.push('===== PAGE =====');
+      if (page !== '') out.push(...page.split('\n').map(escapeLine));
+    });
     out.push('');
   }
   out.push('===== END =====', '');
@@ -289,8 +305,6 @@ export function readDefinition(raw: unknown, tally = new Tally()): Definition {
     const n = optNum(src[k]);
     if (n !== undefined) def[k] = n;
   }
-  const reveal = booleans(src.hoverReveal, TEXT_KEYS);
-  if (Object.keys(reveal).length) def.hoverReveal = reveal;
   return def;
 }
 
@@ -360,6 +374,10 @@ export function importSheet(input: string): ImportResult {
         ended = true;
         break;
       }
+      if (m[1] === 'PAGE') {
+        current?.lines.push(PAGE_BREAK);
+        continue;
+      }
       current = { lines: [], visibility: m[2] };
       // A section that appears twice is not trusted; the first one stands.
       if (!sections.has(m[1])) sections.set(m[1], current);
@@ -403,7 +421,7 @@ export function importSheet(input: string): ImportResult {
   for (const key of TEXT_KEYS) {
     const s = body(key.toUpperCase());
     texts[key] = s
-      ? { body: s.lines.map(unescapeLine).join('\n'), isPublic: s.visibility !== 'private' }
+      ? { body: readPages(s.lines), isPublic: s.visibility !== 'private' }
       : { body: '', isPublic: true };
   }
 
