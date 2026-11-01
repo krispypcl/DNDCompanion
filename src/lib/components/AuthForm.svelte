@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { FullAutoFill } from 'svelte/elements';
+  import { passwordStrength } from '$lib/rules/password';
 
   type Field = {
     id: string;
@@ -8,6 +9,8 @@
     autocomplete: FullAutoFill;
     /** Enforced by the browser as well as by `validate`. */
     minlength?: number;
+    /** Show a strength meter under it, judged against the `email` field. */
+    strength?: boolean;
   };
 
   let {
@@ -96,8 +99,19 @@
               autocomplete={field.autocomplete}
               bind:value={values[field.id]}
               minlength={field.minlength}
+              aria-describedby={field.strength ? `${field.id}-strength` : undefined}
               required
             />
+            {#if field.strength}
+              {@const st = passwordStrength(values[field.id] ?? '', values.email ?? '')}
+              <div class="meter" id="{field.id}-strength" class:shown={Boolean(values[field.id])} data-score={st.score}
+                   aria-live="polite">
+                <div class="bars" aria-hidden="true">
+                  {#each [1, 2, 3, 4] as n (n)}<i class:lit={st.score >= n || (n === 1 && Boolean(values[field.id]))}></i>{/each}
+                </div>
+                <p><b>{st.label}</b>{#if st.hint}<span> · {st.hint}</span>{/if}</p>
+              </div>
+            {/if}
           </div>
         {/each}
 
@@ -113,6 +127,26 @@
 </div>
 
 <style>
+  .meter {
+    margin-top: 0.4375rem; display: grid; grid-template-rows: 0fr; opacity: 0;
+    transition: grid-template-rows 0.25s ease, opacity 0.2s ease;
+  }
+  .meter > * { min-height: 0; overflow: hidden; }
+  .meter.shown { grid-template-rows: auto auto; opacity: 1; }
+  .meter:not(.shown) p { display: none; }
+  .bars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.25rem; }
+  .bars i {
+    height: 4px; border-radius: 2px; background: var(--track);
+    transition: background-color 0.3s ease, transform 0.3s cubic-bezier(0.3, 1.4, 0.5, 1);
+    transform-origin: left center;
+  }
+  .meter[data-score='0'] .bars i.lit, .meter[data-score='1'] .bars i.lit { background: var(--danger); }
+  .meter[data-score='2'] .bars i.lit { background: color-mix(in oklch, var(--danger) 45%, var(--a)); }
+  .meter[data-score='3'] .bars i.lit, .meter[data-score='4'] .bars i.lit { background: var(--a); }
+  .bars i.lit { animation: fill 0.3s ease; }
+  @keyframes fill { from { transform: scaleX(0.3); } }
+  .meter p { margin: 0.3125rem 0 0; font-size: 0.78rem; color: var(--dim); line-height: 1.4; }
+  .meter b { color: var(--text); font-weight: 600; }
   .wrap { display: flex; justify-content: center; }
   .stack { width: 100%; max-width: 23rem; }
   .brand {
