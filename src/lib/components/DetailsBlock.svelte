@@ -5,6 +5,7 @@
    * is about casting rather than about the person.
    */
   import EditableField from './EditableField.svelte';
+  import { pinterestSearchUrl, pinterestTerms, resolveImageUrl } from '$lib/rules/imageUrl';
   import type { Definition, Traits } from '$lib/types';
 
   let {
@@ -40,7 +41,11 @@
     { key: 'allies', label: 'Allies & organizations', placeholder: 'Who they can call on.' }
   ];
 
-  const portrait = $derived(definition.identity.portraitUrl?.trim() ?? '');
+  const portraitLink = $derived(resolveImageUrl(definition.identity.portraitUrl));
+  const bannerLink = $derived(resolveImageUrl(definition.identity.bannerUrl));
+  const portrait = $derived(portraitLink.url);
+  const pinterest = (role: 'portrait' | 'banner') =>
+    pinterestSearchUrl(pinterestTerms(role, { ancestry: definition.identity.ancestry, class: definition.identity.class }));
   const traits = $derived(definition.traits ?? {});
   const shownDetails = $derived(DETAILS.filter((f) => editable || definition.identity[f.key]));
   const shownWriting = $derived(WRITING.filter((f) => editable || traits[f.key]));
@@ -87,26 +92,37 @@
   </dl>
 
   {#if editable}
-    <div class="wide">
-      <dt>Portrait URL</dt>
-      <EditableField
-        value={definition.identity.portraitUrl ?? ''}
-        editable={true}
-        label="Portrait URL"
-        placeholder="https://…"
-        onchange={(v) => patchIdentity('portraitUrl', String(v))}
-      />
-    </div>
-    <div class="wide">
-      <dt>Banner URL</dt>
-      <EditableField
-        value={definition.identity.bannerUrl ?? ''}
-        editable={true}
-        label="Banner URL"
-        placeholder="https://… — optional, shown behind the sheet"
-        onchange={(v) => patchIdentity('bannerUrl', String(v))}
-      />
-    </div>
+    <!-- Both accept the link as it was copied: a Drive or Imgur page is turned
+         into the picture's own address when drawn, and Pinterest, which has
+         no search to offer, is opened in a tab to look through. -->
+    {#each [
+      { role: 'portrait', label: 'Portrait URL', key: 'portraitUrl', link: portraitLink, placeholder: 'https://… or a Google Drive / Imgur link' },
+      { role: 'banner', label: 'Banner URL', key: 'bannerUrl', link: bannerLink, placeholder: 'https://… — optional, shown behind the sheet' }
+    ] as const as field (field.role)}
+      <div class="wide">
+        <div class="urlhead">
+          <dt>{field.label}</dt>
+          <a class="find" href={pinterest(field.role)} target="_blank" rel="noopener noreferrer"
+             title="Opens Pinterest in a new tab. Right-click a picture there and copy its image address.">
+            Find on Pinterest
+            <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true">
+              <path d="M6 3h7v7M13 3 7 9M11 10v3H3V5h3" fill="none" stroke="currentColor"
+                    stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </a>
+        </div>
+        <EditableField
+          value={definition.identity[field.key] ?? ''}
+          editable={true}
+          label={field.label}
+          placeholder={field.placeholder}
+          onchange={(v) => patchIdentity(field.key, String(v))}
+        />
+        {#if field.link.note}
+          <p class="urlnote" class:bad={field.link.source === 'invalid'} role="status">{field.link.note}</p>
+        {/if}
+      </div>
+    {/each}
   {/if}
 </section>
 
@@ -177,6 +193,16 @@
   .empty-portrait { display: grid; place-items: center; color: var(--faint); background: var(--raised); }
   .wide { flex: 1 1 100%; min-width: 0; text-align: left; }
   .wide :global(.field) { width: 100%; field-sizing: fixed; }
+  .urlhead { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
+  .urlhead dt { margin: 0; }
+  .find {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    font-size: 0.75rem; color: var(--dim); text-decoration: none;
+    transition: color 0.15s ease;
+  }
+  .find:hover { color: var(--a); }
+  .urlnote { margin: 0.1875rem 0 0 calc(0.3rem + 1px); font-size: 0.78rem; line-height: 1.45; color: var(--dim); }
+  .urlnote.bad { color: var(--danger); }
 
   .writing {
     display: grid;
