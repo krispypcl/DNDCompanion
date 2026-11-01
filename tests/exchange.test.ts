@@ -30,8 +30,7 @@ const character = (): Definition => ({
   currency: { gp: 11, sp: 6 },
   traits: { proficiencies: 'Light armour', languages: 'Common, Thieves’ cant', personality: 'Dry.' },
   senses: 'Darkvision 60 ft.',
-  spellcastingAbility: 'cha', spellSaveDc: 14, spellAttackBonus: 6, abilitySaveDc: 14,
-  hoverReveal: { backstory: true }
+  spellcastingAbility: 'cha', spellSaveDc: 14, spellAttackBonus: 6, abilitySaveDc: 14
 });
 
 const play = (): State => ({
@@ -115,6 +114,28 @@ describe('round trip', () => {
     const { value } = roundTrip(character(), play(), texts);
     expect(value.texts.notes.body).toBe(nasty);
     expect(value.state.hpCurrent).toBe(31);
+  });
+
+  it('keeps pages as pages, written as marker lines a person can read', () => {
+    const texts = blankTexts();
+    texts.backstory.body = 'Chapter one.\n\fChapter two.\fChapter three.\n';
+    const file = exportSheet({ definition: character(), state: play(), texts });
+    expect(file).not.toContain('\f');
+    expect(file.match(/^===== PAGE =====$/gm)).toHaveLength(2);
+    const { value } = importSheet(file) as { value: { texts: { backstory: { body: string } } } };
+    expect(value.texts.backstory.body).toBe(texts.backstory.body);
+  });
+
+  it('does not take writing that looks like a page marker for one', () => {
+    const texts = blankTexts();
+    texts.notes.body = '===== PAGE =====';
+    expect(roundTrip(character(), play(), texts).value.texts.notes.body).toBe('===== PAGE =====');
+  });
+
+  it('keeps empty pages too', () => {
+    const texts = blankTexts();
+    texts.notes.body = '\f\fend';
+    expect(roundTrip(character(), play(), texts).value.texts.notes.body).toBe('\f\fend');
   });
 
   it('keeps empty and whitespace-only writing as it was', () => {
