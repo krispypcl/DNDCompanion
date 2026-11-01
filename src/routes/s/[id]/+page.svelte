@@ -423,8 +423,8 @@
                          onchange={(v) => patchIdentity('name', v)} />
         </h1>
         <p class="sub">
-          <!-- The class is written on the Character tab, not here, so with
-               none written there is nothing to label and nothing to press. -->
+          <!-- Class, species and background are all written on the Character
+               tab; here they are only read, each with its 5e.tools link. -->
           <!-- Each part of the line has its own 5e.tools link beside it. The
                class link opens the subclass when one is written, which on
                5e.tools is the class page with that subclass chosen. -->
@@ -443,15 +443,11 @@
             </span>
           {/if}
           <span class="ident">
-            <EditableField value={definition.identity.ancestry} {editable} label="Ancestry"
-                           placeholder="Ancestry"
-                           onchange={(v) => patchIdentity('ancestry', v)} />
+            {#if definition.identity.ancestry?.trim()}<span class="detail">{definition.identity.ancestry}</span>{/if}
             <EntryLink name={definition.identity.ancestry ?? ''} source={definition.identity.ancestrySource} category="races" />
           </span>
           <span class="ident">
-            <EditableField value={definition.identity.background} {editable} label="Background"
-                           placeholder="Background"
-                           onchange={(v) => patchIdentity('background', v)} />
+            {#if definition.identity.background?.trim()}<span class="detail">{definition.identity.background}</span>{/if}
             <EntryLink name={definition.identity.background ?? ''} source={definition.identity.backgroundSource} category="backgrounds" />
           </span>
         </p>
@@ -922,7 +918,7 @@
     margin: 0.3125rem 0 0; color: var(--dim); font-size: 0.875rem;
     display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline;
   }
-  .classline { color: var(--text); }
+  .classline, .detail { color: var(--text); }
   /* A detail and its link travel together, and the link shows on hovering
      that detail rather than the whole line. */
   .ident { display: inline-flex; align-items: center; gap: 0.125rem; }
