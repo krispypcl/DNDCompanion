@@ -1,10 +1,30 @@
 <script lang="ts">
   import '../app.css';
   import { page } from '$app/state';
+  import { onNavigate } from '$app/navigation';
   import Splash from '$lib/components/Splash.svelte';
-  import { rise } from '$lib/motion';
+  import { prefersReducedMotion, rise } from '$lib/motion';
 
   let { children } = $props();
+
+  /**
+   * Where the browser can, the page being left fades and lifts away while the
+   * new one rises in, instead of simply vanishing. Only between pages: a
+   * change of hash (switching tabs on a sheet) is not a navigation away.
+   */
+  onNavigate((navigation) => {
+    if (typeof document === 'undefined' || !('startViewTransition' in document)) return;
+    if (prefersReducedMotion()) return;
+    if (navigation.from?.url.pathname === navigation.to?.url.pathname) return;
+    return new Promise<void>((resolve) => {
+      (document as Document & { startViewTransition: (cb: () => Promise<void>) => unknown }).startViewTransition(
+        async () => {
+          resolve();
+          await navigation.complete;
+        }
+      );
+    });
+  });
 </script>
 
 <Splash />
@@ -20,3 +40,14 @@
     {@render children()}
   </div>
 {/key}
+
+<style>
+  /* The old page leaves; the new one brings its own arrival (the rise above). */
+  :global(::view-transition-old(root)) {
+    animation: leave-page 0.2s cubic-bezier(0.4, 0, 1, 1) both;
+  }
+  :global(::view-transition-new(root)) { animation: none; }
+  @keyframes -global-leave-page {
+    to { opacity: 0; transform: translateY(-8px) scale(0.99); }
+  }
+</style>

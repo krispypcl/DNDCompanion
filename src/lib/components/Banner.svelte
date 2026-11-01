@@ -1,12 +1,12 @@
 <script lang="ts">
   /**
-   * The character's banner: the whole top of the sheet, cut off along a
-   * curve that sweeps down from the left. It belongs to the page rather than
+   * The character's banner: the whole top of the sheet, ending in a straight
+   * slash that falls from left to right and fades out slowly across it. It belongs to the page rather than
    * to the window, so it scrolls away with the header it sits behind, while
    * the image inside drifts at three quarters of the page's speed.
    */
   import { onMount } from 'svelte';
-  import { DESKTOP_BLUR, DESKTOP_CURVE, PHONE_BLUR, PHONE_CURVE, maskUrl } from '$lib/bannerMask';
+  import { DESKTOP_SLASH, FALLBACK_MASK, PHONE_SLASH, slashMask } from '$lib/bannerMask';
   import { prefersReducedMotion } from '$lib/motion';
 
   let { url }: { url: string } = $props();
@@ -20,14 +20,12 @@
   });
 
   /* The layer's own size and whether it is the phone's, which together decide
-     the shape and softness of the edge. */
+     the angle of the slash. */
   let width = $state(0);
   let height = $state(0);
   let phone = $state(false);
   const mask = $derived(
-    width > 0 && height > 0
-      ? maskUrl(width, height, phone ? PHONE_CURVE : DESKTOP_CURVE, phone ? PHONE_BLUR : DESKTOP_BLUR)
-      : ''
+    width > 0 && height > 0 ? slashMask(width, height, phone ? PHONE_SLASH : DESKTOP_SLASH) : FALLBACK_MASK
   );
 
   onMount(() => {
@@ -60,30 +58,10 @@
   });
 </script>
 
-<!-- The curve is in fractions of the layer's own box, so it keeps its shape
-     at any width without a media query to redraw it. -->
-<svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
-  <defs>
-    <!-- One continuous sweep, falling from left to right. An earlier shape
-         doubled back on itself and left a kink above the hit points. -->
-    <clipPath id="banner-curve" clipPathUnits="objectBoundingBox">
-      <path d="M0,0 H1 V0.70 C0.74,0.78 0.40,0.46 0,0.30 Z" />
-    </clipPath>
-    <!-- The same fractions read far steeper in a tall narrow box, so a phone
-         gets its own, much gentler. -->
-    <clipPath id="banner-curve-phone" clipPathUnits="objectBoundingBox">
-      <path d="M0,0 H1 V0.46 C0.70,0.56 0.34,0.34 0,0.26 Z" />
-    </clipPath>
-  </defs>
-</svg>
-
-<!-- Until the layer has been measured it keeps the hard clip below; once the
-     soft mask exists it takes over, so there is never an unshaped banner. -->
 <div
   class="slash"
-  class:feathered={mask !== ''}
   class:failed
-  style:--mask={mask || undefined}
+  style:--mask={mask}
   bind:clientWidth={width}
   bind:clientHeight={height}
   aria-hidden="true"
@@ -91,14 +69,12 @@
   <!-- object-fit: cover crops to the layer. The image is never stretched: a
        banner of the wrong proportions loses its edges, not its shape. -->
   <img src={url} alt="" style:--drift="{drift}px" onerror={() => (failed = true)} />
-  <!-- Earns its keep twice: it holds the contrast the text needs, and its
-       gradients keep the curve from ending on a hard line. -->
+  <!-- Holds the contrast the text needs. -->
   <div class="tint"></div>
 </div>
 
 <style>
   .slash.failed { display: none; }
-  .defs { position: absolute; width: 0; height: 0; overflow: hidden; }
   /**
    * No positioned ancestor, so this resolves against the initial containing
    * block: the full width of the page at its very top, rather than the
@@ -111,24 +87,12 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 22rem;
+    height: 27rem;
     z-index: 0;
     pointer-events: none;
     overflow: hidden;
-    clip-path: url(#banner-curve);
-  }
-  /* Where the mask can be used it replaces the clip: a clip would cut the
-     feathering off at the very line it is meant to soften. */
-  @supports (mask-image: none) or (-webkit-mask-image: none) {
-    .slash.feathered {
-      clip-path: none;
-      -webkit-mask-image: var(--mask);
-      mask-image: var(--mask);
-      -webkit-mask-size: 100% 100%;
-      mask-size: 100% 100%;
-      -webkit-mask-repeat: no-repeat;
-      mask-repeat: no-repeat;
-    }
+    -webkit-mask-image: var(--mask);
+    mask-image: var(--mask);
   }
   img {
     position: absolute;
@@ -147,7 +111,7 @@
    * Three gradients, each with a job.
    *
    * Down the page: holds the image back at the very top, where the name sits,
-   * and softens the curve where it crosses the modules.
+   * and softens the slash where it crosses the modules.
    *
    * Across: the name and the class line live at the left, and they are the
    * hardest text on the sheet to protect — dim grey on a mid-grey photograph
@@ -181,14 +145,11 @@
 
   /**
    * A phone is one column, so the sideways relief that protects the name on a
-   * laptop has no room. The curve is shallower and the layer shorter, so the
+   * laptop has no room. The slash is shallower, so the
    * image clears the header and is read through the frost of the hit points.
    */
   @media (max-width: 700px) {
-    .slash { height: 26rem; clip-path: url(#banner-curve-phone); }
-    @supports (mask-image: none) or (-webkit-mask-image: none) {
-      .slash.feathered { clip-path: none; }
-    }
+    .slash { height: 28rem; }
     /* One column, so the header text runs the full width and the sideways
        relief has nowhere to put it. The tint stays even across instead. */
     .tint {

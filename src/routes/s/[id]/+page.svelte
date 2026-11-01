@@ -17,6 +17,7 @@
   import SaveAlert from '$lib/components/SaveAlert.svelte';
   import SkillRail from '$lib/components/SkillRail.svelte';
   import EntryTable from '$lib/components/EntryTable.svelte';
+  import DownloadButton from '$lib/components/DownloadButton.svelte';
   import Flash from '$lib/components/Flash.svelte';
   import ShareButton from '$lib/components/ShareButton.svelte';
   import Tabs from '$lib/components/Tabs.svelte';
@@ -37,7 +38,7 @@
   import { downloadText } from '$lib/download';
   import { exportFileName, exportSheet } from '$lib/exchange';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
-  import { spellGroupTitle, spellRank } from '$lib/rules/spells';
+  import { SPELL_TYPES, spellGroup, spellRank, spellTypeLabel } from '$lib/rules/spells';
   import { themeStyle } from '$lib/theme';
   import { session } from '$lib/stores/session';
   import { sheetStore } from '$lib/stores/sheet';
@@ -132,12 +133,11 @@
     { key: 'damageType', label: 'Type', width: '12%', placeholder: 'slashing' },
     { key: 'notes', label: 'Notes', width: '41%', muted: true, wide: true, placeholder: 'Versatile (1d10)' }
   ];
-  /** Blank first: a new row has no level yet, and defaulting it to Cantrip
-      would put a level on a spell nobody has written one for. */
-  const SPELL_LEVELS = ['', 'Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] as const;
   const SPELL_COLUMNS = [
     { key: 'name', label: 'Name', width: '17%', placeholder: 'Shield' },
-    { key: 'level', label: 'Level', width: '11%', options: SPELL_LEVELS },
+    /* Stored under `level`, as it always was; it now takes any type of the
+       player's, with cantrip and the levels offered as they type. */
+    { key: 'level', label: 'Type', width: '11%', suggest: SPELL_TYPES, placeholder: 'Cantrip', format: spellTypeLabel },
     { key: 'time', label: 'Cast time', width: '11%', placeholder: '1 reaction' },
     { key: 'range', label: 'Range', width: '9%', placeholder: 'Self' },
     { key: 'components', label: 'Components', short: 'Comp', width: '10%', placeholder: 'V, S, M' },
@@ -220,7 +220,7 @@
       exportFileName(definition),
       exportSheet({ definition, state: sheetState, texts: sheet?.texts ?? null })
     );
-    say('Exported');
+    say('Downloaded');
   }
 
   function patchIdentity(key: string, value: string | number) {
@@ -318,10 +318,8 @@
       {editable}
       owner={isOwner}
       isPublic={sheet?.texts ? sheet.texts[key].isPublic : null}
-      hover={Boolean(definition.hoverReveal?.[key])}
       onbody={(body) => sheetStore.setText(key, { body })}
       onpublic={(isPublic) => sheetStore.setText(key, { isPublic })}
-      onhover={(on) => setDefinition({ ...definition, hoverReveal: { ...definition.hoverReveal, [key]: on } })}
     />
   {/if}
 {/snippet}
@@ -412,6 +410,7 @@
         {/if}
         <a class="back" href="{base}/">Back</a>
         <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Could not copy the link')} />
+        {#if isOwner}<DownloadButton ondownload={exportNow} />{/if}
         <ModeToggle />
       </div>
     </header>
@@ -496,21 +495,21 @@
                 items={definition.spells ?? []}
                 columns={SPELL_COLUMNS}
                 check={{ key: 'prepared', label: 'Prepared', short: 'Prep' }}
-                groupBy={{ key: 'level', rank: (spell) => spellRank(spell.level), title: spellGroupTitle }}
+                groupBy={{ key: 'level', rank: (spell) => spellRank(spell.level), title: (spell) => spellGroup(spell.level) }}
                 {editable}
                 category="spells"
                 emptyText="No spells or abilities recorded."
                 addLabel="Add spell"
                 blank={() => ({ name: '' }) as Spell}
                 onchange={(spells) => setDefinition({ ...definition, spells: spells as Spell[] })}
-              />
-              {#if editable}
-                <p class="hint">
+              >
+                {#snippet info()}
                   Anything you can cast or activate goes here, spell or not — an item&rsquo;s
-                  charges belong here as much as a cantrip does. Source <code>homebrew</code>
-                  marks an entry as yours and drops the 5e.tools link.
-                </p>
-              {/if}
+                  charges belong here as much as a cantrip does. Type takes a level or a word of
+                  your own, like <code>Ritual</code>, and spells are grouped by it. Source
+                  <code>homebrew</code> marks an entry as yours and drops the 5e.tools link.
+                {/snippet}
+              </EntryTable>
             {:else if tab === 'Equipment'}
               <EntryTable
                 items={definition.equipment ?? []}
@@ -521,14 +520,13 @@
                 addLabel="Add item"
                 blank={() => ({ name: '', qty: 1 }) as Item}
                 onchange={(equipment) => setDefinition({ ...definition, equipment: equipment as Item[] })}
-              />
-              {#if editable}
-                <p class="hint">
+              >
+                {#snippet info()}
                   Weight is per item, so an amount of two counts twice in the total. Leave it blank
                   for anything whose weight does not matter. Value is written as you like — a price,
                   a range, &ldquo;priceless&rdquo; — and is never added up.
-                </p>
-              {/if}
+                {/snippet}
+              </EntryTable>
             {:else if tab === 'Features'}
               <EntryTable
                 items={definition.features ?? []}
@@ -539,13 +537,12 @@
                 addLabel="Add feature"
                 blank={() => ({ title: '', body: '' }) as Feature}
                 onchange={(features) => setDefinition({ ...definition, features: features as Feature[] })}
-              />
-              {#if editable}
-                <p class="hint">
+              >
+                {#snippet info()}
                   Class features, feats and anything an item grants. Source <code>homebrew</code>
                   marks an entry as yours and drops the 5e.tools link.
-                </p>
-              {/if}
+                {/snippet}
+              </EntryTable>
             {:else if tab === 'Trackers'}
               <EntryTable
                 items={trackerRows}
@@ -556,15 +553,14 @@
                 addLabel="Add tracker"
                 blank={blankTracker}
                 onchange={(rows) => saveTrackers(rows as TrackerRow[])}
-              />
-              {#if editable}
-                <p class="hint">
+              >
+                {#snippet info()}
                   Max accepts a number or a formula over <code>level</code>,
                   <code>classlevel</code>, <code>prof</code> and ability modifiers —
                   <code>prof + 1</code>, <code>classlevel / 2</code>. Name the class on a
                   feature that scales with it, or multiclassing will inflate it.
-                </p>
-              {/if}
+                {/snippet}
+              </EntryTable>
             {:else if tab === 'Character'}
               <EntryTable
                 items={classes}
@@ -575,14 +571,13 @@
                 addLabel="Add class"
                 blank={() => ({ name: '', level: 1 }) as ClassEntry}
                 onchange={(rows) => saveClasses(rows as ClassEntry[])}
-              />
-              {#if editable}
-                <p class="hint">
+              >
+                {#snippet info()}
                   A multiclass character has a row per class. Character level is the sum, and a
                   tracker that uses <code>classlevel</code> follows the class you name on it
                   rather than the total.
-                </p>
-              {/if}
+                {/snippet}
+              </EntryTable>
               <h3 class="sub-h details-h">Details</h3>
               <DetailsBlock {definition} {editable} onchange={setDefinition} />
               {#if editable}
@@ -590,17 +585,6 @@
                   <span class="cap">Character theme</span>
                   <ThemePicker value={definition.identity.theme}
                                onchange={(name) => patchIdentity('theme', name)} />
-                </div>
-              {/if}
-              {#if isOwner}
-                <!-- Not behind edit mode: taking a copy changes nothing. -->
-                <div class="themerow backup">
-                  <span class="cap">Backup</span>
-                  <button class="export" onclick={exportNow}>Export sheet</button>
-                  <span class="hint">
-                    A text file with the whole character, notes and backstory included. Import it
-                    from the sheet list to get it back.
-                  </span>
                 </div>
               {/if}
             {:else if tab === 'Notes'}
@@ -803,7 +787,9 @@
     -webkit-backdrop-filter: blur(16px) saturate(1.1);
     border-color: color-mix(in oklch, var(--line) 70%, transparent);
   }
-  .bannered .identity { position: relative; z-index: 1; }
+  /* Every section sits above the hurt edges (z-index 0), so the red only
+     ever colours the background between and around them. */
+  .identity, .band, .main { position: relative; z-index: 1; }
   /**
    * The class line is secondary text, and secondary text is a mid grey. Over
    * a photograph that is unreadable at any tint which still shows the
@@ -871,7 +857,9 @@
     border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font: inherit;
     font-size: 0.8125rem; cursor: pointer; flex: none; min-width: 4.5rem;
   }
+  .edit:hover { border-color: var(--a-edge); color: var(--a); }
   .edit[aria-pressed='true'] { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
+  .edit[aria-pressed='true']:hover { border-color: var(--a); background: var(--a-edge); color: var(--text); }
   .edit, .undo, .back { transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease; }
   .edit:active, .undo:active, .back:active { transform: translateY(1px); }
   /* A surface of its own: it sits over the banner, where an outline with
@@ -964,18 +952,7 @@
   }
   .carried b { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 600; }
 
-  .hint { color: var(--faint); font-size: 0.78rem; margin: 0.5rem 0 0; line-height: 1.5; }
-  .hint code { background: var(--raised); border-radius: 3px; padding: 0.05rem 0.25rem; font-size: 0.95em; }
   .themerow { display: flex; align-items: center; gap: 1rem; margin: 1.25rem 0; flex-wrap: wrap; }
-  .backup .hint { margin: 0; flex: 1 1 14rem; }
-  .export {
-    background: var(--raised); border: 1px solid var(--line); color: var(--text);
-    border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font: inherit; font-size: 0.8125rem;
-    cursor: pointer; flex: none;
-    transition: border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
-  }
-  .export:hover { border-color: var(--a-edge); color: var(--a); }
-  .export:active { transform: translateY(1px); }
   .casting {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
     gap: 1rem; margin-bottom: 1.25rem; text-align: center;

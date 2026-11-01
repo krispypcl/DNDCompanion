@@ -9,7 +9,9 @@
     onchange
   }: { definition: Definition; editable: boolean; onchange: (next: Definition) => void } = $props();
 
-  const COINS = ['pp', 'gp', 'ep', 'sp', 'cp'] as const;
+  /** Smallest to largest, left to right. Electrum is left out: the table
+      does not use it. A sheet that has some keeps it in its data. */
+  const COINS = ['cp', 'sp', 'gp', 'pp'] as const;
 
   function setCoin(coin: string, value: string) {
     onchange({ ...definition, currency: { ...definition.currency, [coin]: Number(value) } });
@@ -35,7 +37,7 @@
 </div>
 
 <style>
-  .coins { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.375rem; }
+  .coins { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.375rem; }
   label { display: block; text-align: center; min-width: 0; }
   .cap {
     display: block; font-size: 0.6875rem; letter-spacing: 0.1em;

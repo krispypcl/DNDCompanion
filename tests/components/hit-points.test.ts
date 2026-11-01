@@ -121,3 +121,47 @@ describe('HitPoints', () => {
     expect(next.identity.name).toBe('Loka');
   });
 });
+
+import { fireEvent } from '@testing-library/svelte';
+
+describe('HitPoints for a visitor', () => {
+  it('says how the character is doing where the buttons would be', () => {
+    const { container } = render(HitPoints, {
+      props: { definition: definition(), state: { ...state(), hpCurrent: 20 }, editable: false, onchange: () => {} }
+    });
+    expect(screen.getByRole('status').textContent).toMatch(/bloodied/i);
+    expect(container.textContent).toMatch(/45% of maximum/);
+    expect(screen.queryByRole('button', { name: 'Damage' })).toBeNull();
+  });
+
+  it('has no status chip for the owner, who has the buttons', () => {
+    render(HitPoints, { props: { definition: definition(), state: state(), editable: true, onchange: () => {} } });
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+});
+
+describe('death saves', () => {
+  const down = () => ({ ...state(), hpCurrent: 0, deathSaves: { successes: 1, failures: 0 } });
+
+  it('are veiled for the owner too, and the first press only reveals them', async () => {
+    const onchange = vi.fn();
+    const { container } = render(HitPoints, {
+      props: { definition: definition(), state: down(), editable: true, onchange }
+    });
+    const veil = container.querySelector('.reveal')!;
+    expect(veil.classList.contains('veiled')).toBe(true);
+    const pip = screen.getByRole('button', { name: 'failures 1' });
+    await fireEvent.click(pip);
+    expect(onchange).not.toHaveBeenCalled();
+    expect(veil.classList.contains('veiled')).toBe(false);
+    await fireEvent.click(pip);
+    expect(onchange).toHaveBeenCalledTimes(1);
+  });
+
+  it('are veiled for a visitor', () => {
+    const { container } = render(HitPoints, {
+      props: { definition: definition(), state: down(), editable: false, onchange: () => {} }
+    });
+    expect(container.querySelector('.reveal.veiled')).not.toBeNull();
+  });
+});

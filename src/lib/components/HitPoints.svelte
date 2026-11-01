@@ -6,8 +6,11 @@
    */
   import CountUp from './CountUp.svelte';
   import EditableField from './EditableField.svelte';
-  import { applyDamage, applyHealing, hitSeverity, setDeathSave, setTempHp } from '$lib/rules/hp';
+  import Reveal from './Reveal.svelte';
+  import { applyDamage, applyHealing, hitSeverity, setDeathSave, setTempHp, vitalStatus } from '$lib/rules/hp';
   import { snapshot } from '$lib/stores/undo';
+  import { prefersReducedMotion } from '$lib/motion';
+  import { backOut } from 'svelte/easing';
   import type { Definition, State } from '$lib/types';
 
   let {
@@ -103,6 +106,16 @@
   const pct = (n: number) => (barTotal > 0 ? (n / barTotal) * 100 : 0);
   const down = $derived(sheetState.hpCurrent === 0);
   const bloodied = $derived(ratio > 0 && ratio <= 0.5);
+  const status = $derived(vitalStatus(sheetState.hpCurrent, hpMax, sheetState.deathSaves));
+  const percent = $derived(hpMax > 0 ? Math.round(ratio * 100) : null);
+
+  function pop(_node: Element) {
+    return {
+      duration: prefersReducedMotion() ? 0 : 320,
+      easing: backOut,
+      css: (t: number) => `opacity: ${Math.min(1, t * 1.6)}; transform: scale(${0.7 + 0.3 * t});`
+    };
+  }
 
   function act(label: string, next: State) {
     snapshot(sheetState, label);
@@ -155,6 +168,23 @@
 </div>
 
 <div class="actions">
+  {#if !editable}
+    <!-- A visitor has no buttons to press, so this space says how the
+         character is doing instead. -->
+    <div class="statusrow">
+      {#key status.vital}
+        <span class="status {status.vital}" role="status" in:pop>
+          <i class="dot" aria-hidden="true"></i>{status.label}
+        </span>
+      {/key}
+      {#if percent !== null && !down}
+        <span class="pct">{percent}% of maximum</span>
+      {/if}
+      {#if sheetState.hpTemp > 0}
+        <span class="pct">+{sheetState.hpTemp} temporary</span>
+      {/if}
+    </div>
+  {/if}
   {#if editable}
     <div class="hprow">
       <input type="number" min="1" bind:value={amount} aria-label="Amount" />
@@ -168,7 +198,9 @@
   {#if down || editable}
     <div class="restrow">
       {#if down}
-        <!-- At zero there is no resting, so death saves take this space. -->
+        <!-- At zero there is no resting, so death saves take this space,
+             veiled for everyone, the owner too, until looked at. -->
+        <Reveal enabled={true}>
         <div class="deaths">
           {#each (['successes', 'failures'] as const) as kind (kind)}
             <div class="drow">
@@ -188,6 +220,7 @@
             </div>
           {/each}
         </div>
+        </Reveal>
       {:else}
         {@render children?.()}
       {/if}
@@ -319,6 +352,36 @@
   /* Two groups, not one wrapping row: what changes hit points now, and what
      restores them on a rest. The rule between says which is which. */
   .meter { margin-top: auto; }
+  .statusrow {
+    display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+    min-height: 2.375rem;
+  }
+  .status {
+    display: inline-flex; align-items: center; gap: 0.4375rem;
+    border-radius: 999px; padding: 0.25rem 0.75rem 0.25rem 0.625rem;
+    font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.01em;
+    border: 1px solid var(--line); background: var(--raised); color: var(--text);
+    transform-origin: left center;
+  }
+  .dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: currentColor; flex: none; }
+  /* The sheet's own colours: the accent while well, danger as it fails. */
+  .status.healthy { color: var(--a); border-color: var(--a-edge); background: var(--a-wash); }
+  .status.bloodied {
+    color: color-mix(in oklch, var(--danger) 70%, var(--text));
+    border-color: color-mix(in oklch, var(--danger) 40%, transparent);
+    background: color-mix(in oklch, var(--danger-wash) 60%, transparent);
+  }
+  .status.critical, .status.down, .status.dead {
+    color: var(--danger); border-color: color-mix(in oklch, var(--danger) 55%, transparent);
+    background: var(--danger-wash);
+  }
+  .status.stable { color: var(--text); }
+  .status.critical .dot, .status.down .dot { animation: throb 1.4s ease-in-out infinite; }
+  @keyframes throb {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.55; }
+  }
+  .pct { font-size: 0.78rem; color: var(--dim); font-variant-numeric: tabular-nums; }
   .actions { padding-top: 0.75rem; }
   .hprow { display: flex; gap: 0.5rem; }
   /* Fixed height, so swapping rests for death saves cannot resize the module. */
