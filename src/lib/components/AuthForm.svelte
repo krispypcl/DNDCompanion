@@ -1,7 +1,14 @@
 <script lang="ts">
   import type { FullAutoFill } from 'svelte/elements';
 
-  type Field = { id: string; label: string; type: string; autocomplete: FullAutoFill };
+  type Field = {
+    id: string;
+    label: string;
+    type: string;
+    autocomplete: FullAutoFill;
+    /** Enforced by the browser as well as by `validate`. */
+    minlength?: number;
+  };
 
   let {
     title,
@@ -10,6 +17,7 @@
     fields,
     submitLabel,
     onsubmit,
+    validate,
     busyLabel = 'Working…',
     standalone = true,
     children
@@ -23,6 +31,9 @@
     fields: Field[];
     submitLabel: string;
     onsubmit: (values: Record<string, string>) => Promise<string | void>;
+    /** A reason the form cannot be sent yet, or nothing. Checked before the
+        network is touched, so a typo costs no round trip. */
+    validate?: (values: Record<string, string>) => string | null | undefined;
     busyLabel?: string;
     /** A page of its own centres itself; embedded in the landing page it does not. */
     standalone?: boolean;
@@ -38,6 +49,11 @@
     event.preventDefault();
     error = null;
     notice = null;
+    const problem = validate?.(values);
+    if (problem) {
+      error = problem;
+      return;
+    }
     busy = true;
     try {
       const message = await onsubmit(values);
@@ -79,6 +95,7 @@
               type={field.type}
               autocomplete={field.autocomplete}
               bind:value={values[field.id]}
+              minlength={field.minlength}
               required
             />
           </div>
