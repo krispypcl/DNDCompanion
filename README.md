@@ -63,7 +63,11 @@ each request may do. The service role key is never used in this project.
 ### Supabase project
 
 1. Create a project at supabase.com.
-2. Run `schema.sql` in the SQL editor.
+2. Run `schema.sql`, then `0002_private_text.sql`, in
+   the SQL editor. The second adds private notes and backstory; it is safe to
+   run before or after deploying, and the app falls back to public text until
+   it exists. It moves existing notes and backstory out of the sheet row into
+   `sheet_text`, kept public.
 3. **Enable email confirmation** under Authentication → Providers → Email.
    The confirmed address is the only password-recovery route.
 4. Put the project URL and anon key in `.env`, and in the repo's Actions
@@ -99,17 +103,19 @@ view and retired characters. The tables and their policies already ship in
 data. Profiles are a dependency of it: the library has to show who wrote an
 entry, and `auth.users` is not readable by other users.
 
-### Deferred
+## Behaviour worth knowing
 
-Asked for, designed enough to start, and parked:
-
-- **Cards instead of tables for the middle modules on a phone.** Editing
-  already stacks into cards under 700px; this is the reading view catching
-  up, and deciding what each card shows at a glance.
-- **A conditions and effects module.** `State` already carries a
-  `conditions: string[]`, written by nothing and read by nothing, so this
-  needs no migration either — only a decision about whether a condition is
-  free text or a list with the rules attached.
-- **Confirm password when creating an account.** A second field on
-  `/signup` that has to match before the form submits. Worth pairing with
-  a minimum length, since Supabase's own default is six characters.
+- **Private notes and backstory.** Enforced by row-level security in the
+  `sheet_text` table, so visitors receive nothing, not a hidden field. They
+  see an empty section.
+- **Reveal on hover.** A blur veil that lifts on hover, focus or tap. It
+  keeps text tidy on a shared screen; it is not secrecy. Use Private for that.
+- **Images.** Portrait and banner accept direct links, Google Drive share
+  links (file must be "Anyone with the link"; resolved to its
+  `lh3.googleusercontent.com` address) and Imgur or `pinimg.com` image links.
+  Pinterest has no pin-search API and forbids automated access, so the sheet
+  only opens Pinterest's own search in a new tab; paste the image address back.
+- **Export and import.** Owners export a readable text file; Import on the
+  sheet list recreates it as a new sheet. Imports are sanitised.
+- **Passwords** need at least 8 characters, typed twice.
+- Tests alias `$app/paths` to `tests/stubs/app-paths.ts`.
