@@ -64,6 +64,12 @@
     }
   }
 
+  /** Forgets every roll, the latest included. The dice chosen stay. */
+  function clearHistory() {
+    last = null;
+    history = [];
+  }
+
   function clear() {
     pool = { dice: {}, modifier: 0, mode: pool.mode };
   }
@@ -146,6 +152,12 @@
     {/key}
   {/if}
 
+  {#if last}
+    <div class="histhead">
+      <span class="histcap">{history.length ? 'Earlier rolls' : ''}</span>
+      <button class="clearhist" onclick={clearHistory}>Clear history</button>
+    </div>
+  {/if}
   {#if history.length}
     <ol class="history" aria-label="Earlier rolls">
       {#each history as h (h)}
@@ -283,7 +295,17 @@
   .modval { font-weight: 600; color: var(--dim); padding: 0 0.25rem 0.375rem; }
   .said { margin: 0; font-size: 0.75rem; color: var(--dim); }
 
-  .history { list-style: none; margin: 0.625rem 0 0; padding: 0; display: grid; gap: 0.25rem; }
+  .histhead { display: flex; align-items: center; justify-content: space-between; margin-top: 0.625rem; }
+  .histcap {
+    font-size: 0.625rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--label); font-weight: 600;
+  }
+  .clearhist {
+    background: none; border: 1px solid transparent; color: var(--dim); font-size: 0.75rem;
+    border-radius: var(--r-sm); padding: 0.1875rem 0.5rem;
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+  }
+  .clearhist:hover { color: var(--danger); border-color: color-mix(in oklch, var(--danger) 45%, transparent); background: var(--danger-wash); }
+  .history { list-style: none; margin: 0.375rem 0 0; padding: 0; display: grid; gap: 0.25rem; }
   .history li { font-size: 0.78rem; color: var(--faint); display: flex; gap: 0.5rem; animation: land 0.25s ease; }
   .history b { color: var(--dim); min-width: 1.75rem; text-align: right; font-variant-numeric: tabular-nums; }
 

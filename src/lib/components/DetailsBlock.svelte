@@ -19,6 +19,13 @@
     onchange: (next: Definition) => void;
   } = $props();
 
+  const ORIGIN = [
+    { key: 'ancestry', label: 'Species', placeholder: 'Tiefling (Glasya)' },
+    { key: 'ancestrySource', label: 'Species source', placeholder: 'mtf' },
+    { key: 'background', label: 'Background', placeholder: 'Criminal' },
+    { key: 'backgroundSource', label: 'Background source', placeholder: 'xphb' }
+  ] as const;
+
   /** One-liners. All free text: an age may be "24" or "unknown". */
   const DETAILS = [
     { key: 'alignment', label: 'Alignment', placeholder: 'Lawful good' },
@@ -66,6 +73,25 @@
     onchange({ ...definition, traits: { ...traits, [key]: value } });
   }
 </script>
+
+<!-- Species and background, each beside the book it comes from: the book is
+     what lets the header link straight to the entry on 5e.tools. -->
+<dl class="origin">
+  {#each ORIGIN as field (field.key)}
+    <div>
+      <dt>{field.label}</dt>
+      <dd>
+        <EditableField
+          value={definition.identity[field.key] ?? ''}
+          {editable}
+          label={field.label}
+          hint={field.placeholder}
+          onchange={(v) => patchIdentity(field.key, String(v).trim())}
+        />
+      </dd>
+    </div>
+  {/each}
+</dl>
 
 <section class="details">
   <!-- Editing, the preview beside the link field does this job. -->
@@ -125,25 +151,6 @@
   {/if}
 
   {#if editable}
-    <!-- The books the species and background come from: with one written,
-         their 5e.tools links in the header go straight to the entry. -->
-    <div class="wide sources">
-      {#each [
-        { key: 'ancestrySource', label: 'Species source' },
-        { key: 'backgroundSource', label: 'Background source' }
-      ] as const as field (field.key)}
-        <div>
-          <dt>{field.label}</dt>
-          <EditableField
-            value={definition.identity[field.key] ?? ''}
-            editable={true}
-            label={field.label}
-            placeholder="xphb"
-            onchange={(v) => patchIdentity(field.key, String(v).trim())}
-          />
-        </div>
-      {/each}
-    </div>
     <!-- Both accept the link as it was copied: a Drive, Dropbox, OneDrive or
          Imgur page is turned into the picture's own address when drawn. A
          preview beside the field says whether it actually loads. -->
@@ -217,6 +224,12 @@
 {/if}
 
 <style>
+  .origin {
+    margin: 0 0 1.25rem; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.75rem 1.25rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--line-soft);
+  }
+  .origin > div { text-align: center; min-width: 0; }
+  @media (max-width: 560px) { .origin { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .details {
     display: flex;
     flex-wrap: wrap;
@@ -263,7 +276,6 @@
   .empty-portrait { display: grid; place-items: center; color: var(--faint); background: var(--raised); }
   .wide { flex: 1 1 100%; min-width: 0; text-align: left; }
   .wide :global(.field) { width: 100%; field-sizing: fixed; }
-  .sources { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem 1.25rem; }
   .urlrow { display: flex; align-items: center; gap: 0.625rem; }
   .urlfield { flex: 1 1 auto; min-width: 0; }
   .banner {

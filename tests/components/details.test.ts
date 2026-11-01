@@ -46,11 +46,11 @@ describe('DetailsBlock', () => {
 
   // Background moved to the identity line, player was dropped, and initiative
   // is edited in the defense module where it is read.
-  it('no longer carries background, player, initiative, save DC or proficiencies', () => {
+  it('no longer carries player, initiative, save DC or proficiencies', () => {
     render(DetailsBlock, {
       props: { definition: definition(), editable: true, onchange: () => {} }
     });
-    expect(screen.queryByLabelText('Background')).toBeNull();
+    // Background came back, with its source, in the origin row.
     expect(screen.queryByLabelText('Player')).toBeNull();
     expect(screen.queryByLabelText('Initiative bonus')).toBeNull();
     // Ability save DC is edited in the defense module; proficiencies in the rail.
@@ -88,5 +88,23 @@ describe('DetailsBlock', () => {
 
     const block = readFileSync('src/lib/components/DetailsBlock.svelte', 'utf8');
     expect(block).toMatch(/grow=\{true\}/);
+  });
+});
+
+import { render as renderDetails, screen as detailsScreen } from '@testing-library/svelte';
+import DetailsBlockForOrigin from '$lib/components/DetailsBlock.svelte';
+describe('origin row', () => {
+  it('has species, species source, background and background source, in that order', () => {
+    const def = {
+      identity: { name: 'X', level: 1, ancestry: 'Tiefling (Glasya)', ancestrySource: 'mtf', background: 'Criminal' },
+      abilities: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 }, proficiency: 2,
+      combat: { ac: 10, speed: 30, hpMax: 1, hitDice: '1d8' }, saves: {}, skills: {}, attacks: [], features: [],
+      spells: [], trackers: [], equipment: [], currency: {}, notes: ''
+    };
+    const { container } = renderDetails(DetailsBlockForOrigin, { props: { definition: def as never, editable: true, onchange: () => {} } });
+    expect([...container.querySelectorAll('.origin dt')].map((d) => d.textContent)).toEqual([
+      'Species', 'Species source', 'Background', 'Background source'
+    ]);
+    expect((detailsScreen.getByLabelText('Species source') as HTMLInputElement).value).toBe('mtf');
   });
 });
