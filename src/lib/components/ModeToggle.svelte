@@ -55,14 +55,15 @@
     width: 2rem;
     height: 2rem;
     flex: none;
-    background: var(--surface);
+    background: var(--raised);
     border: 1px solid var(--line);
     border-radius: var(--r-sm);
-    color: var(--dim);
+    color: var(--text);
     cursor: pointer;
     padding: 0;
-    transition: border-color 0.18s ease, color 0.18s ease, background-color 0.18s ease;
+    transition: border-color 0.18s ease, color 0.18s ease, background-color 0.18s ease, transform 0.08s ease;
   }
   .mode:hover { border-color: var(--a-edge); color: var(--a); }
+  .mode:active { transform: translateY(1px); }
   .mode svg { display: block; }
 </style>

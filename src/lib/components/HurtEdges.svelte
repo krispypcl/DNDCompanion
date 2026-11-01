@@ -4,9 +4,10 @@
    * below half health, and more the closer to zero they get. It is a mood,
    * not a meter: the hit point module is still where the number is.
    *
-   * Fixed to the viewport and out of the way of every click. The edges grow
-   * and fade by transition, so a heal drains it and a hit floods it rather
-   * than either snapping.
+   * It lives behind the sheet: fixed to the viewport, beneath every module
+   * and line of text, so it only ever colours the page's own background. It
+   * starts faint and greyish-red and ends deep, saturated and nearly opaque,
+   * and every step between is a transition rather than a jump.
    */
   import { hurtLevel } from '$lib/rules/hp';
 
@@ -23,36 +24,48 @@
 </div>
 
 <style>
-  .edges { position: fixed; inset: 0; z-index: 30; pointer-events: none; }
+  /* z-index 0, below the sheet's sections (which sit at 1) and above only the
+     page background and banner. */
+  /* Registered, so the number itself eases and the colour, width and
+     opacity all follow it smoothly; a gradient alone cannot transition. */
+  @property --hurt { syntax: '<number>'; inherits: true; initial-value: 0; }
+  .edges {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    transition: --hurt 0.9s ease;
+  }
   .edge {
     position: absolute; top: 0; bottom: 0;
-    width: clamp(4.5rem, 15vw, 15rem);
-    /* Nothing at all until hurt, then a floor so the first sign is visible,
-       rising to nearly full at zero. */
-    opacity: calc(min(var(--hurt), 1) * 0.86 + min(var(--hurt) * 40, 1) * 0.14);
-    transform: scaleX(calc(0.55 + var(--hurt) * 0.45));
-    transition: opacity 0.9s ease, transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+    width: clamp(5rem, 18vw, 18rem);
+    /* Nothing at all until hurt, then a translucent floor so the first sign
+       is visible, rising to nearly opaque at zero. */
+    opacity: calc(min(var(--hurt) * 40, 1) * (0.3 + var(--hurt) * 0.68));
+    transform: scaleX(calc(0.6 + var(--hurt) * 0.4));
   }
   .left { left: 0; transform-origin: left center; }
   .right { right: 0; transform-origin: right center; }
   .edge i {
     display: block; width: 100%; height: 100%;
+    /* Always red, whatever the character's theme. Chroma climbs with the
+       wound: a dull, almost brown red at first, a vivid one at the end. */
+    --red: oklch(calc(46% + var(--hurt) * 8%) calc(0.06 + var(--hurt) * 0.18) 27);
     background: linear-gradient(
       to right,
-      color-mix(in oklch, var(--danger) 62%, transparent) 0%,
-      color-mix(in oklch, var(--danger) 26%, transparent) 38%,
-      color-mix(in oklch, var(--danger) 8%, transparent) 72%,
+      var(--red) 0%,
+      color-mix(in oklch, var(--red) 55%, transparent) 34%,
+      color-mix(in oklch, var(--red) 18%, transparent) 68%,
       transparent 100%
     );
   }
   .right i { transform: scaleX(-1); }
   .edge i.critical { animation: breathe 2.6s ease-in-out infinite; }
   @keyframes breathe {
-    0%, 100% { opacity: 0.72; }
+    0%, 100% { opacity: 0.78; }
     50% { opacity: 1; }
   }
   @media (max-width: 700px) {
-    /* A phone's edge is also its text, so the wash is narrower. */
-    .edge { width: clamp(2.5rem, 11vw, 5rem); }
+    .edge { width: clamp(2.5rem, 14vw, 6rem); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .edge i.critical { animation: none; }
   }
 </style>

@@ -6,6 +6,9 @@
    */
   import { STANDARD_CONDITIONS, addCondition, conditionUrl, removeCondition } from '$lib/rules/conditions';
   import { snapshot } from '$lib/stores/undo';
+  import { flip } from 'svelte/animate';
+  import { scale } from 'svelte/transition';
+  import { cubicOut } from 'svelte/easing';
   import type { State } from '$lib/types';
 
   let {
@@ -51,7 +54,9 @@
       <ul aria-label="Active conditions">
         {#each active as name (name)}
           {@const href = conditionUrl(name)}
-          <li class="chip">
+          <li class="chip" animate:flip={{ duration: 220, easing: cubicOut }}
+              in:scale={{ start: 0.6, duration: 240, easing: cubicOut }}
+              out:scale={{ start: 0.6, duration: 160 }}>
             {#if href}
               <a {href} target="_blank" rel="noopener noreferrer" title="Look up {name} on 5e.tools">{name}</a>
             {:else}
@@ -96,14 +101,9 @@
     background: var(--a-wash); border: 1px solid var(--a-edge); color: var(--text);
     border-radius: 999px; padding: 0.125rem 0.25rem 0.125rem 0.625rem;
     font-size: 0.8125rem; line-height: 1.5;
-    animation: chipIn 0.22s cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
   }
   /* A chip with nothing to press has nothing to be padded for on the right. */
   .chip:not(:has(.x)) { padding-right: 0.625rem; }
-  @keyframes chipIn {
-    from { opacity: 0; transform: scale(0.85); }
-    to { opacity: 1; transform: none; }
-  }
   .chip a { color: inherit; text-decoration: none; }
   .chip a:hover { color: var(--a); text-decoration: underline; text-underline-offset: 2px; }
   .x {
@@ -123,6 +123,9 @@
   }
   input:hover { border-color: var(--a-edge); }
   input::placeholder { color: var(--dim); opacity: 0.7; }
+  /* The suggestions stay; Chrome's arrow at the end of the field does not. */
+  input::-webkit-calendar-picker-indicator { display: none !important; }
+  input::-webkit-list-button { display: none !important; }
   .go {
     flex: none; background: var(--raised); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.3125rem 0.75rem; font: inherit; font-size: 0.8125rem;

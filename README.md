@@ -105,17 +105,33 @@ entry, and `auth.users` is not readable by other users.
 
 ## Behaviour worth knowing
 
-- **Private notes and backstory.** Enforced by row-level security in the
-  `sheet_text` table, so visitors receive nothing, not a hidden field. They
-  see an empty section.
-- **Reveal on hover.** A blur veil that lifts on hover, focus or tap. It
-  keeps text tidy on a shared screen; it is not secrecy. Use Private for that.
-- **Images.** Portrait and banner accept direct links, Google Drive share
-  links (file must be "Anyone with the link"; resolved to its
-  `lh3.googleusercontent.com` address) and Imgur or `pinimg.com` image links.
-  Pinterest has no pin-search API and forbids automated access, so the sheet
-  only opens Pinterest's own search in a new tab; paste the image address back.
-- **Export and import.** Owners export a readable text file; Import on the
-  sheet list recreates it as a new sheet. Imports are sanitised.
-- **Passwords** need at least 8 characters, typed twice.
-- Tests alias `$app/paths` to `tests/stubs/app-paths.ts`.
+- **Private notes and backstory.** One switch per writing. Enforced by
+  row-level security in the `sheet_text` table, so visitors receive nothing,
+  not a hidden field; they see an empty section.
+- **Pages.** Notes and backstory are books of pages, stored as one text with a
+  form feed (`\f`) between pages. Older single-text writing is a one-page book.
+  Export writes each break as a `===== PAGE =====` line.
+- **Death saves** are blurred for everyone, the owner included, until hovered,
+  focused or tapped; the first tap only reveals them.
+- **Visitors** see a status chip (Healthy, Bloodied, Critical, Down, Stable,
+  Dead) where the owner has the damage and rest buttons.
+- **Images.** Portrait and banner accept direct links and resolve share links
+  from Google Drive (`lh3.googleusercontent.com/d/<id>`; file must be shared
+  "Anyone with the link"), Dropbox (`raw=1`), OneDrive (the shares API),
+  GitHub, Imgur, Gyazo and Google Images results; Pinterest thumbnails are
+  sharpened to 736px. Page links that cannot be turned into a picture without
+  fetching them (Pinterest pins, ArtStation, DeviantArt, Reddit, ImgBB…) get a
+  note saying to copy the image address. The editor previews each link and
+  says when it does not load.
+- **Spell type** is free text with Cantrip and 1st–10th level suggested; it is
+  still stored in the `level` field. Spells group by level, then by any other
+  type, then untyped.
+- **Reordering** is by dragging a row's grip (mouse or touch), or with the arrow
+  keys on the grip. Rows only move within their group.
+- **Download** (owner only, in the header) saves a readable text file; Import
+  on the sheet list recreates it as a new sheet. Imports are sanitised.
+- **Passwords** need at least 8 characters, typed twice, and are refused if
+  the strength meter rates them "Too weak".
+- **Currency** shows CP, SP, GP and PP; electrum is hidden but kept in data.
+- Tests alias `$app/paths` to `tests/stubs/app-paths.ts`, and stub
+  `ResizeObserver`, `Element.animate` and `PointerEvent` for jsdom.

@@ -39,6 +39,35 @@
   const remaining = $derived(accrue ? marked : max - marked);
 
   /**
+   * When the count changes, the pips that changed light or go out one after
+   * another, in the direction of travel, rather than all at once. A rest
+   * that refills four slots reads as four slots coming back.
+   */
+  let wave = $state<{ from: number; to: number } | null>(null);
+  let before = -1;
+  $effect(() => {
+    const now = remaining;
+    if (before === -1 || before === now) {
+      before = now;
+      return;
+    }
+    const from = before;
+    before = now;
+    // Off then on across a frame, so a second change restarts the wave.
+    wave = null;
+    requestAnimationFrame(() => (wave = { from, to: now }));
+  });
+
+  /** This pip's part in the wave: whether it lit or went out, and its turn. */
+  function ripple(i: number): { kind: 'gain' | 'lose'; order: number } | null {
+    if (!wave) return null;
+    const { from, to } = wave;
+    if (to > from && i >= from && i < to) return { kind: 'gain', order: i - from };
+    if (to < from && i >= to && i < from) return { kind: 'lose', order: from - 1 - i };
+    return null;
+  }
+
+  /**
    * Pips show what is left, filled from the left, so spending empties the
    * right-hand end. Tapping pip n leaves n remaining — or n-1 when n is
    * already the last lit one, so tapping the first pip twice empties it.
@@ -81,13 +110,14 @@
   {:else if tracker.type === 'pips' && max <= 12 && max > 0}
     <div class="pips">
       {#each Array(max) as _, i (i)}
+        {@const r = ripple(i)}
         <button
-          class="pip"
+          class="pip {r?.kind ?? ''}"
           class:on={i < remaining}
           aria-pressed={i < remaining}
           aria-label="{tracker.label} {i + 1}"
           disabled={!editable}
-          style:--delay="{i * 45}ms"
+          style:--delay="{(r?.order ?? 0) * 60}ms"
           onclick={() => tapPip(i + 1)}
         ></button>
       {/each}
@@ -135,10 +165,16 @@
   }
   .pip.on { background: var(--accent); border-color: var(--accent); }
   .pip:disabled { cursor: default; }
-  .refilling .pip.on { animation: fill 0.4s backwards; animation-delay: var(--delay); }
+  .pip.gain { animation: fill 0.42s backwards; animation-delay: var(--delay); }
+  .pip.lose { animation: drain 0.36s backwards; animation-delay: var(--delay); }
   @keyframes fill {
-    from { transform: scale(0.4); background: transparent; }
-    60%  { transform: scale(1.18); }
+    from { transform: scale(0.4); background: transparent; border-color: var(--dim); }
+    60%  { transform: scale(1.22); }
+    to   { transform: scale(1); }
+  }
+  @keyframes drain {
+    from { transform: scale(1); background: var(--accent); border-color: var(--accent); }
+    45%  { transform: scale(0.7); background: var(--accent); border-color: var(--accent); }
     to   { transform: scale(1); }
   }
   .gaugerow { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }

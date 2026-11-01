@@ -64,3 +64,27 @@ export function hitSeverity(lost: number, max: number): number {
   // Half the maximum in one hit is as hard as the gauge ever shakes.
   return clamp(lost / (max * 0.5), 0, 1);
 }
+
+export type Vital = 'healthy' | 'bloodied' | 'critical' | 'down' | 'stable' | 'dead';
+
+/**
+ * One word for how the character is doing, for whoever is looking at the
+ * sheet. Bloodied is the table's own word for half health or less; critical
+ * is a quarter or less. At zero, three successes is stable and three
+ * failures is dead.
+ */
+export function vitalStatus(
+  current: number,
+  max: number,
+  saves: { successes: number; failures: number } = { successes: 0, failures: 0 }
+): { vital: Vital; label: string } {
+  if (current <= 0 && max > 0) {
+    if (saves.failures >= 3) return { vital: 'dead', label: 'Dead' };
+    if (saves.successes >= 3) return { vital: 'stable', label: 'Stable' };
+    return { vital: 'down', label: 'Down' };
+  }
+  const ratio = max > 0 ? current / max : 1;
+  if (ratio <= 0.25) return { vital: 'critical', label: 'Critical' };
+  if (ratio <= 0.5) return { vital: 'bloodied', label: 'Bloodied' };
+  return { vital: 'healthy', label: 'Healthy' };
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hitSeverity, hurtLevel } from '$lib/rules/hp';
+import { hitSeverity, hurtLevel, vitalStatus } from '$lib/rules/hp';
 
 describe('hurtLevel', () => {
   it('is nothing at half health or better', () => {
@@ -46,5 +46,23 @@ describe('hitSeverity', () => {
 
   it('copes with no maximum', () => {
     expect(hitSeverity(5, 0)).toBe(0);
+  });
+});
+
+describe('vitalStatus', () => {
+  it('names each band of health', () => {
+    expect(vitalStatus(40, 40).label).toBe('Healthy');
+    expect(vitalStatus(21, 40).label).toBe('Healthy');
+    expect(vitalStatus(20, 40).label).toBe('Bloodied');
+    expect(vitalStatus(10, 40).label).toBe('Critical');
+    expect(vitalStatus(1, 40).label).toBe('Critical');
+  });
+  it('reads death saves at zero', () => {
+    expect(vitalStatus(0, 40).label).toBe('Down');
+    expect(vitalStatus(0, 40, { successes: 3, failures: 1 }).label).toBe('Stable');
+    expect(vitalStatus(0, 40, { successes: 1, failures: 3 }).label).toBe('Dead');
+  });
+  it('has nothing to say about a sheet with no maximum yet', () => {
+    expect(vitalStatus(0, 0).label).toBe('Healthy');
   });
 });

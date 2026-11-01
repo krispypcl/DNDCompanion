@@ -45,18 +45,13 @@ describe('Banner', () => {
     expect(source).toMatch(/pointer-events: none/);
   });
 
-  it('is the whole top of the sheet, cut off along a curve', () => {
+  it('is the whole top of the sheet, ending in a soft straight slash', () => {
     const { container } = render(Banner, { props: { url: 'https://example.test/b.png' } });
-    const path = container.querySelector('clipPath path')!;
-    expect(container.querySelector('clipPath')?.getAttribute('clipPathUnits'))
-      .toBe('objectBoundingBox');
-    const d = path.getAttribute('d')!;
-    // Starts at the top corners — the banner is the whole upper portion,
-    // not a band with a gap above it.
-    expect(d).toMatch(/^M0,0 H1/);
-    // And comes back along a cubic rather than a straight edge.
-    expect(d).toMatch(/C/);
-    expect(source).toMatch(/clip-path: url\(#banner-curve\)/);
+    // No clip shape any more: the edge is a gradient mask, nothing is cut.
+    expect(container.querySelector('clipPath')).toBeNull();
+    expect(source).not.toMatch(/clip-path/);
+    expect(source).toMatch(/mask-image: var\(--mask\)/);
+    expect(source).toMatch(/-webkit-mask-image: var\(--mask\)/);
   });
 
   it('holds still for anyone who asked for less movement', () => {
@@ -117,19 +112,5 @@ describe('Banner', () => {
     // They are the only two, and in that order.
     const urls = [...details.matchAll(/label: '([^']+ URL)'/g)].map((m) => m[1]);
     expect(urls).toEqual(['Portrait URL', 'Banner URL']);
-  });
-});
-
-describe('Banner edge', () => {
-  it('is feathered: a blurred mask where supported, the hard clip where not', async () => {
-    const { maskSvg } = await import('$lib/bannerMask');
-    const svg = maskSvg(1440, 352, { right: 0.7, left: 0.3, c1: [0.74, 0.78], c2: [0.4, 0.46] }, 16);
-    expect(svg).toContain('feGaussianBlur stdDeviation="16"');
-    expect(svg).toContain('fill="#fff"');
-    // The clip stays as the fallback, and is dropped only once the mask exists.
-    expect(source).toMatch(/clip-path: url\(#banner-curve\)/);
-    expect(source).toMatch(/\.slash\.feathered[\s\S]*?clip-path: none/);
-    expect(source).toMatch(/mask-image: var\(--mask\)/);
-    expect(source).toMatch(/-webkit-mask-image: var\(--mask\)/);
   });
 });

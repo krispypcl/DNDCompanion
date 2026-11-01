@@ -1,65 +1,56 @@
 /**
- * The banner's lower edge, as a soft mask rather than a hard cut.
+ * The banner's lower edge: a straight slash, falling from left to right, with
+ * a long soft fade rather than a cut.
  *
- * `clip-path` can only cut. To feather the curve the edge has to be a shape
- * that is blurred, and CSS has no way to blur a clip, so the shape is drawn
- * as an SVG with a Gaussian blur and used as the banner's `mask-image`: where
- * the mask is solid the photograph shows, where it fades the photograph fades.
- *
- * The SVG is built at the banner's own pixel size. A blur drawn in a unit
- * box and stretched to a wide, shallow layer would smear sideways far more
- * than it does up and down; in pixels it is the same softness in every
- * direction.
+ * It is a plain CSS linear gradient used as the banner's mask. The only work
+ * is the angle and where the fade sits: a gradient's angle is in degrees, but
+ * the slash is defined by where it meets each side of the box, so the angle
+ * depends on the box's proportions and is worked out from its measured size.
  */
 
-export type Curve = {
-  /** Fractions of the layer's height where the edge meets the right and left sides. */
-  right: number;
+export type Slash = {
+  /** Fractions of the layer's height where the middle of the fade meets the left and right sides. */
   left: number;
-  /** The two control points of the cubic between them, as [x, y] fractions. */
-  c1: [number, number];
-  c2: [number, number];
+  right: number;
+  /** How long the fade is, as a fraction of the layer's height, measured across the slash. */
+  feather: number;
 };
 
-/** Mirrors the clip paths the banner falls back to without mask support. */
-export const DESKTOP_CURVE: Curve = { right: 0.7, left: 0.3, c1: [0.74, 0.78], c2: [0.4, 0.46] };
-export const PHONE_CURVE: Curve = { right: 0.46, left: 0.26, c1: [0.7, 0.56], c2: [0.34, 0.34] };
+export const DESKTOP_SLASH: Slash = { left: 0.36, right: 0.62, feather: 0.62 };
+/** A phone's box is tall and narrow, so the same fall would read as a cliff. */
+export const PHONE_SLASH: Slash = { left: 0.36, right: 0.48, feather: 0.5 };
 
-/** Blur in pixels. The curve is one long edge, so it takes a wide softening. */
-export const DESKTOP_BLUR = 16;
-export const PHONE_BLUR = 11;
+/** Until the layer has been measured: level, but as soft. */
+export const FALLBACK_MASK = 'linear-gradient(to bottom, #000 18%, transparent 82%)';
 
-/** Sizes are rounded so that a window being dragged does not re-draw the
-    mask on every pixel; the mask is stretched to fit, and a few percent of
-    stretch on a blur is invisible. */
-export const STEP = 32;
-export const snap = (n: number) => Math.max(STEP, Math.round(n / STEP) * STEP);
+const round = (n: number, places = 2) => +n.toFixed(places);
 
-export function maskSvg(width: number, height: number, curve: Curve, blur: number): string {
-  const w = snap(width);
-  const h = snap(height);
-  // The shape runs past the box on three sides so the blur has solid shape
-  // to draw from there, and does not fade the banner at its own top and edges.
-  const pad = Math.ceil(blur * 4);
-  const x = (f: number) => +(f * w).toFixed(1);
-  const y = (f: number) => +(f * h).toFixed(1);
-  const d = [
-    `M${-pad},${-pad}`,
-    `H${w + pad}`,
-    `V${y(curve.right)}`,
-    `H${w}`,
-    `C${x(curve.c1[0])},${y(curve.c1[1])} ${x(curve.c2[0])},${y(curve.c2[1])} 0,${y(curve.left)}`,
-    `H${-pad}`,
-    'Z'
-  ].join(' ');
-  return (
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">` +
-    `<defs><filter id="f" x="-30%" y="-30%" width="160%" height="160%">` +
-    `<feGaussianBlur stdDeviation="${blur}"/></filter></defs>` +
-    `<path d="${d}" fill="#fff" filter="url(#f)"/></svg>`
-  );
-}
-
-export function maskUrl(width: number, height: number, curve: Curve, blur: number): string {
-  return `url("data:image/svg+xml,${encodeURIComponent(maskSvg(width, height, curve, blur))}")`;
+export function slashMask(width: number, height: number, slash: Slash): string {
+  if (!(width > 0) || !(height > 0)) return FALLBACK_MASK;
+  const drop = (slash.right - slash.left) * height;
+  const tilt = Math.atan2(drop, width);
+  // CSS measures from "to top", clockwise. Straight down is 180deg; the fade
+  // points down and a little to the left, square to a slash that falls to
+  // the right.
+  const angle = 180 + (tilt * 180) / Math.PI;
+  const rad = (angle * Math.PI) / 180;
+  const ux = Math.sin(rad);
+  const uy = -Math.cos(rad);
+  // The gradient line runs through the box's centre and is long enough to
+  // reach its far corners.
+  const length = Math.abs(width * ux) + Math.abs(height * uy);
+  // Where the slash's midpoint falls along that line.
+  const middle = ((slash.left + slash.right) / 2) * height;
+  const at = length / 2 + (middle - height / 2) * uy;
+  const half = (slash.feather * height) / 2;
+  // Eased at both ends (a smoothstep), so neither the start nor the end of
+  // the fade shows as a line: a linear ramp leaves a visible crease where it
+  // meets the solid image and where it meets the page.
+  const STEPS = 10;
+  const stops = Array.from({ length: STEPS + 1 }, (_, i) => {
+    const t = i / STEPS;
+    const alpha = 1 - t * t * (3 - 2 * t);
+    return `rgba(0,0,0,${round(alpha, 3)}) ${round(at - half + t * half * 2)}px`;
+  });
+  return `linear-gradient(${round(angle, 3)}deg, ${stops.join(', ')})`;
 }
