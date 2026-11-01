@@ -5,7 +5,9 @@
    * page controls. Pages are added and removed in edit mode, and turned by
    * anyone who can read them.
    */
-  import EditableField from './EditableField.svelte';
+  import FormatBar from './FormatBar.svelte';
+  import RichPage from './RichPage.svelte';
+  import type { Format } from '$lib/rules/richtext';
   import Switch from './Switch.svelte';
   import { cubicOut } from 'svelte/easing';
   import { prefersReducedMotion } from '$lib/motion';
@@ -36,6 +38,9 @@
   } = $props();
 
   const pages = $derived(splitPages(value));
+  /** The page being written, for the toolbar to act on. */
+  let editor: { apply: (f: Format) => void } | undefined = $state();
+  let active = $state<Partial<Record<Format, boolean>>>({});
   let current = $state(0);
   /** Removing a page that has writing on it takes a second press. */
   let confirming = $state(false);
@@ -97,13 +102,14 @@
 <div class="book">
   {#key current}
     <div class="page" in:turn>
-      <EditableField
+      <RichPage
+        bind:this={editor}
         value={pages[current] ?? ''}
         {editable}
-        type="textarea"
         label={many ? `${label}, page ${current + 1}` : label}
         placeholder={isBlank(pages) ? 'Nothing written yet.' : 'This page is blank.'}
-        onchange={(v) => onbody(joinPages(setPage(pages, current, String(v))))}
+        onchange={(v) => onbody(joinPages(setPage(pages, current, v)))}
+        onstate={(a) => (active = a)}
       />
     </div>
   {/key}
@@ -112,6 +118,8 @@
 <!-- Always there, even for a single page: Notes and Backstory look the same
      whatever has been written in them. -->
 <div class="pager" class:reading={!editable}>
+  <!-- Formatting sits to the left of the page arrows, while writing. -->
+  {#if editable}<FormatBar {active} onformat={(f) => editor?.apply(f)} />{/if}
     <div class="turns">
       <button class="nav" aria-label="Previous page" disabled={current === 0} onclick={() => go(current - 1)}>
         <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="m14.5 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -163,15 +171,10 @@
   }
   .page { flex: 1 1 auto; display: flex; flex-direction: column; }
   /* Editing, the page is the whole empty card, not six lines of it. */
-  .page :global(textarea.field) { flex: 1 1 auto; min-height: 16rem; resize: none; }
-  .book :global(.field) {
-    field-sizing: fixed;
-    width: 100%;
-    white-space: pre-wrap; overflow-wrap: anywhere;
-  }
+
 
   .pager {
-    display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+    display: flex; align-items: center; gap: 0.75rem;
     flex-wrap: wrap; margin-top: 0.875rem; padding-top: 0.75rem;
     border-top: 1px solid var(--line-soft);
   }
@@ -188,7 +191,7 @@
   .nav:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
   .nav:active:not(:disabled) { transform: translateY(1px); }
   .nav:disabled { opacity: 0.35; cursor: default; }
-  .edits { display: inline-flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .edits { display: inline-flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-left: auto; }
   .edits :global(.switch) { margin-right: 0.5rem; }
   .pg {
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
