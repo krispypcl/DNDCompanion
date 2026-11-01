@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pinterestSearchUrl, pinterestTerms, resolveImageUrl } from '$lib/rules/imageUrl';
+import { resolveImageUrl } from '$lib/rules/imageUrl';
 
 describe('resolveImageUrl', () => {
   it('says nothing for nothing', () => {
@@ -89,34 +89,80 @@ describe('resolveImageUrl', () => {
       ]) {
         const r = resolveImageUrl(link);
         expect(r.url, link).toBe('');
-        expect(r.note, link).toMatch(/copy image address/i);
+        expect(r.note, link).toMatch(/copy its image address/i);
       }
     });
   });
 });
 
-describe('Pinterest search', () => {
-  it('builds a search on Pinterest itself', () => {
-    const url = new URL(pinterestSearchUrl('elf wizard dnd character portrait art'));
-    expect(url.origin).toBe('https://www.pinterest.com');
-    expect(url.pathname).toBe('/search/pins/');
-    expect(url.searchParams.get('q')).toBe('elf wizard dnd character portrait art');
-  });
-
-  it('escapes what it is given and squeezes its spaces', () => {
-    const url = new URL(pinterestSearchUrl('  half-orc   &  bard  '));
-    expect(url.searchParams.get('q')).toBe('half-orc & bard');
-  });
-
-  it('looks for what the sheet already says', () => {
-    expect(pinterestTerms('portrait', { ancestry: 'Tiefling', class: 'Warlock' })).toBe(
-      'Tiefling Warlock dnd character portrait art'
+describe('other hosts', () => {
+  it('sharpens a Pinterest thumbnail to the large size', () => {
+    expect(resolveImageUrl('https://i.pinimg.com/236x/ab/cd/ef/abcdef.jpg').url).toBe(
+      'https://i.pinimg.com/736x/ab/cd/ef/abcdef.jpg'
     );
-    expect(pinterestTerms('banner', { ancestry: 'Tiefling', class: 'Warlock' })).toMatch(/^Tiefling Warlock fantasy/);
+    expect(resolveImageUrl('https://i.pinimg.com/originals/ab/cd/x.jpg').url).toBe(
+      'https://i.pinimg.com/originals/ab/cd/x.jpg'
+    );
   });
 
-  it('still searches for something on a blank sheet', () => {
-    expect(pinterestTerms('portrait', {})).toBe('dnd character portrait art');
-    expect(pinterestTerms('banner', { ancestry: '  ' })).toBe('fantasy wide banner wallpaper');
+  it('asks Dropbox for the file rather than its preview', () => {
+    const r = resolveImageUrl('https://www.dropbox.com/scl/fi/abc/hero.png?rlkey=xyz&dl=0');
+    expect(r.source).toBe('dropbox');
+    const u = new URL(r.url);
+    expect(u.searchParams.get('raw')).toBe('1');
+    expect(u.searchParams.get('dl')).toBeNull();
+    expect(u.searchParams.get('rlkey')).toBe('xyz');
+  });
+
+  it('turns a OneDrive share link into its content address', () => {
+    const r = resolveImageUrl('https://1drv.ms/i/s!AbCdEf');
+    expect(r.source).toBe('onedrive');
+    expect(r.url).toMatch(/^https:\/\/api\.onedrive\.com\/v1\.0\/shares\/u![A-Za-z0-9_-]+\/root\/content$/);
+  });
+
+  it('turns a GitHub file page into the raw file', () => {
+    expect(resolveImageUrl('https://github.com/me/art/blob/main/img/hero.png').url).toBe(
+      'https://raw.githubusercontent.com/me/art/main/img/hero.png'
+    );
+  });
+
+  it('takes the picture out of a Google Images result', () => {
+    const link = 'https://www.google.com/imgres?imgurl=https%3A%2F%2Fexample.com%2Fa.png&imgrefurl=x';
+    expect(resolveImageUrl(link)).toMatchObject({ url: 'https://example.com/a.png', source: 'google' });
+  });
+
+  it('turns a Gyazo page into its file', () => {
+    expect(resolveImageUrl('https://gyazo.com/0123456789abcdef0123456789abcdef').url).toBe(
+      'https://i.gyazo.com/0123456789abcdef0123456789abcdef.png'
+    );
+  });
+
+  it('passes direct files from image hosts straight through', () => {
+    for (const link of [
+      'https://i.redd.it/abc.jpg',
+      'https://pbs.twimg.com/media/abc.jpg',
+      'https://cdna.artstation.com/p/assets/images/x.jpg',
+      'https://64.media.tumblr.com/abc/s1280x1920/x.png'
+    ]) {
+      expect(resolveImageUrl(link), link).toMatchObject({ url: link, source: 'direct' });
+    }
+  });
+
+  it('warns that Discord links expire', () => {
+    expect(resolveImageUrl('https://cdn.discordapp.com/attachments/1/2/a.png').note).toMatch(/day/);
+  });
+
+  it('says what to copy from pages that are not pictures', () => {
+    for (const link of [
+      'https://www.artstation.com/artwork/abc',
+      'https://www.deviantart.com/someone/art/x-123',
+      'https://ibb.co/abc',
+      'https://www.reddit.com/r/DnD/comments/x',
+      'https://photos.app.goo.gl/abc'
+    ]) {
+      const r = resolveImageUrl(link);
+      expect(r.url, link).toBe('');
+      expect(r.note, link).toMatch(/copy its image address/);
+    }
   });
 });
