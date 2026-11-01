@@ -91,10 +91,12 @@ describe('TextPanel', () => {
     it('writes into the page being shown', async () => {
       const { props, container } = mount({ editable: true, value: 'A\fB' });
       await fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
-      const area = container.querySelector('textarea')!;
-      area.value = 'Changed';
-      await fireEvent.change(area);
-      expect(props.onbody).toHaveBeenCalledWith('A\fChanged');
+      const page = container.querySelector('[contenteditable]') as HTMLElement;
+      expect(page.textContent).toBe('B');
+      page.innerHTML = '<div>Changed <b>boldly</b></div>';
+      await fireEvent.input(page);
+      await fireEvent.blur(page);
+      expect(props.onbody).toHaveBeenCalledWith('A\fChanged **boldly**');
     });
 
     it('asks once before removing a page with writing on it', async () => {
@@ -111,6 +113,30 @@ describe('TextPanel', () => {
       const { props } = mount({ editable: true, value: '\fB' });
       await fireEvent.click(screen.getByRole('button', { name: 'Remove page' }));
       expect(props.onbody).toHaveBeenCalledWith('B');
+    });
+  });
+
+  describe('formatting', () => {
+    it('shows the marks as formatting when reading, with nothing unsafe', () => {
+      const { container } = mount({ owner: false, value: '**Bold** and <script>x</script>' });
+      expect(container.querySelector('.rich strong')?.textContent).toBe('Bold');
+      expect(container.querySelector('script')).toBeNull();
+    });
+
+    it('has a formatting bar beside the page arrows only while editing', () => {
+      const { container } = mount({ editable: true });
+      const bar = screen.getByRole('toolbar', { name: 'Formatting' });
+      const pager = container.querySelector('.pager')!;
+      expect(pager.firstElementChild).toBe(bar);
+      expect(bar.nextElementSibling?.classList.contains('turns')).toBe(true);
+      for (const name of [/bold/i, /italic/i, /underline/i, /strikethrough/i, /heading/i, /bulleted/i, /numbered/i]) {
+        expect(screen.getByRole('button', { name })).toBeTruthy();
+      }
+    });
+
+    it('has no formatting bar while reading', () => {
+      mount();
+      expect(screen.queryByRole('toolbar')).toBeNull();
     });
   });
 });
