@@ -17,7 +17,8 @@ describe('lookupUrl', () => {
     expect(query(lookupUrl('Longsword', 'xphb', 'items'))).toBe('Longsword in:itm source:xphb');
     expect(query(lookupUrl('Fighter', 'xphb', 'classes'))).toBe('Fighter in:class source:xphb');
     expect(query(lookupUrl('Artisan', 'xphb', 'backgrounds'))).toBe('Artisan in:bg source:xphb');
-    expect(query(lookupUrl('Tiefling', 'xphb', 'races'))).toBe('Tiefling in:race source:xphb');
+    expect(query(lookupUrl('Tiefling', 'xphb', 'races'))).toBe('Tiefling in:species source:xphb');
+    expect(query(lookupUrl('Champion', undefined, 'subclasses'))).toBe('Champion in:subclass');
   });
 
   test('does not narrow a feature, which may be a feat or a class feature', () => {

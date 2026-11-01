@@ -416,18 +416,34 @@
         <p class="sub">
           <!-- The class is written on the Character tab, not here, so with
                none written there is nothing to label and nothing to press. -->
+          <!-- Each part of the line has its own 5e.tools link beside it. The
+               class link opens the subclass when one is written, which on
+               5e.tools is the class page with that subclass chosen. -->
           {#if classLine(definition)}
-            <span class="classline">{classLine(definition)}</span>
+            <span class="ident">
+              <span class="classline">{classLine(definition)}</span>
+              {#if classes[0]?.subclass?.trim()}
+                <EntryLink name={classes[0].subclass} source={classes[0].source}
+                           category="subclasses" override={definition.identity.lookupUrl} />
+              {:else}
+                <EntryLink name={classes[0]?.name ?? definition.identity.class ?? ''}
+                           source={classes[0]?.source}
+                           category="classes" override={definition.identity.lookupUrl} />
+              {/if}
+            </span>
           {/if}
-          <EditableField value={definition.identity.ancestry} {editable} label="Ancestry"
-                         placeholder="Ancestry"
-                         onchange={(v) => patchIdentity('ancestry', v)} />
-          <EditableField value={definition.identity.background} {editable} label="Background"
-                         placeholder="Background"
-                         onchange={(v) => patchIdentity('background', v)} />
-          <EntryLink name={classes[0]?.name ?? definition.identity.class ?? ''}
-                     source={classes[0]?.source}
-                     category="classes" override={definition.identity.lookupUrl} />
+          <span class="ident">
+            <EditableField value={definition.identity.ancestry} {editable} label="Ancestry"
+                           placeholder="Ancestry"
+                           onchange={(v) => patchIdentity('ancestry', v)} />
+            <EntryLink name={definition.identity.ancestry ?? ''} category="races" />
+          </span>
+          <span class="ident">
+            <EditableField value={definition.identity.background} {editable} label="Background"
+                           placeholder="Background"
+                           onchange={(v) => patchIdentity('background', v)} />
+            <EntryLink name={definition.identity.background ?? ''} category="backgrounds" />
+          </span>
         </p>
       </div>
 
@@ -896,6 +912,9 @@
     display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline;
   }
   .classline { color: var(--text); }
+  /* A detail and its link travel together, and the link shows on hovering
+     that detail rather than the whole line. */
+  .ident { display: inline-flex; align-items: center; gap: 0.125rem; }
   .sub-h {
     font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
     color: var(--label); font-weight: 600; margin: 0 0 0.625rem;

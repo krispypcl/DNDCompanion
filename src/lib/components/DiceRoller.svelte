@@ -5,10 +5,9 @@
    * damage, tapped in the table above, arrives here already rolled. Nothing
    * is saved or shown to anyone else: it is a tray, not a record.
    *
-   * Folded away like General actions; whether it was left open is
-   * remembered on this device.
+   * Folded away like General actions, and always starts folded.
    */
-  import { onMount, tick } from 'svelte';
+  import { tick } from 'svelte';
   import InfoTip from './InfoTip.svelte';
   import { diceRequest } from '$lib/stores/dice';
   import { DIE_SIDES, addDie, diceCount, formula, hasD20, roll, type Mode, type Pool, type Roll, type Sides } from '$lib/rules/dice';
@@ -30,23 +29,9 @@
     { mode: 'advantage', label: 'Adv.' }
   ];
 
-  const OPEN_KEY = 'dice-roller-open';
+  /** Always starts folded; it opens when pressed, or when an attack is rolled. */
   let open = $state(false);
   let tray: HTMLDetailsElement | undefined = $state();
-  onMount(() => {
-    try {
-      open = localStorage.getItem(OPEN_KEY) === '1';
-    } catch {
-      /* private window: start folded */
-    }
-  });
-  function remember() {
-    try {
-      localStorage.setItem(OPEN_KEY, open ? '1' : '0');
-    } catch {
-      /* nothing to remember it in */
-    }
-  }
 
   // An attack tapped in the table: take its roll, keep the chosen advantage,
   // open the tray and roll it where it can be seen.
@@ -57,7 +42,6 @@
     handled = req.id;
     pool = { ...req.pool, mode: pool.mode };
     open = true;
-    remember();
     go(req.label);
     tick().then(() => tray?.scrollIntoView?.({ block: 'nearest', behavior: prefersReducedMotion() ? 'auto' : 'smooth' }));
   });
@@ -89,7 +73,7 @@
   const flicker = (sides: number, tick: number) => 1 + ((Math.floor(Math.random() * sides) + tick) % sides);
 </script>
 
-<details class="tray" bind:this={tray} bind:open ontoggle={remember}>
+<details class="tray" bind:this={tray} bind:open>
   <summary><span class="cap">Dice Roller</span></summary>
   <div class="inner">
 
