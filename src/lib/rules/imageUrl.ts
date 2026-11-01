@@ -2,17 +2,29 @@
  * Turning the link someone pasted into an address a page can show.
  *
  * What people copy is rarely the picture. A Drive link opens a viewer, an
- * Imgur link opens a page, a Pinterest link opens a pin. A browser's <img>
+ * Imgur link opens a page, a Dropbox link opens a preview. A browser's <img>
  * needs the file itself. Where the picture's address can be worked out from
- * the link it is, here, without asking any service; where it cannot, the
- * answer is a plain sentence about what to copy instead.
+ * the link alone, it is, here, without asking any service. Where it cannot —
+ * a Pinterest pin, an ArtStation page — the answer is one plain sentence on
+ * what to copy instead.
  *
  * The sheet stores what was pasted and resolves it when drawing, so the field
  * always shows what the person put in, and a rule fixed here fixes every
  * sheet that already has one.
  */
 
-export type ImageSource = 'none' | 'direct' | 'drive' | 'imgur' | 'pinterest' | 'invalid';
+export type ImageSource =
+  | 'none'
+  | 'direct'
+  | 'drive'
+  | 'dropbox'
+  | 'onedrive'
+  | 'github'
+  | 'imgur'
+  | 'pinterest'
+  | 'gyazo'
+  | 'google'
+  | 'invalid';
 
 export type ResolvedImage = {
   /** Safe to put in an <img src>, or empty when there is nothing to show. */
@@ -24,6 +36,9 @@ export type ResolvedImage = {
 
 const none: ResolvedImage = { url: '', source: 'none', note: null };
 const invalid = (note: string): ResolvedImage => ({ url: '', source: 'invalid', note });
+const ok = (url: string, source: ImageSource, note: string | null = null): ResolvedImage => ({ url, source, note });
+
+const COPY_ADDRESS = 'right-click the picture (or long-press it on a phone) and copy its image address';
 
 const DRIVE_ID = /^[A-Za-z0-9_-]{10,}$/;
 const IMGUR_ID = /^[A-Za-z0-9]{5,9}$/;
@@ -45,6 +60,31 @@ function driveId(url: URL): string | null {
   return id && DRIVE_ID.test(id) ? id : null;
 }
 
+/** OneDrive's documented way to reach a shared file: the share link, base64url'd. */
+function oneDriveContent(link: string): string {
+  const bytes = new TextEncoder().encode(link);
+  let binary = '';
+  bytes.forEach((b) => (binary += String.fromCharCode(b)));
+  const encoded = btoa(binary).replace(/=+$/, '').replace(/\//g, '_').replace(/\+/g, '-');
+  return `https://api.onedrive.com/v1.0/shares/u!${encoded}/root/content`;
+}
+
+/** Sites whose links are pages, never pictures, and cannot be turned into one offline. */
+const PAGE_ONLY: { test: (host: string) => boolean; name: string }[] = [
+  { test: (h) => /(^|\.)pinterest\.[a-z.]+$/.test(h) || h === 'pin.it', name: 'a Pinterest pin' },
+  { test: (h) => h === 'artstation.com', name: 'an ArtStation page' },
+  { test: (h) => h === 'deviantart.com' || h.endsWith('.deviantart.com'), name: 'a DeviantArt page' },
+  { test: (h) => h === 'flickr.com' || h === 'flic.kr', name: 'a Flickr page' },
+  { test: (h) => h === 'ibb.co', name: 'an ImgBB page' },
+  { test: (h) => h === 'postimg.cc' || h === 'postimages.org', name: 'a Postimages page' },
+  { test: (h) => h === 'photos.app.goo.gl' || h === 'photos.google.com', name: 'a Google Photos page' },
+  { test: (h) => h === 'reddit.com' || h === 'old.reddit.com' || h === 'redd.it', name: 'a Reddit post' },
+  { test: (h) => h === 'x.com' || h === 'twitter.com', name: 'a post on X' },
+  { test: (h) => h === 'instagram.com', name: 'an Instagram post' },
+  { test: (h) => h === 'tumblr.com' || /\.tumblr\.com$/.test(h) && !/media\.tumblr\.com$/.test(h), name: 'a Tumblr post' },
+  { test: (h) => h === 'canva.com', name: 'a Canva design' }
+];
+
 export function resolveImageUrl(input: string | null | undefined): ResolvedImage {
   const raw = (input ?? '').trim();
   if (!raw) return none;
@@ -54,70 +94,87 @@ export function resolveImageUrl(input: string | null | undefined): ResolvedImage
 
   const host = url.hostname.toLowerCase().replace(/^www\./, '');
 
+  // A Google Images result carries the picture's own address inside it.
+  if ((host === 'google.com' || /^google\.[a-z.]+$/.test(host)) && url.pathname === '/imgres') {
+    const inner = url.searchParams.get('imgurl');
+    if (inner) {
+      const resolved = resolveImageUrl(inner);
+      return resolved.source === 'invalid' ? resolved : ok(resolved.url, 'google');
+    }
+  }
+
   // Google Drive. The viewer page is no use in <img>; the file's own address
   // is, for a file shared as "Anyone with the link".
-  if (host === 'drive.google.com' || host === 'docs.google.com') {
+  if (host === 'drive.google.com' || host === 'docs.google.com' || host === 'drive.usercontent.google.com') {
     if (/\/folders\//.test(url.pathname)) {
       return invalid('That is a Drive folder. Share one picture and copy its link instead.');
     }
     const id = driveId(url);
     if (!id) return invalid('That Drive link does not name a file. Use the file’s Share link.');
-    return {
-      url: `https://lh3.googleusercontent.com/d/${id}`,
-      source: 'drive',
-      note: 'Google Drive link. The file has to be shared as “Anyone with the link”.'
-    };
+    return ok(
+      `https://lh3.googleusercontent.com/d/${id}`,
+      'drive',
+      'Google Drive link. The file has to be shared as “Anyone with the link”.'
+    );
+  }
+
+  // Dropbox: the same link, asking for the file rather than the preview.
+  if (host === 'dropbox.com' || host === 'dl.dropbox.com' || host === 'dl.dropboxusercontent.com') {
+    if (/^\/(s|scl|sh)\//.test(url.pathname)) {
+      const file = new URL(url.toString());
+      file.hostname = 'www.dropbox.com';
+      file.searchParams.delete('dl');
+      file.searchParams.set('raw', '1');
+      return ok(file.toString(), 'dropbox');
+    }
+    if (host !== 'dropbox.com') return ok(url.toString(), 'dropbox');
+    return invalid('That Dropbox link is not a shared file. Use Share → Copy link on the picture.');
+  }
+
+  // OneDrive share links, long or short.
+  if (host === '1drv.ms' || host === 'onedrive.live.com') {
+    return ok(oneDriveContent(url.toString()), 'onedrive', 'OneDrive link. The file has to be shared with anyone who has the link.');
+  }
+
+  // GitHub: the page around a file, or the file itself.
+  if (host === 'github.com') {
+    const m = url.pathname.match(/^\/([^/]+)\/([^/]+)\/(?:blob|raw)\/(.+)$/);
+    if (m) return ok(`https://raw.githubusercontent.com/${m[1]}/${m[2]}/${m[3]}`, 'github');
   }
 
   if (host === 'imgur.com' || host === 'm.imgur.com') {
     const [first] = url.pathname.split('/').filter(Boolean);
     if (!first) return invalid('That Imgur link does not name a picture.');
     if (['a', 'gallery', 't', 'r', 'user'].includes(first)) {
-      return invalid(
-        'That is an Imgur album or gallery. Open the picture, right-click it and copy its image address.'
-      );
+      return invalid(`That is an Imgur album or gallery. Open the picture, ${COPY_ADDRESS}.`);
     }
     const [id, ext] = first.split('.');
     if (!IMGUR_ID.test(id)) return invalid('That Imgur link does not name a picture.');
-    return { url: `https://i.imgur.com/${id}.${ext || 'jpg'}`, source: 'imgur', note: null };
+    return ok(`https://i.imgur.com/${id}.${ext || 'jpg'}`, 'imgur');
   }
-  if (host === 'i.imgur.com') {
-    return { url: url.toString(), source: 'imgur', note: null };
-  }
+  if (host === 'i.imgur.com') return ok(url.toString(), 'imgur');
 
-  // Pinterest: the pin is a page; only the file on pinimg.com is a picture.
+  // Pinterest's own picture files. A thumbnail size is swapped for the
+  // largest one every pin has, so a banner is not a blown-up thumbnail.
   if (host.endsWith('pinimg.com')) {
-    return { url: url.toString(), source: 'pinterest', note: null };
-  }
-  if (/(^|\.)pinterest\.[a-z.]+$/.test(host) || host === 'pin.it') {
-    return invalid(
-      'That is a Pinterest page, not the picture. Open the pin, right-click the image and choose “Copy image address”.'
-    );
+    const sharp = url.toString().replace(/\/(?:60x60|75x75|136x136|170x|236x|474x|564x)\//, '/736x/');
+    return ok(sharp, 'pinterest');
   }
 
-  return { url: url.toString(), source: 'direct', note: null };
-}
+  // Gyazo: the page's ID is the file's name.
+  if (host === 'gyazo.com') {
+    const id = url.pathname.split('/').filter(Boolean)[0];
+    if (id && /^[a-f0-9]{32}$/i.test(id)) return ok(`https://i.gyazo.com/${id}.png`, 'gyazo');
+  }
 
-/**
- * Where to look for a picture on Pinterest. Their API does not offer pin
- * search and their terms forbid fetching pins automatically, so the sheet
- * does not try: it opens Pinterest's own search, in the person's own
- * browser, and the person copies the picture's address back.
- */
-export function pinterestSearchUrl(terms: string): string {
-  const q = terms.trim().replace(/\s+/g, ' ');
-  return `https://www.pinterest.com/search/pins/?q=${encodeURIComponent(q)}&rs=typed`;
-}
+  if (host === 'cdn.discordapp.com' || host === 'media.discordapp.net') {
+    return ok(url.toString(), 'direct', 'Discord links stop working after about a day. Host the picture somewhere lasting.');
+  }
 
-export type ImageRole = 'portrait' | 'banner';
+  const page = PAGE_ONLY.find((p) => p.test(host));
+  if (page) {
+    return invalid(`That is ${page.name}, not the picture. Open it, ${COPY_ADDRESS}, and paste that here.`);
+  }
 
-/** What to look for, from what the sheet already says about the character. */
-export function pinterestTerms(
-  role: ImageRole,
-  identity: { ancestry?: string; class?: string; name?: string }
-): string {
-  const who = [identity.ancestry, identity.class].map((s) => s?.trim()).filter(Boolean).join(' ');
-  return role === 'portrait'
-    ? [who, 'dnd character portrait art'].filter(Boolean).join(' ')
-    : [who, 'fantasy wide banner wallpaper'].filter(Boolean).join(' ');
+  return ok(url.toString(), 'direct');
 }
