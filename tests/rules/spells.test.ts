@@ -1,14 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { CUSTOM, SPELL_TYPES, UNLEVELLED, spellGroup, spellLevel, spellRank, spellTypeLabel } from '$lib/rules/spells';
+import { CUSTOM, UNLEVELLED, spellGroup, spellLevel, spellRank } from '$lib/rules/spells';
 
 describe('spell types', () => {
-  it('suggests cantrip and the ten levels', () => {
-    expect(SPELL_TYPES[0]).toBe('Cantrip');
-    expect(SPELL_TYPES[1]).toBe('1st level');
-    expect(SPELL_TYPES.at(-1)).toBe('10th level');
-    expect(SPELL_TYPES).toHaveLength(11);
-  });
-
   it('reads a level however it was written', () => {
     for (const t of ['3', ' 3 ', '3rd level', '3rd-level', '3rd level spell', 'Level 3', 'lvl 3', '3 level']) {
       expect(spellLevel(t), t).toBe(3);
@@ -34,12 +27,7 @@ describe('spell types', () => {
     expect(spellGroup('11')).toBe('11th level');
     expect(spellGroup('ritual')).toBe('Ritual');
     expect(spellGroup('RITUAL')).toBe('Ritual');
-    expect(spellGroup('')).toBe('No type yet');
+    expect(spellGroup('')).toBe('No level yet');
   });
 
-  it('shows an old bare number as a level', () => {
-    expect(spellTypeLabel('3')).toBe('3rd level');
-    expect(spellTypeLabel('cantrip')).toBe('Cantrip');
-    expect(spellTypeLabel('Innate')).toBe('Innate');
-  });
 });

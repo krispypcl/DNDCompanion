@@ -33,8 +33,6 @@
 
   const pages = $derived(splitPages(value));
   let current = $state(0);
-  /** Which way the last turn went, so the new page comes in from that side. */
-  let direction = $state(1);
   /** Removing a page that has writing on it takes a second press. */
   let confirming = $state(false);
   let confirmTimer: ReturnType<typeof setTimeout> | undefined;
@@ -46,14 +44,12 @@
 
   function go(to: number) {
     if (to < 0 || to >= pages.length || to === current) return;
-    direction = to > current ? 1 : -1;
     current = to;
     confirming = false;
   }
 
   function add() {
     onbody(joinPages(addPage(pages, current)));
-    direction = 1;
     current += 1;
   }
 
@@ -66,21 +62,15 @@
     }
     confirming = false;
     onbody(joinPages(removePage(pages, current)));
-    direction = -1;
     current = Math.max(0, current - 1);
   }
 
-  /** A page turning on its spine: the left edge going forward, the right going back. */
+  /** A quiet fade as the page changes: the content is what moves, not the page. */
   function turn(_node: Element) {
-    const span = prefersReducedMotion() ? 0 : 340;
-    const forward = direction > 0;
     return {
-      duration: span,
+      duration: prefersReducedMotion() ? 0 : 180,
       easing: cubicOut,
-      css: (t: number, u: number) =>
-        `transform-origin: ${forward ? 'left' : 'right'} center;` +
-        `transform: perspective(1200px) rotateY(${(forward ? -1 : 1) * u * 32}deg) translateX(${(forward ? 1 : -1) * u * 10}px);` +
-        `opacity: ${t};`
+      css: (t: number) => `opacity: ${t};`
     };
   }
 
@@ -88,7 +78,15 @@
   const showNav = $derived(many || editable);
 </script>
 
-{#if owner && isPublic !== null}
+{#if owner && isPublic === null}
+  <!-- The switch is there, but cannot work until the database has the table
+       that keeps private writing; say so rather than hide it. -->
+  <div class="options">
+    <Switch checked={false} label="Private" disabled onchange={() => {}}
+            title="Private writing needs a one-time database update" />
+    <span class="why">Needs a one-time database update to work.</span>
+  </div>
+{:else if owner}
   <div class="options">
     <Switch
       checked={!isPublic}
@@ -117,7 +115,7 @@
 </div>
 
 {#if showNav}
-  <div class="pager">
+  <div class="pager" class:reading={!editable}>
     <div class="turns" class:hidden={!many}>
       <button class="nav" aria-label="Previous page" disabled={current === 0} onclick={() => go(current - 1)}>
         <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="m14.5 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -141,13 +139,19 @@
 {/if}
 
 <style>
-  .options { display: flex; align-items: center; margin: 0 0 0.75rem; }
+  .options { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin: 0 0 0.75rem; }
+  .why { font-size: 0.78rem; color: var(--dim); }
 
   /* Every other tab starts its content at the panel's edge; the notes field
      insets its text by its own padding and border, so pull the box back by
      exactly that and widen it to match. */
-  .book { margin: calc(-0.15rem - 1px) calc(-0.3rem - 1px) 0; perspective: 1200px; }
-  .page { backface-visibility: hidden; }
+  .book {
+    margin: calc(-0.15rem - 1px) calc(-0.3rem - 1px) 0;
+    flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0;
+  }
+  .page { flex: 1 1 auto; display: flex; flex-direction: column; }
+  /* Editing, the page is the whole empty card, not six lines of it. */
+  .page :global(textarea.field) { flex: 1 1 auto; min-height: 16rem; resize: none; }
   .book :global(.field) {
     field-sizing: fixed;
     width: 100%;
@@ -160,6 +164,8 @@
     border-top: 1px solid var(--line-soft);
   }
   .turns { display: inline-flex; align-items: center; gap: 0.5rem; }
+  /* Reading, the arrows are all there is, so they sit in the middle. */
+  .pager.reading { justify-content: center; }
   .turns.hidden { visibility: hidden; }
   .count { font-size: 0.78rem; color: var(--dim); font-variant-numeric: tabular-nums; min-width: 6.5rem; text-align: center; }
   .nav {

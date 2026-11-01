@@ -60,9 +60,10 @@ describe('TextPanel', () => {
       expect(props.onpublic).toHaveBeenCalledWith(true);
     });
 
-    it('offers no private switch when the database cannot keep one', () => {
+    it('shows the switch as unavailable, and why, when the database cannot keep private text', () => {
       mount({ isPublic: null });
-      expect(screen.queryByRole('switch')).toBeNull();
+      expect((screen.getByRole('switch') as HTMLButtonElement).disabled).toBe(true);
+      expect(screen.getByText(/database update/i)).toBeTruthy();
     });
 
     it('adds a page after the current one', async () => {

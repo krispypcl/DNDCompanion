@@ -36,9 +36,10 @@
     weightCarried
   } from '$lib/rules/derived';
   import { downloadText } from '$lib/download';
+  import { friendlyDate, latest } from '$lib/rules/dates';
   import { exportFileName, exportSheet } from '$lib/exchange';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
-  import { SPELL_TYPES, spellGroup, spellRank, spellTypeLabel } from '$lib/rules/spells';
+  import { spellGroup, spellRank } from '$lib/rules/spells';
   import { themeStyle } from '$lib/theme';
   import { session } from '$lib/stores/session';
   import { sheetStore } from '$lib/stores/sheet';
@@ -92,6 +93,10 @@
   /** Optional: with no banner the sheet renders exactly as it did before. */
   const banner = $derived(resolveImageUrl(definition?.identity?.bannerUrl).url);
   const portraitSrc = $derived(resolveImageUrl(definition?.identity?.portraitUrl).url);
+  /** The writing lives in its own rows, so its edits count towards "updated" too. */
+  const updated = $derived(
+    latest(sheet?.updated_at, sheet?.texts?.notes.updatedAt, sheet?.texts?.backstory.updatedAt)
+  );
   const totalLevel = $derived(definition ? characterLevel(definition) : 1);
 
   const CLASS_COLUMNS = [
@@ -133,18 +138,22 @@
     { key: 'damageType', label: 'Type', width: '12%', placeholder: 'slashing' },
     { key: 'notes', label: 'Notes', width: '41%', muted: true, wide: true, placeholder: 'Versatile (1d10)' }
   ];
+  /** Blank first: a new row has no level yet, and defaulting it to Cantrip
+      would put a level on a spell nobody has written one for. */
+  const SPELL_LEVELS = ['', 'Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] as const;
   const SPELL_COLUMNS = [
-    { key: 'name', label: 'Name', width: '17%', placeholder: 'Shield' },
-    /* Stored under `level`, as it always was; it now takes any type of the
-       player's, with cantrip and the levels offered as they type. */
-    { key: 'level', label: 'Type', width: '11%', suggest: SPELL_TYPES, placeholder: 'Cantrip', format: spellTypeLabel },
-    { key: 'time', label: 'Cast time', width: '11%', placeholder: '1 reaction' },
-    { key: 'range', label: 'Range', width: '9%', placeholder: 'Self' },
-    { key: 'components', label: 'Components', short: 'Comp', width: '10%', placeholder: 'V, S, M' },
+    { key: 'name', label: 'Name', width: '15%', placeholder: 'Shield' },
+    { key: 'level', label: 'Level', width: '11%', options: SPELL_LEVELS },
+    { key: 'time', label: 'Cast time', width: '10%', placeholder: '1 reaction' },
+    { key: 'range', label: 'Range', width: '8%', placeholder: 'Self' },
+    { key: 'components', label: 'Components', short: 'Comp', width: '8%', placeholder: 'V, S, M' },
     { key: 'duration', label: 'Duration', width: '11%', placeholder: '1 round' },
-    { key: 'save', label: 'Save', width: '9%', placeholder: 'DEX 13' },
-    { key: 'notes', label: 'Notes', width: '22%', muted: true, wide: true, placeholder: '+5 AC' }
+    { key: 'save', label: 'Save', width: '8%', placeholder: 'DEX 13' },
+    { key: 'notes', label: 'Notes', width: '20%', muted: true, wide: true, placeholder: '+5 AC' },
+    { key: 'source', label: 'Source', short: 'Src', width: '9%', muted: true, placeholder: 'xphb' }
   ];
+
+
   const ITEM_COLUMNS = [
     { key: 'name', label: 'Item', width: '46%', placeholder: 'Longsword' },
     { key: 'qty', label: 'Amount', width: '14%', type: 'number' as const, numeric: true, placeholder: '1' },
@@ -408,6 +417,14 @@
             {editing ? 'Done' : 'Edit'}
           </button>
         {/if}
+        <!-- For a visitor, when the sheet was made and last touched. The owner
+             sees the same on the sheet list instead. -->
+        {#if !isOwner}
+          <dl class="stamps">
+            <div><dt>Created</dt><dd>{friendlyDate(sheet.created_at)}</dd></div>
+            <div><dt>Last updated</dt><dd>{friendlyDate(updated)}</dd></div>
+          </dl>
+        {/if}
         <a class="back" href="{base}/">Back</a>
         <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Could not copy the link')} />
         {#if isOwner}<DownloadButton ondownload={exportNow} />{/if}
@@ -505,9 +522,10 @@
               >
                 {#snippet info()}
                   Anything you can cast or activate goes here, spell or not — an item&rsquo;s
-                  charges belong here as much as a cantrip does. Type takes a level or a word of
-                  your own, like <code>Ritual</code>, and spells are grouped by it. Source
-                  <code>homebrew</code> marks an entry as yours and drops the 5e.tools link.
+                  charges belong here as much as a cantrip does. Source is the book it is from, as
+                  5e.tools writes it — <code>xphb</code>, <code>phb</code>, <code>tce</code> — and
+                  sets where the name links to. <code>homebrew</code> marks an entry as yours and
+                  drops the link.
                 {/snippet}
               </EntryTable>
             {:else if tab === 'Equipment'}
@@ -882,6 +900,13 @@
     text-decoration: none; flex: none; line-height: 1.5;
   }
   .back:hover { border-color: var(--a-edge); color: var(--a); }
+  .stamps { display: flex; gap: 1rem; margin: 0 0.5rem 0 0; }
+  .stamps div { text-align: right; }
+  .stamps dt {
+    font-size: 0.5875rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--label); font-weight: 600;
+  }
+  .stamps dd { margin: 0.0625rem 0 0; font-size: 0.8125rem; color: var(--text); white-space: nowrap; }
 
   /* Equal heights: the hit point module matches the ability band beside it. */
   .band {

@@ -34,7 +34,7 @@ const phoneBlock = (css: string) => {
 describe('phone layout', () => {
   it('labels every cell, so a stacked row still says what each field is', () => {
     render(EntryTable, { props: props(true) });
-    const cells = [...document.querySelectorAll('td:not(.rm)')];
+    const cells = [...document.querySelectorAll('td:not(.rm):not(.gripcell)')];
     expect(cells.length).toBeGreaterThan(0);
     for (const cell of cells) expect(cell.getAttribute('data-label')).toBeTruthy();
     expect(cells.map((c) => c.getAttribute('data-label'))).toEqual(['Name', 'Notes']);

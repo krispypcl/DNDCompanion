@@ -34,10 +34,6 @@
     muted?: boolean;
     /** Long prose (notes, a description): takes a full line of its card. */
     wide?: boolean;
-    /** Values offered as you type. Anything else may still be written. */
-    suggest?: readonly string[];
-    /** How a value reads when not editing. */
-    format?: (value: unknown) => string;
   };
 
   /** Keep rows in groups, in a fixed order of groups. Within a group the
@@ -79,7 +75,6 @@
     info?: import('svelte').Snippet;
   } = $props();
 
-  const uid = Math.random().toString(36).slice(2, 8);
 
   const [nameCol, ...rest] = $derived(columns);
 
@@ -115,7 +110,7 @@
     Boolean(groupBy) && view.length > 0 && view.some((r) => r.group !== view[0].group)
   );
 
-  const span = $derived(columns.length + (check ? 1 : 0) + (editable ? 1 : 0));
+  const span = $derived(columns.length + (check ? 1 : 0) + (editable ? 2 : 0));
 
   function patch(index: number, key: string, raw: string, type?: string) {
     const value = type === 'number' ? (raw === '' ? undefined : Number(raw)) : raw;
@@ -163,8 +158,8 @@
 
   // ── Dragging ──────────────────────────────────────────────────────────────
 
-  const rowEls: Record<number, HTMLTableRowElement> = {};
-  const grips: Record<number, HTMLButtonElement> = {};
+  const rowEls: Record<number, HTMLTableRowElement> = $state({});
+  const grips: Record<number, HTMLButtonElement> = $state({});
 
   type Drag = {
     key: number;
@@ -300,7 +295,9 @@
     return {
       duration: prefersReducedMotion() ? 0 : 180,
       easing: cubicOut,
-      css: (t: number, u: number) => `opacity: ${t}; transform: translateX(${16 * u}px);`
+      // Fades and settles in place. Moving sideways pushed the row past the
+      // table's edge for a moment, and the scroller showed a scrollbar.
+      css: (t: number) => `opacity: ${t}; transform: scale(${0.985 + 0.015 * t});`
     };
   }
 
@@ -313,7 +310,7 @@
     if (pos > 0 && view[pos - 1].group === here.group) return null;
     return here.title;
   };
-  const shown = (col: Column, v: unknown) => (col.format && !isEmpty(v) ? col.format(v) : text(v));
+
 </script>
 
 {#if items.length === 0 && !editable}
@@ -322,19 +319,21 @@
   <div class="scroller">
     <table class:editing={editable} class:headed={showHeadings} class:dragging={drag !== null} class:landing>
       <colgroup>
+        {#if editable}<col style:width="1.75rem" />{/if}
         {#if check}<col style:width="2.5rem" />{/if}
         {#each columns as col (col.key)}<col style:width={col.width} />{/each}
-        {#if editable}<col style:width="4.25rem" />{/if}
+        {#if editable}<col style:width="2rem" />{/if}
       </colgroup>
       <thead>
         <tr>
+          {#if editable}<th><span class="sr">Order</span></th>{/if}
           {#if check}<th class="tick" title={check.label}>{check.short ?? check.label}</th>{/if}
           {#each columns as col (col.key)}
             <th title={col.short ? col.label : undefined}>
               {col.short ?? col.label}
             </th>
           {/each}
-          {#if editable}<th><span class="sr">Order and remove</span></th>{/if}
+          {#if editable}<th><span class="sr">Remove</span></th>{/if}
         </tr>
       </thead>
       <tbody>
@@ -347,6 +346,29 @@
           <tr bind:this={rowEls[row.key]} in:arrive out:leave
               class:lifted={drag?.key === row.key}
               style:transform={drag ? `translateY(${offset(row.key)}px)` : undefined}>
+            <!-- The handle leads the row: the remove button holds the other end. -->
+            {#if editable}
+              <td class="gripcell">
+                <button
+                  bind:this={grips[row.key]}
+                  class="grip"
+                  disabled={!canMove(row)}
+                  aria-label="Reorder {nameOf(item) || `row ${index + 1}`}. Drag, or use the arrow keys."
+                  title="Drag to reorder"
+                  onpointerdown={(e) => grab(e, row)}
+                  onpointermove={move}
+                  onpointerup={drop}
+                  onpointercancel={cancel}
+                  onkeydown={(e) => nudge(e, row)}
+                >
+                  <svg viewBox="0 0 12 18" width="10" height="15" aria-hidden="true">
+                    {#each [3, 9, 15] as y (y)}
+                      <circle cx="3" cy={y} r="1.5" fill="currentColor" /><circle cx="9" cy={y} r="1.5" fill="currentColor" />
+                    {/each}
+                  </svg>
+                </button>
+              </td>
+            {/if}
             {#if check}
               <td class="tick" data-label={check.label} data-empty={!editable && !item[check.key] ? '' : undefined}>
                 {#if editable}
@@ -395,36 +417,17 @@
                 {:else if editable}
                   <input
                     type={col.type === 'number' ? 'number' : 'text'}
-                    value={col.format && !isEmpty(item[col.key]) ? col.format(item[col.key]) : (item[col.key] ?? '')}
-                    list={col.suggest ? `${uid}-${col.key}` : undefined}
+                    value={item[col.key] ?? ''}
                     placeholder={col.placeholder ?? ''}
                     aria-label="{nameOf(item) || `Row ${index + 1}`} {col.label}"
                     onchange={(e) => patch(index, col.key, e.currentTarget.value, col.type)}
                   />
-                {:else}{shown(col, item[col.key])}{/if}
+                {:else}{text(item[col.key])}{/if}
               </td>
             {/each}
 
             {#if editable}
               <td class="rm">
-                <button
-                  bind:this={grips[row.key]}
-                  class="grip"
-                  disabled={!canMove(row)}
-                  aria-label="Reorder {nameOf(item) || `row ${index + 1}`}. Drag, or use the arrow keys."
-                  title="Drag to reorder"
-                  onpointerdown={(e) => grab(e, row)}
-                  onpointermove={move}
-                  onpointerup={drop}
-                  onpointercancel={cancel}
-                  onkeydown={(e) => nudge(e, row)}
-                >
-                  <svg viewBox="0 0 12 18" width="10" height="15" aria-hidden="true">
-                    {#each [3, 9, 15] as y (y)}
-                      <circle cx="3" cy={y} r="1.5" fill="currentColor" /><circle cx="9" cy={y} r="1.5" fill="currentColor" />
-                    {/each}
-                  </svg>
-                </button>
                 <button class="x" aria-label="Remove {nameOf(item) || `row ${index + 1}`}"
                         onclick={() => remove(index)}>×</button>
               </td>
@@ -437,11 +440,6 @@
 {/if}
 
 {#if editable}
-  {#each columns.filter((c) => c.suggest) as col (col.key)}
-    <datalist id="{uid}-{col.key}">
-      {#each col.suggest ?? [] as option (option)}<option value={option}></option>{/each}
-    </datalist>
-  {/each}
   <div class="addrow">
     <button class="add" onclick={add}>{addLabel}</button>
     {#if info}<InfoTip label="About {addLabel.toLowerCase().replace(/^add /, '')}">{@render info()}</InfoTip>{/if}
@@ -512,6 +510,7 @@
   .x:hover { color: var(--danger); }
   /* The handle: grabbed, not clicked, so the page must not scroll under a
      finger dragging it. */
+  .gripcell { padding-right: 0.25rem; vertical-align: middle; }
   .grip { cursor: grab; touch-action: none; display: inline-grid; place-items: center; vertical-align: middle; }
   .grip:hover:not(:disabled) { color: var(--a); background: var(--a-wash); }
   .grip:disabled { opacity: 0.3; cursor: default; }
@@ -524,8 +523,7 @@
     background: var(--raised);
     box-shadow: 0 8px 24px rgb(0 0 0 / 0.3), 0 0 0 1px var(--a-edge);
   }
-  input::-webkit-calendar-picker-indicator { display: none !important; }
-  input::-webkit-list-button { display: none !important; }
+
   /* The tick column is the width of the mark and nothing more. */
   .tick { text-align: center; vertical-align: middle; }
   th.tick { color: var(--label); }
@@ -657,7 +655,13 @@
     }
     table.editing td.rm::before { content: none; }
     table.editing .x, table.editing .grip { font-size: 1.125rem; padding: 0.375rem 0.75rem; }
-    table.editing td.rm { justify-content: space-between; }
+    /* On a card the handle sits in the footer's left corner, across from
+       remove in the right. */
+    table.editing tr:not(.group) { position: relative; }
+    table.editing td.gripcell {
+      position: absolute; left: 0.25rem; bottom: 0.5rem; padding: 0;
+    }
+    table.editing td.gripcell::before { content: none; }
     /* The tick reads as a field of its own here, label and all. */
     table.editing td.tick { text-align: left; }
     /* Under 16px, a phone zooms in when a field takes focus. */

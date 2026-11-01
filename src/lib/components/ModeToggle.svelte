@@ -28,7 +28,7 @@
 >
   {#if $mode === 'dark'}
     <!-- Dark now, so offer the sun. -->
-    <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+    <svg class="sun" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
       <circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.6" />
       <g stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
         <path d="M12 2.6v2.2M12 19.2v2.2M4.4 12H2.2M21.8 12h-2.2" />
@@ -36,7 +36,7 @@
       </g>
     </svg>
   {:else}
-    <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+    <svg class="moon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
       <path
         d="M20 14.2A8.2 8.2 0 0 1 9.8 4a8.2 8.2 0 1 0 10.2 10.2z"
         fill="none"
@@ -65,5 +65,9 @@
   }
   .mode:hover { border-color: var(--a-edge); color: var(--a); }
   .mode:active { transform: translateY(1px); }
-  .mode svg { display: block; }
+  .mode svg { display: block; transition: transform 0.45s cubic-bezier(0.3, 0.7, 0.4, 1); }
+  /* The sun turns a little; the moon tips, as if setting. */
+  .mode:hover svg.sun { transform: rotate(45deg); }
+  .mode:hover svg.moon { transform: rotate(-18deg); }
+  @media (prefers-reduced-motion: reduce) { .mode svg { transition: none; } }
 </style>

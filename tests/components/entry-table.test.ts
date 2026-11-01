@@ -43,9 +43,11 @@ describe('EntryTable', () => {
     expect(document.querySelectorAll('td.tick input').length).toBe(0);
   });
 
-  it('puts the tick ahead of the name', () => {
+  it('puts the drag handle first, then the tick, ahead of the name', () => {
     mount(true);
-    const first = document.querySelector('tbody tr')!.firstElementChild!;
+    const [grip, tick] = [...document.querySelector('tbody tr')!.children];
+    expect(grip.className).toContain('gripcell');
+    const first = tick;
     expect(first.className).toContain('tick');
     expect(first.getAttribute('data-label')).toBe('Prepared');
   });

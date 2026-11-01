@@ -111,8 +111,15 @@ entry, and `auth.users` is not readable by other users.
 - **Pages.** Notes and backstory are books of pages, stored as one text with a
   form feed (`\f`) between pages. Older single-text writing is a one-page book.
   Export writes each break as a `===== PAGE =====` line.
-- **Death saves** are blurred for everyone, the owner included, until hovered,
-  focused or tapped; the first tap only reveals them.
+- **Death saves** are covered for everyone, the owner included, until hovered,
+  reached by keyboard or tapped; the first tap only uncovers them, and they
+  cover again when the pointer leaves or a tap lands elsewhere.
+- **Private switch** appears greyed out with a note until
+  `0002_private_text.sql` has been run.
+- **Dates.** Visitors see Created and Last updated in the header; owners see
+  them on the sheet list.
+- **Pictures** open full screen from the portrait (reading) or the link
+  previews (editing).
 - **Visitors** see a status chip (Healthy, Bloodied, Critical, Down, Stable,
   Dead) where the owner has the damage and rest buttons.
 - **Images.** Portrait and banner accept direct links and resolve share links
@@ -123,11 +130,10 @@ entry, and `auth.users` is not readable by other users.
   fetching them (Pinterest pins, ArtStation, DeviantArt, Reddit, ImgBB…) get a
   note saying to copy the image address. The editor previews each link and
   says when it does not load.
-- **Spell type** is free text with Cantrip and 1st–10th level suggested; it is
-  still stored in the `level` field. Spells group by level, then by any other
-  type, then untyped.
-- **Reordering** is by dragging a row's grip (mouse or touch), or with the arrow
-  keys on the grip. Rows only move within their group.
+- **Spells** have a Level drop-down and a Source column (the 5e.tools book
+  code, which sets the lookup link). Spells group by level, cantrips first.
+- **Reordering** is by dragging the grip at the left of a row (mouse or touch),
+  or with the arrow keys on the grip. Rows only move within their group.
 - **Download** (owner only, in the header) saves a readable text file; Import
   on the sheet list recreates it as a new sheet. Imports are sanitised.
 - **Passwords** need at least 8 characters, typed twice, and are refused if
