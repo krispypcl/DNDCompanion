@@ -105,6 +105,17 @@ entry, and `auth.users` is not readable by other users.
 
 ## Behaviour worth knowing
 
+- **Names used in conversation.** *DHT* is the Damage / Heal / Temp row of the
+  hit point module; *SLD* is the Short Rest / Long Rest / Dawn row.
+- **5e.tools links** go through 5e.tools' own search with its `lucky` switch
+  (`search.html?q=<name> in:<category> source:<book>&lucky`), which opens the
+  best match. The name is stripped of bonuses and notes first (`Revolver (+1)`
+  → `Revolver`). A blank source still links, by name; `homebrew` never does.
+  Spells, equipment, features, classes and trackers all link.
+- **Dice roller** (owner only, Combat tab): a pool of d4–d100, a modifier, and
+  advantage or disadvantage applied to the d20s. Rolls use `crypto` with
+  rejection sampling; nothing is saved.
+
 - **Private notes and backstory.** One switch per writing. Enforced by
   row-level security in the `sheet_text` table, so visitors receive nothing,
   not a hidden field; they see an empty section.
@@ -132,8 +143,8 @@ entry, and `auth.users` is not readable by other users.
   says when it does not load.
 - **Spells** have a Level drop-down and a Source column (the 5e.tools book
   code, which sets the lookup link). Spells group by level, cantrips first.
-- **Reordering** is by dragging the grip at the left of a row (mouse or touch),
-  or with the arrow keys on the grip. Rows only move within their group.
+- **Reordering** is by dragging the grip at the left of a row (mouse or touch).
+  Rows only move within their group.
 - **Download** (owner only, in the header) saves a readable text file; Import
   on the sheet list recreates it as a new sheet. Imports are sanitised.
 - **Passwords** need at least 8 characters, typed twice, and are refused if

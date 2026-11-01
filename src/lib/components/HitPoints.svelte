@@ -127,7 +127,7 @@
   }
 </script>
 
-<div class="hpwrap" class:struck style={blow}>
+<div class="hpwrap" class:struck class:reading={!editable} style={blow}>
 <span class="cap">Hit points</span>
 
 <div class="meter">
@@ -352,6 +352,9 @@
   /* Two groups, not one wrapping row: what changes hit points now, and what
      restores them on a rest. The rule between says which is which. */
   .meter { margin-top: auto; }
+  /* A visitor has no buttons below, so what there is sits in the middle of
+     the card under its title, rather than at the foot of it. */
+  .reading .actions { margin-bottom: auto; }
   .statusrow {
     display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
     min-height: 2.375rem;

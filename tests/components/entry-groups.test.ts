@@ -64,21 +64,22 @@ describe('grouped table', () => {
     expect(onchange).not.toHaveBeenCalled();
   });
 
-  it('moves a row within its group from the keyboard', async () => {
+  it('will not drag a row across a group', async () => {
     const onchange = mount(true);
-    await fireEvent.keyDown(screen.getByLabelText(/Reorder Magic Missile/), { key: 'ArrowUp' });
+    // Rows on screen: Light | Shield, Magic Missile | Fireball | Mystery.
+    const rows = [...document.querySelectorAll('tbody tr:not(.group)')] as HTMLElement[];
+    rows.forEach((row, i) => {
+      row.getBoundingClientRect = () => ({ top: i * 40, height: 40, bottom: i * 40 + 40, left: 0, right: 0, width: 0, x: 0, y: i * 40, toJSON() {} });
+    });
+    const grip = screen.getByLabelText(/reorder Shield/i);
+    // Dragged far down, past Fireball: it can only go to the end of its own group.
+    await fireEvent.pointerDown(grip, { button: 0, pointerId: 1, clientY: 60 });
+    await fireEvent.pointerMove(grip, { pointerId: 1, clientY: 190 });
+    await fireEvent.pointerUp(grip, { pointerId: 1, clientY: 190 });
     const next = onchange.mock.calls[0][0] as typeof spells;
     expect(next.map((s) => s.name)).toEqual(['Fireball', 'Magic Missile', 'Light', 'Shield', 'Mystery']);
-  });
-
-  it('will not move a row across a group', async () => {
-    const onchange = mount(true);
-    // Shield is first in 1st level; the row above it on screen is a cantrip.
-    await fireEvent.keyDown(screen.getByLabelText(/Reorder Shield/), { key: 'ArrowUp' });
-    await fireEvent.keyDown(screen.getByLabelText(/Reorder Magic Missile/), { key: 'ArrowDown' });
-    expect(onchange).not.toHaveBeenCalled();
     // A row alone in its group has nothing to trade places with.
-    expect((screen.getByLabelText(/Reorder Light/) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByLabelText(/reorder Light/i) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('moves a row by dragging its handle past another', async () => {
@@ -92,7 +93,7 @@ describe('grouped table', () => {
     rows.forEach((row, i) => {
       row.getBoundingClientRect = () => ({ top: i * 40, height: 40, bottom: i * 40 + 40, left: 0, right: 0, width: 0, x: 0, y: i * 40, toJSON() {} });
     });
-    const grip = screen.getByLabelText(/Reorder A/);
+    const grip = screen.getByLabelText(/reorder A/i);
     await fireEvent.pointerDown(grip, { button: 0, pointerId: 1, clientY: 20 });
     await fireEvent.pointerMove(grip, { pointerId: 1, clientY: 125 });
     await fireEvent.pointerUp(grip, { pointerId: 1, clientY: 125 });
@@ -101,7 +102,7 @@ describe('grouped table', () => {
 
   it('puts a dropped row back where it was if it did not travel', async () => {
     const onchange = mount(true, vi.fn(), [{ name: 'A', level: '1' }, { name: 'B', level: '1' }]);
-    const grip = screen.getByLabelText(/Reorder A/);
+    const grip = screen.getByLabelText(/reorder A/i);
     await fireEvent.pointerDown(grip, { button: 0, pointerId: 1, clientY: 0 });
     await fireEvent.pointerUp(grip, { pointerId: 1, clientY: 0 });
     expect(onchange).not.toHaveBeenCalled();

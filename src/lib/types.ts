@@ -93,7 +93,7 @@ export type Item = LinkableEntry & {
 
 /** The long-form character writing, kept apart from the one-line details. */
 /** One class a character has levels in. A single-class character has one. */
-export type ClassEntry = { name: string; subclass?: string; level: number };
+export type ClassEntry = { name: string; subclass?: string; level: number; source?: string };
 
 export type Traits = {
   /** Armour, weapons, tools and saving throws. Languages are separate: a

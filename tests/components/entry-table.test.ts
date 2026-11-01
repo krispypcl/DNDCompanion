@@ -62,11 +62,26 @@ describe('EntryTable', () => {
     expect(next.length).toBe(3);
   });
 
-  it('moves a row one place with the arrow keys on its handle', async () => {
+  /** jsdom has no layout: give each row a 40px slot down the page. */
+  const layOut = () =>
+    ([...document.querySelectorAll('tbody tr:not(.group)')] as HTMLElement[]).forEach((row, i) => {
+      row.getBoundingClientRect = () =>
+        ({ top: i * 40, height: 40, bottom: i * 40 + 40, left: 0, right: 0, width: 0, x: 0, y: i * 40, toJSON() {} }) as DOMRect;
+    });
+
+  async function drag(name: string, fromY: number, toY: number) {
+    const grip = screen.getByLabelText(new RegExp(`reorder ${name}`, 'i'));
+    await fireEvent.pointerDown(grip, { button: 0, pointerId: 1, clientY: fromY });
+    await fireEvent.pointerMove(grip, { pointerId: 1, clientY: toY });
+    await fireEvent.pointerUp(grip, { pointerId: 1, clientY: toY });
+  }
+
+  it('moves a row by dragging its handle', async () => {
     const onchange = vi.fn();
     mount(true, onchange);
+    layOut();
     expect(rowNames()).toEqual(['Shield', 'Mage Hand', 'Fireball']);
-    await fireEvent.keyDown(screen.getByLabelText(/Reorder Fireball/), { key: 'ArrowUp' });
+    await drag('Fireball', 100, 50);
     expect(onchange.mock.calls.at(-1)![0].map((i: { name: string }) => i.name)).toEqual([
       'Shield',
       'Fireball',
@@ -74,11 +89,10 @@ describe('EntryTable', () => {
     ]);
   });
 
-  it('does nothing past either end', async () => {
+  it('leaves the order alone when the arrow keys are pressed on the handle, so the page can scroll', async () => {
     const onchange = vi.fn();
     mount(true, onchange);
-    await fireEvent.keyDown(screen.getByLabelText(/Reorder Shield/), { key: 'ArrowUp' });
-    await fireEvent.keyDown(screen.getByLabelText(/Reorder Fireball/), { key: 'ArrowDown' });
+    await fireEvent.keyDown(screen.getByLabelText(/reorder Fireball/i), { key: 'ArrowUp' });
     expect(onchange).not.toHaveBeenCalled();
   });
 

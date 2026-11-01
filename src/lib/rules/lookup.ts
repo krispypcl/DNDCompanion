@@ -1,15 +1,19 @@
 /**
- * Builds 5e.tools deep links.
+ * Links to an entry on 5e.tools.
  *
- * The pattern, confirmed against real URLs:
- *   https://5e.tools/<category>.html#<name>_<source>
+ * Every link goes through 5e.tools' own search, with its "lucky" switch,
+ * which opens the best match directly:
  *
- * The name is lowercased and URL-encoded; encodeURIComponent already leaves
- * parentheses and apostrophes literal, which is what 5e.tools expects.
+ *   https://5e.tools/search.html?q=<name> in:<category> source:<source>&lucky
  *
- * The source is mandatory and cannot be derived — one character spans xphb,
- * mtf and valdagunslinger. No source means no link, which is better than a
- * link that lands on nothing.
+ * A page link (spells.html#fireball_xphb) has to match the entry's name and
+ * book exactly and lives on a page that depends on what the entry is; a class
+ * feature like Second Wind is not on the feats page at all. The search
+ * forgives all of that: it matches the name loosely, narrows by category and
+ * book when they are known, and still finds something when the book is not.
+ *
+ * Before searching, the name is stripped of what is the player's and not the
+ * book's: "(+1)", "+2", "x3", "[attuned]".
  */
 
 export const LOOKUP_BASE = 'https://5e.tools';
@@ -21,10 +25,38 @@ export type LookupCategory =
   | 'feats'
   | 'backgrounds'
   | 'classes'
-  | 'conditionsdiseases';
+  | 'conditionsdiseases'
+  /** Anything: a tracker, or a feature that may be a feat or a class feature. */
+  | 'any';
+
+/** 5e.tools search's own category words. A feature may be a feat, a class
+    feature or an optional feature, so it is not narrowed. */
+const IN_CATEGORY: Record<LookupCategory, string | null> = {
+  spells: 'sp',
+  items: 'itm',
+  races: 'race',
+  feats: null,
+  backgrounds: 'bg',
+  classes: 'class',
+  conditionsdiseases: 'con',
+  any: null
+};
 
 /** Sources that describe content with no page to link to. */
 const UNLINKABLE = new Set(['homebrew', 'custom', 'none']);
+
+/** The name as the book has it: no bonuses, counts or notes in brackets. */
+export function lookupName(name: string): string {
+  return name
+    .replace(/\([^)]*\)|\[[^\]]*\]|\{[^}]*\}/g, ' ')
+    .replace(/(^|\s)[+-]\s?\d+(?=\s|$)/g, ' ')
+    .replace(/(^|\s)[x×]\s?\d+(?=\s|$)/gi, ' ')
+    .replace(/(^|\s)\d+\s?[x×](?=\s|$)/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/[,;:–—-]+$/, '')
+    .trim();
+}
 
 export function lookupUrl(
   name: string,
@@ -35,11 +67,16 @@ export function lookupUrl(
   if (override?.trim()) return override.trim();
 
   const src = source?.trim().toLowerCase();
-  if (!src || UNLINKABLE.has(src)) return null;
-  if (!name?.trim()) return null;
+  if (src && UNLINKABLE.has(src)) return null;
+  const clean = lookupName(name ?? '');
+  if (!clean) return null;
 
-  const fragment = encodeURIComponent(name.trim().toLowerCase());
-  return `${LOOKUP_BASE}/${category}.html#${fragment}_${src}`;
+  const parts = [clean];
+  const cat = IN_CATEGORY[category];
+  if (cat) parts.push(`in:${cat}`);
+  // Last: 5e.tools reads everything after "source:" as the source.
+  if (src) parts.push(`source:${src}`);
+  return `${LOOKUP_BASE}/search.html?q=${encodeURIComponent(parts.join(' '))}&lucky`;
 }
 
 /** True when the entry should show a "Homebrew" tag rather than a link. */
