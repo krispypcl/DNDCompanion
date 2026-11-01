@@ -117,6 +117,7 @@
 
 <!-- Always there, even for a single page: Notes and Backstory look the same
      whatever has been written in them. -->
+<div class="pagerwrap">
 <div class="pager" class:reading={!editable}>
   <!-- Formatting sits to the left of the page arrows, while writing. -->
   {#if editable}<FormatBar {active} onformat={(f) => editor?.apply(f)} />{/if}
@@ -144,12 +145,13 @@
         <button class="pg" onclick={add}>Add page</button>
         {#if many || pages[current].trim() !== ''}
           <button class="pg remove" class:confirming onclick={remove}>
-            {confirming ? 'Remove this page?' : 'Remove page'}
+            {confirming ? 'Remove it?' : 'Remove page'}
           </button>
         {/if}
       </div>
     {/if}
   </div>
+</div>
 {/if}
 
 <style>
@@ -170,9 +172,6 @@
     flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0;
   }
   .page { flex: 1 1 auto; display: flex; flex-direction: column; }
-  /* Editing, the page is the whole empty card, not six lines of it. */
-
-
   .pager {
     display: flex; align-items: center; gap: 0.75rem;
     flex-wrap: wrap; margin-top: 0.875rem; padding-top: 0.75rem;
@@ -181,7 +180,36 @@
   .turns { display: inline-flex; align-items: center; gap: 0.5rem; }
   /* Reading, the arrows are all there is, so they sit in the middle. */
   .pager.reading { justify-content: center; }
-  .count { font-size: 0.78rem; color: var(--dim); font-variant-numeric: tabular-nums; min-width: 6.5rem; text-align: center; }
+  /* Editing, the arrows stay in the middle too: formatting on their left,
+     the page and privacy controls on their right. Where the card is too
+     narrow for all three on one line, the arrows take a line of their own,
+     still centred, and on a phone everything stacks. */
+  .pagerwrap { container-type: inline-size; }
+  .pager:not(.reading) {
+    display: grid; align-items: center; column-gap: 0.75rem; row-gap: 0.625rem;
+    grid-template-columns: auto 1fr;
+    grid-template-areas: 'bar edits' 'turns turns';
+  }
+  .pager:not(.reading) :global(.bar) { grid-area: bar; justify-self: start; }
+  .pager:not(.reading) .turns { grid-area: turns; justify-self: center; }
+  .pager:not(.reading) .edits { grid-area: edits; justify-self: end; justify-content: flex-end; margin-left: 0; }
+  @container (min-width: 700px) {
+    .pager:not(.reading) {
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      grid-template-areas: 'bar turns edits';
+    }
+    .pager:not(.reading) .edits { flex-wrap: nowrap; }
+  }
+  @container (max-width: 460px) {
+    .pager:not(.reading) {
+      grid-template-columns: 1fr;
+      grid-template-areas: 'bar' 'turns' 'edits';
+      justify-items: center;
+    }
+    .pager:not(.reading) :global(.bar),
+    .pager:not(.reading) .edits { justify-self: center; justify-content: center; }
+  }
+  .count { font-size: 0.78rem; color: var(--dim); font-variant-numeric: tabular-nums; min-width: 5.75rem; text-align: center; white-space: nowrap; }
   .nav {
     display: inline-grid; place-items: center; width: 1.875rem; height: 1.875rem;
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
@@ -192,10 +220,11 @@
   .nav:active:not(:disabled) { transform: translateY(1px); }
   .nav:disabled { opacity: 0.35; cursor: default; }
   .edits { display: inline-flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-left: auto; }
-  .edits :global(.switch) { margin-right: 0.5rem; }
+  .edits :global(.switch) { margin-right: 0.25rem; }
   .pg {
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
-    border-radius: var(--r-sm); padding: 0.3125rem 0.75rem; font: inherit; font-size: 0.78rem;
+    border-radius: var(--r-sm); padding: 0.3125rem 0.625rem; font: inherit; font-size: 0.78rem;
+    white-space: nowrap;
     cursor: pointer; transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
   }
   .pg:hover { border-color: var(--a-edge); color: var(--a); }
