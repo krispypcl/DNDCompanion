@@ -337,3 +337,28 @@ describe('private marker', () => {
     expect(value.definition.privateText).toBeUndefined();
   });
 });
+
+describe('fields added since the format was written', () => {
+  it('carries class sources, item value and source, spell source, pictures and pages', () => {
+    const def = character();
+    def.identity = {
+      ...def.identity,
+      classes: [{ name: 'Fighter', level: 2, source: 'xphb' }],
+      portraitUrl: 'https://drive.google.com/file/d/abcdefghijklmnop/view',
+      bannerUrl: 'https://i.imgur.com/abcdefg.png'
+    };
+    def.equipment = [{ name: 'Rope', qty: 1, value: '1 gp', source: 'xphb' }];
+    def.spells = [{ name: 'Shield', level: '1', source: 'xphb', prepared: true }];
+    const texts = blankTexts();
+    texts.notes = { body: 'One\fTwo', isPublic: false, updatedAt: null };
+    const { value } = roundTrip(def, play(), texts);
+    expect(value.definition.identity.classes).toEqual([{ name: 'Fighter', level: 2, source: 'xphb' }]);
+    expect(value.definition.identity.portraitUrl).toBe(def.identity.portraitUrl);
+    expect(value.definition.identity.bannerUrl).toBe(def.identity.bannerUrl);
+    expect(value.definition.equipment).toEqual(def.equipment);
+    expect(value.definition.spells).toEqual(def.spells);
+    expect(value.texts.notes).toEqual({ body: 'One\fTwo', isPublic: false });
+    expect(value.definition.privateText).toEqual({ notes: true });
+    expect(value.state.conditions).toEqual(['Prone', 'Bless']);
+  });
+});
