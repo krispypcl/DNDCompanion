@@ -240,7 +240,8 @@ export function readDefinition(raw: unknown, tally = new Tally()): Definition {
     identity.classes = id.classes.filter(isObj).map((c) => ({
       name: str(c.name),
       ...(str(c.subclass) ? { subclass: str(c.subclass) } : {}),
-      level: Math.max(0, Math.round(num(c.level, 1, 0, 30)))
+      level: Math.max(0, Math.round(num(c.level, 1, 0, 30))),
+      ...(str(c.source) ? { source: str(c.source) } : {})
     }));
   }
   def.identity = identity as Definition['identity'];

@@ -98,7 +98,7 @@
       <EntryLink
         name={tracker.label}
         source={tracker.source}
-        category="items"
+        category="any"
         override={undefined}
       />
     </span>

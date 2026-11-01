@@ -1,62 +1,71 @@
 import { describe, expect, test } from 'vitest';
-import { lookupUrl } from '$lib/rules/lookup';
+import { lookupName, lookupUrl } from '$lib/rules/lookup';
 
-const BASE = 'https://5e.tools';
+const query = (url: string | null) => {
+  const u = new URL(url!);
+  expect(u.origin + u.pathname).toBe('https://5e.tools/search.html');
+  expect(u.searchParams.has('lucky')).toBe(true);
+  return u.searchParams.get('q');
+};
 
 describe('lookupUrl', () => {
-  // Asserted against real URLs collected from 5e.tools during design.
-  test('spell', () => {
-    expect(lookupUrl('Command', 'xphb', 'spells')).toBe(`${BASE}/spells.html#command_xphb`);
+  test('goes through 5e.tools search, which opens the best match', () => {
+    expect(query(lookupUrl('Fireball', 'xphb', 'spells'))).toBe('Fireball in:sp source:xphb');
   });
 
-  test('item from a third-party source', () => {
-    expect(lookupUrl('Revolver', 'valdagunslinger', 'items')).toBe(
-      `${BASE}/items.html#revolver_valdagunslinger`
-    );
+  test('narrows by category for items, classes, backgrounds, species and conditions', () => {
+    expect(query(lookupUrl('Longsword', 'xphb', 'items'))).toBe('Longsword in:itm source:xphb');
+    expect(query(lookupUrl('Fighter', 'xphb', 'classes'))).toBe('Fighter in:class source:xphb');
+    expect(query(lookupUrl('Artisan', 'xphb', 'backgrounds'))).toBe('Artisan in:bg source:xphb');
+    expect(query(lookupUrl('Tiefling', 'xphb', 'races'))).toBe('Tiefling in:race source:xphb');
   });
 
-  test('a name with parentheses keeps them literal', () => {
-    expect(lookupUrl('Tiefling (Glasya)', 'mtf', 'races')).toBe(
-      `${BASE}/races.html#tiefling%20(glasya)_mtf`
-    );
+  test('does not narrow a feature, which may be a feat or a class feature', () => {
+    expect(query(lookupUrl('Second Wind', 'xphb', 'feats'))).toBe('Second Wind source:xphb');
   });
 
-  test('feat', () => {
-    expect(lookupUrl('Archery', 'xphb', 'feats')).toBe(`${BASE}/feats.html#archery_xphb`);
+  test('puts the source last, since 5e.tools reads the rest of the query as the source', () => {
+    expect(query(lookupUrl('Shield', 'phb', 'spells'))!.endsWith('source:phb')).toBe(true);
   });
 
-  test('background', () => {
-    expect(lookupUrl('Artisan', 'xphb', 'backgrounds')).toBe(
-      `${BASE}/backgrounds.html#artisan_xphb`
-    );
+  test('still links with no source, by name alone', () => {
+    expect(query(lookupUrl('Rope', undefined, 'items'))).toBe('Rope in:itm');
+    expect(query(lookupUrl('Rope', '  ', 'items'))).toBe('Rope in:itm');
   });
 
-  test('an apostrophe survives unescaped', () => {
-    expect(lookupUrl("Melf's Acid Arrow", 'xphb', 'spells')).toBe(
-      `${BASE}/spells.html#melf's%20acid%20arrow_xphb`
-    );
+  test('leaves out what is the player’s, not the book’s', () => {
+    expect(query(lookupUrl('Revolver (+1)', 'xphb', 'items'))).toBe('Revolver in:itm source:xphb');
   });
 
   test('an override wins over name and source', () => {
-    const override = `${BASE}/classes.html#gunslinger_valdagunslinger,state:feature=s2-0`;
+    const override = 'https://5e.tools/classes.html#gunslinger_valdagunslinger,state:feature=s2-0';
     expect(lookupUrl('Gunslinger', 'xphb', 'classes', override)).toBe(override);
   });
 
-  test('a homebrew source has no link', () => {
+  test('a homebrew source has no link, unless overridden', () => {
     expect(lookupUrl("Sheriff's Star", 'homebrew', 'items')).toBeNull();
+    expect(lookupUrl("Sheriff's Star", 'homebrew', 'items', 'https://example.com/star')).toBe('https://example.com/star');
   });
 
-  test('a missing source has no link', () => {
-    expect(lookupUrl('Mystery Item', undefined, 'items')).toBeNull();
+  test('no name, no link', () => {
+    expect(lookupUrl('(+1)', 'xphb', 'items')).toBeNull();
+  });
+});
+
+describe('lookupName', () => {
+  test('strips bonuses, counts and bracketed notes', () => {
+    expect(lookupName('Revolver (+1)')).toBe('Revolver');
+    expect(lookupName('Longsword +1')).toBe('Longsword');
+    expect(lookupName('+2 Shield')).toBe('Shield');
+    expect(lookupName('Arrows x20')).toBe('Arrows');
+    expect(lookupName('20x Arrows')).toBe('Arrows');
+    expect(lookupName('Potion of Healing ×3')).toBe('Potion of Healing');
+    expect(lookupName('Cloak of Elvenkind [attuned]')).toBe('Cloak of Elvenkind');
   });
 
-  test('an empty source has no link', () => {
-    expect(lookupUrl('Mystery Item', '   ', 'items')).toBeNull();
-  });
-
-  test('an override still wins when the source is homebrew', () => {
-    expect(lookupUrl("Sheriff's Star", 'homebrew', 'items', 'https://example.com/star')).toBe(
-      'https://example.com/star'
-    );
+  test('keeps names that are the book’s own', () => {
+    expect(lookupName("Melf's Acid Arrow")).toBe("Melf's Acid Arrow");
+    expect(lookupName('Bigby’s Hand')).toBe('Bigby’s Hand');
+    expect(lookupName('Half-Elf')).toBe('Half-Elf');
   });
 });

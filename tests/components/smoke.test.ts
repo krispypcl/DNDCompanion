@@ -110,7 +110,7 @@ describe('every component renders without throwing', () => {
       props: { name: 'Shield', source: 'xphb', category: 'spells' }
     });
     expect(container.querySelector('a')?.getAttribute('href')).toBe(
-      'https://5e.tools/spells.html#shield_xphb'
+      'https://5e.tools/search.html?q=Shield%20in%3Asp%20source%3Axphb&lucky'
     );
   });
 

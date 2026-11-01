@@ -8,6 +8,7 @@
   import Conditions from '$lib/components/Conditions.svelte';
   import Currency from '$lib/components/Currency.svelte';
   import DetailsBlock from '$lib/components/DetailsBlock.svelte';
+  import DiceRoller from '$lib/components/DiceRoller.svelte';
   import EditableField from '$lib/components/EditableField.svelte';
   import EntryLink from '$lib/components/EntryLink.svelte';
   import HitPoints from '$lib/components/HitPoints.svelte';
@@ -100,9 +101,10 @@
   const totalLevel = $derived(definition ? characterLevel(definition) : 1);
 
   const CLASS_COLUMNS = [
-    { key: 'name', label: 'Class', width: '45%', placeholder: 'Class' },
-    { key: 'subclass', label: 'Subclass', width: '35%', placeholder: 'Subclass' },
-    { key: 'level', label: 'Level', width: '20%', type: 'number' as const, numeric: true, placeholder: '1' }
+    { key: 'name', label: 'Class', width: '38%', placeholder: 'Class' },
+    { key: 'subclass', label: 'Subclass', width: '30%', placeholder: 'Subclass' },
+    { key: 'level', label: 'Level', width: '14%', type: 'number' as const, numeric: true, placeholder: '1' },
+    { key: 'source', label: 'Source', width: '18%', muted: true, placeholder: 'xphb' }
   ];
 
   /**
@@ -115,7 +117,8 @@
     const list = rows.map((r) => ({
       name: String(r.name ?? ''),
       ...(r.subclass ? { subclass: String(r.subclass) } : {}),
-      level: Number(r.level) || 0
+      level: Number(r.level) || 0,
+      ...(r.source ? { source: String(r.source) } : {})
     }));
     const total = list.reduce((sum, c) => sum + c.level, 0);
     const [first] = list;
@@ -150,15 +153,16 @@
     { key: 'duration', label: 'Duration', width: '11%', placeholder: '1 round' },
     { key: 'save', label: 'Save', width: '8%', placeholder: 'DEX 13' },
     { key: 'notes', label: 'Notes', width: '20%', muted: true, wide: true, placeholder: '+5 AC' },
-    { key: 'source', label: 'Source', short: 'Src', width: '9%', muted: true, placeholder: 'xphb' }
+    { key: 'source', label: 'Source', width: '9%', muted: true, placeholder: 'xphb' }
   ];
 
 
   const ITEM_COLUMNS = [
-    { key: 'name', label: 'Item', width: '46%', placeholder: 'Longsword' },
-    { key: 'qty', label: 'Amount', width: '14%', type: 'number' as const, numeric: true, placeholder: '1' },
-    { key: 'weight', label: 'Weight', width: '14%', type: 'number' as const, numeric: true, placeholder: '3' },
-    { key: 'value', label: 'Value', width: '26%', numeric: true, placeholder: '15 gp' }
+    { key: 'name', label: 'Item', width: '38%', placeholder: 'Longsword' },
+    { key: 'qty', label: 'Amount', width: '12%', type: 'number' as const, numeric: true, placeholder: '1' },
+    { key: 'weight', label: 'Weight', width: '12%', type: 'number' as const, numeric: true, placeholder: '3' },
+    { key: 'value', label: 'Value', width: '22%', numeric: true, placeholder: '15 gp' },
+    { key: 'source', label: 'Source', width: '16%', muted: true, placeholder: 'xphb' }
   ];
   const TRACKER_COLUMNS = [
     { key: 'label', label: 'Label', width: '16%', placeholder: 'Second Wind' },
@@ -391,8 +395,8 @@
                              onchange={(v) => patchIdentity('level', Number(v))} />
             </span>
           {/if}
-          <EntryLink name={definition.identity.class ?? ''}
-                     source={definition.identity.lookupUrl ? 'override' : undefined}
+          <EntryLink name={classes[0]?.name ?? definition.identity.class ?? ''}
+                     source={classes[0]?.source}
                      category="classes" override={definition.identity.lookupUrl} />
         </p>
       </div>
@@ -467,6 +471,7 @@
                 blank={() => ({ name: '' }) as Attack}
                 onchange={(attacks) => setDefinition({ ...definition, attacks: attacks as Attack[] })}
               />
+              {#if isOwner}<DiceRoller />{/if}
               <CombatActions />
             {:else if tab === 'Spells'}
               <div class="casting">
@@ -542,7 +547,9 @@
                 {#snippet info()}
                   Weight is per item, so an amount of two counts twice in the total. Leave it blank
                   for anything whose weight does not matter. Value is written as you like — a price,
-                  a range, &ldquo;priceless&rdquo; — and is never added up.
+                  a range, &ldquo;priceless&rdquo; — and is never added up. Source is the book code
+                  (<code>xphb</code>, <code>dmg</code>) for the 5e.tools link; <code>homebrew</code>
+                  marks an item as yours.
                 {/snippet}
               </EntryTable>
             {:else if tab === 'Features'}
@@ -593,7 +600,7 @@
                 {#snippet info()}
                   A multiclass character has a row per class. Character level is the sum, and a
                   tracker that uses <code>classlevel</code> follows the class you name on it
-                  rather than the total.
+                  rather than the total. Source is the book code for the 5e.tools link.
                 {/snippet}
               </EntryTable>
               <h3 class="sub-h details-h">Details</h3>

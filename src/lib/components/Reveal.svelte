@@ -122,6 +122,9 @@
     font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
     color: var(--dim); font-weight: 600;
     border: 1px dashed var(--line); border-radius: 999px; padding: 0.375rem 0.875rem;
+    /* Capitals have no descenders, so the line box leaves them sitting low;
+       lifted to sit visually in the middle. */
+    line-height: 1; transform: translateY(-3px);
   }
   @media (hover: none) { .cue::before { content: attr(data-tap); } }
 </style>

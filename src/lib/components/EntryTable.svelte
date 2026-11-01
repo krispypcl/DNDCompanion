@@ -268,18 +268,6 @@
     return 0;
   }
 
-  /** The grip also answers the arrow keys, one place at a time. */
-  async function nudge(event: KeyboardEvent, row: Row) {
-    const by = event.key === 'ArrowUp' ? -1 : event.key === 'ArrowDown' ? 1 : 0;
-    if (!by) return;
-    event.preventDefault();
-    const rows = groupRows(row.group);
-    const from = rows.findIndex((r) => r.key === row.key);
-    reorder(row.group, from, from + by);
-    await tick();
-    grips[row.key]?.focus();
-  }
-
   const canMove = (row: Row) => groupRows(row.group).length > 1;
 
   // ── Rows arriving and leaving ─────────────────────────────────────────────
@@ -353,13 +341,12 @@
                   bind:this={grips[row.key]}
                   class="grip"
                   disabled={!canMove(row)}
-                  aria-label="Reorder {nameOf(item) || `row ${index + 1}`}. Drag, or use the arrow keys."
+                  aria-label="Drag to reorder {nameOf(item) || `row ${index + 1}`}"
                   title="Drag to reorder"
                   onpointerdown={(e) => grab(e, row)}
                   onpointermove={move}
                   onpointerup={drop}
                   onpointercancel={cancel}
-                  onkeydown={(e) => nudge(e, row)}
                 >
                   <svg viewBox="0 0 12 18" width="10" height="15" aria-hidden="true">
                     {#each [3, 9, 15] as y (y)}
