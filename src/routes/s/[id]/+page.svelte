@@ -425,15 +425,6 @@
           <EditableField value={definition.identity.background} {editable} label="Background"
                          placeholder="Background"
                          onchange={(v) => patchIdentity('background', v)} />
-          {#if editable && classes.length > 1}
-            <span class="lvltotal">level {totalLevel}</span>
-          {:else if editable}
-            <span class="lvledit">level
-              <EditableField value={definition.identity.level} editable={true} type="number"
-                             label="Level" placeholder="5"
-                             onchange={(v) => patchIdentity('level', Number(v))} />
-            </span>
-          {/if}
           <EntryLink name={classes[0]?.name ?? definition.identity.class ?? ''}
                      source={classes[0]?.source}
                      category="classes" override={definition.identity.lookupUrl} />
@@ -904,14 +895,6 @@
     margin: 0.3125rem 0 0; color: var(--dim); font-size: 0.875rem;
     display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline;
   }
-  .lvledit { display: inline-flex; gap: 0.3rem; align-items: baseline; }
-  /* Must out-specify `.sub :global(input.field)` below, whose min-width was
-     holding this open at 5.5rem however narrow the width was set. */
-  .sub .lvledit :global(input.field) {
-    text-align: left; field-sizing: fixed;
-    width: 2.5rem; min-width: 0;
-  }
-  .lvltotal { color: var(--dim); }
   .classline { color: var(--text); }
   .sub-h {
     font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
