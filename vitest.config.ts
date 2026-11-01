@@ -11,7 +11,8 @@ export default defineConfig({
   resolve: {
     conditions: ['browser'],
     alias: {
-      $lib: fileURLToPath(new URL('./src/lib', import.meta.url))
+      $lib: fileURLToPath(new URL('./src/lib', import.meta.url)),
+      '$app/paths': fileURLToPath(new URL('./tests/stubs/app-paths.ts', import.meta.url))
     }
   },
   test: {

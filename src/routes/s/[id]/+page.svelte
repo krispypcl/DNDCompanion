@@ -5,18 +5,23 @@
   import ModeToggle from '$lib/components/ModeToggle.svelte';
   import Banner from '$lib/components/Banner.svelte';
   import CombatActions from '$lib/components/CombatActions.svelte';
+  import Conditions from '$lib/components/Conditions.svelte';
   import Currency from '$lib/components/Currency.svelte';
   import DetailsBlock from '$lib/components/DetailsBlock.svelte';
   import EditableField from '$lib/components/EditableField.svelte';
   import EntryLink from '$lib/components/EntryLink.svelte';
   import HitPoints from '$lib/components/HitPoints.svelte';
+  import HurtEdges from '$lib/components/HurtEdges.svelte';
   import RestButtons from '$lib/components/RestButtons.svelte';
   import SaveIndicator from '$lib/components/SaveIndicator.svelte';
   import SaveAlert from '$lib/components/SaveAlert.svelte';
   import SkillRail from '$lib/components/SkillRail.svelte';
   import EntryTable from '$lib/components/EntryTable.svelte';
+  import Flash from '$lib/components/Flash.svelte';
+  import ShareButton from '$lib/components/ShareButton.svelte';
   import Tabs from '$lib/components/Tabs.svelte';
   import TrackerGroup from '$lib/components/TrackerGroup.svelte';
+  import TextPanel from '$lib/components/TextPanel.svelte';
   import ThemePicker from '$lib/components/ThemePicker.svelte';
   import UndoToast from '$lib/components/UndoToast.svelte';
   import { sheetRepo } from '$lib/data/sheets';
@@ -29,11 +34,16 @@
     passiveScore,
     weightCarried
   } from '$lib/rules/derived';
+  import { downloadText } from '$lib/download';
+  import { exportFileName, exportSheet } from '$lib/exchange';
+  import { resolveImageUrl } from '$lib/rules/imageUrl';
+  import { spellGroupTitle, spellRank } from '$lib/rules/spells';
   import { themeStyle } from '$lib/theme';
   import { session } from '$lib/stores/session';
   import { sheetStore } from '$lib/stores/sheet';
   import { canUndo, lastLabel, resetUndo, snapshot, undo } from '$lib/stores/undo';
   import { ABILITIES } from '$lib/types';
+  import type { TextKey } from '$lib/types';
   import type {
     Ability,
     Attack,
@@ -59,6 +69,15 @@
   let editing = $state(false);
   let refilling = $state(false);
   let toast = $state<string | null>(null);
+  /** A passing word at the foot of the screen, e.g. that the link was copied. */
+  let flash = $state<string | null>(null);
+  let flashTimer: ReturnType<typeof setTimeout> | undefined;
+
+  function say(message: string) {
+    flash = message;
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => (flash = null), 1800);
+  }
 
   const sheet = $derived($sheetStore.sheet as Sheet | null);
   const definition = $derived(sheet?.definition as Definition | undefined);
@@ -70,7 +89,8 @@
   const carried = $derived(definition ? weightCarried(definition) : 0);
   const classes = $derived(definition ? classList(definition) : []);
   /** Optional: with no banner the sheet renders exactly as it did before. */
-  const banner = $derived(definition?.identity?.bannerUrl?.trim() ?? '');
+  const banner = $derived(resolveImageUrl(definition?.identity?.bannerUrl).url);
+  const portraitSrc = $derived(resolveImageUrl(definition?.identity?.portraitUrl).url);
   const totalLevel = $derived(definition ? characterLevel(definition) : 1);
 
   const CLASS_COLUMNS = [
@@ -110,7 +130,7 @@
     { key: 'bonus', label: 'Hit', width: '9%', numeric: true, placeholder: '+5' },
     { key: 'damage', label: 'Damage', width: '14%', numeric: true, placeholder: '1d8 + 3' },
     { key: 'damageType', label: 'Type', width: '12%', placeholder: 'slashing' },
-    { key: 'notes', label: 'Notes', width: '41%', muted: true, placeholder: 'Versatile (1d10)' }
+    { key: 'notes', label: 'Notes', width: '41%', muted: true, wide: true, placeholder: 'Versatile (1d10)' }
   ];
   /** Blank first: a new row has no level yet, and defaulting it to Cantrip
       would put a level on a spell nobody has written one for. */
@@ -123,12 +143,13 @@
     { key: 'components', label: 'Components', short: 'Comp', width: '10%', placeholder: 'V, S, M' },
     { key: 'duration', label: 'Duration', width: '11%', placeholder: '1 round' },
     { key: 'save', label: 'Save', width: '9%', placeholder: 'DEX 13' },
-    { key: 'notes', label: 'Notes', width: '22%', muted: true, placeholder: '+5 AC' }
+    { key: 'notes', label: 'Notes', width: '22%', muted: true, wide: true, placeholder: '+5 AC' }
   ];
   const ITEM_COLUMNS = [
-    { key: 'name', label: 'Item', width: '60%', placeholder: 'Longsword' },
-    { key: 'qty', label: 'Amount', width: '20%', type: 'number' as const, numeric: true, placeholder: '1' },
-    { key: 'weight', label: 'Weight', width: '20%', type: 'number' as const, numeric: true, placeholder: '3' }
+    { key: 'name', label: 'Item', width: '46%', placeholder: 'Longsword' },
+    { key: 'qty', label: 'Amount', width: '14%', type: 'number' as const, numeric: true, placeholder: '1' },
+    { key: 'weight', label: 'Weight', width: '14%', type: 'number' as const, numeric: true, placeholder: '3' },
+    { key: 'value', label: 'Value', width: '26%', numeric: true, placeholder: '15 gp' }
   ];
   const TRACKER_COLUMNS = [
     { key: 'label', label: 'Label', width: '16%', placeholder: 'Second Wind' },
@@ -142,7 +163,7 @@
   ];
   const FEATURE_COLUMNS = [
     { key: 'title', label: 'Title', width: '26%', placeholder: 'Second Wind' },
-    { key: 'body', label: 'Description', width: '58%', placeholder: 'Regain 1d10 + level hit points' },
+    { key: 'body', label: 'Description', width: '58%', wide: true, placeholder: 'Regain 1d10 + level hit points' },
     { key: 'source', label: 'Source', width: '16%', muted: true, placeholder: 'phb' }
   ];
   const initiative = $derived(
@@ -190,6 +211,16 @@
     const entry = undo();
     if (entry) setState(entry.state);
     toast = null;
+  }
+
+  /** A copy of the character as it is on screen right now, as a text file. */
+  function exportNow() {
+    if (!definition || !sheetState) return;
+    downloadText(
+      exportFileName(definition),
+      exportSheet({ definition, state: sheetState, texts: sheet?.texts ?? null })
+    );
+    say('Exported');
   }
 
   function patchIdentity(key: string, value: string | number) {
@@ -279,6 +310,22 @@
   }
 </script>
 
+{#snippet writing(key: TextKey, label: string)}
+  {#if definition}
+    <TextPanel
+      {label}
+      value={sheet?.texts ? sheet.texts[key].body : (definition[key] ?? '')}
+      {editable}
+      owner={isOwner}
+      isPublic={sheet?.texts ? sheet.texts[key].isPublic : null}
+      hover={Boolean(definition.hoverReveal?.[key])}
+      onbody={(body) => sheetStore.setText(key, { body })}
+      onpublic={(isPublic) => sheetStore.setText(key, { isPublic })}
+      onhover={(on) => setDefinition({ ...definition, hoverReveal: { ...definition.hoverReveal, [key]: on } })}
+    />
+  {/if}
+{/snippet}
+
 <svelte:head>
   <!-- The definition is the character's name as typed; the row's name is a
        projection of it, so prefer the definition and fall back. -->
@@ -301,9 +348,11 @@
   <div class="sheet themed" class:bannered={banner} style={themeStyle(definition.identity.theme)}>
     {#if banner}<Banner url={banner} />{/if}
     <header class="identity">
-      <div class="portrait" class:has={Boolean(definition.identity.portraitUrl?.trim())}>
-        {#if definition.identity.portraitUrl?.trim()}
-          <img src={definition.identity.portraitUrl.trim()} alt="" />
+      <div class="portrait" class:has={Boolean(portraitSrc)}>
+        {#if portraitSrc}
+          <!-- A link that stops working (a Drive file that was unshared) leaves
+               the frame as it is for a sheet with no art, not a broken-image icon. -->
+          <img src={portraitSrc} alt="" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />
         {/if}
         <span class="lvl">LV {totalLevel}</span>
       </div>
@@ -344,20 +393,25 @@
       <!-- One group, so they wrap together: loose in the header the status
            dot was left stranded at the end of the name's line on a phone. -->
       <div class="controls">
-        <!-- Always here, so the row is laid out once: muted and inert until
-             there is something to undo, and lit when there is. -->
-        <button
-          class="undo"
-          disabled={!$canUndo}
-          title={$canUndo ? `Undo ${$lastLabel}` : 'Nothing to undo'}
-          onclick={doUndo}>Undo</button
-        >
+        <!-- Only the owner has anything to undo, so a visitor is not shown a
+             control that can never do anything. For the owner it is always
+             here, so the row is laid out once: muted and inert until there
+             is something to undo, and lit when there is. -->
+        {#if isOwner}
+          <button
+            class="undo"
+            disabled={!$canUndo}
+            title={$canUndo ? `Undo ${$lastLabel}` : 'Nothing to undo'}
+            onclick={doUndo}>Undo</button
+          >
+        {/if}
         {#if isOwner}
           <button class="edit" aria-pressed={editing} onclick={() => (editing = !editing)}>
             {editing ? 'Done' : 'Edit'}
           </button>
         {/if}
         <a class="back" href="{base}/">Back</a>
+        <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Could not copy the link')} />
         <ModeToggle />
       </div>
     </header>
@@ -442,6 +496,7 @@
                 items={definition.spells ?? []}
                 columns={SPELL_COLUMNS}
                 check={{ key: 'prepared', label: 'Prepared', short: 'Prep' }}
+                groupBy={{ key: 'level', rank: (spell) => spellRank(spell.level), title: spellGroupTitle }}
                 {editable}
                 category="spells"
                 emptyText="No spells or abilities recorded."
@@ -470,7 +525,8 @@
               {#if editable}
                 <p class="hint">
                   Weight is per item, so an amount of two counts twice in the total. Leave it blank
-                  for anything whose weight does not matter.
+                  for anything whose weight does not matter. Value is written as you like — a price,
+                  a range, &ldquo;priceless&rdquo; — and is never added up.
                 </p>
               {/if}
             {:else if tab === 'Features'}
@@ -536,19 +592,21 @@
                                onchange={(name) => patchIdentity('theme', name)} />
                 </div>
               {/if}
+              {#if isOwner}
+                <!-- Not behind edit mode: taking a copy changes nothing. -->
+                <div class="themerow backup">
+                  <span class="cap">Backup</span>
+                  <button class="export" onclick={exportNow}>Export sheet</button>
+                  <span class="hint">
+                    A text file with the whole character, notes and backstory included. Import it
+                    from the sheet list to get it back.
+                  </span>
+                </div>
+              {/if}
             {:else if tab === 'Notes'}
-              <div class="notes">
-                <EditableField value={definition.notes} {editable} type="textarea" label="Notes"
-                               placeholder="Nothing written yet."
-                               onchange={(v) => setDefinition({ ...definition, notes: String(v) })} />
-              </div>
+              {@render writing('notes', 'Notes')}
             {:else}
-              <div class="notes">
-                <EditableField value={definition.backstory ?? ''} {editable} type="textarea"
-                               label="Backstory"
-                               placeholder="Nothing written yet."
-                               onchange={(v) => setDefinition({ ...definition, backstory: String(v) })} />
-              </div>
+              {@render writing('backstory', 'Backstory')}
             {/if}
           {/snippet}
         </Tabs>
@@ -623,6 +681,8 @@
           </div>
         </div>
 
+        <Conditions state={sheetState} editable={isOwner} onchange={setState} />
+
         {#if (definition.trackers ?? []).length > 0}
           <div class="trk">
             <h2 class="cap">Trackers</h2>
@@ -646,7 +706,7 @@
           </div>
         </div>
 
-        <div class="profs">
+        <div class="profs" style:--rows={4}>
           <h2 class="cap">Proficiencies</h2>
           <EditableField
             value={definition.traits?.proficiencies ?? ''}
@@ -664,7 +724,7 @@
           />
         </div>
 
-        <div class="profs">
+        <div class="profs" style:--rows={2}>
           <h2 class="cap">Languages</h2>
           <EditableField
             value={definition.traits?.languages ?? ''}
@@ -682,7 +742,7 @@
           />
         </div>
 
-        <div class="profs">
+        <div class="profs" style:--rows={3}>
           <h2 class="cap">Senses</h2>
           <EditableField
             value={definition.senses ?? ''}
@@ -699,6 +759,8 @@
     </div>
   </div>
 
+  <Flash message={flash} />
+  <HurtEdges current={sheetState.hpCurrent} max={definition.combat?.hpMax ?? 0} />
   <UndoToast label={toast} onundo={doUndo} onexpire={() => (toast = null)} />
   <SaveAlert />
   <!-- Floating, so saying a word costs the header nothing. -->
@@ -885,6 +947,12 @@
   .money .cap { margin-bottom: 0.5rem; }
   .profs { padding-top: 1.25rem; }
   .profs .cap { margin-bottom: 0.5rem; }
+  /* Read-only, an empty block is one line; editing, it is the box's rows. Give
+     the readout the same floor, so opening the editor does not push the rest
+     of the rail down. */
+  .profs :global(.readout) {
+    min-height: calc(var(--rows) * 1.5em + var(--fld-pad-y, 0.15rem) * 2 + 2px);
+  }
   .profs :global(.field) {
     width: 100%; field-sizing: fixed; display: block;
     white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.8125rem;
@@ -899,6 +967,15 @@
   .hint { color: var(--faint); font-size: 0.78rem; margin: 0.5rem 0 0; line-height: 1.5; }
   .hint code { background: var(--raised); border-radius: 3px; padding: 0.05rem 0.25rem; font-size: 0.95em; }
   .themerow { display: flex; align-items: center; gap: 1rem; margin: 1.25rem 0; flex-wrap: wrap; }
+  .backup .hint { margin: 0; flex: 1 1 14rem; }
+  .export {
+    background: var(--raised); border: 1px solid var(--line); color: var(--text);
+    border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font: inherit; font-size: 0.8125rem;
+    cursor: pointer; flex: none;
+    transition: border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+  }
+  .export:hover { border-color: var(--a-edge); color: var(--a); }
+  .export:active { transform: translateY(1px); }
   .casting {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
     gap: 1rem; margin-bottom: 1.25rem; text-align: center;
@@ -917,17 +994,6 @@
     border-radius: var(--r-sm); padding: 0.15rem 0.3rem; font: inherit;
     font-size: 1.0625rem; font-weight: 600;
   }
-  /* Every other tab starts its content at the panel's edge; the notes field
-     insets its text by its own padding and border, so pull the box back by
-     exactly that and widen it to match. The text then lines up with the table
-     in Combat, in both states. */
-  .notes { margin: calc(-0.15rem - 1px) calc(-0.3rem - 1px) 0; }
-  .notes :global(.field) {
-    field-sizing: fixed;
-    width: 100%;
-    white-space: pre-wrap; overflow-wrap: anywhere;
-  }
-
   @media (max-width: 860px) {
     .sheet { padding: 0.875rem; }
     .band, .main { grid-template-columns: 1fr; }

@@ -6,11 +6,38 @@
    * the image inside drifts at three quarters of the page's speed.
    */
   import { onMount } from 'svelte';
+  import { DESKTOP_BLUR, DESKTOP_CURVE, PHONE_BLUR, PHONE_CURVE, maskUrl } from '$lib/bannerMask';
   import { prefersReducedMotion } from '$lib/motion';
 
   let { url }: { url: string } = $props();
 
   let drift = $state(0);
+  /** A link that no longer works leaves no banner rather than a tinted blank. */
+  let failed = $state(false);
+  $effect(() => {
+    url;
+    failed = false;
+  });
+
+  /* The layer's own size and whether it is the phone's, which together decide
+     the shape and softness of the edge. */
+  let width = $state(0);
+  let height = $state(0);
+  let phone = $state(false);
+  const mask = $derived(
+    width > 0 && height > 0
+      ? maskUrl(width, height, phone ? PHONE_CURVE : DESKTOP_CURVE, phone ? PHONE_BLUR : DESKTOP_BLUR)
+      : ''
+  );
+
+  onMount(() => {
+    if (typeof matchMedia !== 'function') return;
+    const query = matchMedia('(max-width: 700px)');
+    phone = query.matches;
+    const follow = () => (phone = query.matches);
+    query.addEventListener('change', follow);
+    return () => query.removeEventListener('change', follow);
+  });
 
   onMount(() => {
     if (prefersReducedMotion()) return;
@@ -50,16 +77,27 @@
   </defs>
 </svg>
 
-<div class="slash" aria-hidden="true">
+<!-- Until the layer has been measured it keeps the hard clip below; once the
+     soft mask exists it takes over, so there is never an unshaped banner. -->
+<div
+  class="slash"
+  class:feathered={mask !== ''}
+  class:failed
+  style:--mask={mask || undefined}
+  bind:clientWidth={width}
+  bind:clientHeight={height}
+  aria-hidden="true"
+>
   <!-- object-fit: cover crops to the layer. The image is never stretched: a
        banner of the wrong proportions loses its edges, not its shape. -->
-  <img src={url} alt="" style:--drift="{drift}px" />
+  <img src={url} alt="" style:--drift="{drift}px" onerror={() => (failed = true)} />
   <!-- Earns its keep twice: it holds the contrast the text needs, and its
        gradients keep the curve from ending on a hard line. -->
   <div class="tint"></div>
 </div>
 
 <style>
+  .slash.failed { display: none; }
   .defs { position: absolute; width: 0; height: 0; overflow: hidden; }
   /**
    * No positioned ancestor, so this resolves against the initial containing
@@ -78,6 +116,19 @@
     pointer-events: none;
     overflow: hidden;
     clip-path: url(#banner-curve);
+  }
+  /* Where the mask can be used it replaces the clip: a clip would cut the
+     feathering off at the very line it is meant to soften. */
+  @supports (mask-image: none) or (-webkit-mask-image: none) {
+    .slash.feathered {
+      clip-path: none;
+      -webkit-mask-image: var(--mask);
+      mask-image: var(--mask);
+      -webkit-mask-size: 100% 100%;
+      mask-size: 100% 100%;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+    }
   }
   img {
     position: absolute;
@@ -135,6 +186,9 @@
    */
   @media (max-width: 700px) {
     .slash { height: 26rem; clip-path: url(#banner-curve-phone); }
+    @supports (mask-image: none) or (-webkit-mask-image: none) {
+      .slash.feathered { clip-path: none; }
+    }
     /* One column, so the header text runs the full width and the sideways
        relief has nowhere to put it. The tint stays even across instead. */
     .tint {
