@@ -34,6 +34,11 @@
     muted?: boolean;
     /** Long prose (notes, a description): takes a full line of its card. */
     wide?: boolean;
+    /** When reading, the value is a button if this says it can be pressed
+        (an attack's hit or damage, which rolls it). */
+    canPress?: (value: unknown) => boolean;
+    /** What pressing it does, for the button's accessible name. */
+    pressVerb?: string;
   };
 
   /** Keep rows in groups, in a fixed order of groups. Within a group the
@@ -57,7 +62,9 @@
     emptyText,
     addLabel,
     groupBy,
-    info
+    info,
+    links = true,
+    onpress
   }: {
     items: T[];
     columns: Column[];
@@ -73,6 +80,10 @@
     groupBy?: Grouping<T>;
     /** Help for whoever is editing, behind an (i) beside the add button. */
     info?: import('svelte').Snippet;
+    /** 5e.tools links on the names. */
+    links?: boolean;
+    /** A pressable cell was pressed. */
+    onpress?: (key: string, item: T) => void;
   } = $props();
 
 
@@ -380,12 +391,12 @@
                 />
               {:else}
                 <span class="nm">{text(item[nameCol.key])}</span>
-                <EntryLink
+                {#if links}<EntryLink
                   name={nameOf(item)}
                   source={item.source as string | undefined}
                   {category}
                   override={item.lookupUrl as string | undefined}
-                />
+                />{/if}
               {/if}
             </td>
 
@@ -409,6 +420,10 @@
                     aria-label="{nameOf(item) || `Row ${index + 1}`} {col.label}"
                     onchange={(e) => patch(index, col.key, e.currentTarget.value, col.type)}
                   />
+                {:else if onpress && col.canPress?.(item[col.key])}
+                  <button class="press" onclick={() => onpress(col.key, item)}
+                          aria-label="{col.pressVerb ?? 'Use'} {nameOf(item)} {col.label.toLowerCase()} {text(item[col.key])}"
+                          title="{col.pressVerb ?? 'Use'} {text(item[col.key])}">{text(item[col.key])}</button>
                 {:else}{text(item[col.key])}{/if}
               </td>
             {/each}
@@ -473,6 +488,16 @@
   }
   tr.group:first-child th { padding-top: 0.25rem; }
   .name { font-weight: 600; }
+  /* A value that rolls: it reads as the number, with a hint of a button. */
+  .press {
+    font: inherit; color: inherit; background: none; cursor: pointer;
+    border: 1px dashed transparent; border-radius: var(--r-sm);
+    padding: 0 0.3rem; margin: 0 -0.3rem; text-align: inherit;
+    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+  }
+  .press:hover { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
+  .press:active { transform: translateY(1px); }
+  @media (hover: none) { .press { border-color: var(--line); } }
   .nm { overflow-wrap: anywhere; }
   .muted { color: var(--dim); font-size: 0.85rem; }
   .numeric { font-variant-numeric: tabular-nums; }

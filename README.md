@@ -112,9 +112,11 @@ entry, and `auth.users` is not readable by other users.
   best match. The name is stripped of bonuses and notes first (`Revolver (+1)`
   → `Revolver`). A blank source still links, by name; `homebrew` never does.
   Spells, equipment, features, classes and trackers all link.
-- **Dice roller** (owner only, Combat tab): a pool of d4–d100, a modifier, and
-  advantage or disadvantage applied to the d20s. Rolls use `crypto` with
-  rejection sampling; nothing is saved.
+- **Dice Roller** (owner only, Combat tab, folds open like General actions):
+  a pool of d4–d100, a modifier, and advantage or disadvantage applied to the
+  d20s. Tapping an attack's Hit or Damage rolls it there. Rolls use `crypto`
+  with rejection sampling; nothing is saved. The Combat table has no 5e.tools
+  links.
 
 - **Private notes and backstory.** One switch per writing. Enforced by
   row-level security in the `sheet_text` table, so visitors receive nothing,
@@ -125,12 +127,15 @@ entry, and `auth.users` is not readable by other users.
 - **Death saves** are covered for everyone, the owner included, until hovered,
   reached by keyboard or tapped; the first tap only uncovers them, and they
   cover again when the pointer leaves or a tap lands elsewhere.
-- **Private switch** appears greyed out with a note until
-  `0002_private_text.sql` has been run.
+- **Private switch** is in edit mode only, beside Add page. Which writings are
+  private is also noted on the public sheet row (`definition.privateText`), so a
+  visitor sees "Private" instead of an empty page; the owner's visit keeps it
+  in step with `sheet_text`.
+- **Saving throws** show a hollow or filled dot for proficiency.
+- **Character tab, reading:** portrait on the left, banner on the right; both
+  open full screen.
 - **Dates.** Visitors see Created and Last updated in the header; owners see
   them on the sheet list.
-- **Pictures** open full screen from the portrait (reading) or the link
-  previews (editing).
 - **Visitors** see a status chip (Healthy, Bloodied, Critical, Down, Stable,
   Dead) where the owner has the damage and rest buttons.
 - **Images.** Portrait and banner accept direct links and resolve share links

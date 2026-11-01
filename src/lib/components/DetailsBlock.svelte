@@ -45,6 +45,9 @@
   const portraitLink = $derived(resolveImageUrl(definition.identity.portraitUrl));
   const bannerLink = $derived(resolveImageUrl(definition.identity.bannerUrl));
   const portrait = $derived(portraitLink.url);
+  const bannerSrc = $derived(bannerLink.url);
+  /** A picture that failed to load falls back to the empty frame. */
+  let broken = $state<Record<string, boolean>>({});
   /** Whether each resolved address actually loaded, so a link that cannot be
       shown says so while it is being pasted rather than leaving a blank. */
   let loads = $state<Record<string, 'loading' | 'ok' | 'failed'>>({});
@@ -101,6 +104,25 @@
     {/each}
 
   </dl>
+
+  <!-- The banner, opposite the portrait, the same way: press for full screen. -->
+  {#if !editable}
+    {#if bannerSrc && !broken[bannerSrc]}
+      <button class="banner-btn" aria-label="View banner full screen"
+              onclick={() => (viewing = { src: bannerSrc, alt: `Banner of ${definition.identity.name}` })}>
+        <img class="banner" src={bannerSrc} alt="Banner of {definition.identity.name}"
+             onerror={() => (broken[bannerSrc] = true)} />
+      </button>
+    {:else}
+      <div class="banner empty-portrait" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="26" height="26">
+          <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5" />
+          <path d="m3 16 5-5 4 4 3-3 6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+          <circle cx="16" cy="9" r="1.5" fill="none" stroke="currentColor" stroke-width="1.5" />
+        </svg>
+      </div>
+    {/if}
+  {/if}
 
   {#if editable}
     <!-- Both accept the link as it was copied: a Drive, Dropbox, OneDrive or
@@ -224,6 +246,21 @@
   .wide :global(.field) { width: 100%; field-sizing: fixed; }
   .urlrow { display: flex; align-items: center; gap: 0.625rem; }
   .urlfield { flex: 1 1 auto; min-width: 0; }
+  .banner {
+    align-self: center; width: 9.5rem; height: 5.5rem; flex: none;
+    object-fit: cover; border-radius: var(--r); border: 1px solid var(--line); display: block;
+  }
+  .banner-btn {
+    align-self: center; flex: none; padding: 0; border: 0; background: none;
+    border-radius: var(--r); cursor: zoom-in; transition: transform 0.15s ease, opacity 0.15s ease;
+  }
+  .banner-btn:hover { opacity: 0.9; transform: scale(1.02); }
+  @media (max-width: 560px) {
+    /* Under the details on a phone, the full width of the card. */
+    .banner, .banner-btn { width: 100%; }
+    .banner-btn .banner { height: 7rem; }
+    div.banner { height: 5.5rem; }
+  }
   .portrait-btn {
     align-self: center; flex: none; padding: 0; border: 0; background: none;
     border-radius: var(--r); cursor: zoom-in;

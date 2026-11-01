@@ -1,8 +1,9 @@
 <script lang="ts">
   /**
-   * One long-form writing (notes, backstory), kept in pages like a book. The
-   * owner has one switch for it: private or not. Pages are added and removed
-   * in edit mode, and turned by anyone.
+   * One long-form writing (notes, backstory), kept in pages like a book. In
+   * edit mode the owner has one switch for it, private or not, beside the
+   * page controls. Pages are added and removed in edit mode, and turned by
+   * anyone who can read them.
    */
   import EditableField from './EditableField.svelte';
   import Switch from './Switch.svelte';
@@ -16,6 +17,7 @@
     editable,
     owner,
     isPublic,
+    locked = false,
     onbody,
     onpublic
   }: {
@@ -27,6 +29,8 @@
     owner: boolean;
     /** Null when the database cannot keep private text; there is no switch then. */
     isPublic: boolean | null;
+    /** Private, and this reader is not the owner: say so instead of showing it. */
+    locked?: boolean;
     onbody: (next: string) => void;
     onpublic: (next: boolean) => void;
   } = $props();
@@ -78,27 +82,18 @@
   const showNav = $derived(many || editable);
 </script>
 
-{#if owner && isPublic === null}
-  <!-- The switch is there, but cannot work until the database has the table
-       that keeps private writing; say so rather than hide it. -->
-  <div class="options">
-    <Switch checked={false} label="Private" disabled onchange={() => {}}
-            title="Private writing needs a one-time database update" />
-    <span class="why">Needs a one-time database update to work.</span>
+{#if locked}
+  <!-- A visitor cannot read private writing (the database does not send it),
+       but should know there is something there, not think it blank. -->
+  <div class="locked" role="note">
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+      <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" />
+      </g>
+    </svg>
+    <p><b>Private</b><span>The player keeps their {label.toLowerCase()} to themselves.</span></p>
   </div>
-{:else if owner}
-  <div class="options">
-    <Switch
-      checked={!isPublic}
-      label="Private"
-      title={isPublic
-        ? 'Anyone with the link can read this. Turn on to keep it to yourself.'
-        : 'Only you can read this. Everyone else sees it as empty.'}
-      onchange={(on) => onpublic(!on)}
-    />
-  </div>
-{/if}
-
+{:else}
 <div class="book">
   {#key current}
     <div class="page" in:turn>
@@ -127,6 +122,16 @@
     </div>
     {#if editable}
       <div class="edits">
+        {#if owner && isPublic !== null}
+          <Switch
+            checked={!isPublic}
+            label="Private"
+            title={isPublic
+              ? 'Anyone with the link can read this. Turn on to keep it to yourself.'
+              : 'Only you can read this. Everyone else is told it is private.'}
+            onchange={(on) => onpublic(!on)}
+          />
+        {/if}
         <button class="pg" onclick={add}>Add page</button>
         {#if many || pages[current].trim() !== ''}
           <button class="pg remove" class:confirming onclick={remove}>
@@ -137,10 +142,17 @@
     {/if}
   </div>
 {/if}
+{/if}
 
 <style>
-  .options { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin: 0 0 0.75rem; }
-  .why { font-size: 0.78rem; color: var(--dim); }
+  .locked {
+    flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 0.5rem; min-height: 10rem; text-align: center; color: var(--dim);
+    border: 1px dashed var(--line); border-radius: var(--r); padding: 1.5rem 1rem;
+  }
+  .locked p { margin: 0; display: grid; gap: 0.125rem; }
+  .locked b { color: var(--text); font-weight: 600; }
+  .locked span { font-size: 0.8125rem; }
 
   /* Every other tab starts its content at the panel's edge; the notes field
      insets its text by its own padding and border, so pull the box back by
@@ -177,7 +189,8 @@
   .nav:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
   .nav:active:not(:disabled) { transform: translateY(1px); }
   .nav:disabled { opacity: 0.35; cursor: default; }
-  .edits { display: inline-flex; gap: 0.5rem; }
+  .edits { display: inline-flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .edits :global(.switch) { margin-right: 0.5rem; }
   .pg {
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.3125rem 0.75rem; font: inherit; font-size: 0.78rem;

@@ -21,7 +21,7 @@ export type DieResult = {
   dropped?: number;
 };
 
-export type Roll = { pool: Pool; dice: DieResult[]; total: number; formula: string; at: number };
+export type Roll = { pool: Pool; dice: DieResult[]; total: number; formula: string; at: number; label?: string };
 
 export type Rng = (sides: number) => number;
 
@@ -84,4 +84,44 @@ export function roll(pool: Pool, rng: Rng = fairRng, now = Date.now()): Roll {
   }
   const total = dice.reduce((t, d) => t + d.value, 0) + pool.modifier;
   return { pool, dice, total, formula: formula(pool), at: now };
+}
+
+/**
+ * A roll written the way a sheet writes it. An attack bonus ("+7", "-1", "5")
+ * is a d20 plus that; damage ("2d6 + 1d4 + 3", "1d8+3 piercing") is its dice
+ * and modifier, with any words ignored. Returns null for anything that is not
+ * a roll this tray can make (a d3, or no dice and no number).
+ */
+export function parseRoll(text: unknown, kind: 'hit' | 'damage'): Pool | null {
+  const raw = String(text ?? '').trim();
+  if (!raw) return null;
+  if (kind === 'hit') {
+    const m = raw.replace(/\s+/g, '').match(/^([+-−]?)(\d{1,3})$/);
+    if (!m) return null;
+    const n = Number(m[2]) * (m[1] === '-' || m[1] === '−' ? -1 : 1);
+    return { dice: { 20: 1 }, modifier: n, mode: 'normal' };
+  }
+  const pool: Pool = { dice: {}, modifier: 0, mode: 'normal' };
+  const cleaned = raw.toLowerCase().replace(/−/g, '-').replace(/\([^)]*\)/g, ' ');
+  const terms = cleaned.match(/[+-]?\s*\d*\s*d\s*\d+|[+-]?\s*\d+/g);
+  if (!terms) return null;
+  let found = false;
+  for (const term of terms) {
+    const t = term.replace(/\s+/g, '');
+    const neg = t.startsWith('-');
+    const body = t.replace(/^[+-]/, '');
+    const dm = body.match(/^(\d*)d(\d+)$/);
+    if (dm) {
+      const sides = Number(dm[2]) as Sides;
+      if (!DIE_SIDES.includes(sides) || neg) return null;
+      const count = dm[1] === '' ? 1 : Number(dm[1]);
+      if (count < 1 || count > MAX_DICE) return null;
+      pool.dice[sides] = (pool.dice[sides] ?? 0) + count;
+      found = true;
+    } else {
+      pool.modifier += Number(body) * (neg ? -1 : 1);
+    }
+  }
+  if (!found || diceCount(pool) > MAX_DICE) return null;
+  return pool;
 }

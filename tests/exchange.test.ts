@@ -322,3 +322,18 @@ describe('a hostile or damaged file', () => {
     expect(r.ok && r.value.texts.notes).toEqual({ body: 'hi', isPublic: true });
   });
 });
+
+describe('private marker', () => {
+  it('notes on the definition which writings are private, from the writing itself', () => {
+    const texts = blankTexts();
+    texts.backstory = { body: 'Secret.', isPublic: false, updatedAt: null };
+    const def = { ...character(), privateText: { notes: true } };
+    const { value } = roundTrip(def, play(), texts);
+    expect(value.definition.privateText).toEqual({ backstory: true });
+  });
+
+  it('leaves no marker when nothing is private', () => {
+    const { value } = roundTrip({ ...character(), privateText: { notes: true } }, play());
+    expect(value.definition.privateText).toBeUndefined();
+  });
+});

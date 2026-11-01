@@ -171,6 +171,10 @@ export type Definition = {
       sheets saved before that, and by a database that has no table for it. */
   notes: string;
   backstory?: string;
+  /** Which writings are private. The writing itself is kept from visitors by
+      the database; this copy, on the public row, is only so a visitor can be
+      told it is private rather than shown an empty page. */
+  privateText?: Partial<Record<TextKey, boolean>>;
 };
 
 export type State = {
