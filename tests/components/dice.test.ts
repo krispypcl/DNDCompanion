@@ -10,7 +10,7 @@ describe('DiceRoller', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Add a d6' }));
     await fireEvent.click(screen.getByRole('button', { name: 'Add a d20' }));
     await fireEvent.click(screen.getByRole('button', { name: 'Raise the modifier' }));
-    await fireEvent.click(screen.getByRole('radio', { name: 'Adv.', exact: true }));
+    await fireEvent.click(screen.getByRole('radio', { name: /^Adv\.$/ }));
     expect(document.querySelector('.formula')!.textContent).toMatch('1d20 + 2d6 + 1, advantage');
     await fireEvent.click(screen.getByRole('button', { name: 'Remove a d6' }));
     expect(document.querySelector('.formula')!.textContent).toMatch('1d20 + 1d6 + 1');
