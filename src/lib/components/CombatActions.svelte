@@ -4,6 +4,8 @@
    * play when nobody can remember whether Disengage is an action. Collapsed by
    * default, since it is a reference rather than part of the sheet.
    */
+  import InfoTip from './InfoTip.svelte';
+
   const GROUPS: { label: string; note?: string; items: string[] }[] = [
     {
       label: 'Action',
@@ -24,7 +26,7 @@
     },
     {
       label: 'Bonus action',
-      note: 'Only when something grants one',
+      note: 'You only have a bonus action when a feature, spell or item grants one.',
       items: ['Off-hand attack', 'Class feature', 'A spell cast as a bonus action']
     },
     {
@@ -33,7 +35,7 @@
     },
     {
       label: 'Table variants',
-      note: 'Optional rules — check with your DM',
+      note: 'Optional rules from the Dungeon Master’s Guide. Check with your DM before using them.',
       items: ['Overrun', 'Tumble', 'Climb onto a bigger creature', 'Disarm']
     }
   ];
@@ -46,8 +48,10 @@
   <div class="inner">
     {#each GROUPS as group (group.label)}
       <section>
-        <h3>{group.label}</h3>
-        {#if group.note}<p class="note">{group.note}</p>{/if}
+        <div class="head">
+          <h3>{group.label}</h3>
+          {#if group.note}<InfoTip label="About {group.label.toLowerCase()}">{group.note}</InfoTip>{/if}
+        </div>
         <ul>
           {#each group.items as item (item)}<li>{item}</li>{/each}
         </ul>
@@ -114,7 +118,9 @@
     color: var(--dim);
     font-weight: 600;
   }
-  .note { margin: 0.125rem 0 0; font-size: 0.7rem; color: var(--faint); }
+  /* One height whether or not there is an (i): the button overhangs the line
+     rather than pushing the chips below it down. */
+  .head { display: flex; align-items: center; gap: 0.125rem; height: 1rem; }
   ul {
     list-style: none;
     margin: 0.3125rem 0 0;

@@ -1,15 +1,19 @@
-/** Spells sit in level order with headings; a row still moves by hand, within its group. */
+/** Spells sit in type order with headings; a row still moves by hand, within its group. */
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 import EntryTable from '$lib/components/EntryTable.svelte';
-import { spellGroupTitle, spellRank } from '$lib/rules/spells';
+import { spellGroup, spellRank } from '$lib/rules/spells';
 
 const columns = [
   { key: 'name', label: 'Name', width: '60%' },
-  { key: 'level', label: 'Level', width: '20%' },
+  { key: 'level', label: 'Type', width: '20%' },
   { key: 'notes', label: 'Notes', width: '20%', wide: true }
 ];
-const groupBy = { key: 'level', rank: (s: Record<string, unknown>) => spellRank(s.level), title: spellGroupTitle };
+const groupBy = {
+  key: 'level',
+  rank: (s: Record<string, unknown>) => spellRank(s.level),
+  title: (s: Record<string, unknown>) => spellGroup(s.level)
+};
 
 const spells = [
   { name: 'Fireball', level: '3' },
@@ -38,7 +42,7 @@ describe('grouped table', () => {
       '# Cantrips', 'Light',
       '# 1st level', 'Shield', 'Magic Missile',
       '# 3rd level', 'Fireball',
-      '# No level yet', 'Mystery'
+      '# No type yet', 'Mystery'
     ]);
   });
 
@@ -60,19 +64,52 @@ describe('grouped table', () => {
     expect(onchange).not.toHaveBeenCalled();
   });
 
-  it('moves a row within its group by swapping the two entries in the data', async () => {
+  it('moves a row within its group from the keyboard', async () => {
     const onchange = mount(true);
-    await fireEvent.click(screen.getByLabelText('Move Magic Missile up'));
+    await fireEvent.keyDown(screen.getByLabelText(/Reorder Magic Missile/), { key: 'ArrowUp' });
     const next = onchange.mock.calls[0][0] as typeof spells;
     expect(next.map((s) => s.name)).toEqual(['Fireball', 'Magic Missile', 'Light', 'Shield', 'Mystery']);
   });
 
-  it('will not move a row across a group', () => {
-    mount(true);
+  it('will not move a row across a group', async () => {
+    const onchange = mount(true);
     // Shield is first in 1st level; the row above it on screen is a cantrip.
-    expect((screen.getByLabelText('Move Shield up') as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByLabelText('Move Magic Missile down') as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByLabelText('Move Shield down') as HTMLButtonElement).disabled).toBe(false);
+    await fireEvent.keyDown(screen.getByLabelText(/Reorder Shield/), { key: 'ArrowUp' });
+    await fireEvent.keyDown(screen.getByLabelText(/Reorder Magic Missile/), { key: 'ArrowDown' });
+    expect(onchange).not.toHaveBeenCalled();
+    // A row alone in its group has nothing to trade places with.
+    expect((screen.getByLabelText(/Reorder Light/) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('moves a row by dragging its handle past another', async () => {
+    const onchange = mount(true, vi.fn(), [
+      { name: 'A', level: '1' },
+      { name: 'B', level: '1' },
+      { name: 'C', level: '1' }
+    ]);
+    // jsdom has no layout: give each row a 40px slot down the page.
+    const rows = [...document.querySelectorAll('tbody tr:not(.group)')] as HTMLElement[];
+    rows.forEach((row, i) => {
+      row.getBoundingClientRect = () => ({ top: i * 40, height: 40, bottom: i * 40 + 40, left: 0, right: 0, width: 0, x: 0, y: i * 40, toJSON() {} });
+    });
+    const grip = screen.getByLabelText(/Reorder A/);
+    await fireEvent.pointerDown(grip, { button: 0, pointerId: 1, clientY: 20 });
+    await fireEvent.pointerMove(grip, { pointerId: 1, clientY: 125 });
+    await fireEvent.pointerUp(grip, { pointerId: 1, clientY: 125 });
+    expect((onchange.mock.calls[0][0] as { name: string }[]).map((s) => s.name)).toEqual(['B', 'C', 'A']);
+  });
+
+  it('puts a dropped row back where it was if it did not travel', async () => {
+    const onchange = mount(true, vi.fn(), [{ name: 'A', level: '1' }, { name: 'B', level: '1' }]);
+    const grip = screen.getByLabelText(/Reorder A/);
+    await fireEvent.pointerDown(grip, { button: 0, pointerId: 1, clientY: 0 });
+    await fireEvent.pointerUp(grip, { pointerId: 1, clientY: 0 });
+    expect(onchange).not.toHaveBeenCalled();
+  });
+
+  it('groups the player’s own types after the levels', () => {
+    mount(false, vi.fn(), [{ name: 'X', level: 'Ritual' }, { name: 'Y', level: '2' }, { name: 'Z', level: 'ritual' }]);
+    expect(order()).toEqual(['# 2nd level', 'Y', '# Ritual', 'X', 'Z']);
   });
 
   it('removes the row that was meant, not the one at that screen position', async () => {
@@ -87,6 +124,6 @@ describe('grouped table', () => {
     mount(false);
     const mystery = [...document.querySelectorAll('tbody tr')].find((r) => r.textContent?.includes('Mystery'))!;
     expect(mystery.querySelector('td[data-label="Notes"]')?.hasAttribute('data-empty')).toBe(true);
-    expect(mystery.querySelector('td[data-label="Level"]')?.hasAttribute('data-empty')).toBe(true);
+    expect(mystery.querySelector('td[data-label="Type"]')?.hasAttribute('data-empty')).toBe(true);
   });
 });

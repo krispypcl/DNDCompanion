@@ -1,5 +1,5 @@
 /** The tick column and row order, which every list on the sheet now shares. */
-import { render, screen } from '@testing-library/svelte';
+import { fireEvent, render, screen } from '@testing-library/svelte';
 import { describe, expect, it, vi } from 'vitest';
 import EntryTable from '$lib/components/EntryTable.svelte';
 
@@ -60,35 +60,29 @@ describe('EntryTable', () => {
     expect(next.length).toBe(3);
   });
 
-  it('moves a row by swapping it with its neighbour', () => {
+  it('moves a row one place with the arrow keys on its handle', async () => {
     const onchange = vi.fn();
     mount(true, onchange);
     expect(rowNames()).toEqual(['Shield', 'Mage Hand', 'Fireball']);
-    (screen.getByLabelText(/Move Fireball up$/) as HTMLButtonElement).click();
+    await fireEvent.keyDown(screen.getByLabelText(/Reorder Fireball/), { key: 'ArrowUp' });
     expect(onchange.mock.calls.at(-1)![0].map((i: { name: string }) => i.name)).toEqual([
       'Shield',
       'Fireball',
       'Mage Hand'
     ]);
-
-    (screen.getByLabelText(/Move Shield down$/) as HTMLButtonElement).click();
-    expect(onchange.mock.calls.at(-1)![0].map((i: { name: string }) => i.name)).toEqual([
-      'Mage Hand',
-      'Shield',
-      'Fireball'
-    ]);
   });
 
-  it('cannot move the first row up or the last row down', () => {
-    mount(true);
-    expect((screen.getByLabelText(/Move Shield up$/) as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByLabelText(/Move Shield down$/) as HTMLButtonElement).disabled).toBe(false);
-    expect((screen.getByLabelText(/Move Fireball down$/) as HTMLButtonElement).disabled).toBe(true);
+  it('does nothing past either end', async () => {
+    const onchange = vi.fn();
+    mount(true, onchange);
+    await fireEvent.keyDown(screen.getByLabelText(/Reorder Shield/), { key: 'ArrowUp' });
+    await fireEvent.keyDown(screen.getByLabelText(/Reorder Fireball/), { key: 'ArrowDown' });
+    expect(onchange).not.toHaveBeenCalled();
   });
 
   it('gives a reader no order controls at all', () => {
     mount(false);
-    expect(screen.queryByLabelText(/Move/)).toBeNull();
+    expect(screen.queryByLabelText(/Reorder/)).toBeNull();
     expect(document.querySelectorAll('td.rm').length).toBe(0);
   });
 });
