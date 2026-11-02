@@ -932,7 +932,8 @@
       <LeaveDialog onstay={() => (leaving = null)}
                    onleave={() => { const t = leaving; leaving = null; letGo = true; if (t) goto(t); }} />
     {/if}
-    <ConditionOverlay conditions={sheetState.conditions ?? []} />
+    <ConditionOverlay conditions={sheetState.conditions ?? []} looks={definition.conditionLooks}
+                      current={sheetState.hpCurrent} max={definition.combat?.hpMax ?? 0} />
     <DownScreen state={sheetState} hpMax={definition.combat?.hpMax ?? 0} />
     <HurtEdges current={sheetState.hpCurrent} max={definition.combat?.hpMax ?? 0} />
     <UndoToast label={toast} onundo={doUndo} onexpire={() => (toast = null)} />

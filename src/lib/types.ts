@@ -110,6 +110,9 @@ export type Traits = {
   flaws?: string;
 };
 
+export type ConditionMotion = 'still' | 'pulse' | 'shimmer' | 'heavy' | 'shiver' | 'daze';
+export type ConditionLook = { color: string; motion: ConditionMotion; low?: boolean };
+
 export type Definition = {
   identity: {
     name: string;
@@ -176,6 +179,9 @@ export type Definition = {
       sheets saved before that, and by a database that has no table for it. */
   notes: string;
   backstory?: string;
+  /** How a condition that is not one of the standard ones tints the screen,
+      by its name in lower case. A blank colour means no tint. */
+  conditionLooks?: Record<string, ConditionLook>;
   /** How many magic items may be attuned at once: 3 by the rules, changed in
       edit mode for a class or table that allows more. */
   attunementSlots?: number;

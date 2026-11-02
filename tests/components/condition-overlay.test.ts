@@ -10,6 +10,15 @@ describe('ConditionOverlay', () => {
     expect(container.querySelectorAll('.tint.on')).toHaveLength(1);
   });
 
+  it('tints for a condition of the player\'s own, in their colour', () => {
+    const { container } = render(ConditionOverlay, {
+      props: { conditions: ['Bless'], looks: { bless: { color: '#ffcc00', motion: 'shimmer' } } }
+    });
+    const tint = container.querySelector('[data-condition="bless"]') as HTMLElement;
+    expect(tint.classList.contains('shimmer')).toBe(true);
+    expect(tint.style.getPropertyValue('--tint')).toBe('#ffcc00');
+  });
+
   it('has a look for Dead', () => {
     const { container } = render(ConditionOverlay, { props: { conditions: ['Dead'] } });
     expect(container.querySelector('[data-condition="dead"]')).not.toBeNull();
