@@ -69,7 +69,13 @@ export type Attack = LinkableEntry & {
   damageType?: string;
   notes?: string;
 };
-export type Feature = LinkableEntry & { title: string; body: string };
+export type Feature = LinkableEntry & {
+  title: string;
+  body: string;
+  /** Where it comes from: Class, Subclass, Species, Background, Feat… The
+      features list is grouped by it. */
+  kind?: string;
+};
 export type Spell = LinkableEntry & {
   /** 'Cantrip' or '1'–'10', as written: a free-form string so a homebrew
       level above ninth is not a schema change. */

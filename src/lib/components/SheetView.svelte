@@ -203,12 +203,12 @@
     { key: 'name', label: 'Name', width: '15%', placeholder: 'Shield' },
     { key: 'level', label: 'Level', width: '11%', options: SPELL_LEVELS },
     { key: 'time', label: 'Cast time', width: '10%', placeholder: '1 reaction' },
-    { key: 'range', label: 'Range', width: '8%', placeholder: 'Self' },
+    { key: 'range', label: 'Range', width: '9%', placeholder: 'Self' },
     { key: 'components', label: 'Components', short: 'Comp', width: '8%', placeholder: 'V, S, M' },
-    { key: 'duration', label: 'Duration', width: '11%', placeholder: '1 round' },
+    { key: 'duration', label: 'Duration', short: 'Dur.', width: '11%', placeholder: '1 round' },
     { key: 'save', label: 'Save', width: '8%', placeholder: 'DEX 13' },
-    { key: 'notes', label: 'Notes', width: '20%', muted: true, wide: true, placeholder: '+5 AC' },
-    { key: 'source', label: 'Source', width: '9%', muted: true, placeholder: 'xphb' }
+    { key: 'notes', label: 'Notes', width: '19%', muted: true, wide: true, placeholder: '+5 AC' },
+    { key: 'source', label: 'Source', short: 'Src', width: '9%', muted: true, placeholder: 'xphb' }
   ];
 
 
@@ -232,10 +232,16 @@
     { key: 'resetAmount', label: 'Refill', width: '9%', placeholder: 'full' },
     { key: 'source', label: 'Source', width: '14%', muted: true, placeholder: 'phb' }
   ];
+  /** Where a feature comes from, in the order the groups are listed. A
+      feature with none written is under Other, last. */
+  const FEATURE_KINDS = ['Class', 'Subclass', 'Species', 'Background', 'Feat', 'Fighting Style',
+    'Weapon Mastery', 'Maneuver', 'Invocation', 'Metamagic', 'Item', 'Other'];
+  const kindOf = (f: Feature) => (FEATURE_KINDS.includes(f.kind ?? '') ? f.kind! : 'Other');
   const FEATURE_COLUMNS = [
-    { key: 'title', label: 'Title', width: '26%', placeholder: 'Second Wind' },
-    { key: 'body', label: 'Description', width: '58%', wide: true, placeholder: 'Regain 1d10 + level hit points' },
-    { key: 'source', label: 'Source', width: '16%', muted: true, placeholder: 'phb' }
+    { key: 'title', label: 'Title', width: '24%', placeholder: 'Second Wind' },
+    { key: 'kind', label: 'Type', width: '14%', options: ['Other', ...FEATURE_KINDS.slice(0, -1)] },
+    { key: 'body', label: 'Description', width: '48%', wide: true, placeholder: 'Regain 1d10 + level hit points' },
+    { key: 'source', label: 'Source', width: '14%', muted: true, placeholder: 'phb' }
   ];
   const initiative = $derived(
     definition ? (definition.combat?.initiative ?? modifierOf(definition, 'dex')) : 0
@@ -813,6 +819,8 @@
               <EntryTable
                 items={definition.features ?? []}
                 columns={FEATURE_COLUMNS}
+                groupBy={{ key: 'kind', rank: (f) => FEATURE_KINDS.indexOf(kindOf(f as Feature)),
+                           title: (f) => kindOf(f as Feature) }}
                 {editable}
                 category="feats"
                 emptyText="No features yet."
