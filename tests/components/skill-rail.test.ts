@@ -1,0 +1,156 @@
+/**
+ * Abilities and skills share one grid, so a skill must sit inside the column of
+ * the ability it is scored off. Asserting the DOM nesting is what makes the
+ * visual alignment a guarantee rather than a coincidence of two grids.
+ */
+import { readFileSync } from 'node:fs';
+import { render, screen } from '@testing-library/svelte';
+import { describe, expect, it, vi } from 'vitest';
+import SkillRail from '$lib/components/SkillRail.svelte';
+import { SKILLS, type Ability, type Definition, type SkillName } from '$lib/types';
+
+const LABELS: Record<SkillName, string> = {
+  acrobatics: 'Acrobatics',
+  animalHandling: 'Animal Handling',
+  arcana: 'Arcana',
+  athletics: 'Athletics',
+  deception: 'Deception',
+  history: 'History',
+  insight: 'Insight',
+  intimidation: 'Intimidation',
+  investigation: 'Investigation',
+  medicine: 'Medicine',
+  nature: 'Nature',
+  perception: 'Perception',
+  performance: 'Performance',
+  persuasion: 'Persuasion',
+  religion: 'Religion',
+  sleightOfHand: 'Sleight of Hand',
+  stealth: 'Stealth',
+  survival: 'Survival'
+};
+
+/** Groups are labelled "<ability> skills" so a skill can be traced to its group. */
+const groupLabel = (ability: Ability) => `${ability} skills`;
+
+const loka: Definition = {
+  identity: { name: 'Loka Sibbs', class: 'Gunslinger', level: 5 },
+  abilities: { str: 12, dex: 18, con: 16, int: 9, wis: 14, cha: 18 },
+  proficiency: 3,
+  combat: { ac: 16, speed: 30, hpMax: 40, hitDice: '5d8' },
+  saves: { dex: true, cha: true },
+  skills: {
+    acrobatics: { proficient: true },
+    deception: { proficient: true },
+    sleightOfHand: { proficient: true },
+    stealth: { proficient: true }
+  },
+  attacks: [],
+  features: [],
+  spells: [],
+  trackers: [],
+  equipment: [],
+  currency: {},
+  notes: ''
+};
+
+const mount = (editable = false, onchange: (next: Definition) => void = () => {}) =>
+  render(SkillRail, { props: { definition: loka, editable, onchange } });
+
+describe('AbilityColumns', () => {
+  it('puts every skill in the group of the ability it is scored off', () => {
+    mount();
+    for (const [skill, ability] of Object.entries(SKILLS) as [SkillName, Ability][]) {
+      const group = screen.getByLabelText(groupLabel(ability));
+      const names = Array.from(group.querySelectorAll('.row .name')).map((n) =>
+        n.textContent?.trim()
+      );
+      expect(names, `${skill} must sit under ${ability}`).toContain(LABELS[skill]);
+    }
+  });
+
+  it('shows each skill once in the whole rail, not once per group', () => {
+    const { container } = mount();
+    const all = Array.from(container.querySelectorAll('.row .name')).map((n) =>
+      n.textContent?.trim()
+    );
+    expect(all).toHaveLength(Object.keys(SKILLS).length);
+    expect(new Set(all).size).toBe(all.length);
+  });
+
+  it('lists each ability group exactly once, in ability order', () => {
+    const { container } = mount();
+    const headings = Array.from(container.querySelectorAll('.group .ab')).map((n) =>
+      n.textContent?.trim()
+    );
+    // Whole words, not abbreviations; Constitution governs no skill.
+    expect(headings).toEqual(['Strength', 'Dexterity', 'Intelligence', 'Wisdom', 'Charisma']);
+  });
+
+  it('orders skills alphabetically within a group', () => {
+    mount();
+    const wis = screen.getByLabelText(groupLabel('wis'));
+    const names = Array.from(wis.querySelectorAll('.name')).map((n) => n.textContent?.trim());
+    expect(names).toEqual(['Animal Handling', 'Insight', 'Medicine', 'Perception', 'Survival']);
+  });
+
+  it('omits an ability that governs no skills rather than heading an empty group', () => {
+    mount();
+    expect(screen.queryByLabelText(groupLabel('con'))).toBeNull();
+  });
+
+  it('shows the group modifier and each skill total', () => {
+    const { container } = mount();
+    const text = container.textContent ?? '';
+    expect(text).toContain('+4'); // DEX modifier, on the group heading
+    expect(text).toContain('+7'); // Stealth: DEX 4 + prof 3
+    expect(text).toContain('-1'); // INT 9
+  });
+
+  it('cycles a skill none → proficient and reports it', () => {
+    const onchange = vi.fn();
+    mount(true, onchange);
+    (screen.getByLabelText('Athletics proficiency') as HTMLButtonElement).click();
+    const next = onchange.mock.calls.at(-1)![0] as Definition;
+    expect(next.skills.athletics).toEqual({ proficient: true });
+  });
+
+  it('says which of the three states a skill is in', () => {
+    // Half filled for proficiency, filled for expertise: the classes carry
+    // the shape, and the title says it in words for anyone hovering.
+    const states: [Record<string, unknown>, RegExp | null, string][] = [
+      [{}, null, 'Not proficient'],
+      [{ proficient: true }, /\bon\b/, 'Proficient'],
+      [{ proficient: true, expertise: true }, /expert/, 'Expertise']
+    ];
+    for (const [skills, cls, title] of states) {
+      const { unmount } = render(SkillRail, {
+        props: {
+          definition: { ...loka, skills: { athletics: skills } } as Definition,
+          editable: true,
+          onchange: () => {}
+        }
+      });
+      const dot = screen.getByLabelText('Athletics proficiency') as HTMLButtonElement;
+      expect(dot.title, title).toBe(title);
+      if (cls) expect(dot.className, title).toMatch(cls);
+      else expect(dot.className, title).not.toMatch(/\bon\b/);
+      if (title !== 'Expertise') expect(dot.className, title).not.toMatch(/expert/);
+      unmount();
+    }
+  });
+
+  it('draws proficiency as half a circle and expertise as a whole one', () => {
+    const css = readFileSync('src/lib/components/SkillRail.svelte', 'utf8');
+    const on = css.slice(css.indexOf('.dot.on {'), css.indexOf('.name {'));
+    expect(on).toMatch(/linear-gradient\(90deg[^)]*\) 0 50%, transparent 50%/);
+    expect(on).toMatch(/\.dot\.expert \{[^}]*background-color: var\(--a\)/);
+  });
+
+  it('gives a viewer no working controls', () => {
+    mount(false);
+    for (const b of screen.queryAllByRole('button')) {
+      expect((b as HTMLButtonElement).disabled).toBe(true);
+    }
+  });
+});
