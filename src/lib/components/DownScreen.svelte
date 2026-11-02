@@ -10,10 +10,14 @@
    *
    * Only changes set it off, never a sheet opened in that state, except that
    * the vignette itself is there whenever the character is at 0.
+   *
+   * The vignette's beat is driven from here rather than by CSS, so that the
+   * heartbeat sound (when sound is on) lands on exactly the same moment.
    */
   import { isDead } from '$lib/rules/hp';
   import { prefersReducedMotion } from '$lib/motion';
   import type { State } from '$lib/types';
+  import { deathBell, deathSave, heartbeat } from '$lib/sound';
 
   let { state: sheetState, hpMax }: { state: State; hpMax: number } = $props();
 
@@ -37,24 +41,78 @@
     };
     const was = before;
     before = now;
-    if (!was || still || !(hpMax > 0)) return;
-    if (was.hp > 0 && now.hp <= 0) beat += 1;
+    if (!was || !(hpMax > 0)) return;
+    if (was.hp > 0 && now.hp <= 0) {
+      if (!still) beat += 1;
+      heartbeat(0.12, 1.3);
+      wentDown = performance.now();
+    }
     // A third success brings them up to 1 at once, so it shows as a rise in hit
     // points from 0 with the saves cleared, not as a fourth pip.
     const saved = now.s > was.s || (was.hp <= 0 && now.hp > 0 && was.s === 2);
     const failed = now.f > was.f && now.hp <= 0;
     if (saved || failed) {
       const level = failed ? Math.min(3, now.f) : now.hp > 0 ? 3 : Math.min(3, now.s);
+      deathSave(failed ? 'fail' : 'save', level);
+      if (failed && now.f >= 3) deathBell();
+      if (still) return;
       impact = { kind: failed ? 'fail' : 'save', id: (impact?.id ?? 0) + 1, level };
       clearTimeout(clear);
-      clear = setTimeout(() => (impact = null), 900);
+      clear = setTimeout(() => (impact = null), 1300);
+      // A failure jolts the whole vignette, harder each time.
+      const k = level / 3;
+      if (failed) vig?.animate(
+        [
+          { transform: `scale(${1 - 0.07 * k})` },
+          { transform: `scale(${1 - 0.05 * k}) translateX(${-9 * k}px)`, offset: 0.2 },
+          { transform: `scale(${1 - 0.03 * k}) translateX(${7 * k}px)`, offset: 0.4 },
+          { transform: `scale(${1 - 0.015 * k}) translateX(${-4 * k}px)`, offset: 0.6 },
+          { transform: 'none' }
+        ],
+        { duration: 600, easing: 'cubic-bezier(0.3, 0.7, 0.4, 1)' }
+      );
     }
+  });
+
+  /** The vignette, and the layer inside it that beats. */
+  let vig = $state<HTMLElement>();
+  let beatEl = $state<HTMLElement>();
+  let wentDown = 0;
+  const PERIOD = 1500;
+  /** Lub-dub: two beats close together (at 10% and 30%), then a rest. */
+  const LUBDUB: Keyframe[] = [
+    { opacity: 0.75, transform: 'scale(1)', offset: 0 },
+    { opacity: 1, transform: 'scale(0.985)', offset: 0.1 },
+    { opacity: 0.8, transform: 'scale(1)', offset: 0.2 },
+    { opacity: 1, transform: 'scale(0.99)', offset: 0.3 },
+    { opacity: 0.75, transform: 'scale(1)', offset: 0.45 },
+    { opacity: 0.75, transform: 'scale(1)', offset: 1 }
+  ];
+  $effect(() => {
+    if (!dying || !beatEl) return;
+    const el = beatEl;
+    const pulse = () => {
+      if (!still) el.animate(LUBDUB, { duration: PERIOD, easing: 'ease-in-out' });
+      // The sound's first thump at 10% of the beat, its second 0.3s later.
+      heartbeat(PERIOD * 0.1 / 1000, 0.85);
+    };
+    // Just gone down: let the two big heartbeats finish first.
+    const wait = Math.max(0, 1600 - (performance.now() - wentDown));
+    let loop: ReturnType<typeof setInterval> | undefined;
+    const start = setTimeout(() => {
+      pulse();
+      loop = setInterval(pulse, PERIOD);
+    }, wait);
+    return () => {
+      clearTimeout(start);
+      clearInterval(loop);
+    };
   });
 </script>
 
 {#if down}
   <div class="vignette" class:dead aria-hidden="true">
-    {#key impact?.id}<i class:thud={impact?.kind === 'fail'} style:--k={(impact?.level ?? 1) / 3}></i>{/key}
+    <div class="jolt" bind:this={vig}><i bind:this={beatEl}></i></div>
   </div>
 {/if}
 {#key beat}
@@ -79,26 +137,10 @@
       oklch(22% 0.09 25 / 0.35) 60%,
       oklch(14% 0.07 25 / 0.82) 76%,
       oklch(12% 0.06 25 / 0.9) 100%);
-    animation: lubdub 1.5s ease-in-out infinite;
     transform-origin: center;
   }
-  /* Lub-dub: two beats close together, then a rest. */
-  @keyframes lubdub {
-    0%, 100% { opacity: 0.75; transform: scale(1); }
-    10% { opacity: 1; transform: scale(0.985); }
-    20% { opacity: 0.8; transform: scale(1); }
-    30% { opacity: 1; transform: scale(0.99); }
-    45% { opacity: 0.75; transform: scale(1); }
-  }
-  .vignette i.thud { animation: thud 0.6s cubic-bezier(0.3, 0.7, 0.4, 1), lubdub 1.5s ease-in-out 0.6s infinite; }
-  /* Harder with each failure: --k is a third, two thirds, then all. */
-  @keyframes thud {
-    0% { opacity: 1; transform: scale(calc(1 - 0.07 * var(--k, 1))) translateX(0); }
-    20% { transform: scale(calc(1 - 0.05 * var(--k, 1))) translateX(calc(-9px * var(--k, 1))); }
-    40% { transform: scale(calc(1 - 0.03 * var(--k, 1))) translateX(calc(7px * var(--k, 1))); }
-    60% { transform: scale(calc(1 - 0.015 * var(--k, 1))) translateX(calc(-4px * var(--k, 1))); }
-    100% { opacity: 0.8; transform: scale(1); }
-  }
+  .jolt { position: absolute; inset: 0; }
+  .vignette i { opacity: 0.75; }
   /* Dead: it stops beating, and stays. */
   .vignette.dead i { animation: none; opacity: 1;
     background: radial-gradient(ellipse at center, transparent 38%, oklch(16% 0.04 25 / 0.5) 58%, oklch(10% 0.03 25 / 0.9) 76%, oklch(8% 0.02 25 / 0.95) 100%); }
@@ -132,7 +174,5 @@
   }
   @keyframes flash { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
 
-  @media (prefers-reduced-motion: reduce) {
-    .vignette i { animation: none; }
-  }
+
 </style>

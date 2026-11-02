@@ -8,6 +8,7 @@
   import { base } from '$app/paths';
   import AbilityBand from '$lib/components/AbilityBand.svelte';
   import ModeToggle from '$lib/components/ModeToggle.svelte';
+  import SoundToggle from '$lib/components/SoundToggle.svelte';
   import Banner from '$lib/components/Banner.svelte';
   import CombatActions from '$lib/components/CombatActions.svelte';
   import Conditions from '$lib/components/Conditions.svelte';
@@ -630,12 +631,13 @@
             </g>
           </svg>
         </button>
+        <SoundToggle />
         <ModeToggle />
       </div>
     </header>
 
     <div class="band">
-      <section class="panel hp">
+      <section class="panel hp" style:--i=0>
         <HitPoints {definition} state={sheetState} editable={isOwner} editDefinition={editable}
                    onchange={setState} ondefinition={setDefinition}>
           {#snippet children()}

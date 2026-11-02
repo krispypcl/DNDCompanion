@@ -12,6 +12,7 @@
   import { diceRequest, takeRoll } from '$lib/stores/dice';
   import { DIE_SIDES, addDie, diceCount, formula, hasD20, roll, type Mode, type Pool, type Roll, type Sides } from '$lib/rules/dice';
   import { prefersReducedMotion } from '$lib/motion';
+  import { clatter, land, nat1, nat20 } from '$lib/sound';
 
   let pool = $state<Pool>({ dice: {}, modifier: 0, mode: 'normal' });
   let last = $state<Roll | null>(null);
@@ -53,6 +54,12 @@
     if (last) history = [last, ...history].slice(0, 6);
     last = result;
     seq += 1;
+    clatter(diceCount(result.pool), 420);
+    const landed = () => {
+      if (isCrit(result)) nat20();
+      else if (isFumble(result)) nat1();
+      else land();
+    };
     if (!prefersReducedMotion()) {
       tumbling = true;
       clearInterval(spinner);
@@ -60,7 +67,10 @@
       setTimeout(() => {
         clearInterval(spinner);
         tumbling = false;
+        landed();
       }, 440);
+    } else {
+      setTimeout(landed, 300);
     }
   }
 
