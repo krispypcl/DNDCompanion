@@ -84,14 +84,14 @@
 
 <main>
   <header>
-    <a class="back" href="{base}/">← Your characters</a>
+    <a class="back" href="{base}/">Back</a>
     <ModeToggle />
   </header>
 
   {#if $session.loading}
     <div class="wait"><D20Loader size={56} label="Loading your account" /></div>
   {:else if !$session.user}
-    <section class="card"><h1>Your account</h1><p class="dim">Sign in to see your account.</p>
+    <section class="card"><h1>Who goes there?</h1><p class="dim">Sign in to see your account!</p>
       <a class="btn" href="{base}/login">Sign in</a></section>
   {:else}
     <h1 class="title">Your account</h1>
@@ -166,8 +166,15 @@
 <style>
   main { max-width: 36rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
   header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-  .back { color: var(--dim); text-decoration: none; font-size: 0.875rem; transition: color 0.15s ease; }
-  .back:hover { color: var(--a); }
+  /* The same Back as on a sheet. */
+  .back {
+    background: var(--raised); border: 1px solid var(--line); color: var(--text);
+    border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font-size: 0.8125rem;
+    text-decoration: none; line-height: 1.5;
+    transition: border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+  }
+  .back:hover { border-color: var(--a-edge); color: var(--a); }
+  .back:active { transform: translateY(1px); }
   .title { font-size: 1.5rem; font-weight: 650; margin: 0 0 1rem; letter-spacing: -0.01em; }
   .wait { display: grid; place-items: center; padding: 4rem 0; }
   .card {
