@@ -25,6 +25,10 @@ to keep as anything from the books.
 - **Themes** per character, light and dark mode, and undo.
 - **Share, download and import**: copy a sheet's link, or save it as a readable
   text file and bring it back later.
+- **Print** on the layout of the official character sheet, with a spell page
+  for casters.
+- **Install** on a phone's home screen as an app.
+- **Accounts** with a display name and profile picture.
 
 ## Built with
 
