@@ -35,7 +35,7 @@ function sizes(): Map<string, number> {
  * One that is going is copied first and the copy fades out where it stood;
  * one that is arriving fades in. Neither pops.
  */
-type Ghost = { rect: DOMRect; copy: HTMLElement };
+type Ghost = { rect: DOMRect; copy: HTMLElement; scale: number };
 const COPIED = ['font', 'color', 'backgroundColor', 'border', 'borderRadius', 'padding', 'textAlign',
   'lineHeight', 'letterSpacing', 'textTransform', 'verticalAlign', 'boxShadow'] as const;
 
@@ -46,6 +46,14 @@ function ghosts(): Map<string, Ghost> {
     const rect = el.getBoundingClientRect();
     if (!rect.width || !rect.height || rect.bottom < 0 || rect.top > vh) return;
     const copy = el.cloneNode(true) as HTMLElement;
+    // A copied <select> or <input> starts from its markup, not what it shows
+    // ("Other" instead of "Class"): carry the values across.
+    const from = el.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea');
+    const to = copy.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea');
+    from.forEach((f, i) => {
+      if (to[i]) to[i].value = f.value;
+    });
+    if (el instanceof HTMLSelectElement || el instanceof HTMLInputElement) (copy as HTMLInputElement).value = el.value;
     const cs = getComputedStyle(el);
     for (const k of COPIED) copy.style[k] = cs[k];
     copy.style.display = cs.display.startsWith('table') ? 'block' : cs.display;
@@ -60,7 +68,7 @@ function ghosts(): Map<string, Ghost> {
       n.removeAttribute('data-flip-ghost');
       n.removeAttribute('id');
     });
-    out.set(el.dataset.flipGhost!, { rect, copy });
+    out.set(el.dataset.flipGhost!, { rect, copy, scale: Number(el.dataset.ghostScale) || 0.96 });
   });
   return out;
 }
@@ -110,22 +118,25 @@ export async function glide(change: () => void): Promise<void> {
     const key = el.dataset.flipGhost!;
     present.add(key);
     if (had.has(key)) return;
-    el.animate([{ opacity: 0, transform: 'scale(0.97)' }, { opacity: 1, transform: 'none' }], {
-      duration: DURATION, delay: 60, easing: EASE, fill: 'backwards'
+    // Pictures and other larger pieces grow in from smaller (data-ghost-scale).
+    const from = Number(el.dataset.ghostScale) || 0.97;
+    el.animate([{ opacity: 0, transform: `scale(${from})` }, { opacity: 1, transform: 'none' }], {
+      duration: DURATION + 40, delay: 80, easing: EASE, fill: 'backwards'
     });
   });
-  for (const [key, { rect, copy }] of leaving) {
+  for (const [key, { rect, copy, scale }] of leaving) {
     if (present.has(key)) continue;
     const holder = document.createElement('div');
     holder.setAttribute('aria-hidden', 'true');
     Object.assign(holder.style, {
       position: 'fixed', left: `${rect.left}px`, top: `${rect.top - dyScroll}px`,
-      width: `${rect.width}px`, height: `${rect.height}px`, pointerEvents: 'none', zIndex: '30'
+      width: `${rect.width}px`, height: `${rect.height}px`, pointerEvents: 'none', zIndex: '2',
+      transformOrigin: 'center'
     });
     holder.appendChild(copy);
     document.body.appendChild(holder);
-    const out = holder.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(0.96)' }], {
-      duration: DURATION * 0.7, easing: 'ease-out', fill: 'forwards'
+    const out = holder.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `scale(${scale})` }], {
+      duration: DURATION * 0.75, easing: 'cubic-bezier(0.4, 0, 0.7, 0.2)', fill: 'forwards'
     });
     out.onfinish = () => holder.remove();
   }
