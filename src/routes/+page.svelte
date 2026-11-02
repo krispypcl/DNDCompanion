@@ -405,12 +405,6 @@
   header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
   .tools { display: flex; align-items: center; gap: 0.5rem; flex: none; }
   h1 { font-size: 1.5rem; margin: 0; display: flex; align-items: center; gap: 0.625rem; min-width: 0; }
-  @media (max-width: 420px) {
-    h1 { font-size: 1.3125rem; gap: 0.5rem; }
-    /* The picture alone says whose account it is. */
-    .me span { display: none; }
-    .me { padding: 0.1875rem; }
-  }
   h2 { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin: 0; }
   .bar { display: flex; align-items: center; justify-content: space-between; margin: 2rem 0 0.75rem; }
   .actions { display: flex; gap: 0.5rem; }

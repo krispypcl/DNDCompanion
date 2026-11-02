@@ -1060,7 +1060,7 @@
   }
   /* Sits on the bottom edge, half in and half out. */
   .lvl {
-    position: absolute; left: 50%; bottom: 0; transform: translate(-50%, 50%);
+    position: absolute; left: 50%; bottom: 0; transform: translate(-50%, 50%); z-index: 2;
     background: var(--surface); border: 1px solid var(--a-edge);
     color: var(--a); border-radius: var(--r-sm); font-size: 0.6875rem; font-weight: 650;
     padding: 0.0625rem 0.5rem; letter-spacing: 0.02em; white-space: nowrap;
