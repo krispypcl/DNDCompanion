@@ -181,6 +181,62 @@ export function deathBell() {
   );
 }
 
+/** Damage: a body blow, heavier and lower the harder the hit (0 to 1). */
+export function hit(severity = 0.3) {
+  const ac = ready();
+  if (!ac) return;
+  const t = ac.currentTime;
+  const k = Math.max(0, Math.min(1, severity));
+  tone(ac, t, 190 - k * 90, 0.18 + k * 0.25, 0.28 + k * 0.3, 'sine', 55);
+  burst(ac, t, 0.07 + k * 0.08, 0.25 + k * 0.2, 700 - k * 400, 1.1);
+}
+
+/** Healing: a soft rising shimmer. */
+export function heal() {
+  const ac = ready();
+  if (!ac) return;
+  const t = ac.currentTime;
+  [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(ac, t + i * 0.06, f, 0.6, 0.07, 'sine'));
+  tone(ac, t, 392, 0.7, 0.05, 'triangle', 784);
+}
+
+/** Temporary hit points: a bright, metallic ring, like a shield raised. */
+export function shield() {
+  const ac = ready();
+  if (!ac) return;
+  const t = ac.currentTime;
+  [[1180, 0.12], [1770 * 1.01, 0.06], [2650, 0.035]].forEach(([f, g]) => tone(ac, t, f, 0.7, g, 'sine'));
+  burst(ac, t, 0.05, 0.12, 4200, 3);
+}
+
+/** A short rest: two soft, low notes, settling. */
+export function shortRest() {
+  const ac = ready();
+  if (!ac) return;
+  const t = ac.currentTime;
+  tone(ac, t, 392, 0.6, 0.1, 'triangle');
+  tone(ac, t + 0.18, 329.63, 0.9, 0.09, 'triangle');
+}
+
+/** A long rest: a slow, warm chord, rolled upward. */
+export function longRest() {
+  const ac = ready();
+  if (!ac) return;
+  const t = ac.currentTime;
+  [261.63, 329.63, 392, 523.25].forEach((f, i) => tone(ac, t + i * 0.12, f, 1.6 - i * 0.15, 0.08, 'sine'));
+}
+
+/** Dawn: a bright rising call, the day starting. */
+export function dawn() {
+  const ac = ready();
+  if (!ac) return;
+  const t = ac.currentTime;
+  [587.33, 739.99, 880, 1174.66].forEach((f, i) => {
+    tone(ac, t + i * 0.09, f, 0.9, 0.08, 'sine');
+    tone(ac, t + i * 0.09, f * 2, 0.4, 0.02, 'sine');
+  });
+}
+
 /** For tests: forget the audio context. */
 export function _resetSound() {
   ctx = null;

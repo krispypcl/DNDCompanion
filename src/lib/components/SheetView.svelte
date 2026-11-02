@@ -38,6 +38,7 @@
   import Tabs from '$lib/components/Tabs.svelte';
   import TrackerGroup from '$lib/components/TrackerGroup.svelte';
   import TrackerPresets from '$lib/components/TrackerPresets.svelte';
+  import { resetTray } from '$lib/stores/tray';
   import TextPanel from '$lib/components/TextPanel.svelte';
   import ThemePicker from '$lib/components/ThemePicker.svelte';
   import UndoToast from '$lib/components/UndoToast.svelte';
@@ -223,14 +224,15 @@
     { key: 'source', label: 'Source', width: '16%', muted: true, placeholder: 'xphb' }
   ];
   const TRACKER_COLUMNS = [
-    { key: 'label', label: 'Label', width: '16%', placeholder: 'Second Wind' },
+    { key: 'label', label: 'Label', width: '15%', placeholder: 'Second Wind' },
     { key: 'max', label: 'Max', width: '12%', placeholder: '1 or classlevel' },
-    { key: 'die', label: 'Die', width: '7%', placeholder: 'd10' },
-    { key: 'type', label: 'Shape', width: '12%', options: ['pips', 'gauge'] as const },
-    { key: 'direction', label: 'Direction', width: '12%', options: ['spend', 'accrue'] as const },
-    { key: 'resetOn', label: 'Resets on', width: '13%', options: ['manual', 'short', 'long', 'dawn'] as const },
+    { key: 'cls', label: 'Class', width: '12%', placeholder: 'Fighter' },
+    { key: 'die', label: 'Die', width: '6%', placeholder: 'd10' },
+    { key: 'type', label: 'Shape', width: '10%', options: ['pips', 'gauge'] as const },
+    { key: 'direction', label: 'Direction', short: 'Dir.', width: '10%', options: ['spend', 'accrue'] as const },
+    { key: 'resetOn', label: 'Resets on', short: 'Resets', width: '11%', options: ['manual', 'short', 'long', 'dawn'] as const },
     { key: 'resetAmount', label: 'Refill', width: '9%', placeholder: 'full' },
-    { key: 'source', label: 'Source', width: '14%', muted: true, placeholder: 'phb' }
+    { key: 'source', label: 'Source', short: 'Src', width: '15%', muted: true, placeholder: 'phb' }
   ];
   /** Where a feature comes from, in the order the groups are listed. A
       feature with none written is under Other, last. */
@@ -257,6 +259,7 @@
     revealed = false;
     loadError = null;
     resetUndo();
+    resetTray();
     sheetRepo
       .loadSheet(id)
       .then((found) => {
@@ -447,6 +450,8 @@
     resetAmount: string;
     group: string;
     source: string;
+    /** The class whose level `classlevel` means for this tracker. */
+    cls: string;
   };
 
   const numeric = (v: string) => /^-?\d+$/.test(v.trim());
@@ -463,7 +468,8 @@
       resetOn: t.reset?.on ?? 'manual',
       resetAmount: String(t.reset?.amount ?? 'full'),
       group: t.group ?? '',
-      source: t.source ?? ''
+      source: t.source ?? '',
+      cls: t.class ?? ''
     }))
   );
 
@@ -491,21 +497,31 @@
         amount: r.resetAmount.trim() === 'full' ? 'full' : scalar(r.resetAmount || 'full')
       },
       ...(r.group ? { group: r.group } : {}),
-      ...(r.source ? { source: r.source } : {})
+      ...(r.source ? { source: r.source } : {}),
+      ...(r.cls?.trim() ? { class: r.cls.trim() } : {})
     }));
     setDefinition({ ...definition, trackers });
   }
 
   function withoutShown(t: Tracker | undefined): Partial<Tracker> {
     if (!t) return {};
-    const { die: _d, group: _g, source: _s, ...rest } = t;
+    const { die: _d, group: _g, source: _s, class: _c, ...rest } = t;
     return rest;
   }
 
+  let presetsOpen = $state(false);
   function addPreset(added: Tracker[], label: string) {
     if (!definition) return;
     setDefinition({ ...definition, trackers: [...(definition.trackers ?? []), ...added] });
     say(`Added ${label}`);
+  }
+  function removePreset(ids: string[], label: string) {
+    if (!definition || !sheetState) return;
+    const gone = new Set(ids);
+    setDefinition({ ...definition, trackers: (definition.trackers ?? []).filter((t) => !gone.has(t.id)) });
+    const spent = Object.fromEntries(Object.entries(sheetState.trackers ?? {}).filter(([k]) => !gone.has(k)));
+    setState({ ...sheetState, trackers: spent });
+    say(`Removed ${label}`);
   }
 
   function blankTracker(): TrackerRow {
@@ -519,7 +535,8 @@
       resetOn: 'long',
       resetAmount: 'full',
       group: '',
-      source: ''
+      source: '',
+      cls: ''
     };
   }
 </script>
@@ -844,6 +861,15 @@
                 blank={blankTracker}
                 onchange={(rows) => saveTrackers(rows as TrackerRow[])}
               >
+                {#snippet extra()}
+                  <button class="opener" aria-expanded={presetsOpen} onclick={() => (presetsOpen = !presetsOpen)}>
+                    <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+                      <path d="M8 1.5 9.6 6.4 14.5 8 9.6 9.6 8 14.5 6.4 9.6 1.5 8 6.4 6.4Z" fill="currentColor" />
+                    </svg>
+                    Ready-made
+                    <i class="chev" class:up={presetsOpen} aria-hidden="true">▾</i>
+                  </button>
+                {/snippet}
                 {#snippet info()}
                   Max accepts a number or a formula over <code>level</code>,
                   <code>classlevel</code>, <code>prof</code> and ability modifiers —
@@ -855,7 +881,7 @@
                 {/snippet}
               </EntryTable>
               {#if editable}
-                <TrackerPresets {definition} makeId={newId} onadd={addPreset} />
+                <TrackerPresets {definition} makeId={newId} open={presetsOpen} onadd={addPreset} onremove={removePreset} />
               {/if}
             {:else if tab === 'Character'}
               <EntryTable
@@ -1302,6 +1328,17 @@
     font-size: 1.0625rem; font-weight: 600;
   }
   .floats { display: contents; }
+  /* Ready-made trackers: beside Add tracker, in the accent. */
+  .opener {
+    display: inline-flex; align-items: center; gap: 0.375rem; font: inherit; font-size: 0.8125rem;
+    background: var(--a-wash); border: 1px solid var(--a-edge); color: var(--a); border-radius: var(--r-sm);
+    padding: 0.3125rem 0.625rem; cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+  }
+  .opener:hover { border-color: var(--a); color: var(--a-hi); }
+  .opener:active { transform: translateY(1px); }
+  .chev { font-style: normal; font-size: 0.7rem; transition: transform 0.2s ease; }
+  .chev.up { transform: rotate(180deg); }
   /* The narrowest phones: the icon buttons and the dates draw in a little so
      every control still fits on one row. */
   @media (max-width: 400px) {

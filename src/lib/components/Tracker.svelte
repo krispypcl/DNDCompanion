@@ -178,12 +178,19 @@
   .pip.on { background: var(--accent); border-color: var(--accent); }
   /* Spending one: the fill drains out of the middle and a ring puffs away. */
   .pip { position: relative; }
+  /* Invisible before and after its turn: a wave of several pips puffs one at
+     a time, never all showing a ring while they wait. */
   .pip.lose::after {
-    content: ''; position: absolute; inset: -1px; border-radius: 50%; pointer-events: none;
-    border: 1.5px solid var(--accent); opacity: 0;
-    animation: puff 0.5s ease-out backwards; animation-delay: var(--delay);
+    content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
+    background: var(--accent); opacity: 0;
+    animation: puff 0.6s cubic-bezier(0.2, 0.7, 0.3, 1) both; animation-delay: var(--delay);
   }
-  @keyframes puff { from { opacity: 0.9; transform: scale(1); } to { opacity: 0; transform: scale(2.1); } }
+  /* A soft cloud of the pip's colour, swelling and thinning to nothing. */
+  @keyframes puff {
+    0% { opacity: 0; transform: scale(0.8); }
+    15% { opacity: 0.4; transform: scale(1.05); }
+    100% { opacity: 0; transform: scale(2); }
+  }
   /* The last one gone: a small shake of the whole tracker. */
   .tracker.emptied { animation: emptyShake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
   @keyframes emptyShake {
@@ -203,8 +210,8 @@
     to   { transform: scale(1); }
   }
   @keyframes drain {
-    from { transform: scale(1); background: var(--accent); border-color: var(--accent); box-shadow: inset 0 0 0 0 var(--surface); }
-    55%  { transform: scale(0.82); background: var(--accent); border-color: var(--accent); box-shadow: inset 0 0 0 0.6rem var(--surface); }
+    from { transform: scale(1); background: var(--accent); border-color: var(--accent); }
+    40%  { transform: scale(0.78); background: var(--accent); border-color: var(--accent); }
     to   { transform: scale(1); }
   }
   .gaugerow { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }

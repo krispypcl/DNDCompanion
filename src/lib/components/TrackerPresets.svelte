@@ -14,10 +14,18 @@
   let {
     definition,
     makeId,
-    onadd
-  }: { definition: Definition; makeId: () => string; onadd: (added: Tracker[], label: string) => void } = $props();
-
-  let open = $state(false);
+    open,
+    onadd,
+    onremove
+  }: {
+    definition: Definition;
+    makeId: () => string;
+    /** Whether the list is showing; its button sits in the table's add row. */
+    open: boolean;
+    onadd: (added: Tracker[], label: string) => void;
+    /** Takes back the trackers a preset added. */
+    onremove: (ids: string[], label: string) => void;
+  } = $props();
   const groups = $derived(presetsFor(classList(definition).map((c) => c.name)));
   const levels = $derived(classLevels(definition));
   const key = (t: { label: string; class?: string }) => `${t.label.toLowerCase()}|${(t.class ?? '').toLowerCase()}`;
@@ -27,24 +35,23 @@
   function added(p: Preset): boolean {
     return p.build(1).every((t) => have.has(key(t)));
   }
-  function add(p: Preset) {
+  /** Pressed once it adds; pressed again it takes the same trackers away. */
+  function toggle(p: Preset) {
+    if (added(p)) {
+      const keys = new Set(p.build(1).map(key));
+      const ids = (definition.trackers ?? []).filter((t) => keys.has(key(t))).map((t) => t.id);
+      onremove(ids, p.label);
+      return;
+    }
     const level = levels[p.className.toLowerCase()] ?? 0;
     const fresh = buildPreset(p, level, makeId).filter((t) => !have.has(key(t)));
     if (fresh.length) onadd(fresh, p.label);
   }
+  const mine = $derived(new Set(groups.yours.map((p) => p.id)));
   const still = prefersReducedMotion();
 </script>
 
-<div class="presets">
-  <button class="opener" aria-expanded={open} onclick={() => (open = !open)}>
-    <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
-      <path d="M8 1.5 9.6 6.4 14.5 8 9.6 9.6 8 14.5 6.4 9.6 1.5 8 6.4 6.4Z" fill="currentColor" />
-    </svg>
-    Ready-made trackers
-    <i class="chev" class:up={open} aria-hidden="true">▾</i>
-  </button>
-
-  {#if open}
+{#if open}
     <div class="panel" transition:slide={{ duration: still ? 0 : 240, easing: cubicOut }}>
       {#each [{ title: 'For your classes', list: groups.yours }, { title: 'Other classes', list: groups.others }] as g (g.title)}
         {#if g.list.length}
@@ -52,34 +59,23 @@
           <div class="grid">
             {#each g.list as p (p.id)}
               {@const done = added(p)}
-              <button class="preset" class:done disabled={done} onclick={() => add(p)}
-                      title={done ? 'Already on this sheet' : `Add ${p.label}`}>
+              <button class="preset" class:done aria-pressed={done} onclick={() => toggle(p)}
+                      title={done ? `Remove ${p.label}` : `Add ${p.label}`}>
                 <b>{p.label}</b>
-                <span>{done ? 'Added' : p.blurb}</span>
+                <span>{done ? 'Added · press again to remove' : p.blurb}</span>
+                {#if !mine.has(p.id)}<em>Counts {p.className} levels: none on this sheet yet</em>{/if}
               </button>
             {/each}
           </div>
         {/if}
       {/each}
-      <p class="note">Numbers follow the 2024 Player’s Handbook and grow with the class’s level.
+      <p class="note">Each tracker counts the level of its own class, set in its Class column
+        and taken from the classes on the Character tab.<br />Numbers follow the 2024 Player’s Handbook and grow with the class’s level.
         A die or rest that changes with level is set for the level you are now.</p>
     </div>
-  {/if}
-</div>
+{/if}
 
 <style>
-  .presets { margin-top: 0.75rem; }
-  .opener {
-    display: inline-flex; align-items: center; gap: 0.4375rem; font: inherit; font-size: 0.8125rem;
-    background: var(--a-wash); border: 1px solid var(--a-edge); color: var(--a); border-radius: var(--r-sm);
-    padding: 0.375rem 0.75rem; cursor: pointer; animation: openerIn 0.3s cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
-  }
-  @keyframes openerIn { from { opacity: 0; transform: translateY(-4px); } }
-  .opener:hover { border-color: var(--a); color: var(--a-hi); }
-  .opener:active { transform: translateY(1px); }
-  .chev { font-style: normal; font-size: 0.7rem; transition: transform 0.2s ease; }
-  .chev.up { transform: rotate(180deg); }
   .panel { margin-top: 0.625rem; padding: 0.75rem; border: 1px solid var(--line-soft); border-radius: var(--r); background: var(--raised); }
   h4 {
     margin: 0 0 0.5rem; font-size: 0.6875rem; letter-spacing: 0.1em; text-transform: uppercase;
@@ -95,7 +91,8 @@
   .preset b { font-size: 0.8125rem; font-weight: 600; }
   .preset span { font-size: 0.72rem; color: var(--dim); line-height: 1.35; }
   .preset:hover:not(:disabled) { border-color: var(--a-edge); transform: translateY(-1px); }
-  .preset.done { opacity: 0.55; cursor: default; }
+  .preset.done { border-color: var(--a-edge); background: var(--a-wash); }
   .preset.done span { color: var(--a); }
+  .preset em { font-style: normal; font-size: 0.68rem; color: var(--faint); }
   .note { margin: 0.75rem 0 0; font-size: 0.72rem; color: var(--faint); line-height: 1.45; }
 </style>

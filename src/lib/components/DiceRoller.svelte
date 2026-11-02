@@ -13,10 +13,14 @@
   import { DIE_SIDES, addDie, diceCount, formula, hasD20, roll, type Mode, type Pool, type Roll, type Sides } from '$lib/rules/dice';
   import { prefersReducedMotion } from '$lib/motion';
   import { clatter, land, nat1, nat20 } from '$lib/sound';
+  import { trayMemory } from '$lib/stores/tray';
+  import { get } from 'svelte/store';
 
-  let pool = $state<Pool>({ dice: {}, modifier: 0, mode: 'normal' });
-  let last = $state<Roll | null>(null);
-  let history = $state<Roll[]>([]);
+  // Picks up where it was before the tab was switched away.
+  const kept = get(trayMemory);
+  let pool = $state<Pool>(kept.pool);
+  let last = $state<Roll | null>(kept.last);
+  let history = $state<Roll[]>(kept.history);
   /** Faces flicker for a moment before they land. */
   let tumbling = $state(false);
   let spin = $state(0);
@@ -31,7 +35,15 @@
   ];
 
   /** Always starts folded; it opens when pressed, or when an attack is rolled. */
-  let open = $state(false);
+  let open = $state(kept.open);
+  $effect(() => {
+    trayMemory.set({
+      open,
+      pool: $state.snapshot(pool) as Pool,
+      last: $state.snapshot(last) as Roll | null,
+      history: $state.snapshot(history) as Roll[]
+    });
+  });
   let tray: HTMLDetailsElement | undefined = $state();
 
   // An attack tapped in the table: take its roll, keep the chosen advantage,

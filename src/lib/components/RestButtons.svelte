@@ -1,6 +1,9 @@
 <script lang="ts">
   import { applyRest } from '$lib/rules/rest';
   import { snapshot } from '$lib/stores/undo';
+  import { dawn, longRest, shortRest } from '$lib/sound';
+
+  const SOUNDS: Record<RestKind, () => void> = { short: shortRest, long: longRest, dawn };
   import type { Definition, RestKind, State } from '$lib/types';
 
   let {
@@ -26,6 +29,7 @@
   function rest(kind: RestKind) {
     if (!editable) return;
     snapshot(state, LABELS[kind]);
+    SOUNDS[kind]();
     onchange(applyRest(definition, state, kind));
     onrest(`${LABELS[kind]} taken`);
   }

@@ -104,10 +104,14 @@ describe('rolling a skill', () => {
     await new Promise((r) => setTimeout(r, 500));
     expect(first.container.querySelector('.said')!.textContent).toMatch(/Stealth check/);
     expect(get(diceRequest)).toBeNull();
+    const total = first.container.querySelector('.total')!.textContent;
     first.unmount();
+    // Back on the tab: the same roll is still showing, and nothing rolled again.
     const again = render(DiceRoller);
     await new Promise((r) => setTimeout(r, 50));
-    expect(again.container.querySelector('.result')).toBeNull();
+    expect(again.container.querySelector('.total')!.textContent).toBe(total);
+    expect(again.container.querySelector('[aria-label="Earlier rolls"]')).toBeNull();
+    expect((again.container.querySelector('details') as HTMLDetailsElement).open).toBe(true);
   });
 });
 

@@ -9,6 +9,7 @@
   import Reveal from './Reveal.svelte';
   import { applyDamage, applyHealing, hitSeverity, isDead, setDeathSave, setTempHp, vitalStatus, withVitals } from '$lib/rules/hp';
   import { snapshot } from '$lib/stores/undo';
+  import { heal, hit, shield } from '$lib/sound';
   import { prefersReducedMotion } from '$lib/motion';
   import { backOut } from 'svelte/easing';
   import type { Definition, State } from '$lib/types';
@@ -278,9 +279,9 @@
   {#if editable}
     <div class="hprow">
       <input type="number" min="1" bind:value={amount} aria-label="Amount" />
-      <button onclick={() => act('Damage', applyDamage(sheetState, amount, hpMax))}>Damage</button>
-      <button onclick={() => act('Healing', applyHealing(sheetState, amount, hpMax))}>Heal</button>
-      <button onclick={() => act('Temp HP', setTempHp(sheetState, amount))}>Temp</button>
+      <button onclick={() => { hit(hitSeverity(Math.max(0, amount - sheetState.hpTemp), hpMax)); act('Damage', applyDamage(sheetState, amount, hpMax)); }}>Damage</button>
+      <button onclick={() => { heal(); act('Healing', applyHealing(sheetState, amount, hpMax)); }}>Heal</button>
+      <button onclick={() => { shield(); act('Temp HP', setTempHp(sheetState, amount)); }}>Temp</button>
     </div>
   {/if}
   <!-- A visitor can neither rest nor spend: the row is only there for the

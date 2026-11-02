@@ -80,3 +80,8 @@ if (typeof window !== 'undefined' && !('PointerEvent' in window)) {
   }
   (window as unknown as { PointerEvent: unknown }).PointerEvent = PointerEventStub;
 }
+
+// The dice tray remembers itself while a sheet is open; each test is a fresh sheet.
+import { beforeEach as beforeEachTest } from 'vitest';
+import { resetTray } from '$lib/stores/tray';
+beforeEachTest(() => resetTray());
