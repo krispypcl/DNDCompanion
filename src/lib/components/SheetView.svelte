@@ -666,8 +666,9 @@
                 blank={() => ({ name: '' }) as Attack}
                 onchange={(attacks) => setDefinition({ ...definition, attacks: attacks as Attack[] })}
               />
-              {#if isOwner}<DiceRoller />{/if}
-              <CombatActions />
+              <!-- Below the table, so they move when it changes size: they glide too. -->
+              {#if isOwner}<div class="flipbox" data-flip="dice"><DiceRoller /></div>{/if}
+              <div class="flipbox" data-flip="actions"><CombatActions /></div>
             {:else if tab === 'Spells'}
               <div class="casting">
                 <div>

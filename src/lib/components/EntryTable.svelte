@@ -292,6 +292,19 @@
 
   const canMove = (row: Row) => groupRows(row.group).length > 1;
 
+  /** The add button and its (i) open out with edit mode and fold away after it. */
+  function unfold(node: HTMLElement) {
+    const h = node.offsetHeight;
+    const style = getComputedStyle(node);
+    const mt = parseFloat(style.marginTop) || 0;
+    return {
+      duration: prefersReducedMotion() ? 0 : 300,
+      easing: cubicOut,
+      css: (t: number) =>
+        `opacity: ${t}; height: ${t * h}px; margin-top: ${t * mt}px; overflow: hidden; transform: translateY(${(1 - t) * -6}px);`
+    };
+  }
+
   // ── Rows arriving and leaving ─────────────────────────────────────────────
 
   function arrive(_node: Element) {
@@ -474,7 +487,7 @@
 {/if}
 
 {#if editable}
-  <div class="addrow">
+  <div class="addrow" transition:unfold>
     <button class="add" onclick={add}>{addLabel}</button>
     {#if info}<InfoTip label="About {addLabel.toLowerCase().replace(/^add /, '')}">{@render info()}</InfoTip>{/if}
   </div>
@@ -596,6 +609,9 @@
     display: block; margin: 0 auto;
   }
   .addrow { display: flex; align-items: center; gap: 0.375rem; margin-top: 0.75rem; }
+  /* The handles and remove buttons come in with edit mode rather than popping. */
+  .grip, .x, .toggle { animation: handleIn 0.32s cubic-bezier(0.2, 0.8, 0.3, 1) backwards; }
+  @keyframes handleIn { from { opacity: 0; transform: scale(0.6); } }
   .add { background: none; border: 1px dashed var(--line);
     color: var(--dim); border-radius: var(--r-sm); padding: 0.4rem 0.9rem;
     font: inherit; font-size: 0.85rem; cursor: pointer;
