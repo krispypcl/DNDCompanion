@@ -907,17 +907,21 @@
     </div>
   </div>
 
-  <Flash message={flash} />
-  {#if leaving}
-    <LeaveDialog onstay={() => (leaving = null)}
-                 onleave={() => { const t = leaving; leaving = null; letGo = true; if (t) goto(t); }} />
-  {/if}
-  <HurtEdges current={sheetState.hpCurrent} max={definition.combat?.hpMax ?? 0} />
-  <UndoToast label={toast} onundo={doUndo} onexpire={() => (toast = null)} />
-  <SaveAlert />
-  <!-- Floating, so saying a word costs the header nothing. -->
-  <SaveIndicator />
+  <!-- Floating pieces sit outside the sheet's box but take its theme, so a
+       toast's Undo is in the character's accent too. -->
+  <div class="themed floats" style={themeStyle(definition.identity.theme)}>
+    <Flash message={flash} />
+    {#if leaving}
+      <LeaveDialog onstay={() => (leaving = null)}
+                   onleave={() => { const t = leaving; leaving = null; letGo = true; if (t) goto(t); }} />
+    {/if}
     <ConditionOverlay conditions={sheetState.conditions ?? []} />
+    <HurtEdges current={sheetState.hpCurrent} max={definition.combat?.hpMax ?? 0} />
+    <UndoToast label={toast} onundo={doUndo} onexpire={() => (toast = null)} />
+    <SaveAlert />
+    <!-- Floating, so saying a word costs the header nothing. -->
+    <SaveIndicator />
+  </div>
   <!-- Only the printer shows this. Private writing a visitor cannot read is
        not passed in, so it is never on their paper either. -->
   <PrintSheet {definition} state={sheetState} notes={readable('notes')} backstory={readable('backstory')} />
@@ -1163,6 +1167,7 @@
     border-radius: var(--r-sm); padding: 0.15rem 0.3rem; font: inherit;
     font-size: 1.0625rem; font-weight: 600;
   }
+  .floats { display: contents; }
   @media (max-width: 860px) {
     .sheet { padding: 0.875rem; }
     .band, .main { grid-template-columns: 1fr; }
