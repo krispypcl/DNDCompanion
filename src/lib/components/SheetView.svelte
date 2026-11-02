@@ -60,6 +60,7 @@
   import { bump, glow, sparkle } from '$lib/motion';
   import { glide } from '$lib/flip';
   import { isDead } from '$lib/rules/hp';
+  import ConditionOverlay from '$lib/components/ConditionOverlay.svelte';
   import { friendlyError } from '$lib/errors';
   import { session } from '$lib/stores/session';
   import { sheetStore } from '$lib/stores/sheet';
@@ -916,6 +917,7 @@
   <SaveAlert />
   <!-- Floating, so saying a word costs the header nothing. -->
   <SaveIndicator />
+    <ConditionOverlay conditions={sheetState.conditions ?? []} />
   <!-- Only the printer shows this. Private writing a visitor cannot read is
        not passed in, so it is never on their paper either. -->
   <PrintSheet {definition} state={sheetState} notes={readable('notes')} backstory={readable('backstory')} />
