@@ -35,7 +35,7 @@ function sizes(): Map<string, number> {
  * One that is going is copied first and the copy fades out where it stood;
  * one that is arriving fades in. Neither pops.
  */
-type Ghost = { rect: DOMRect; copy: HTMLElement; scale: number };
+type Ghost = { rect: DOMRect; copy: HTMLElement; scale: number; quick: boolean };
 const COPIED = ['font', 'color', 'backgroundColor', 'border', 'borderRadius', 'padding', 'textAlign',
   'lineHeight', 'letterSpacing', 'textTransform', 'verticalAlign', 'boxShadow'] as const;
 
@@ -68,7 +68,9 @@ function ghosts(): Map<string, Ghost> {
       n.removeAttribute('data-flip-ghost');
       n.removeAttribute('id');
     });
-    out.set(el.dataset.flipGhost!, { rect, copy, scale: Number(el.dataset.ghostScale) || 0.96 });
+    out.set(el.dataset.flipGhost!, {
+      rect, copy, scale: Number(el.dataset.ghostScale) || 0.96, quick: el.dataset.ghostQuick !== undefined
+    });
   });
   return out;
 }
@@ -119,12 +121,15 @@ export async function glide(change: () => void): Promise<void> {
     present.add(key);
     if (had.has(key)) return;
     // Pictures and other larger pieces grow in from smaller (data-ghost-scale).
+    // Big pieces that scale (data-ghost-quick) go briskly, or they lag
+    // behind the words gliding round them.
     const from = Number(el.dataset.ghostScale) || 0.97;
+    const quick = el.dataset.ghostQuick !== undefined;
     el.animate([{ opacity: 0, transform: `scale(${from})` }, { opacity: 1, transform: 'none' }], {
-      duration: DURATION + 40, delay: 80, easing: EASE, fill: 'backwards'
+      duration: quick ? 260 : DURATION - 60, delay: quick ? 30 : 60, easing: EASE, fill: 'backwards'
     });
   });
-  for (const [key, { rect, copy, scale }] of leaving) {
+  for (const [key, { rect, copy, scale, quick }] of leaving) {
     if (present.has(key)) continue;
     const holder = document.createElement('div');
     holder.setAttribute('aria-hidden', 'true');
@@ -136,7 +141,9 @@ export async function glide(change: () => void): Promise<void> {
     holder.appendChild(copy);
     document.body.appendChild(holder);
     const out = holder.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `scale(${scale})` }], {
-      duration: DURATION * 0.75, easing: 'cubic-bezier(0.4, 0, 0.7, 0.2)', fill: 'forwards'
+      // Gone while the rest is still gliding: an ease-in held the copies
+      // opaque over the new layout long after the words around them moved.
+      duration: quick ? 170 : 220, easing: 'cubic-bezier(0.3, 0, 0.5, 1)', fill: 'forwards'
     });
     out.onfinish = () => holder.remove();
   }

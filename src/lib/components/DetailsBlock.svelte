@@ -99,13 +99,13 @@
   <!-- Editing, the preview beside the link field does this job. -->
   {#if !editable}
     {#if portrait}
-      <button class="portrait-btn" data-flip-ghost="details:portrait" data-ghost-scale="0.8" aria-label="View portrait full screen"
+      <button class="portrait-btn" data-flip-ghost="details:portrait" data-ghost-scale="0.8" data-ghost-quick aria-label="View portrait full screen"
               onclick={(e) => (viewing = { src: portrait, alt: `Portrait of ${definition.identity.name}`, from: e.currentTarget })}>
         <img class="portrait" src={portrait} alt="Portrait of {definition.identity.name}" />
       </button>
     {:else}
       <!-- A placeholder keeps the row the same height whether or not there is art. -->
-      <div class="portrait empty-portrait" data-flip-ghost="details:portrait" data-ghost-scale="0.8" aria-hidden="true">
+      <div class="portrait empty-portrait" data-flip-ghost="details:portrait" data-ghost-scale="0.8" data-ghost-quick aria-hidden="true">
         <svg viewBox="0 0 24 24" width="26" height="26">
           <circle cx="12" cy="9" r="4" fill="none" stroke="currentColor" stroke-width="1.5" />
           <path d="M4.5 20a7.5 7.5 0 0 1 15 0" fill="none" stroke="currentColor" stroke-width="1.5"
@@ -136,13 +136,13 @@
   <!-- The banner, opposite the portrait, the same way: press for full screen. -->
   {#if !editable}
     {#if bannerSrc && !broken[bannerSrc]}
-      <button class="banner-btn" data-flip-ghost="details:banner" data-ghost-scale="0.8" aria-label="View banner full screen"
+      <button class="banner-btn" data-flip-ghost="details:banner" data-ghost-scale="0.8" data-ghost-quick aria-label="View banner full screen"
               onclick={(e) => (viewing = { src: bannerSrc, alt: `Banner of ${definition.identity.name}`, from: e.currentTarget })}>
         <img class="banner" src={bannerSrc} alt="Banner of {definition.identity.name}"
              onerror={() => (broken[bannerSrc] = true)} />
       </button>
     {:else}
-      <div class="banner empty-portrait" data-flip-ghost="details:banner" data-ghost-scale="0.8" aria-hidden="true">
+      <div class="banner empty-portrait" data-flip-ghost="details:banner" data-ghost-scale="0.8" data-ghost-quick aria-hidden="true">
         <svg viewBox="0 0 24 24" width="26" height="26">
           <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5" />
           <path d="m3 16 5-5 4 4 3-3 6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
