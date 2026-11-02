@@ -58,6 +58,7 @@
   import { spellGroup, spellRank } from '$lib/rules/spells';
   import { themeStyle } from '$lib/theme';
   import { bump, glow, sparkle } from '$lib/motion';
+  import { friendlyError } from '$lib/errors';
   import { session } from '$lib/stores/session';
   import { sheetStore } from '$lib/stores/sheet';
   import { canUndo, lastLabel, resetUndo, snapshot, undo } from '$lib/stores/undo';
@@ -227,7 +228,7 @@
         sheetStore.load(found);
         if (!found) loadError = 'notfound';
       })
-      .catch((e) => (loadError = e instanceof Error ? e.message : 'Could not load this sheet'))
+      .catch((e) => (loadError = friendlyError(e, 'This sheet wouldn’t load! Give it another roll in a moment.')))
       .finally(() => (loading = false));
   });
 
@@ -464,9 +465,9 @@
     </div>
   </div>
 {:else if loadError === 'notfound'}
-  <NotFound title="No sheet here" message="This sheet does not exist, or it has been deleted. Check the link with whoever sent it." />
+  <NotFound title="No sheet here!" message="This sheet has vanished like a rogue in the night. It may have been deleted, or the link is off by a letter, so check it with whoever sent it." />
 {:else if loadError}
-  <div class="centred"><h1>Could not load</h1><p>{loadError}</p></div>
+  <NotFound title="That’s a critical fail!" message={loadError} />
 {:else if sheet && definition && sheetState}
   <!-- The theme is scoped here, not to :root, so a campaign view can later show
        several characters in their own colours at once. -->
@@ -548,7 +549,7 @@
           </dl>
         {/if}
         <a class="back" href="{base}/">Back</a>
-        <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Could not copy the link')} />
+        <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
         <PrintButton />
         {#if isOwner}<DownloadButton ondownload={exportNow} />{/if}
         <ModeToggle />
@@ -923,7 +924,6 @@
   .loading { position: relative; }
   .loading > :global(.skel) { opacity: 0.45; }
   .loading .die { position: fixed; inset: 0; display: grid; place-items: center; pointer-events: none; }
-  .centred { max-width: 30rem; margin: 4rem auto; padding: 0 1rem; text-align: center; color: var(--dim); }
   /* Not positioned: the banner inside it is meant to escape this column and
      run the width of the page. */
   .sheet { padding: 1.5rem; max-width: 110rem; margin: 0 auto; }

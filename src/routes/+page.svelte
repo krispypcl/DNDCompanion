@@ -7,6 +7,7 @@
   import { MAX_BYTES, importSheet } from '$lib/exchange';
   import { profileOf, signIn } from '$lib/data/session';
   import Avatar from '$lib/components/Avatar.svelte';
+  import { friendlyError } from '$lib/errors';
   import { friendlyDate } from '$lib/rules/dates';
   import D20Loader from '$lib/components/D20Loader.svelte';
   import { flip } from 'svelte/animate';
@@ -60,7 +61,7 @@
     sheetRepo
       .listMySheets(user.id)
       .then((rows) => (sheets = rows))
-      .catch((e) => (error = e instanceof Error ? e.message : 'Could not load your sheets'))
+      .catch((e) => (error = friendlyError(e, 'Your sheets wouldn’t load! Try again in a moment.')))
       .finally(() => (loading = false));
   });
 
@@ -72,7 +73,7 @@
       sheets = sheets.filter((s) => s.id !== id);
       confirming = null;
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Could not delete that sheet';
+      error = friendlyError(e, 'That sheet refused to leave! Try deleting it again.');
     } finally {
       deleting = null;
     }
@@ -91,7 +92,7 @@
     error = null;
     notice = null;
     if (file.size > MAX_BYTES) {
-      error = 'That file is too large to be a character sheet.';
+      error = 'That file is far too heavy to be a character sheet!';
       return;
     }
     importing = true;
@@ -118,7 +119,7 @@
           try {
             await sheetRepo.saveText(sheet.id, user.id, key, t.body, t.isPublic, null);
           } catch (e) {
-            error = `The sheet was imported, but its ${key} could not be saved: ${e instanceof Error ? e.message : 'unknown error'}`;
+            error = `The sheet came in, but its ${key} didn’t make it! Open the sheet and paste it in again.`;
           }
         }
       }
@@ -129,7 +130,7 @@
       }
       await goto(`${base}/s/${sheet.id}`);
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Could not import that file';
+      error = friendlyError(e, 'That file wouldn’t come in! Try exporting it again.');
     } finally {
       importing = false;
     }
@@ -143,7 +144,7 @@
       const sheet = await sheetRepo.createSheet(user.id, 'New character', blankDefinition());
       await goto(`${base}/s/${sheet.id}`);
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Could not create a sheet';
+      error = friendlyError(e, 'The new sheet fizzled! Try again in a moment.');
     } finally {
       creating = false;
     }

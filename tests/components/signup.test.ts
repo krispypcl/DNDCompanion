@@ -25,7 +25,7 @@ describe('sign-up', () => {
   it('refuses two passwords that differ, without calling the server', async () => {
     render(Signup);
     await fill('a@b.co', 'longenough1', 'longenough2');
-    expect((await screen.findByRole('alert')).textContent).toMatch(/do not match/i);
+    expect((await screen.findByRole('alert')).textContent).toMatch(/don’t match/i);
     expect(signUp).not.toHaveBeenCalled();
   });
 
@@ -58,7 +58,7 @@ describe('sign-up', () => {
   it('refuses a password everyone tries first', async () => {
     render(Signup);
     await fill('a@b.co', 'password123', 'password123');
-    expect((await screen.findByRole('alert')).textContent).toMatch(/too easy to guess/i);
+    expect((await screen.findByRole('alert')).textContent).toMatch(/could guess that password/i);
     expect(signUp).not.toHaveBeenCalled();
   });
 });

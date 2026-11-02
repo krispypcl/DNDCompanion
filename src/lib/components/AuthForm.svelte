@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { friendlyError } from '$lib/errors';
   import type { FullAutoFill } from 'svelte/elements';
   import { passwordStrength } from '$lib/rules/password';
 
@@ -62,7 +63,7 @@
       const message = await onsubmit(values);
       if (message) notice = message;
     } catch (e) {
-      error = e instanceof Error ? e.message : String(e);
+      error = friendlyError(e, 'That didn’t work! Give it another go in a moment.');
     } finally {
       busy = false;
     }

@@ -99,6 +99,6 @@ describe('the sheet renders real numbers', () => {
     const { container } = render(Tracker, {
       props: { tracker: broken, spent: 0, ctx: formulaContext(loka), editable: true, onchange: () => {} }
     });
-    expect(container.textContent).toContain('Formula error');
+    expect(container.textContent).toContain('formula fumbled');
   });
 });

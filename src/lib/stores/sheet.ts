@@ -1,3 +1,4 @@
+import { friendlyError } from '$lib/errors';
 import { get, writable, type Readable } from 'svelte/store';
 import { StaleWriteError, sheetRepo } from '$lib/data/sheets';
 import { TEXT_KEYS, type Definition, type Sheet, type State, type TextKey } from '$lib/types';
@@ -108,10 +109,8 @@ function createSheetStore() {
           setStatus(
             'unsaved',
             typeof navigator !== 'undefined' && navigator.onLine === false
-              ? 'You are offline. Your changes will save when you are back online.'
-              : error instanceof Error
-                ? error.message
-                : 'Could not save'
+              ? 'You’re offline! Your changes are safe and will save when you’re back.'
+              : friendlyError(error, 'Your changes didn’t save! Trying again shortly.')
           );
           return;
         }

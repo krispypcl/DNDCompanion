@@ -13,6 +13,7 @@
   import { passwordStrength } from '$lib/rules/password';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
   import { session } from '$lib/stores/session';
+  import { friendlyError } from '$lib/errors';
 
   const MIN_PASSWORD = 8;
 
@@ -42,7 +43,7 @@
       await updateProfile({ displayName: name, avatarUrl: picture });
       profileMsg = { ok: true, text: 'Saved.' };
     } catch (err) {
-      profileMsg = { ok: false, text: err instanceof Error ? err.message : 'Could not save.' };
+      profileMsg = { ok: false, text: friendlyError(err, 'Your profile didn’t save! Try again in a moment.') };
     } finally {
       savingProfile = false;
     }
@@ -56,16 +57,16 @@
   async function savePassword(e: SubmitEvent) {
     e.preventDefault();
     pwMsg = null;
-    if (pw.length < MIN_PASSWORD) return (pwMsg = { ok: false, text: `Use at least ${MIN_PASSWORD} characters.` });
-    if (strength.score === 0) return (pwMsg = { ok: false, text: 'That password is too easy to guess.' });
-    if (pw !== pw2) return (pwMsg = { ok: false, text: 'The two passwords do not match.' });
+    if (pw.length < MIN_PASSWORD) return (pwMsg = { ok: false, text: `That password is a bit short! Use at least ${MIN_PASSWORD} characters.` });
+    if (strength.score === 0) return (pwMsg = { ok: false, text: 'Even a goblin could guess that password! Try a longer one.' });
+    if (pw !== pw2) return (pwMsg = { ok: false, text: 'Those two passwords don’t match! Type them again.' });
     savingPw = true;
     try {
       await updatePassword(pw);
       pw = pw2 = '';
       pwMsg = { ok: true, text: 'Password changed.' };
     } catch (err) {
-      pwMsg = { ok: false, text: err instanceof Error ? err.message : 'Could not change the password.' };
+      pwMsg = { ok: false, text: friendlyError(err, 'Your password didn’t change! Try again in a moment.') };
     } finally {
       savingPw = false;
     }
@@ -113,7 +114,7 @@
         <img class="probe" src={link.url} alt="" onload={() => (loaded[link.url] = 'ok')} onerror={() => (loaded[link.url] = 'failed')} />
       {/if}
       {#if link.url && loaded[link.url] === 'failed'}
-        <p class="note bad">That link did not load as a picture. Open the picture itself and copy its image address.</p>
+        <p class="note bad">That link didn’t turn into a picture! Open the picture itself and copy its image address.</p>
       {:else if link.note}
         <p class="note" class:bad={link.source === 'invalid'}>{link.note}</p>
       {/if}

@@ -203,12 +203,12 @@ describe('refusing what is not a sheet', () => {
     expect(!importSheet(good().replace(/===== DEFINITION =====[\s\S]*?(?====== STATE)/, '')).ok).toBe(true);
     const broken = good().replace('"name": "Loka Sibbs"', '"name": ');
     const r = importSheet(broken);
-    expect(!r.ok && r.error).toMatch(/character section/i);
+    expect(!r.ok && r.error).toMatch(/character part/i);
   });
 
   it('says when the state is unreadable rather than quietly using a blank one', () => {
     const r = importSheet(good().replace('"hpCurrent": 31', '"hpCurrent": '));
-    expect(!r.ok && r.error).toMatch(/state section/i);
+    expect(!r.ok && r.error).toMatch(/state part/i);
   });
 
   it('does not take a second section of the same name over the first', () => {
@@ -243,7 +243,7 @@ describe('a hostile or damaged file', () => {
     expect(d.combat).toMatchObject({ ac: 10, hpMax: 1, hitDice: '1d8' });
     expect(d.attacks).toEqual([]);
     expect(d.currency).toEqual({});
-    expect(r.warnings.join(' ')).toMatch(/left out/);
+    expect(r.warnings.join(' ')).toMatch(/left behind/);
   });
 
   it('keeps numbers inside sane limits', () => {
