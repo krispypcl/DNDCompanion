@@ -62,6 +62,7 @@
   import { isDead } from '$lib/rules/hp';
   import ConditionOverlay from '$lib/components/ConditionOverlay.svelte';
   import DownScreen from '$lib/components/DownScreen.svelte';
+  import ShortcutHelp from '$lib/components/ShortcutHelp.svelte';
   import { friendlyError } from '$lib/errors';
   import { session } from '$lib/stores/session';
   import { sheetStore } from '$lib/stores/sheet';
@@ -336,6 +337,36 @@
     setTimeout(() => (refilling = false), 700);
   }
 
+  /** Keyboard shortcuts, for a computer; none while typing in a field. */
+  let showKeys = $state(false);
+  function onkey(e: KeyboardEvent) {
+    if (!definition || showKeys || leaving) return;
+    const t = e.target as HTMLElement | null;
+    if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    if (document.querySelector('.lightbox, [role="dialog"]:not([data-keys]), [role="alertdialog"]')) return;
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && !e.shiftKey && e.key.toLowerCase() === 'z') {
+      if (isOwner && $canUndo) {
+        e.preventDefault();
+        doUndo();
+      }
+      return;
+    }
+    if (mod || e.altKey) return;
+    if (e.key === '?') {
+      e.preventDefault();
+      showKeys = true;
+    } else if (e.key.toLowerCase() === 'e' && isOwner) {
+      e.preventDefault();
+      void glide(() => (editing = !editing));
+    } else if (e.key.toLowerCase() === 'p') {
+      e.preventDefault();
+      window.print();
+    } else if (/^[1-8]$/.test(e.key)) {
+      activeTab = TABS[Number(e.key) - 1];
+    }
+  }
+
   function doUndo() {
     const entry = undo();
     if (entry) setState(entry.state);
@@ -438,6 +469,8 @@
     };
   }
 </script>
+
+<svelte:window onkeydown={onkey} />
 
 {#snippet writing(key: TextKey, label: string)}
   {#if definition}
@@ -570,6 +603,14 @@
         {/if}
         <a class="back" href="{base}/">Back</a>
         <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
+        <button class="keys" onclick={() => (showKeys = true)} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+            <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2.5" y="6" width="19" height="12" rx="2" />
+              <path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M7.5 14h9" />
+            </g>
+          </svg>
+        </button>
         <PrintButton />
         {#if isOwner}<DownloadButton ondownload={exportNow} />{/if}
         <ModeToggle />
@@ -927,6 +968,7 @@
   <!-- Floating pieces sit outside the sheet's box but take its theme, so a
        toast's Undo is in the character's accent too. -->
   <div class="themed floats" style={themeStyle(definition.identity.theme)}>
+    {#if showKeys}<ShortcutHelp owner={isOwner} onclose={() => (showKeys = false)} />{/if}
     <Flash message={flash} />
     {#if leaving}
       <LeaveDialog onstay={() => (leaving = null)}
@@ -1189,6 +1231,20 @@
     font-size: 1.0625rem; font-weight: 600;
   }
   .floats { display: contents; }
+  /* Shortcuts are for a keyboard: the button only shows where there is a mouse. */
+  .keys {
+    display: none; place-items: center; width: 2rem; height: 2rem; flex: none; padding: 0;
+    background: var(--raised); border: 1px solid var(--line); border-radius: var(--r-sm);
+    color: var(--text); cursor: pointer; transition: border-color 0.18s ease, color 0.18s ease, transform 0.08s ease;
+  }
+  .keys:hover { border-color: var(--a-edge); color: var(--a); }
+  .keys:active { transform: translateY(1px); }
+  @media (hover: hover) and (pointer: fine) { .keys { display: inline-grid; } }
+  .attune { display: flex; align-items: baseline; gap: 0.625rem; margin-bottom: 0.75rem; }
+  .attune .cap { margin: 0; }
+  .attn { color: var(--dim); font-size: 0.875rem; display: inline-flex; align-items: baseline; gap: 0.25rem; }
+  .attn b { color: var(--a); font-weight: 650; }
+  .attn :global(.field) { width: 2.75rem; field-sizing: fixed; text-align: center; color: var(--text); font-weight: 600; }
   @media (max-width: 860px) {
     .sheet { padding: 0.875rem; }
     .band, .main { grid-template-columns: 1fr; }
