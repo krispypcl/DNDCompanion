@@ -290,7 +290,7 @@
       {#if down}
         <!-- At zero there is no resting, so death saves take this space,
              veiled for everyone, the owner too, until looked at. -->
-        <Reveal enabled={true}>
+        <Reveal enabled={true} urgent={dying} cue="Death saves · hover to reveal" tapCue="Death saves · tap to reveal">
         <div class="deaths" class:stable={sheetState.deathSaves.successes >= 3}
              class:dead={sheetState.deathSaves.failures >= 3}>
           {#each (['successes', 'failures'] as const) as kind (kind)}
@@ -549,7 +549,8 @@
   @keyframes pipPop { from { transform: scale(0.3); } 60% { transform: scale(1.3); } }
   .pip { transition: background-color 0.2s ease, border-color 0.2s ease; }
   .deaths { padding: 0.25rem 0.625rem; }
-  .pip.fail[aria-pressed='true'] { background: var(--danger); border-color: var(--danger); }
+  /* Failures are red whatever the theme. */
+  .pip.fail[aria-pressed='true'] { background: var(--hurt-red); border-color: var(--hurt-red); }
   /* Two groups, not one wrapping row: what changes hit points now, and what
      restores them on a rest. The rule between says which is which. */
   .meter { margin-top: auto; }

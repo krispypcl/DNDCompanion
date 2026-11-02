@@ -19,6 +19,8 @@ import {
   TEXT_KEYS,
   emptyState,
   type Ability,
+  type ConditionLook,
+  type ConditionMotion,
   type Definition,
   type RestKind,
   type SheetTexts,
@@ -184,6 +186,7 @@ function entries(raw: unknown, tally: Tally, textKey: string): Plain[] {
 }
 
 const REST_ON = new Set(['short', 'long', 'dawn', 'manual']);
+const MOTIONS = new Set(['still', 'pulse', 'shimmer', 'heavy', 'shiver', 'daze']);
 
 function trackers(raw: unknown, tally: Tally): Tracker[] {
   if (raw === undefined) return [];
@@ -299,6 +302,19 @@ export function readDefinition(raw: unknown, tally = new Tally()): Definition {
     def.traits = traits as Definition['traits'];
   }
   if (typeof src.senses === 'string') def.senses = src.senses;
+  if (isObj(src.conditionLooks)) {
+    const looks: Record<string, ConditionLook> = {};
+    for (const [k, v] of Object.entries(src.conditionLooks)) {
+      if (isObj(v) && typeof v.color === 'string' && typeof v.motion === 'string' && MOTIONS.has(v.motion)) {
+        looks[k.toLowerCase()] = { color: v.color.slice(0, 60), motion: v.motion as ConditionMotion };
+      }
+    }
+    if (Object.keys(looks).length) def.conditionLooks = looks;
+  }
+  {
+    const n = optNum(src.attunementSlots);
+    if (n !== undefined) def.attunementSlots = Math.max(0, Math.min(20, Math.round(n)));
+  }
   if (ABILITIES.includes(src.spellcastingAbility as Ability)) {
     def.spellcastingAbility = src.spellcastingAbility as Ability;
   }

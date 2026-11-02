@@ -207,7 +207,7 @@
           </div>
           <ul class="items">
             {#each def.equipment ?? [] as item, i (i)}
-              <li>{item.qty && item.qty !== 1 ? `${item.qty} × ` : ''}{item.name}{#if item.weight}<em> · {item.weight} lb</em>{/if}</li>
+              <li>{item.qty && item.qty !== 1 ? `${item.qty} × ` : ''}{item.name}{#if item.attuned}<em> · attuned</em>{/if}{#if item.weight}<em> · {item.weight} lb</em>{/if}</li>
             {/each}
           </ul>
           {#if weightCarried(def)}<p class="carried">Carrying {weightCarried(def)} lb</p>{/if}

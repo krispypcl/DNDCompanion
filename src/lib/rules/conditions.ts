@@ -6,7 +6,7 @@
  * table, the same as everywhere else on the sheet; the list below exists so
  * the common ones are one pick away, not so the app can apply them.
  */
-import type { State } from '$lib/types';
+import type { ConditionLook, State } from '$lib/types';
 
 export const STANDARD_CONDITIONS = [
   'Blinded',
@@ -59,4 +59,42 @@ export function conditionUrl(name: string): string | null {
   const match = STANDARD_CONDITIONS.find((c) => key(c) === key(name.replace(/\s*\d+$/, '')));
   if (match && NO_PAGE.has(key(match))) return null;
   return match ? `https://5e.tools/conditionsdiseases.html#${match.toLowerCase()}_xphb` : null;
+}
+
+/**
+ * The screen tint for each standard condition: a colour and how it moves.
+ * Dead has one too. A condition written in by hand gets whatever its owner
+ * chose for it, kept on the sheet in `conditionLooks`.
+ */
+export const STANDARD_LOOKS: Record<string, ConditionLook> = {
+  blinded: { color: 'oklch(14% 0.005 286)', motion: 'heavy' },
+  charmed: { color: 'oklch(68% 0.2 350)', motion: 'pulse' },
+  deafened: { color: 'oklch(58% 0.06 245)', motion: 'still' },
+  exhaustion: { color: 'oklch(52% 0.08 60)', motion: 'heavy' },
+  frightened: { color: 'oklch(45% 0.18 300)', motion: 'shiver' },
+  grappled: { color: 'oklch(64% 0.16 50)', motion: 'still' },
+  incapacitated: { color: 'oklch(58% 0.01 286)', motion: 'still' },
+  invisible: { color: 'oklch(86% 0.08 210)', motion: 'shimmer' },
+  paralyzed: { color: 'oklch(76% 0.12 230)', motion: 'still' },
+  petrified: { color: 'oklch(62% 0.025 80)', motion: 'still' },
+  poisoned: { color: 'oklch(66% 0.19 140)', motion: 'pulse' },
+  prone: { color: 'oklch(50% 0.07 50)', motion: 'still' },
+  restrained: { color: 'oklch(70% 0.14 75)', motion: 'still' },
+  stunned: { color: 'oklch(88% 0.17 95)', motion: 'daze' },
+  unconscious: { color: 'oklch(28% 0.08 265)', motion: 'heavy' },
+  dead: { color: 'oklch(16% 0.04 25)', motion: 'heavy' }
+};
+
+/** "Exhaustion 2" is exhaustion; case and spacing do not matter. */
+export const lookKey = (name: string) => key(name).replace(/\s*\d+$/, '');
+
+export function isStandard(name: string): boolean {
+  return lookKey(name) in STANDARD_LOOKS;
+}
+
+/** The tint for a condition, or null for one with none. */
+export function lookOf(name: string, custom: Record<string, ConditionLook> = {}): ConditionLook | null {
+  const k = lookKey(name);
+  const look = STANDARD_LOOKS[k] ?? custom[k];
+  return look && look.color ? look : null;
 }

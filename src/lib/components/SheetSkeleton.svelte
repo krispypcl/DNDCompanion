@@ -29,7 +29,7 @@
   }
   @keyframes shimmer { from { background-position: 100% 0; } to { background-position: -50% 0; } }
   .head { display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; }
-  .sq { width: 6rem; height: 6rem; border-radius: var(--r); }
+  .sq { width: 6rem; height: 6rem; border-radius: var(--r); flex: none; }
   .lines { display: grid; gap: 0.625rem; flex: 1; }
   .l1 { width: 14rem; height: 1.75rem; }
   .l2 { width: 20rem; max-width: 80%; height: 0.875rem; }
@@ -51,6 +51,14 @@
     .band, .main { grid-template-columns: 1fr; }
     .abil { grid-template-columns: repeat(3, 1fr); }
     .main .rail:last-child { display: none; }
+  }
+  /* The real header stacks on a phone: the portrait, then the name under it. */
+  @media (max-width: 700px) {
+    .head { flex-direction: column; align-items: flex-start; gap: 0.875rem; }
+    .sq { width: 4rem; height: 4rem; }
+    .lines { width: 100%; }
+    .l1 { width: 11rem; }
+    .l2 { width: 16rem; }
   }
   @media (prefers-reduced-motion: reduce) { i { animation: none; } }
 </style>
