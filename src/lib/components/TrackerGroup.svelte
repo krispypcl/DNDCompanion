@@ -3,6 +3,7 @@
   import type { FormulaContext } from '$lib/rules/formula';
   import type { Tracker as TrackerT } from '$lib/types';
   import { trackerMax } from '$lib/rules/tracker';
+  import { slotLevel } from '$lib/rules/print';
 
   let {
     trackers,
@@ -21,12 +22,12 @@
   } = $props();
 
   /**
-   * A tracker whose formula comes to nothing yet (9th-level slots for a
-   * 3rd-level wizard) is not shown until the character reaches it. One
-   * written as a plain 0, or whose formula is broken, still is.
+   * Spell slots of a level the character has not reached (9th-level slots
+   * for a 3rd-level wizard) are not shown until they have some. Any other
+   * tracker shows even at 0: it may simply be spent, or a score may be low.
    */
   function reached(t: TrackerT): boolean {
-    if (typeof t.max !== 'string' || /^\s*\d+\s*$/.test(t.max)) return true;
+    if (slotLevel(t) === null) return true;
     try {
       return trackerMax(t, ctx) > 0;
     } catch {
