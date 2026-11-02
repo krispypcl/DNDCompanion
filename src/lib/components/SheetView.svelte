@@ -603,6 +603,8 @@
         {/if}
         <a class="back" href="{base}/">Back</a>
         <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
+        <PrintButton />
+        {#if isOwner}<DownloadButton ondownload={exportNow} />{/if}
         <button class="keys" onclick={() => (showKeys = true)} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
             <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -611,8 +613,6 @@
             </g>
           </svg>
         </button>
-        <PrintButton />
-        {#if isOwner}<DownloadButton ondownload={exportNow} />{/if}
         <ModeToggle />
       </div>
     </header>
@@ -1186,6 +1186,9 @@
      the bottom of the panel, not into a gap above this. */
   .passives { padding-top: 1.25rem; }
   .passives .cap:first-child { margin-bottom: 0.625rem; }
+  /* In the narrower skills card "Investigation" only fits a little smaller. */
+  .rail-skills .passives .defbox { padding-inline: 0.125rem; }
+  .rail-skills .passives .defbox .cap { font-size: 0.5rem; letter-spacing: 0; }
   .money { padding-top: 1.25rem; }
   .money .cap { margin-bottom: 0.5rem; }
   .profs { padding-top: 1.25rem; }
