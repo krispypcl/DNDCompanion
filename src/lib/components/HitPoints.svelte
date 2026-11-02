@@ -44,6 +44,48 @@
   let ghost = $state<{ left: number; width: number; kind: 'damage' | 'heal' } | null>(null);
   let pulse = $state(0);
   let struck = $state(false);
+  /** A heal just landed: the gauge glows green and a light runs along it. */
+  let healed = $state(false);
+  /** Temporary hit points were just gained: the outline flares. */
+  let shored = $state(false);
+  /** The amount that just changed, floated up off the gauge. */
+  let float = $state<{ text: string; kind: 'heal' | 'temp'; id: number } | null>(null);
+  let healTimer: ReturnType<typeof setTimeout> | undefined;
+  let tempTimer: ReturnType<typeof setTimeout> | undefined;
+  let floatTimer: ReturnType<typeof setTimeout> | undefined;
+  let previousTemp = -1;
+
+  /** Off then on across a frame, so a second one restarts the animation. */
+  function replay(set: (on: boolean) => void, ms: number, timer: 'heal' | 'temp') {
+    set(false);
+    requestAnimationFrame(() => set(true));
+    if (timer === 'heal') {
+      clearTimeout(healTimer);
+      healTimer = setTimeout(() => set(false), ms);
+    } else {
+      clearTimeout(tempTimer);
+      tempTimer = setTimeout(() => set(false), ms);
+    }
+  }
+
+  function floatUp(text: string, kind: 'heal' | 'temp') {
+    float = { text, kind, id: (float?.id ?? 0) + 1 };
+    clearTimeout(floatTimer);
+    floatTimer = setTimeout(() => (float = null), 1100);
+  }
+
+  $effect(() => {
+    const temp = sheetState.hpTemp;
+    if (previousTemp === -1) {
+      previousTemp = temp;
+      return;
+    }
+    if (temp > previousTemp) {
+      replay((on) => (shored = on), 1000, 'temp');
+      floatUp(`+${temp - previousTemp} temp`, 'temp');
+    }
+    previousTemp = temp;
+  });
   /** How hard the last hit was, as inline variables the shake reads. */
   let blow = $state('');
   /* Plain variables: reading a $state inside the effect would make the effect
@@ -73,6 +115,10 @@
     previous = current;
     seq += 1;
     pulse = seq;
+    if (!damaged) {
+      replay((on) => (healed = on), 950, 'heal');
+      floatUp(`+${-lost}`, 'heal');
+    }
     if (damaged) {
       // A heavier blow moves the gauge further, longer and with more weight:
       // sideways, then up and down, then a lean, then a thickening. A scratch
@@ -127,7 +173,7 @@
   }
 </script>
 
-<div class="hpwrap" class:struck class:reading={!editable} style={blow}>
+<div class="hpwrap" class:struck class:healed class:shored class:reading={!editable} style={blow}>
 <span class="cap">Hit points</span>
 
 <div class="meter">
@@ -154,8 +200,17 @@
   </span>
 </div>
 
-<div class="bar" aria-hidden="true">
+<div class="gauge">
+{#if float}
+  {#key float.id}
+    <!-- Rises from where the gauge now ends. -->
+    <span class="float {float.kind}" aria-hidden="true"
+          style:left="clamp(1.5rem, {pct(sheetState.hpCurrent + (float.kind === 'temp' ? sheetState.hpTemp : 0))}%, calc(100% - 2.5rem))">{float.text}</span>
+  {/key}
+{/if}
+<div class="bar" class:shielded={sheetState.hpTemp > 0} aria-hidden="true">
   <i class="cur" class:bloodied class:down style:width="{pct(sheetState.hpCurrent)}%"></i>
+  {#if healed}<i class="sweep"></i>{/if}
   {#key sheetState.hpTemp}
     <i class="tmp" style:width="{pct(sheetState.hpTemp)}%"></i>
   {/key}
@@ -164,6 +219,7 @@
       <i class="ghost {ghost.kind}" style:left="{ghost.left}%" style:width="{ghost.width}%"></i>
     {/key}
   {/if}
+</div>
 </div>
 </div>
 
@@ -313,7 +369,10 @@
   .bar i { display: block; height: 100%; transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
   .cur { background: var(--a-mid); }
   .cur.bloodied, .cur.down { background: var(--danger); }
-  .tmp { background: var(--temp); animation: tempIn 0.4s ease-out; }
+  .tmp {
+    background: color-mix(in oklch, var(--shield) 85%, transparent);
+    animation: tempIn 0.4s ease-out;
+  }
   @keyframes tempIn {
     from { filter: brightness(var(--temp-flash)); }
     to { filter: none; }
@@ -324,7 +383,70 @@
     pointer-events: none;
   }
   .ghost.damage { background: var(--danger); }
-  .ghost.heal { background: var(--heal); }
+  .ghost.heal { background: var(--heal-green); }
+
+  /* Healing: green, always, whatever the character's colours. The gauge
+     glows, a light runs along the filled part, and the number brightens. */
+  .hpwrap { --heal-green: oklch(74% 0.17 150); --shield: oklch(91% 0.11 95); }
+  /* On a light page, pale gold vanishes; a deeper gold and green read. */
+  :global([data-mode='light']) .hpwrap { --heal-green: oklch(58% 0.16 150); --shield: oklch(76% 0.15 85); }
+  .gauge { position: relative; }
+  .healed .bar { animation: healGlow 0.95s ease-out; }
+  @keyframes healGlow {
+    0% { box-shadow: 0 0 0 0 transparent; }
+    30% { box-shadow: 0 0 0 1px var(--heal-green), 0 0 18px 2px color-mix(in oklch, var(--heal-green) 55%, transparent); }
+    100% { box-shadow: 0 0 0 0 transparent; }
+  }
+  .sweep {
+    position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(90deg, transparent 0%, color-mix(in oklch, var(--heal-green) 80%, white) 50%, transparent 100%);
+    width: 40% !important; opacity: 0.85; mix-blend-mode: screen;
+    animation: sweep 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  @keyframes sweep {
+    from { transform: translateX(-110%); }
+    to { transform: translateX(260%); opacity: 0; }
+  }
+  .healed .hp-readout strong { animation: healNum 0.8s ease-out; }
+  @keyframes healNum {
+    0% { color: inherit; transform: scale(1); }
+    30% { color: var(--heal-green); transform: scale(1.08); text-shadow: 0 0 14px color-mix(in oklch, var(--heal-green) 60%, transparent); }
+    100% { transform: scale(1); }
+  }
+
+  /* Temporary hit points: a pale gold outline round the gauge for as long as
+     there are any, which flares when more are gained. */
+  .bar { transition: box-shadow 0.45s ease; }
+  .bar.shielded {
+    box-shadow: 0 0 0 1.5px var(--shield), 0 0 10px -2px color-mix(in oklch, var(--shield) 70%, transparent);
+  }
+  .shored .bar.shielded { animation: shieldUp 1s cubic-bezier(0.2, 0.8, 0.3, 1); }
+  @keyframes shieldUp {
+    0% { box-shadow: 0 0 0 0 var(--shield), 0 0 0 0 transparent; }
+    35% { box-shadow: 0 0 0 3px white, 0 0 22px 4px color-mix(in oklch, var(--shield) 80%, transparent); }
+    100% { box-shadow: 0 0 0 1.5px var(--shield), 0 0 10px -2px color-mix(in oklch, var(--shield) 70%, transparent); }
+  }
+
+  /* What just changed, rising off the gauge and fading. */
+  .float {
+    position: absolute; bottom: 0; line-height: 14px; pointer-events: none;
+    translate: -50% 0; text-shadow: 0 1px 3px rgb(0 0 0 / 0.55);
+    font-size: 0.75rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap;
+    animation: floatUp 1.1s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+  }
+  .float.heal { color: var(--heal-green); }
+  .float.temp { color: var(--shield); }
+  /* From the gauge up into the gap above it, never as far as the line of
+     numbers. */
+  @keyframes floatUp {
+    0% { opacity: 0; transform: translateY(0); }
+    20% { opacity: 1; transform: translateY(-6px); }
+    70% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-14px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sweep, .float { display: none; }
+  }
   @keyframes ghostOut {
     0% { opacity: 0.95; }
     35% { opacity: 0.95; }

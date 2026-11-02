@@ -194,3 +194,26 @@ describe('death save cover', () => {
     expect(veil.classList.contains('veiled')).toBe(true);
   });
 });
+
+describe('healing and temporary hit points', () => {
+  it('outlines the gauge while there are temporary hit points', async () => {
+    const { container, rerender } = render(HitPoints, {
+      props: { definition: definition(), state: { ...state(), hpCurrent: 20 }, editable: true, onchange: () => {} }
+    });
+    expect(container.querySelector('.bar.shielded')).toBeNull();
+    await rerender({ definition: definition(), state: { ...state(), hpCurrent: 20, hpTemp: 5 }, editable: true, onchange: () => {} });
+    expect(container.querySelector('.bar.shielded')).not.toBeNull();
+    expect(container.querySelector('.float.temp')?.textContent).toBe('+5 temp');
+  });
+
+  it('marks a heal, and floats the amount healed', async () => {
+    const { container, rerender } = render(HitPoints, {
+      props: { definition: definition(), state: { ...state(), hpCurrent: 20 }, editable: true, onchange: () => {} }
+    });
+    await rerender({ definition: definition(), state: { ...state(), hpCurrent: 28 }, editable: true, onchange: () => {} });
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    await new Promise((r) => setTimeout(r, 30));
+    expect(container.querySelector('.hpwrap.healed')).not.toBeNull();
+    expect(container.querySelector('.float.heal')?.textContent).toBe('+8');
+  });
+});
