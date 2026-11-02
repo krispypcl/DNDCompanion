@@ -1191,7 +1191,7 @@
     .defense { gap: 0.4375rem; }
     /* Seven controls in a phone's width: tighter, and allowed to wrap on the
        narrowest screens rather than run off the edge. */
-    .controls { gap: 0.375rem; flex-wrap: wrap; }
+    .controls { gap: 0.375rem; flex-wrap: wrap; width: 100%; justify-content: space-between; }
     .edit { min-width: 3.75rem; padding: 0.375rem 0.625rem; }
     .undo, .back { padding: 0.375rem 0.625rem; }
   }
