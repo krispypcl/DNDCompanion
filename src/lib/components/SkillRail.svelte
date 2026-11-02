@@ -3,6 +3,7 @@
       the ability band, each group headed by that ability's modifier. */
   import { modifierOf, skillTotal } from '$lib/rules/derived';
   import { ABILITIES, SKILLS, type Ability, type Definition, type SkillName } from '$lib/types';
+  import { bump } from '$lib/motion';
 
   let {
     definition,
@@ -82,11 +83,11 @@
         <span class="name">{LABELS[skill]}</span>
         {#if onroll}
           {@const total = skillTotal(definition, skill)}
-          <button class="bonus roll" title="Roll {LABELS[skill]}: d20 {sign(total)}"
+          <button class="bonus roll" use:bump={total} title="Roll {LABELS[skill]}: d20 {sign(total)}"
                   aria-label="Roll {LABELS[skill]} {sign(total)}"
                   onclick={() => onroll(`${LABELS[skill]} check`, total)}>{sign(total)}</button>
         {:else}
-          <span class="bonus">{sign(skillTotal(definition, skill))}</span>
+          <span class="bonus" use:bump={skillTotal(definition, skill)}>{sign(skillTotal(definition, skill))}</span>
         {/if}
       </div>
     {/each}

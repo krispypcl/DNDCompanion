@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
 import Banner from '$lib/components/Banner.svelte';
 
 const source = readFileSync('src/lib/components/Banner.svelte', 'utf8');
-const sheet = readFileSync('src/routes/s/[id]/+page.svelte', 'utf8');
+const sheet = readFileSync('src/lib/components/SheetView.svelte', 'utf8');
 const details = readFileSync('src/lib/components/DetailsBlock.svelte', 'utf8');
 
 describe('Banner', () => {

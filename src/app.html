@@ -5,6 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <link rel="icon" href="%sveltekit.assets%/favicon.svg" />
     <!--
+      What a chat app shows when a link to the site is pasted. Every page,
+      sheets included, carries the same card: the site is static, so there is
+      no server to put one character's name or portrait into it. Chat apps
+      need absolute addresses, so the site's own is supplied at build time
+      (PUBLIC_SITE_URL, set by the deploy workflow).
+    -->
+    <meta name="description" content="An online D&amp;D 5e character sheet. Open the link to see it." />
+    <meta name="theme-color" content="#0b0b0d" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="DND Companion" />
+    <meta property="og:title" content="DND Companion — a character sheet" />
+    <meta property="og:description" content="An online D&amp;D 5e character sheet. Open the link to see it." />
+    <meta property="og:image" content="%sveltekit.env.PUBLIC_SITE_URL%/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="DND Companion: your character, at the table." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="DND Companion — a character sheet" />
+    <meta name="twitter:description" content="An online D&amp;D 5e character sheet. Open the link to see it." />
+    <meta name="twitter:image" content="%sveltekit.env.PUBLIC_SITE_URL%/og.png" />
+    <!--
       The splash is in the document itself, with its own styles, because this
       shell carries no stylesheet: app.css arrives with the bundle. Anything
       rendered by the app can only appear after hydration has painted, which

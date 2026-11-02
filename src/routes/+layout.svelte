@@ -3,6 +3,7 @@
   import { page } from '$app/state';
   import { onNavigate } from '$app/navigation';
   import Splash from '$lib/components/Splash.svelte';
+  import ConnectionNotice from '$lib/components/ConnectionNotice.svelte';
   import { prefersReducedMotion, rise } from '$lib/motion';
 
   let { children } = $props();
@@ -28,6 +29,7 @@
 </script>
 
 <Splash />
+<ConnectionNotice />
 
 <!--
   Keyed on the path, so every route change — opening a sheet, coming back to

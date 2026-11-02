@@ -4,6 +4,7 @@
   import EditableField from './EditableField.svelte';
   import { modifierOf, saveBonus, saveExtra } from '$lib/rules/derived';
   import { ABILITIES, type Ability, type Definition } from '$lib/types';
+  import { bump } from '$lib/motion';
 
   let {
     definition,
@@ -55,7 +56,7 @@
   {#each ABILITIES as ability (ability)}
     <div class="ability">
       <span class="name">{NAMES[ability]}</span>
-      <span class="mod">{sign(modifierOf(definition, ability))}</span>
+      <span class="mod" use:bump={modifierOf(definition, ability)}>{sign(modifierOf(definition, ability))}</span>
       <span class="score">
         <EditableField
           value={definition.abilities[ability]}
@@ -84,7 +85,7 @@
         <!-- The same mark as a skill's, but only ever empty or full: there
              is no expertise in a saving throw. -->
         <i class="dot" class:on={definition.saves?.[ability]} aria-hidden="true"></i>
-        <b>{sign(saveBonus(definition, ability))}</b>
+        <b use:bump={saveBonus(definition, ability)}>{sign(saveBonus(definition, ability))}</b>
       </button>
       <!-- A flat bonus from an item or aura. Always rendered, so entering edit
            mode does not move the band. -->

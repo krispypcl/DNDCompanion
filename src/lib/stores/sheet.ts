@@ -38,7 +38,17 @@ function createSheetStore() {
     store.update((s) => ({ ...s, status, message }));
   }
 
-  async function flush() {
+  /** The save in flight, if any, so leaving can wait for it. */
+  let inflight: Promise<void> | null = null;
+  function flush(): Promise<void> {
+    const run = save().finally(() => {
+      if (inflight === run) inflight = null;
+    });
+    inflight = run;
+    return run;
+  }
+
+  async function save() {
     const current = get(store).sheet;
     if (!current) return;
     const work = pending;
@@ -85,7 +95,24 @@ function createSheetStore() {
           return;
         }
         if (attempt === RETRIES) {
-          setStatus('unsaved', error instanceof Error ? error.message : 'Could not save');
+          // Keep what did not land, under anything newer typed since, so the
+          // next save (or coming back online) sends it rather than losing it.
+          pending = {
+            definition: pending.definition ?? work.definition,
+            state: pending.state ?? work.state,
+            texts: work.texts || pending.texts ? { ...work.texts, ...pending.texts } : undefined
+          };
+          if (!pending.definition) delete pending.definition;
+          if (!pending.state) delete pending.state;
+          if (!pending.texts || Object.keys(pending.texts).length === 0) delete pending.texts;
+          setStatus(
+            'unsaved',
+            typeof navigator !== 'undefined' && navigator.onLine === false
+              ? 'You are offline. Your changes will save when you are back online.'
+              : error instanceof Error
+                ? error.message
+                : 'Could not save'
+          );
           return;
         }
         await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
@@ -174,7 +201,21 @@ function createSheetStore() {
       schedule();
     },
 
-    flushNow: flush
+    flushNow: flush,
+
+    /** Whether anything typed has not reached the database yet. */
+    hasUnsaved() {
+      const status = get(store).status;
+      return Object.keys(pending).length > 0 || status === 'saving' || status === 'unsaved';
+    },
+
+    /** Sends whatever is waiting now (leaving the sheet, coming back online)
+        and resolves once nothing is in flight. */
+    async retry() {
+      clearTimeout(timer);
+      if (inflight) await inflight;
+      if (Object.keys(pending).length > 0) await flush();
+    }
   };
 }
 

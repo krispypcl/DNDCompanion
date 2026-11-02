@@ -510,6 +510,10 @@
     transition: border-color 0.15s ease;
   }
   input:hover, select:hover { border-color: var(--a-edge); }
+  .editing input:not([type='checkbox']), .editing select { animation: fieldIn 0.32s ease; }
+  @keyframes fieldIn {
+    from { border-color: transparent; background-color: transparent; }
+  }
   input::placeholder { color: var(--dim); opacity: 0.6; }
   input[type='number'] { -moz-appearance: textfield; appearance: textfield; }
   input[type='number']::-webkit-outer-spin-button,

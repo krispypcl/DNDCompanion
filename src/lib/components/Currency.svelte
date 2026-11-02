@@ -52,12 +52,16 @@
     line-height: 1.4; height: calc(1.4em + 0.375rem + 2px);
   }
   input {
+    animation: fieldIn 0.32s ease;
     background: var(--bg); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.1875rem 0.125rem; font-family: inherit;
     -moz-appearance: textfield; appearance: textfield;
   }
   input::-webkit-outer-spin-button,
   input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  @keyframes fieldIn {
+    from { border-color: transparent; background-color: transparent; }
+  }
   strong { border: 1px solid transparent; padding: 0.1875rem 0.125rem; }
 
   @media (max-width: 700px) {

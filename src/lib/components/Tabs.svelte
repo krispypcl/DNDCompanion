@@ -44,6 +44,30 @@
     return () => watch.disconnect();
   });
 
+  /**
+   * The panel grows or shrinks to the new tab's height rather than jumping:
+   * measured before the switch and after it, and eased between. Where the
+   * card is stretched to its neighbours (a laptop) the two are the same and
+   * nothing moves.
+   */
+  let panels: HTMLDivElement | undefined = $state();
+  let before = 0;
+  $effect.pre(() => {
+    active;
+    before = panels?.offsetHeight ?? 0;
+  });
+  $effect(() => {
+    active;
+    const el = panels;
+    if (!el || !before || prefersReducedMotion() || typeof el.animate !== 'function') return;
+    const after = el.offsetHeight;
+    if (Math.abs(after - before) < 4) return;
+    el.animate([{ height: `${before}px`, overflow: 'hidden' }, { height: `${after}px`, overflow: 'hidden' }], {
+      duration: 280,
+      easing: 'cubic-bezier(0.22, 1, 0.36, 1)'
+    });
+  });
+
   function slide(_node: Element) {
     const span = prefersReducedMotion() ? 0 : 260;
     const dx = 14 * direction;
@@ -79,11 +103,13 @@
      style:width="{bar.width}px" aria-hidden="true"></i>
 </div>
 
-{#key active}
-  <section role="tabpanel" in:slide>
-    {@render children(active)}
-  </section>
-{/key}
+<div class="panels" bind:this={panels}>
+  {#key active}
+    <section role="tabpanel" in:slide>
+      {@render children(active)}
+    </section>
+  {/key}
+</div>
 
 <style>
   .tablist {
@@ -121,5 +147,6 @@
   section { padding: 1rem 0 0; }
   /* The writing tabs fill the rest of the card, so a page has the whole
      height to be written on and its page controls sit at the foot. */
+  .panels { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
   section:has(:global(.book)) { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
 </style>

@@ -170,6 +170,36 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
+/* Shared by the `bump` action in src/lib/motion.ts. */
+.fx-bump { animation: fx-bump 0.45s cubic-bezier(0.3, 1.5, 0.5, 1); }
+@keyframes fx-bump {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+.fx-glow { animation: fx-glow 1.2s ease-out; }
+@keyframes fx-glow {
+  0% { box-shadow: 0 0 0 0 transparent; }
+  30% { box-shadow: 0 0 0 2px var(--a), 0 0 22px 4px color-mix(in oklch, var(--a) 55%, transparent); transform: translate(-50%, 50%) scale(1.12); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.fx-sparkle { position: relative; animation: fx-bump 0.5s cubic-bezier(0.3, 1.5, 0.5, 1); }
+.fx-sparkle::after {
+  content: ''; position: absolute; inset: -0.6em; border-radius: 50%; pointer-events: none;
+  background:
+    radial-gradient(circle, oklch(95% 0.12 95 / 0.9) 0 2px, transparent 3px) 10% 20% / 30% 30% no-repeat,
+    radial-gradient(circle, oklch(95% 0.12 95 / 0.9) 0 2px, transparent 3px) 85% 15% / 30% 30% no-repeat,
+    radial-gradient(circle, oklch(95% 0.12 95 / 0.9) 0 1.5px, transparent 2.5px) 80% 85% / 30% 30% no-repeat,
+    radial-gradient(circle, oklch(95% 0.12 95 / 0.9) 0 1.5px, transparent 2.5px) 15% 80% / 30% 30% no-repeat,
+    radial-gradient(circle, color-mix(in oklch, var(--a) 40%, transparent), transparent 65%);
+  animation: fx-sparkle 0.9s ease-out forwards;
+}
+@keyframes fx-sparkle {
+  0% { opacity: 0; transform: scale(0.4) rotate(0deg); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.5) rotate(40deg); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

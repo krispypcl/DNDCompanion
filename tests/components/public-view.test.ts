@@ -8,7 +8,7 @@ import { blankDefinition } from '$lib/sample';
 import { emptyState } from '$lib/types';
 
 const def = { ...blankDefinition('Visitor'), combat: { ac: 10, speed: 30, hpMax: 20, hitDice: '3d8' } };
-const sheet = readFileSync('src/routes/s/[id]/+page.svelte', 'utf8');
+const sheet = readFileSync('src/lib/components/SheetView.svelte', 'utf8');
 
 describe('public view', () => {
   it('has no rest buttons at all', () => {

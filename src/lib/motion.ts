@@ -24,3 +24,39 @@ export function rise(_node: Element, { y = 8, duration = 220, delay = 0 }: RiseO
     css: (t: number, u: number) => `opacity: ${t}; transform: translate3d(0, ${u * y}px, 0);`
   };
 }
+
+/**
+ * A number that changed gives a small pop, so the eye catches it: an ability
+ * modifier after a score changes, a skill after proficiency is toggled, AC.
+ * Not on the first render, only on a change. `kind` picks the effect:
+ * "bump" (the pop), "glow" (a soft accent glow, for the level badge) or
+ * "sparkle" (a burst, for gaining Inspiration; only when the value rises).
+ */
+function fx(node: HTMLElement, value: unknown, kind: 'bump' | 'glow' | 'sparkle') {
+  let last = value;
+  const fire = (cls: string) => {
+    node.classList.remove(cls);
+    void node.offsetWidth; // restart the animation
+    node.classList.add(cls);
+  };
+  const end = (e: AnimationEvent) => {
+    if (e.target === node) node.classList.remove('fx-bump', 'fx-glow', 'fx-sparkle');
+  };
+  node.addEventListener('animationend', end);
+  return {
+    update(next: unknown) {
+      if (next === last) return;
+      const rose = typeof next === 'number' && typeof last === 'number' ? next > last : true;
+      last = next;
+      if (kind === 'sparkle' && !rose) return fire('fx-bump');
+      fire(`fx-${kind}`);
+    },
+    destroy() {
+      node.removeEventListener('animationend', end);
+    }
+  };
+}
+
+export const bump = (node: HTMLElement, value: unknown) => fx(node, value, 'bump');
+export const glow = (node: HTMLElement, value: unknown) => fx(node, value, 'glow');
+export const sparkle = (node: HTMLElement, value: unknown) => fx(node, value, 'sparkle');

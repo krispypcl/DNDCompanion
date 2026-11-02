@@ -10,14 +10,17 @@
    * inside one cannot rise over the modules whatever z-index it asks for.
    */
   import { sheetStore } from '$lib/stores/sheet';
+  import { online } from '$lib/stores/online';
 
   // `unsaved` is also the ordinary "queued" state; only the one carrying a
   // message is a failure.
   const stale = $derived($sheetStore.status === 'stale');
+  // Offline, the connection notice already says what is going on.
   const shown = $derived(
-    stale ||
-      $sheetStore.status === 'error' ||
-      ($sheetStore.status === 'unsaved' && Boolean($sheetStore.message))
+    $online &&
+      (stale ||
+        $sheetStore.status === 'error' ||
+        ($sheetStore.status === 'unsaved' && Boolean($sheetStore.message)))
   );
 </script>
 

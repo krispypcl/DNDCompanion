@@ -7,13 +7,13 @@ import ShareButton from '$lib/components/ShareButton.svelte';
 describe('sheetLink', () => {
   it('joins origin, base path and id', () => {
     expect(sheetLink('https://krispypcl.github.io', '/DNDCompanion', 'abc')).toBe(
-      'https://krispypcl.github.io/DNDCompanion/s/abc'
+      'https://krispypcl.github.io/DNDCompanion/s?id=abc'
     );
   });
 
   it('works with no base path, and tolerates stray slashes', () => {
-    expect(sheetLink('https://x.test/', '', 'abc')).toBe('https://x.test/s/abc');
-    expect(sheetLink('https://x.test', '/app/', 'abc')).toBe('https://x.test/app/s/abc');
+    expect(sheetLink('https://x.test/', '', 'abc')).toBe('https://x.test/s?id=abc');
+    expect(sheetLink('https://x.test', '/app/', 'abc')).toBe('https://x.test/app/s?id=abc');
   });
 });
 
@@ -54,7 +54,7 @@ describe('ShareButton', () => {
     const oncopied = vi.fn();
     render(ShareButton, { props: { id: 'sheet-1', oncopied } });
     await fireEvent.click(screen.getByLabelText('Copy link to this sheet'));
-    expect(writeText).toHaveBeenCalledWith(`${location.origin}/s/sheet-1`);
+    expect(writeText).toHaveBeenCalledWith(`${location.origin}/s?id=sheet-1`);
     expect(oncopied).toHaveBeenCalledWith(true);
   });
 });
