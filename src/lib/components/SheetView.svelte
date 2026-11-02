@@ -38,6 +38,7 @@
   import Tabs from '$lib/components/Tabs.svelte';
   import TrackerGroup from '$lib/components/TrackerGroup.svelte';
   import TrackerPresets from '$lib/components/TrackerPresets.svelte';
+  import { resetTray } from '$lib/stores/tray';
   import TextPanel from '$lib/components/TextPanel.svelte';
   import ThemePicker from '$lib/components/ThemePicker.svelte';
   import UndoToast from '$lib/components/UndoToast.svelte';
@@ -258,6 +259,7 @@
     revealed = false;
     loadError = null;
     resetUndo();
+    resetTray();
     sheetRepo
       .loadSheet(id)
       .then((found) => {
