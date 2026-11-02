@@ -22,6 +22,7 @@
  */
 
 import BREW_SOURCES from '$lib/data/brew-sources.json';
+import SUBCLASS_SHORT from '$lib/data/subclass-short.json';
 
 export const LOOKUP_BASE = 'https://5e.tools';
 
@@ -33,8 +34,40 @@ export const LOOKUP_BASE = 'https://5e.tools';
  */
 export function sourceId(source: string): string {
   const key = source.trim().toLowerCase();
-  return (BREW_SOURCES as Record<string, string>)[key] ?? key;
+  const brew = (BREW_SOURCES as Record<string, string>)[key];
+  if (brew) return brew;
+  return BOOK_ALIASES[key.replace(/[^a-z0-9]/g, '')] ?? key;
 }
+
+/**
+ * The 2024 core books as players and other sites write them: "PHB'24",
+ * "PHB 2024", "Player's Handbook (2024)". 5e.tools calls them XPHB, XDMG and
+ * XMM. The 2014 books, and a few others, by their full names.
+ */
+const BOOK_ALIASES: Record<string, string> = (() => {
+  const out: Record<string, string> = {};
+  const books: [string[], string][] = [
+    [['phb', 'playershandbook'], 'phb'],
+    [['dmg', 'dungeonmastersguide'], 'dmg'],
+    [['mm', 'monstermanual'], 'mm']
+  ];
+  for (const [names, id] of books) {
+    for (const n of names) {
+      for (const year of ['24', '2024']) {
+        out[`${n}${year}`] = `x${id}`;
+        out[`${year}${n}`] = `x${id}`;
+      }
+      if (n.length > 3) out[n] = id;
+    }
+  }
+  Object.assign(out, {
+    xanathars: 'xge', xanathersguidetoeverything: 'xge', xanatharsguidetoeverything: 'xge',
+    tashas: 'tce', tashascauldronofeverything: 'tce',
+    mordenkainensmonstersofthemultiverse: 'mpmm', volosguidetomonsters: 'vgm',
+    swordcoastadventurersguide: 'scag', fizbansreasuryofdragons: 'ftd', fizbanstreasuryofdragons: 'ftd'
+  });
+  return out;
+})();
 
 export type LookupCategory =
   | 'spells'
@@ -79,23 +112,30 @@ const hashPart = (s: string) => encodeURIComponent(s.toLowerCase()).toLowerCase(
 /** Sources that describe content with no page to link to. */
 const UNLINKABLE = new Set(['homebrew', 'custom', 'none']);
 
-/** Where the books themselves name a variant in brackets: "Tiefling
-    (Glasya)", "Elf (High)", "Dragonborn (Gold)". There, a bracket is part of
-    the name and stays — unless it holds a number, which is the player's. */
-const NAMED_VARIANTS = new Set<LookupCategory>(['races', 'classes', 'subclasses', 'backgrounds']);
+/** A bracket with a bonus or a multiplier in it: "(+1)", "(+1 CHA)", "(x3)". */
+const BONUS = /[+\-−]\s?\d|(?:^|[\s(])[x×]\s?\d|\d\s?[x×](?:$|[\s)])/i;
 
-/** The name as the book has it: no bonuses, counts or notes in brackets. */
+/**
+ * The name as the book has it. Checked against every spell, item, species,
+ * background, feat and class on 5e.tools: the books' own brackets stay
+ * ("Tiefling (Glasya)", "Potion of Healing (Greater)", "Arrows (20)"), and
+ * so does the "+1" that starts a magic item's name ("+1 Longsword"). What
+ * goes is the player's: notes in square or curly brackets, and a bonus or
+ * multiplier in brackets or at the end ("Revolver (+1)", "Arrows x20").
+ */
 export function lookupName(name: string, category: LookupCategory = 'any'): string {
-  const keepWords = NAMED_VARIANTS.has(category);
-  return name
-    .replace(/\([^)]*\)|\[[^\]]*\]|\{[^}]*\}/g, (group) => (keepWords && !/[\d+\-−×]/.test(group) ? group : ' '))
-    .replace(/(^|\s)[+-]\s?\d+(?=\s|$)/g, ' ')
-    .replace(/(^|\s)[x×]\s?\d+(?=\s|$)/gi, ' ')
-    .replace(/(^|\s)\d+\s?[x×](?=\s|$)/gi, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/[,;:–—-]+$/, '')
-    .trim();
+  let s = name.trim().replace(/\[[^\]]*\]|\{[^}]*\}/g, ' ');
+  s = s.replace(/\([^)]*\)/g, (group) => (BONUS.test(group) ? ' ' : group));
+  s = s.replace(/\s+(?:[+\-−]\s?\d+|[x×]\s?\d+|\d+\s?[x×])\s*$/i, '');
+  s = s.replace(/^\s*\d+\s?[x×]\s+/i, '');
+  if (category !== 'items') s = s.replace(/^\s*[+\-−]\d+\s+/, '');
+  return s.replace(/\s+/g, ' ').trim().replace(/[,;:–—-]+$/, '').trim();
+}
+
+/** "Path of the Berserker" is "Berserker" in a 5e.tools link. */
+export function subclassShortName(name: string): string {
+  const key = name.trim().toLowerCase();
+  return (SUBCLASS_SHORT as Record<string, string>)[key] ?? key;
 }
 
 export function lookupUrl(
@@ -121,7 +161,7 @@ export function lookupUrl(
     const parentName = parent ? lookupName(parent.name, 'classes') : '';
     if (category === 'subclasses' && parentName) {
       const parentSrc = parent?.source?.trim() ? sourceId(parent.source) : src;
-      return `${LOOKUP_BASE}/classes.html#${hashPart(parentName)}_${hashPart(parentSrc)},state:sub_${hashPart(clean)}_${hashPart(src)}=b1`;
+      return `${LOOKUP_BASE}/classes.html#${hashPart(parentName)}_${hashPart(parentSrc)},state:sub_${hashPart(subclassShortName(clean))}_${hashPart(src)}=b1`;
     }
   }
 

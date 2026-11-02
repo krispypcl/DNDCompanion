@@ -5,10 +5,13 @@
   let {
     tabs,
     active = $bindable(),
+    lit = null,
     children
   }: {
     tabs: string[];
     active: string;
+    /** A tab to flare for a moment (Spells, when a slot is spent). */
+    lit?: string | null;
     children: import('svelte').Snippet<[string]>;
   } = $props();
 
@@ -94,6 +97,7 @@
       role="tab"
       aria-selected={active === tab}
       class:active={active === tab}
+      class:lit={lit === tab}
       onclick={() => select(tab)}
     >
       {tab}
@@ -135,6 +139,10 @@
   }
   button:hover { color: var(--text); }
   .active { color: var(--a); }
+  .lit { animation: tabFlare 1.5s ease-out; }
+  @keyframes tabFlare {
+    18% { color: var(--a-hi); text-shadow: 0 0 12px color-mix(in oklch, var(--a) 70%, transparent); }
+  }
   .indicator {
     position: absolute; left: 0; bottom: 0; height: 2px; background: var(--a);
     border-radius: 2px; opacity: 0; pointer-events: none;

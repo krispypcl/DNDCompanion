@@ -3,6 +3,7 @@
   import { base } from '$app/paths';
   import AuthForm from '$lib/components/AuthForm.svelte';
   import ModeToggle from '$lib/components/ModeToggle.svelte';
+  import SoundToggle from '$lib/components/SoundToggle.svelte';
   import { sheetName, sheetRepo } from '$lib/data/sheets';
   import { MAX_BYTES, importSheet } from '$lib/exchange';
   import { pinnedOf, profileOf, savePinned, signIn } from '$lib/data/session';
@@ -288,6 +289,7 @@
   <header>
     <h1><Logo size={30} />DND Companion</h1>
     <div class="tools">
+      <SoundToggle />
       <ModeToggle />
       {#if $session.user}
         {@const me = profileOf($session.user)}

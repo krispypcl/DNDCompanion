@@ -65,7 +65,8 @@
     groupBy,
     info,
     links = true,
-    onpress
+    onpress,
+    lit = null
   }: {
     items: T[];
     columns: Column[];
@@ -86,6 +87,8 @@
     links?: boolean;
     /** A pressable cell was pressed. */
     onpress?: (key: string, item: T) => void;
+    /** A group heading to light up for a moment: a spell level just cast at. */
+    lit?: string | null;
   } = $props();
 
   /** Keys for gliding between reading and editing; see $lib/flip. */
@@ -339,7 +342,7 @@
 {#if items.length === 0 && !editable}
   <p class="empty">{emptyText}</p>
 {:else}
-  <div class="scroller">
+  <div class="scroller" data-flip-size={tk}>
     <table class:editing={editable} class:headed={showHeadings} class:dragging={drag !== null} class:landing>
       <colgroup>
         {#if editable}<col style:width="1.75rem" />{/if}
@@ -364,7 +367,7 @@
           {@const { item, index } = row}
           {@const title = heading(pos)}
           {#if title !== null}
-            <tr class="group"><th colspan={span} scope="colgroup"><span data-flip="{tk}:g:{title}">{title}</span></th></tr>
+            <tr class="group" class:lit={lit === title}><th colspan={span} scope="colgroup"><span data-flip="{tk}:g:{title}">{title}</span></th></tr>
           {/if}
           <tr bind:this={rowEls[row.key]} in:arrive out:leave
               class:lifted={drag?.key === row.key}
@@ -546,6 +549,13 @@
   .press:active { transform: translateY(1px); }
   @media (hover: none) { .press { border-color: var(--line); } }
   .nm { overflow-wrap: anywhere; }
+  /* A slot of this level was just spent: the heading flares. */
+  tr.group.lit th { animation: castFlare 1.5s ease-out; }
+  @keyframes castFlare {
+    0% { color: var(--label); text-shadow: none; }
+    18% { color: var(--a-hi); text-shadow: 0 0 12px color-mix(in oklch, var(--a) 70%, transparent); }
+    100% { color: var(--label); text-shadow: none; }
+  }
   .nameedit { display: flex; align-items: center; gap: 0.25rem; }
   .nameedit input { flex: 1 1 auto; min-width: 0; }
   /* The inline tick: a small sparkle that fills when on. */

@@ -60,7 +60,7 @@
   let loads = $state<Record<string, 'loading' | 'ok' | 'failed'>>({});
   const loadState = (url: string) => (url ? (loads[url] ?? 'loading') : null);
   /** The picture shown full screen, if any. */
-  let viewing = $state<{ src: string; alt: string } | null>(null);
+  let viewing = $state<{ src: string; alt: string; from?: Element | null } | null>(null);
   const traits = $derived(definition.traits ?? {});
   const shownDetails = $derived(DETAILS.filter((f) => editable || definition.identity[f.key]));
   const shownWriting = $derived(WRITING.filter((f) => editable || traits[f.key]));
@@ -98,7 +98,7 @@
   {#if !editable}
     {#if portrait}
       <button class="portrait-btn" aria-label="View portrait full screen"
-              onclick={() => (viewing = { src: portrait, alt: `Portrait of ${definition.identity.name}` })}>
+              onclick={(e) => (viewing = { src: portrait, alt: `Portrait of ${definition.identity.name}`, from: e.currentTarget })}>
         <img class="portrait" src={portrait} alt="Portrait of {definition.identity.name}" />
       </button>
     {:else}
@@ -135,7 +135,7 @@
   {#if !editable}
     {#if bannerSrc && !broken[bannerSrc]}
       <button class="banner-btn" aria-label="View banner full screen"
-              onclick={() => (viewing = { src: bannerSrc, alt: `Banner of ${definition.identity.name}` })}>
+              onclick={(e) => (viewing = { src: bannerSrc, alt: `Banner of ${definition.identity.name}`, from: e.currentTarget })}>
         <img class="banner" src={bannerSrc} alt="Banner of {definition.identity.name}"
              onerror={() => (broken[bannerSrc] = true)} />
       </button>
@@ -176,7 +176,7 @@
                     disabled={status !== 'ok'}
                     aria-label="View {field.role} full screen"
                     title={status === 'failed' ? 'This link didn’t turn into a picture!' : 'View full screen'}
-                    onclick={() => (viewing = { src: field.link.url, alt: field.label.replace(' URL', '') })}>
+                    onclick={(e) => (viewing = { src: field.link.url, alt: field.label.replace(' URL', ''), from: e.currentTarget })}>
               {#key field.link.url}
                 <img src={field.link.url} alt=""
                      onload={() => (loads[field.link.url] = 'ok')}
@@ -200,7 +200,7 @@
 </section>
 
 {#if viewing}
-  <Lightbox src={viewing.src} alt={viewing.alt} onclose={() => (viewing = null)} />
+  <Lightbox src={viewing.src} alt={viewing.alt} from={viewing.from} onclose={() => (viewing = null)} />
 {/if}
 
 {#if shownWriting.length > 0}

@@ -11,7 +11,8 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "brew-sources": "node scripts/brew-sources.mjs"
+    "brew-sources": "node scripts/brew-sources.mjs",
+    "subclass-names": "node scripts/subclass-names.mjs"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.8",
