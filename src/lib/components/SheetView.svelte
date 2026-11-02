@@ -36,6 +36,7 @@
   import ShareButton from '$lib/components/ShareButton.svelte';
   import Tabs from '$lib/components/Tabs.svelte';
   import TrackerGroup from '$lib/components/TrackerGroup.svelte';
+  import TrackerPresets from '$lib/components/TrackerPresets.svelte';
   import TextPanel from '$lib/components/TextPanel.svelte';
   import ThemePicker from '$lib/components/ThemePicker.svelte';
   import UndoToast from '$lib/components/UndoToast.svelte';
@@ -437,7 +438,11 @@
 
   function saveTrackers(rows: TrackerRow[]) {
     if (!definition) return;
+    // What the table does not show (its class, description) is kept from
+    // the tracker as it was; what it shows is taken from the row.
+    const before = new Map((definition.trackers ?? []).map((t) => [t.id, t]));
     const trackers: Tracker[] = rows.map((r) => ({
+      ...withoutShown(before.get(r.id)),
       id: r.id || newId(),
       label: r.label,
       max: scalar(r.max || '0'),
@@ -452,6 +457,18 @@
       ...(r.source ? { source: r.source } : {})
     }));
     setDefinition({ ...definition, trackers });
+  }
+
+  function withoutShown(t: Tracker | undefined): Partial<Tracker> {
+    if (!t) return {};
+    const { die: _d, group: _g, source: _s, ...rest } = t;
+    return rest;
+  }
+
+  function addPreset(added: Tracker[], label: string) {
+    if (!definition) return;
+    setDefinition({ ...definition, trackers: [...(definition.trackers ?? []), ...added] });
+    say(`Added ${label}`);
   }
 
   function blankTracker(): TrackerRow {
@@ -782,10 +799,16 @@
                 {#snippet info()}
                   Max accepts a number or a formula over <code>level</code>,
                   <code>classlevel</code>, <code>prof</code> and ability modifiers —
-                  <code>prof + 1</code>, <code>classlevel / 2</code>. Name the class on a
-                  feature that scales with it, or multiclassing will inflate it.
+                  <code>prof + 1</code>, <code>classlevel / 2</code>, <code>classlevel * 5</code>.
+                  <code>at(1, 2, 3, 3)</code> is 2 from 1st level and 3 from 3rd;
+                  <code>full(1)</code>, <code>half(1)</code>, <code>third(1)</code> and
+                  <code>pact()</code> are spell slots. Name the class on a feature that scales
+                  with it, or multiclassing will inflate it.
                 {/snippet}
               </EntryTable>
+              {#if editable}
+                <TrackerPresets {definition} makeId={newId} onadd={addPreset} />
+              {/if}
             {:else if tab === 'Character'}
               <EntryTable
                 items={classes}

@@ -2,6 +2,7 @@
   import Tracker from './Tracker.svelte';
   import type { FormulaContext } from '$lib/rules/formula';
   import type { Tracker as TrackerT } from '$lib/types';
+  import { trackerMax } from '$lib/rules/tracker';
 
   let {
     trackers,
@@ -19,10 +20,24 @@
     onchange: (id: string, value: number) => void;
   } = $props();
 
+  /**
+   * A tracker whose formula comes to nothing yet (9th-level slots for a
+   * 3rd-level wizard) is not shown until the character reaches it. One
+   * written as a plain 0, or whose formula is broken, still is.
+   */
+  function reached(t: TrackerT): boolean {
+    if (typeof t.max !== 'string' || /^\s*\d+\s*$/.test(t.max)) return true;
+    try {
+      return trackerMax(t, ctx) > 0;
+    } catch {
+      return true;
+    }
+  }
+
   /** Trackers sharing a `group` render as one block; the rest stand alone. */
   const groups = $derived.by(() => {
     const map = new Map<string, TrackerT[]>();
-    for (const t of trackers) {
+    for (const t of trackers.filter(reached)) {
       const key = t.group ?? `\u0000${t.id}`;
       map.set(key, [...(map.get(key) ?? []), t]);
     }
