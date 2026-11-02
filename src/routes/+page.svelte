@@ -7,6 +7,20 @@
   import { MAX_BYTES, importSheet } from '$lib/exchange';
   import { signIn, signOut } from '$lib/data/session';
   import { friendlyDate } from '$lib/rules/dates';
+  import { flip } from 'svelte/animate';
+  import { cubicOut } from 'svelte/easing';
+  import { prefersReducedMotion } from '$lib/motion';
+
+  /** A deleted sheet folds away: fades, slides aside and closes its gap. */
+  function fold(node: Element) {
+    const h = (node as HTMLElement).offsetHeight;
+    return {
+      duration: prefersReducedMotion() ? 0 : 280,
+      easing: cubicOut,
+      css: (t: number, u: number) =>
+        `opacity: ${t}; transform: translateX(${-12 * u}px); height: ${t * h}px; overflow: hidden;`
+    };
+  }
   import { blankDefinition } from '$lib/sample';
   import { session } from '$lib/stores/session';
   import { isConfigured } from '$lib/supabase';
@@ -202,7 +216,8 @@
     {:else}
       <ul>
         {#each sheets as sheet (sheet.id)}
-          <li class:retired={sheet.retired}>
+          <li class:retired={sheet.retired} animate:flip={{ duration: 260, easing: cubicOut }}
+              out:fold>
             <a href="{base}/s/{sheet.id}">
               <strong>{sheet.definition?.identity?.name || sheet.name}</strong>
               <span class="meta">
@@ -294,7 +309,7 @@
     padding-right: 0.5rem;
     transition: border-color 0.15s ease, transform 0.15s ease;
   }
-  li:hover { border-color: var(--a-edge); transform: translateY(-1px); }
+  li:hover { border-color: var(--a-edge); transform: translateY(-1px); box-shadow: 0 6px 18px -8px rgb(0 0 0 / 0.45); }
   li a {
     display: block; flex: 1; min-width: 0;
     padding: 0.75rem 0.9rem; text-decoration: none; color: inherit;

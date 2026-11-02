@@ -138,3 +138,40 @@ describe('saving text', () => {
     expect(out.proficiency).toBe(4);
   });
 });
+
+describe('a save that cannot land', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    repo.saveDefinition.mockReset().mockResolvedValue('T-def');
+    repo.saveText.mockReset().mockResolvedValue('T-t');
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it('keeps the change, reports it unsaved, and sends it on retry', async () => {
+    repo.saveState.mockReset().mockRejectedValue(new Error('Failed to fetch'));
+    sheetStore.load(sheet());
+    sheetStore.setState({ ...emptyState(), hpCurrent: 7 });
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(sheetStore.hasUnsaved()).toBe(true);
+    expect(get(sheetStore).status).toBe('unsaved');
+
+    repo.saveState.mockReset().mockResolvedValue('T-ok');
+    await sheetStore.retry();
+    expect(repo.saveState).toHaveBeenCalledWith('s1', expect.objectContaining({ hpCurrent: 7 }), 'T0');
+    expect(sheetStore.hasUnsaved()).toBe(false);
+  });
+
+  it('keeps a newer change over the one that failed', async () => {
+    repo.saveState.mockReset().mockImplementationOnce(async () => {
+      sheetStore.setState({ ...emptyState(), hpCurrent: 9 });
+      throw new Error('Failed to fetch');
+    }).mockRejectedValue(new Error('Failed to fetch'));
+    sheetStore.load(sheet());
+    sheetStore.setState({ ...emptyState(), hpCurrent: 7 });
+    await vi.advanceTimersByTimeAsync(600);
+    repo.saveState.mockReset().mockResolvedValue('T-ok');
+    await vi.advanceTimersByTimeAsync(3000);
+    await sheetStore.retry();
+    expect(repo.saveState).toHaveBeenLastCalledWith('s1', expect.objectContaining({ hpCurrent: 9 }), expect.anything());
+  });
+});

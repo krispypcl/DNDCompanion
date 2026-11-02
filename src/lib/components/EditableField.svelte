@@ -134,6 +134,11 @@
     field-sizing: content;
     min-width: 2.5rem;
   }
+  /* Entering edit mode: the boxes fade in around the words, which stay put. */
+  input.field, textarea.field { animation: fieldIn 0.32s ease; }
+  @keyframes fieldIn {
+    from { border-color: transparent; background-color: transparent; }
+  }
   input.field:focus-visible,
   textarea.field:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
   textarea.field { resize: vertical; line-height: 1.5; display: block; height: auto; }

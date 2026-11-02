@@ -11,6 +11,7 @@
     ctx,
     editable,
     refilling = false,
+    stagger = 0,
     onchange
   }: {
     tracker: Tracker;
@@ -18,6 +19,8 @@
     ctx: FormulaContext;
     editable: boolean;
     refilling?: boolean;
+    /** Its place in the rail, so a rest refills trackers one after another. */
+    stagger?: number;
     onchange: (spent: number) => void;
   } = $props();
 
@@ -90,7 +93,7 @@
   }
 </script>
 
-<div class="tracker" class:refilling>
+<div class="tracker" class:refilling style:--stagger={stagger}>
   <div class="head">
     <span class="label">
       {tracker.label}
@@ -117,7 +120,7 @@
           aria-pressed={i < remaining}
           aria-label="{tracker.label} {i + 1}"
           disabled={!editable}
-          style:--delay="{(r?.order ?? 0) * 60}ms"
+          style:--delay="{(r?.order ?? 0) * 60 + (refilling ? stagger * 110 : 0)}ms"
           onclick={() => tapPip(i + 1)}
         ></button>
       {/each}
@@ -193,6 +196,7 @@
   .step:disabled { cursor: default; opacity: 0.5; }
   .gauge { flex: 1; height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
   .gauge i { display: block; height: 100%; background: var(--accent); transition: width 0.3s ease; }
+  .refilling .gauge i { transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1) calc(var(--stagger, 0) * 110ms); }
   .desc { margin: 0.4rem 0 0; font-size: 0.78rem; color: var(--dim); }
   .error { margin: 0.4rem 0 0; font-size: 0.78rem; color: var(--bad); }
 </style>

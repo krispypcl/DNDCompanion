@@ -132,7 +132,7 @@
 
   {#if last}
     {#key seq}
-      <div class="result" class:crit={isCrit(last)} class:fumble={isFumble(last)} role="status">
+      <div class="result" class:tumbling class:crit={!tumbling && isCrit(last)} class:fumble={!tumbling && isFumble(last)} role="status">
         <strong class="total" class:settled={!tumbling}>{tumbling ? '…' : last.total}</strong>
         <div class="faces">
           {#each last.dice as d, i (i)}
@@ -273,8 +273,34 @@
     animation: land 0.3s cubic-bezier(0.2, 0.8, 0.3, 1);
   }
   @keyframes land { from { opacity: 0; transform: translateY(4px); } }
-  .result.crit { border-color: var(--a-edge); box-shadow: 0 0 0 1px var(--a-edge), 0 0 22px -6px var(--a); }
+  /* The dice rattle in the tray until they land. */
+  .result.tumbling .faces { animation: rattle 0.12s linear infinite; }
+  @keyframes rattle {
+    0%, 100% { transform: translate(0, 0) rotate(0); }
+    25% { transform: translate(-1.5px, 1px) rotate(-1.5deg); }
+    75% { transform: translate(1.5px, -1px) rotate(1.5deg); }
+  }
+  /* A natural 20 bursts gold; a natural 1 sinks and greys. */
+  .result { position: relative; --gold: oklch(86% 0.15 90); }
+  .result.crit { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 0 26px -6px var(--gold); }
+  .result.crit .total { color: var(--gold); animation: critPop 0.6s cubic-bezier(0.3, 1.6, 0.5, 1); }
+  @keyframes critPop { from { transform: scale(0.5); } 55% { transform: scale(1.25); } }
+  .result.crit::after {
+    content: ''; position: absolute; left: 2.25rem; top: 50%; width: 1px; height: 1px; border-radius: 50%;
+    box-shadow: 0 0 0 0 var(--gold); pointer-events: none;
+    animation: burst 0.8s ease-out forwards;
+  }
+  @keyframes burst {
+    0% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--gold) 90%, transparent); }
+    100% { box-shadow: 0 0 0 70px transparent; }
+  }
   .result.fumble { border-color: color-mix(in oklch, var(--danger) 60%, transparent); }
+  .result.fumble .total { color: var(--faint); animation: sink 0.7s cubic-bezier(0.3, 0.7, 0.4, 1); }
+  @keyframes sink {
+    0% { transform: translateY(-6px); opacity: 0.3; }
+    60% { transform: translateY(3px); }
+    100% { transform: none; }
+  }
   .total { grid-row: span 2; font-size: 2.25rem; line-height: 1; font-weight: 650; color: var(--a-hi); font-variant-numeric: tabular-nums; }
   .total.settled { animation: pop 0.3s cubic-bezier(0.3, 1.5, 0.5, 1); }
   @keyframes pop { from { transform: scale(0.6); opacity: 0.3; } }

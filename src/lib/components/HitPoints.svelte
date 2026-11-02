@@ -257,7 +257,8 @@
         <!-- At zero there is no resting, so death saves take this space,
              veiled for everyone, the owner too, until looked at. -->
         <Reveal enabled={true}>
-        <div class="deaths">
+        <div class="deaths" class:stable={sheetState.deathSaves.successes >= 3}
+             class:dead={sheetState.deathSaves.failures >= 3}>
           {#each (['successes', 'failures'] as const) as kind (kind)}
             <div class="drow">
               <span class="kind">{kind === 'successes' ? 'Saves' : 'Fails'}</span>
@@ -469,7 +470,23 @@
     width: 0.95rem; height: 0.95rem; border-radius: 50%;
     border: 1px solid var(--faint); background: transparent; padding: 0; cursor: pointer;
   }
-  .pip[aria-pressed='true'] { background: var(--a); border-color: var(--a); }
+  .pip[aria-pressed='true'] { background: var(--a); border-color: var(--a); animation: pipPop 0.35s cubic-bezier(0.3, 1.6, 0.5, 1); }
+  @keyframes pipPop { from { transform: scale(0.3); } 60% { transform: scale(1.3); } }
+  .pip { transition: background-color 0.2s ease, border-color 0.2s ease; }
+  /* Three successes: the saves glow once and settle. Three failures: a slow
+     red pulse that stays. */
+  .deaths { border-radius: 999px; padding: 0.25rem 0.625rem; transition: box-shadow 0.4s ease; }
+  .deaths.stable { animation: stableGlow 1.4s ease-out; }
+  @keyframes stableGlow {
+    0% { box-shadow: 0 0 0 0 transparent; }
+    35% { box-shadow: 0 0 0 1px var(--a), 0 0 24px 2px color-mix(in oklch, var(--a) 50%, transparent); }
+    100% { box-shadow: 0 0 0 0 transparent; }
+  }
+  .deaths.dead { animation: deadPulse 2.4s ease-in-out infinite; }
+  @keyframes deadPulse {
+    0%, 100% { box-shadow: 0 0 0 0 transparent; }
+    50% { box-shadow: 0 0 0 1px var(--danger), 0 0 20px 1px color-mix(in oklch, var(--danger) 45%, transparent); }
+  }
   .pip.fail[aria-pressed='true'] { background: var(--danger); border-color: var(--danger); }
   /* Two groups, not one wrapping row: what changes hit points now, and what
      restores them on a rest. The rule between says which is which. */

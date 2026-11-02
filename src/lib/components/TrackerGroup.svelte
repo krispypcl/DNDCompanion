@@ -33,6 +33,7 @@
   });
 </script>
 
+<!-- On a rest, trackers refill one after another, top to bottom. -->
 <div class="stack">
 {#each groups as group (group.name ?? group.items[0].id)}
   {#if group.name}
@@ -46,6 +47,7 @@
             {ctx}
             {editable}
             {refilling}
+            stagger={trackers.findIndex((x) => x.id === t.id)}
             onchange={(v) => onchange(t.id, v)}
           />
         {/each}
@@ -59,6 +61,7 @@
         {ctx}
         {editable}
         {refilling}
+        stagger={trackers.findIndex((x) => x.id === t.id)}
         onchange={(v) => onchange(t.id, v)}
       />
     {/each}
