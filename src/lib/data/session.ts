@@ -30,3 +30,27 @@ export async function requestReset(email: string, redirectTo?: string) {
 export async function updatePassword(password: string) {
   await unwrap(supabase.auth.updateUser({ password }));
 }
+
+/** What a player shows of themselves: kept on their account, no table needed. */
+export type Profile = { displayName: string; avatarUrl: string };
+
+export function profileOf(user: { user_metadata?: Record<string, unknown> } | null | undefined): Profile {
+  const meta = user?.user_metadata ?? {};
+  return {
+    displayName: typeof meta.display_name === 'string' ? meta.display_name : '',
+    avatarUrl: typeof meta.avatar_url === 'string' ? meta.avatar_url : ''
+  };
+}
+
+export async function updateProfile(profile: Profile) {
+  await unwrap(
+    supabase.auth.updateUser({
+      data: { display_name: profile.displayName.trim(), avatar_url: profile.avatarUrl.trim() }
+    })
+  );
+}
+
+/** Signs this account out on every device, this one included. */
+export async function signOutEverywhere() {
+  await unwrap(supabase.auth.signOut({ scope: 'global' }));
+}

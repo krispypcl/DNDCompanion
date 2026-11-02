@@ -5,8 +5,10 @@
   import ModeToggle from '$lib/components/ModeToggle.svelte';
   import { sheetName, sheetRepo } from '$lib/data/sheets';
   import { MAX_BYTES, importSheet } from '$lib/exchange';
-  import { signIn, signOut } from '$lib/data/session';
+  import { profileOf, signIn } from '$lib/data/session';
+  import Avatar from '$lib/components/Avatar.svelte';
   import { friendlyDate } from '$lib/rules/dates';
+  import D20Loader from '$lib/components/D20Loader.svelte';
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
   import { prefersReducedMotion } from '$lib/motion';
@@ -35,6 +37,8 @@
 
   let sheets = $state<Sheet[]>([]);
   let loading = $state(false);
+  /** The die has landed: the list shows. */
+  let listShown = $state(false);
   let error = $state<string | null>(null);
   let creating = $state(false);
   /** id of the sheet awaiting confirmation; deleting is permanent. */
@@ -52,6 +56,7 @@
       return;
     }
     loading = true;
+    listShown = false;
     sheetRepo
       .listMySheets(user.id)
       .then((rows) => (sheets = rows))
@@ -171,7 +176,11 @@
     <div class="tools">
       <ModeToggle />
       {#if $session.user}
-        <button class="ghost" onclick={() => signOut()}>Sign out</button>
+        {@const me = profileOf($session.user)}
+        <a class="me" href="{base}/account" title="Your account">
+          <Avatar url={me.avatarUrl} name={me.displayName || $session.user.email || '?'} size={30} />
+          <span>{me.displayName || 'Account'}</span>
+        </a>
       {/if}
     </div>
   </header>
@@ -182,7 +191,7 @@
       <code>PUBLIC_SUPABASE_ANON_KEY</code> and rebuild.
     </p>
   {:else if $session.loading}
-    <p class="dim">Loading…</p>
+    <div class="dieload"><D20Loader size={56} label="Signing in" /></div>
   {:else}
     <div class="bar">
       <h2>Your characters</h2>
@@ -209,8 +218,11 @@
     {#if error}<p class="warn" role="alert">{error}</p>{/if}
     {#if notice}<p class="note" role="status">{notice}</p>{/if}
 
-    {#if loading}
-      <p class="dim">Loading…</p>
+    {#if loading || !listShown}
+      <div class="dieload">
+        <D20Loader size={56} label="Loading your characters" result={loading ? null : error ? 1 : 20}
+                   onlanded={() => (listShown = true)} />
+      </div>
     {:else if sheets.length === 0}
       <p class="dim">No characters yet. Make one and start filling it in.</p>
     {:else}
@@ -326,6 +338,14 @@
   .retired a { opacity: 0.6; }
   .meta { display: block; font-size: 0.8rem; color: var(--dim); margin-top: 0.15rem; }
   .dates { color: var(--faint); }
+  .me {
+    display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; color: var(--text);
+    font-size: 0.875rem; padding: 0.1875rem 0.75rem 0.1875rem 0.1875rem; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--raised);
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .me:hover { border-color: var(--a-edge); color: var(--a); }
+  .dieload { display: grid; place-items: center; padding: 3rem 0; }
   .dim { color: var(--dim); }
   .warn { color: var(--accent); font-size: 0.9rem; }
   code { font-size: 0.85em; }
