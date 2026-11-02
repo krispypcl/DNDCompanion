@@ -44,7 +44,7 @@
     asking = false;
     if (roll) onroll?.();
   }
-  $effect(() => () => clearTimeout(askTimer));
+  $effect(() => () => { clearTimeout(askTimer); clearTimeout(waveTimer); });
   // Leaving edit rights (or the owner's view) drops the question.
   $effect(() => { if (!editable) asking = false; });
 
@@ -80,9 +80,16 @@
     }
     const from = before;
     before = now;
-    // Off then on across a frame, so a second change restarts the wave.
-    wave = null;
-    requestAnimationFrame(() => (wave = { from, to: now }));
+    // Set at once, before the frame paints, so the first pip moves the
+    // instant it is tapped. Only a wave still running is cleared for a frame
+    // first, so its animations restart.
+    clearTimeout(waveTimer);
+    const next = { from, to: now };
+    if (wave) {
+      wave = null;
+      requestAnimationFrame(() => (wave = next));
+    } else wave = next;
+    waveTimer = setTimeout(() => (wave = null), 900);
     // The last one used: the tracker gives a small shake.
     if (now === 0 && from > 0 && !accrue) {
       emptied = false;
@@ -91,6 +98,7 @@
       emptyTimer = setTimeout(() => (emptied = false), 600);
     }
   });
+  let waveTimer: ReturnType<typeof setTimeout> | undefined;
   let emptied = $state(false);
   let emptyTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -158,7 +166,7 @@
           aria-pressed={i < remaining}
           aria-label="{tracker.label} {i + 1}"
           disabled={!editable}
-          style:--delay="{(r?.order ?? 0) * (r?.kind === 'lose' ? 28 : 60) + (refilling ? stagger * 110 : 0)}ms"
+          style:--delay="{(r?.order ?? 0) * (r?.kind === 'lose' ? 22 : 60) + (refilling ? stagger * 110 : 0)}ms"
           onclick={() => tapPip(i + 1)}
         ></button>
       {/each}
@@ -208,17 +216,25 @@
     background: transparent;
     padding: 0;
     cursor: pointer;
-    transition: background 0.18s cubic-bezier(0.2, 1.4, 0.4, 1), transform 0.18s ease;
+    position: relative;
+    transition: border-color 0.16s ease-out, transform 0.18s ease;
   }
-  .pip.on { background: var(--accent); border-color: var(--accent); }
-  /* Spending one: the fill drains out of the middle and a ring puffs away. */
-  .pip { position: relative; }
+  /* The fill is a layer whose opacity moves. Animating the theme's accent as
+     a colour either overshot or switched at once, so a spent pip held its
+     colour, then vanished. */
+  .pip::before {
+    content: ''; position: absolute; inset: -1px; border-radius: 50%; pointer-events: none;
+    background: var(--accent); opacity: 0;
+    transition: opacity 0.16s ease-out;
+  }
+  .pip.on { border-color: var(--accent); }
+  .pip.on::before { opacity: 1; }
   /* Invisible before and after its turn: a wave of several pips puffs one at
      a time, never all showing a ring while they wait. */
   .pip.lose::after {
     content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
     background: var(--accent); opacity: 0;
-    animation: puff 0.42s cubic-bezier(0.2, 0.7, 0.3, 1) both; animation-delay: var(--delay);
+    animation: puff 0.36s cubic-bezier(0.2, 0.7, 0.3, 1) both; animation-delay: var(--delay);
   }
   /* A soft cloud of the pip's colour, swelling and thinning to nothing. */
   @keyframes puff {
@@ -238,18 +254,18 @@
   @media (prefers-reduced-motion: reduce) { .tracker.emptied, .pip.lose::after { animation: none; } }
   .pip:disabled { cursor: default; }
   .pip.gain { animation: fill 0.42s backwards; animation-delay: var(--delay); }
-  /* Spending is quick: several go out almost together, at once on tapping. */
-  .pip.lose { animation: drain 0.26s ease-out backwards; animation-delay: var(--delay); }
+  .pip.gain::before { transition-delay: var(--delay); }
+  /* Spending is quick: the fill fades from the first frame, a few
+     hundredths of a second apart, while the pip gives a small dip. */
+  .pip.lose { animation: drain 0.2s ease-out; animation-delay: var(--delay); transition-delay: var(--delay); }
+  .pip.lose::before { animation: drain-fill 0.16s ease-out backwards; animation-delay: var(--delay); }
   @keyframes fill {
-    from { transform: scale(0.4); background: transparent; border-color: var(--dim); }
+    from { transform: scale(0.4); }
     60%  { transform: scale(1.22); }
     to   { transform: scale(1); }
   }
-  @keyframes drain {
-    from { transform: scale(1); background: var(--accent); border-color: var(--accent); }
-    40%  { transform: scale(0.78); background: var(--accent); border-color: var(--accent); }
-    to   { transform: scale(1); }
-  }
+  @keyframes drain { 50% { transform: scale(0.8); } }
+  @keyframes drain-fill { from { opacity: 1; } to { opacity: 0; } }
   .gaugerow { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
   .step {
     width: 1.5rem; height: 1.5rem; flex: none;
