@@ -71,7 +71,7 @@
     columns: Column[];
     /** A tick in the first column, ahead of the name: prepared spells,
         attuned items. With a limit, no more than that many can be ticked. */
-    check?: { key: string; label: string; short?: string; limit?: number; full?: string };
+    check?: { key: string; label: string; short?: string; limit?: number; full?: string; inline?: boolean };
     editable: boolean;
     blank: () => T;
     onchange: (next: T[]) => void;
@@ -127,7 +127,9 @@
     Boolean(groupBy) && view.length > 0 && view.some((r) => r.group !== view[0].group)
   );
 
-  const span = $derived(columns.length + (check ? 1 : 0) + (editable ? 2 : 0));
+  /** An inline tick lives in the name cell, as a toggle, not in a column. */
+  const tickColumn = $derived(Boolean(check && !check.inline));
+  const span = $derived(columns.length + (tickColumn ? 1 : 0) + (editable ? 2 : 0));
 
   function patch(index: number, key: string, raw: string, type?: string) {
     const value = type === 'number' ? (raw === '' ? undefined : Number(raw)) : raw;
@@ -290,6 +292,19 @@
 
   const canMove = (row: Row) => groupRows(row.group).length > 1;
 
+  /** The add button and its (i) open out with edit mode and fold away after it. */
+  function unfold(node: HTMLElement) {
+    const h = node.offsetHeight;
+    const style = getComputedStyle(node);
+    const mt = parseFloat(style.marginTop) || 0;
+    return {
+      duration: prefersReducedMotion() ? 0 : 300,
+      easing: cubicOut,
+      css: (t: number) =>
+        `opacity: ${t}; height: ${t * h}px; margin-top: ${t * mt}px; overflow: hidden; transform: translateY(${(1 - t) * -6}px);`
+    };
+  }
+
   // ── Rows arriving and leaving ─────────────────────────────────────────────
 
   function arrive(_node: Element) {
@@ -328,14 +343,14 @@
     <table class:editing={editable} class:headed={showHeadings} class:dragging={drag !== null} class:landing>
       <colgroup>
         {#if editable}<col style:width="1.75rem" />{/if}
-        {#if check}<col style:width="2.5rem" />{/if}
+        {#if tickColumn}<col style:width="2.5rem" />{/if}
         {#each columns as col (col.key)}<col style:width={col.width} />{/each}
         {#if editable}<col style:width="2rem" />{/if}
       </colgroup>
       <thead>
         <tr>
           {#if editable}<th><span class="sr">Order</span></th>{/if}
-          {#if check}<th class="tick" title={check.label}>{check.short ?? check.label}</th>{/if}
+          {#if check && tickColumn}<th class="tick" title={check.label}>{check.short ?? check.label}</th>{/if}
           {#each columns as col (col.key)}
             <th title={col.short ? col.label : undefined}>
               {col.short ?? col.label}
@@ -376,7 +391,7 @@
                 </button>
               </td>
             {/if}
-            {#if check}
+            {#if check && tickColumn}
               <td class="tick" data-label={check.label} data-empty={!editable && !item[check.key] ? '' : undefined}>
                 {#if editable}
                   <input
@@ -395,13 +410,28 @@
             {/if}
             <td class="name" data-label={nameCol.label}>
               {#if editable}
-                <input
-                  data-flip={fk(row, nameCol.key)}
-                  value={nameOf(item)}
-                  placeholder={nameCol.placeholder ?? ''}
-                  aria-label="{nameCol.label} {index + 1}"
-                  onchange={(e) => patch(index, nameCol.key, e.currentTarget.value)}
-                />
+                <div class="nameedit">
+                  <input
+                    data-flip={fk(row, nameCol.key)}
+                    value={nameOf(item)}
+                    placeholder={nameCol.placeholder ?? ''}
+                    aria-label="{nameCol.label} {index + 1}"
+                    onchange={(e) => patch(index, nameCol.key, e.currentTarget.value)}
+                  />
+                  {#if check?.inline}
+                    {@const on = Boolean(item[check.key])}
+                    <button class="toggle" class:on aria-pressed={on}
+                            disabled={full && !on}
+                            aria-label="{nameOf(item) || `Row ${index + 1}`} {check.label.toLowerCase()}"
+                            title={full && !on ? check.full : on ? `${check.label} · press to undo` : check.label}
+                            onclick={() => setFlag(index, check.key, !on)}>
+                      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+                        <path d="M8 1.5 9.6 6.4 14.5 8 9.6 9.6 8 14.5 6.4 9.6 1.5 8 6.4 6.4Z"
+                              stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
+                      </svg>
+                    </button>
+                  {/if}
+                </div>
               {:else}
                 <span class="nm" data-flip={fk(row, nameCol.key)}>{text(item[nameCol.key])}</span>
                 {#if links}<EntryLink
@@ -457,7 +487,7 @@
 {/if}
 
 {#if editable}
-  <div class="addrow">
+  <div class="addrow" transition:unfold>
     <button class="add" onclick={add}>{addLabel}</button>
     {#if info}<InfoTip label="About {addLabel.toLowerCase().replace(/^add /, '')}">{@render info()}</InfoTip>{/if}
   </div>
@@ -516,6 +546,19 @@
   .press:active { transform: translateY(1px); }
   @media (hover: none) { .press { border-color: var(--line); } }
   .nm { overflow-wrap: anywhere; }
+  .nameedit { display: flex; align-items: center; gap: 0.25rem; }
+  .nameedit input { flex: 1 1 auto; min-width: 0; }
+  /* The inline tick: a small sparkle that fills when on. */
+  .toggle {
+    flex: none; width: 1.75rem; height: 1.75rem; padding: 0; display: grid; place-items: center;
+    background: none; border: 1px solid var(--line); border-radius: var(--r-sm); color: var(--faint);
+    cursor: pointer; transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+  }
+  .toggle svg { fill: none; transition: fill 0.2s ease, transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1); }
+  .toggle:hover:not(:disabled) { color: var(--a); border-color: var(--a-edge); }
+  .toggle.on { color: var(--a); border-color: var(--a-edge); background: var(--a-wash); }
+  .toggle.on svg { fill: currentColor; transform: rotate(45deg); }
+  .toggle:disabled { opacity: 0.35; cursor: not-allowed; }
   .muted { color: var(--dim); font-size: 0.85rem; }
   .numeric { font-variant-numeric: tabular-nums; }
   /* Centred on the row rather than aligned with the first line of text. */
@@ -566,6 +609,9 @@
     display: block; margin: 0 auto;
   }
   .addrow { display: flex; align-items: center; gap: 0.375rem; margin-top: 0.75rem; }
+  /* The handles and remove buttons come in with edit mode rather than popping. */
+  .grip, .x, .toggle { animation: handleIn 0.32s cubic-bezier(0.2, 0.8, 0.3, 1) backwards; }
+  @keyframes handleIn { from { opacity: 0; transform: scale(0.6); } }
   .add { background: none; border: 1px dashed var(--line);
     color: var(--dim); border-radius: var(--r-sm); padding: 0.4rem 0.9rem;
     font: inherit; font-size: 0.85rem; cursor: pointer;
