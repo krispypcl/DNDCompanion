@@ -144,10 +144,15 @@
     lastLevel = now;
   });
   /** The sheet's panels arrive one after another when it first appears. */
-  let entering = $state(false);
+  // On from the start, so the sheet's very first frame is already the start
+  // of the animation; switched on only once it showed, the panels appeared,
+  // vanished and faded in again.
+  let entering = $state(true);
   $effect(() => {
-    if (!revealed) return;
-    entering = true;
+    if (!revealed) {
+      entering = true;
+      return;
+    }
     const t = setTimeout(() => (entering = false), 1200);
     return () => clearTimeout(t);
   });
@@ -595,6 +600,12 @@
   }
 
   let presetsOpen = $state(false);
+  // Switching modes either way folds the ready-made list: it is never
+  // waiting open on returning to edit mode.
+  $effect(() => {
+    editing;
+    presetsOpen = false;
+  });
   function addPreset(added: Tracker[], label: string) {
     if (!definition) return;
     setDefinition({ ...definition, trackers: [...(definition.trackers ?? []), ...added] });
@@ -892,9 +903,15 @@
                   charges belong here as much as a cantrip does. Source is the book it is from, as
                   5e.tools writes it — <code>xphb</code>, <code>phb</code>, <code>tce</code> — and
                   sets where the name links to. <code>homebrew</code> marks an entry as yours and
-                  drops the link.
+                  drops the link. Hit is <code>spell</code> for a spell attack. Damage is written
+                  like an attack's, with what each higher slot adds after it:
+                  <code>8d6 fire +1d6/level</code>. A cantrip's dice grow with your level by themselves.
                 {/snippet}
               </EntryTable>
+              {#if casting}
+                <CastPicker spell={casting} slots={slotsByLevel} themeCss={themeStyle(definition.identity.theme)}
+                            oncast={(at, spend) => castAt(casting!, at, spend)} oncancel={() => (casting = null)} />
+              {/if}
             {:else if tab === 'Equipment'}
               <EntryTable
                 items={definition.equipment ?? []}
@@ -1166,19 +1183,13 @@
 {/if}
 
 <style>
-  /* Panels arrive in reading order rather than all at once. */
+  /* The heading rises in with the panels, and only on arrival: as a lasting
+     rule, it played a second time the moment the arrival ended. */
   @keyframes rise {
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: none; }
   }
-  .identity, .band > :global(*), .main > :global(*) {
-    animation: rise 0.3s cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
-  }
-  .band > :global(*:nth-child(1)) { animation-delay: 0.04s; }
-  .band > :global(*:nth-child(2)) { animation-delay: 0.08s; }
-  .main > :global(*:nth-child(1)) { animation-delay: 0.12s; }
-  .main > :global(*:nth-child(2)) { animation-delay: 0.16s; }
-  .main > :global(*:nth-child(3)) { animation-delay: 0.2s; }
+  .entering .identity { animation: rise 0.3s cubic-bezier(0.2, 0.7, 0.3, 1) backwards; }
 
   .loading { position: relative; }
   .loading > :global(.skel) { opacity: 0.45; }
@@ -1467,7 +1478,7 @@
     100% { opacity: 0; transform: translate(-50%, -20px); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .entering .panel, .defbox.inspired, .burst, .levelup { animation: none; }
+    .entering .panel, .entering .identity, .defbox.inspired, .burst, .levelup { animation: none; }
     .burst { display: none; }
   }
   /* Shortcuts are for a keyboard: the button only shows where there is a mouse. */

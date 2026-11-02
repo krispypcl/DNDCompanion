@@ -158,7 +158,7 @@
           aria-pressed={i < remaining}
           aria-label="{tracker.label} {i + 1}"
           disabled={!editable}
-          style:--delay="{(r?.order ?? 0) * 60 + (refilling ? stagger * 110 : 0)}ms"
+          style:--delay="{(r?.order ?? 0) * (r?.kind === 'lose' ? 28 : 60) + (refilling ? stagger * 110 : 0)}ms"
           onclick={() => tapPip(i + 1)}
         ></button>
       {/each}
@@ -218,7 +218,7 @@
   .pip.lose::after {
     content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
     background: var(--accent); opacity: 0;
-    animation: puff 0.6s cubic-bezier(0.2, 0.7, 0.3, 1) both; animation-delay: var(--delay);
+    animation: puff 0.42s cubic-bezier(0.2, 0.7, 0.3, 1) both; animation-delay: var(--delay);
   }
   /* A soft cloud of the pip's colour, swelling and thinning to nothing. */
   @keyframes puff {
@@ -238,7 +238,8 @@
   @media (prefers-reduced-motion: reduce) { .tracker.emptied, .pip.lose::after { animation: none; } }
   .pip:disabled { cursor: default; }
   .pip.gain { animation: fill 0.42s backwards; animation-delay: var(--delay); }
-  .pip.lose { animation: drain 0.36s backwards; animation-delay: var(--delay); }
+  /* Spending is quick: several go out almost together, at once on tapping. */
+  .pip.lose { animation: drain 0.26s ease-out backwards; animation-delay: var(--delay); }
   @keyframes fill {
     from { transform: scale(0.4); background: transparent; border-color: var(--dim); }
     60%  { transform: scale(1.22); }
