@@ -52,3 +52,18 @@ describe('conditions', () => {
     expect(conditionUrl('Dead')).toBeNull();
   });
 });
+
+describe('condition looks', () => {
+  it('knows the standard ones, with or without a level', async () => {
+    const { isStandard, lookOf } = await import('$lib/rules/conditions');
+    expect(isStandard('Exhaustion 2')).toBe(true);
+    expect(isStandard('Bless')).toBe(false);
+    expect(lookOf('Charmed')?.motion).toBe('pulse');
+  });
+  it('uses a chosen look for one written in, and none for a blank colour', async () => {
+    const { lookOf } = await import('$lib/rules/conditions');
+    expect(lookOf('Bless', { bless: { color: '#ffcc00', motion: 'shimmer' } })).toEqual({ color: '#ffcc00', motion: 'shimmer' });
+    expect(lookOf('Bless', { bless: { color: '', motion: 'pulse' } })).toBeNull();
+    expect(lookOf('Bless')).toBeNull();
+  });
+});

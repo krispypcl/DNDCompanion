@@ -1,102 +1,105 @@
 <script lang="ts">
   /**
-   * A tint at the top and bottom of the screen for each standard condition
-   * the character has: pink while charmed, yellow while stunned, and so on.
+   * A tint rising from the bottom of the screen for each condition the
+   * character has: pink while charmed, yellow while stunned, and whatever its
+   * owner chose for one of their own.
    *
-   * It keeps out of everything else's way. It sits behind the modules, as the
-   * hurt edges do, and takes the top and bottom of the screen where the hurt
-   * edges take the sides, so the two can both be showing. With more than one
-   * condition, the colours take turns.
+   * It shares the screen with the hurt edges rather than fighting them: it
+   * sits behind the modules as they do, takes only the bottom of the screen
+   * where they take the sides, and as the character is hurt its own sides
+   * fade away to leave those to the red. With more than one condition, the
+   * colours take turns.
    */
   import { onDestroy } from 'svelte';
   import { prefersReducedMotion } from '$lib/motion';
+  import { hurtLevel } from '$lib/rules/hp';
+  import { lookKey, lookOf } from '$lib/rules/conditions';
+  import type { ConditionLook } from '$lib/types';
 
-  let { conditions }: { conditions: string[] } = $props();
+  let {
+    conditions,
+    looks = {},
+    current = 1,
+    max = 1
+  }: {
+    conditions: string[];
+    looks?: Record<string, ConditionLook>;
+    /** Hit points, so the tint can make room for the hurt edges. */
+    current?: number;
+    max?: number;
+  } = $props();
 
-  type Look = { color: string; motion: 'still' | 'pulse' | 'flicker' | 'shimmer' | 'shiver' | 'heavy'; low?: boolean };
-
-  /** Hue and movement per condition. Anything not listed (Bless, Rage…) has none. */
-  const LOOKS: Record<string, Look> = {
-    blinded: { color: 'oklch(14% 0.005 286)', motion: 'heavy' },
-    charmed: { color: 'oklch(68% 0.2 350)', motion: 'pulse' },
-    deafened: { color: 'oklch(58% 0.06 245)', motion: 'still' },
-    exhaustion: { color: 'oklch(52% 0.08 60)', motion: 'heavy' },
-    frightened: { color: 'oklch(45% 0.18 300)', motion: 'shiver' },
-    grappled: { color: 'oklch(64% 0.16 50)', motion: 'still' },
-    incapacitated: { color: 'oklch(58% 0.01 286)', motion: 'still' },
-    invisible: { color: 'oklch(86% 0.08 210)', motion: 'shimmer' },
-    paralyzed: { color: 'oklch(76% 0.12 230)', motion: 'still' },
-    petrified: { color: 'oklch(62% 0.025 80)', motion: 'still' },
-    poisoned: { color: 'oklch(66% 0.19 140)', motion: 'pulse' },
-    prone: { color: 'oklch(50% 0.07 50)', motion: 'still', low: true },
-    restrained: { color: 'oklch(70% 0.14 75)', motion: 'still' },
-    stunned: { color: 'oklch(88% 0.17 95)', motion: 'flicker' },
-    unconscious: { color: 'oklch(28% 0.08 265)', motion: 'heavy' },
-    dead: { color: 'oklch(16% 0.04 25)', motion: 'heavy' }
-  };
-
-  /** "Exhaustion 2" is exhaustion; case and spacing do not matter. */
-  const keyOf = (name: string) => name.trim().toLowerCase().replace(/\s*\d+$/, '');
-  const shown = $derived(
-    [...new Set(conditions.map(keyOf))].filter((k) => k in LOOKS).map((k) => ({ key: k, ...LOOKS[k] }))
-  );
+  const shown = $derived.by(() => {
+    const seen = new Set<string>();
+    const out: (ConditionLook & { key: string })[] = [];
+    for (const name of conditions) {
+      const k = lookKey(name);
+      const look = lookOf(name, looks);
+      if (!look || seen.has(k)) continue;
+      seen.add(k);
+      out.push({ key: k, ...look });
+    }
+    return out;
+  });
+  const hurt = $derived(hurtLevel(current, max));
 
   let turn = $state(0);
   const timer = setInterval(() => (turn += 1), prefersReducedMotion() ? 6000 : 3200);
   onDestroy(() => clearInterval(timer));
-  const current = $derived(shown.length ? turn % shown.length : 0);
+  const on = $derived(shown.length ? turn % shown.length : 0);
 </script>
 
-<div class="overlay" aria-hidden="true">
+<div class="overlay" style:--hurt={hurt} aria-hidden="true">
   {#each shown as look, i (look.key)}
-    <div class="tint {look.motion}" class:low={look.low} class:on={i === current} data-condition={look.key}
-         style:--tint={look.color}>
-      <i class="top"></i><i class="bottom"></i>
+    <div class="tint {look.motion}" class:on={i === on} data-condition={look.key} style:--tint={look.color}>
+      <i></i>
     </div>
   {/each}
 </div>
 
 <style>
+  @property --hurt { syntax: '<number>'; inherits: true; initial-value: 0; }
   /* Behind the modules (z 1), with the hurt edges, above only the page. */
-  .overlay { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
-  .tint {
-    position: absolute; inset: 0; opacity: 0;
-    transition: opacity 1.1s ease;
-    animation: tintIn 0.9s ease;
+  .overlay {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    transition: --hurt 0.9s ease;
+    /* The sides give way to the hurt edges as they come in. */
+    --side: calc(var(--hurt) * clamp(5rem, 18vw, 18rem));
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--side), #000 calc(100% - var(--side)), transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0, #000 var(--side), #000 calc(100% - var(--side)), transparent 100%);
   }
+  @media (max-width: 700px) {
+    .overlay { --side: calc(var(--hurt) * clamp(2.5rem, 14vw, 6rem)); }
+  }
+  .tint { position: absolute; inset: 0; opacity: 0; transition: opacity 1.1s ease; }
   .tint.on { opacity: 1; }
-  @keyframes tintIn { from { transform: scaleY(1.15); } }
-  .tint i { position: absolute; left: 0; right: 0; display: block; }
-  .top {
-    top: 0; height: clamp(7rem, 30vh, 18rem);
-    background: linear-gradient(to bottom,
-      color-mix(in oklch, var(--tint) 62%, transparent) 0%,
-      color-mix(in oklch, var(--tint) 24%, transparent) 45%,
-      transparent 100%);
-  }
-  .bottom {
-    bottom: 0; height: clamp(5rem, 22vh, 13rem);
+  /* From the bottom only, high, with a long soft feather into nothing. */
+  .tint i {
+    position: absolute; left: 0; right: 0; bottom: 0; display: block;
+    height: clamp(16rem, 62vh, 40rem);
+    transform-origin: center bottom;
     background: linear-gradient(to top,
-      color-mix(in oklch, var(--tint) 52%, transparent) 0%,
-      color-mix(in oklch, var(--tint) 18%, transparent) 50%,
+      color-mix(in oklch, var(--tint) 58%, transparent) 0%,
+      color-mix(in oklch, var(--tint) 42%, transparent) 12%,
+      color-mix(in oklch, var(--tint) 28%, transparent) 28%,
+      color-mix(in oklch, var(--tint) 16%, transparent) 48%,
+      color-mix(in oklch, var(--tint) 7%, transparent) 70%,
+      color-mix(in oklch, var(--tint) 2%, transparent) 86%,
       transparent 100%);
+    animation: rise 0.9s cubic-bezier(0.2, 0.8, 0.3, 1);
   }
-  /* Prone: the weight is at the bottom of the screen, on the floor. */
-  .low .top { height: clamp(4rem, 14vh, 8rem); opacity: 0.6; }
-  .low .bottom { height: clamp(8rem, 36vh, 20rem); }
+  @keyframes rise { from { transform: scaleY(0.6); opacity: 0; } }
 
-  .pulse i { animation: pulse 2.8s ease-in-out infinite; }
+  .pulse i { animation: rise 0.9s cubic-bezier(0.2, 0.8, 0.3, 1), pulse 2.8s ease-in-out 0.9s infinite; }
   @keyframes pulse { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
-  .heavy i { animation: heavy 4.5s ease-in-out infinite; transform-origin: center top; }
-  .heavy .bottom { transform-origin: center bottom; }
-  @keyframes heavy { 0%, 100% { opacity: 0.85; transform: scaleY(1); } 50% { opacity: 1; transform: scaleY(1.12); } }
-  .flicker i { animation: flicker 1.9s steps(1, end) infinite; }
-  @keyframes flicker {
-    0%, 100% { opacity: 0.9; } 8% { opacity: 0.55; } 11% { opacity: 1; } 47% { opacity: 0.75; } 50% { opacity: 1; } 78% { opacity: 0.6; } 81% { opacity: 0.95; }
-  }
-  .shimmer i { animation: shimmer 3.4s ease-in-out infinite; }
+  .heavy i { animation: rise 0.9s cubic-bezier(0.2, 0.8, 0.3, 1), heavy 4.5s ease-in-out 0.9s infinite; }
+  @keyframes heavy { 0%, 100% { opacity: 0.85; transform: scaleY(1); } 50% { opacity: 1; transform: scaleY(1.1); } }
+  /* Stunned: a slow dazed swell, not a flicker. */
+  .daze i { animation: rise 0.9s cubic-bezier(0.2, 0.8, 0.3, 1), daze 1.8s ease-in-out 0.9s infinite; }
+  @keyframes daze { 0%, 100% { opacity: 0.6; transform: scaleY(0.96); } 50% { opacity: 1; transform: scaleY(1.04); } }
+  .shimmer i { animation: rise 0.9s cubic-bezier(0.2, 0.8, 0.3, 1), shimmer 3.4s ease-in-out 0.9s infinite; }
   @keyframes shimmer { 0%, 100% { opacity: 0.45; filter: blur(0); } 50% { opacity: 0.9; filter: blur(6px); } }
-  .shiver i { animation: shiver 0.35s ease-in-out infinite alternate; }
+  .shiver i { animation: rise 0.9s cubic-bezier(0.2, 0.8, 0.3, 1), shiver 0.4s ease-in-out 0.9s infinite alternate; }
   @keyframes shiver { from { transform: translateY(-2px); opacity: 0.85; } to { transform: translateY(2px); opacity: 1; } }
 
   @media (prefers-reduced-motion: reduce) {

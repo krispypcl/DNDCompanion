@@ -31,7 +31,12 @@ to keep as anything from the books.
 - **Print** on the layout of the official character sheet, with a spell page
   for casters.
 - **Install** on a phone's home screen as an app.
-- **Accounts** with a display name and profile picture.
+- **Accounts** with a display name and profile picture, and the option to
+  delete the account and everything in it.
+- **Pinned sheets** stay at the top of the list in your own order.
+- **Attunement**: up to three attuned items (or as many as you set), listed
+  first.
+- **Keyboard shortcuts** on a computer; press <kbd>?</kbd> on a sheet.
 
 ## Built with
 

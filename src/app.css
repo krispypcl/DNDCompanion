@@ -162,6 +162,16 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
+/* Nothing may make the page wider than the screen: on a phone that lets the
+   whole page be panned or zoomed sideways. The banner's slant is clipped. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { overflow-x: clip; }
+/* A phone zooms in on any field under 16px when it takes focus, and stays
+   zoomed after. Every field is at least that on a phone. */
+@media (max-width: 700px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='color']):not([type='range']),
+  select, textarea { font-size: max(16px, 1em); }
+}
 body {
   background: var(--bg);
   color: var(--text);

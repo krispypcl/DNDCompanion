@@ -9,7 +9,8 @@
   import Lightbox from '$lib/components/Lightbox.svelte';
   import ModeToggle from '$lib/components/ModeToggle.svelte';
   import D20Loader from '$lib/components/D20Loader.svelte';
-  import { profileOf, signOut, signOutEverywhere, updatePassword, updateProfile } from '$lib/data/session';
+  import { DeleteNotAvailable, deleteAccount, profileOf, signOut, signOutEverywhere, updatePassword, updateProfile } from '$lib/data/session';
+  import { slide } from 'svelte/transition';
   import { passwordStrength } from '$lib/rules/password';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
   import { session } from '$lib/stores/session';
@@ -73,6 +74,29 @@
   }
 
   let confirmEverywhere = $state(false);
+
+  /** Deleting the account: a button, then the phrase typed out, then gone. */
+  const PHRASE = 'IHATEDND';
+  let deletingOpen = $state(false);
+  let typed = $state('');
+  let deleting = $state(false);
+  let deleteMsg = $state<string | null>(null);
+  async function deleteForGood(e: SubmitEvent) {
+    e.preventDefault();
+    if (typed !== PHRASE) return;
+    deleting = true;
+    deleteMsg = null;
+    try {
+      await deleteAccount();
+      goto(`${base}/`);
+    } catch (err) {
+      deleteMsg = err instanceof DeleteNotAvailable
+        ? 'Deleting accounts isn’t switched on yet! The site’s owner has to run one more database update first.'
+        : friendlyError(err, 'Your account refused to go! Try again in a moment.');
+    } finally {
+      deleting = false;
+    }
+  }
   async function leave(everywhere: boolean) {
     if (everywhere) await signOutEverywhere();
     else await signOut();
@@ -156,6 +180,30 @@
         {/if}
       </div>
     </section>
+
+    <section class="card danger-zone" aria-labelledby="del-h">
+      <h2 id="del-h">Delete account</h2>
+      <p class="dim">Deletes your account and every sheet you have made, with all their notes and
+        backstories. Shared links to them stop working.</p>
+      {#if !deletingOpen}
+        <div class="row">
+          <button class="btn danger" onclick={() => (deletingOpen = true)}>Delete my account</button>
+        </div>
+      {:else}
+        <form onsubmit={deleteForGood} transition:slide={{ duration: 200 }}>
+          <label for="phrase">Type <b>{PHRASE}</b> to finalize deletion. This is irreversible and cannot be undone.</label>
+          <input id="phrase" bind:value={typed} autocomplete="off" autocapitalize="characters" spellcheck="false"
+                 placeholder={PHRASE} />
+          {#if deleteMsg}<p class="msg bad" role="alert">{deleteMsg}</p>{/if}
+          <div class="row">
+            <button type="button" class="btn" onclick={() => { deletingOpen = false; typed = ''; deleteMsg = null; }}>Keep my account</button>
+            <button class="btn danger solid" disabled={typed !== PHRASE || deleting}>
+              {deleting ? 'Deleting…' : 'Delete everything'}
+            </button>
+          </div>
+        </form>
+      {/if}
+    </section>
   {/if}
 </main>
 
@@ -218,6 +266,14 @@
   .btn.primary { background: var(--a); border-color: var(--a); color: var(--bg); font-weight: 650; }
   .btn.primary:hover:not(:disabled) { color: var(--bg); filter: brightness(1.1); }
   .btn.danger { border-color: var(--danger); color: var(--danger); }
+  /* Deleting is red whatever the account's theme: it is not a themed action. */
+  .danger-zone { --danger: oklch(62% 0.2 25); border-color: oklch(62% 0.2 25 / 0.35); }
+  .danger-zone .btn.danger:hover:not(:disabled) { background: oklch(62% 0.2 25 / 0.12); color: var(--danger); border-color: var(--danger); }
+  .btn.danger.solid { background: var(--danger); color: white; font-weight: 650; }
+  .btn.danger.solid:hover:not(:disabled) { background: var(--danger); color: white; filter: brightness(1.1); }
+  .danger-zone form { display: grid; gap: 0.5rem; }
+  .danger-zone label b { color: var(--text); letter-spacing: 0.04em; }
+  .danger-zone .msg { margin: 0; }
   .meter { display: grid; gap: 0.25rem; }
   .bars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.25rem; }
   .bars i { height: 4px; border-radius: 2px; background: var(--track); transition: background-color 0.3s ease; }

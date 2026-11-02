@@ -288,6 +288,9 @@
   }
   .banner-btn:hover { opacity: 0.9; transform: scale(1.02); }
   @media (max-width: 560px) {
+    /* On a phone the portrait and banner sit centred on their own rows. */
+    .details { justify-content: center; }
+    .portrait-btn, div.portrait { margin-inline: auto; }
     /* Under the details on a phone, the full width of the card. */
     .banner, .banner-btn { width: 100%; }
     .banner-btn .banner { height: 7rem; }

@@ -168,3 +168,27 @@ create policy "sheet_text update" on sheet_text for update
 
 create policy "sheet_text delete" on sheet_text for delete
   using (owner_id = auth.uid());
+
+-- ---------------------------------------------------------------------------
+-- Deleting your own account. Only the owner of the database may delete from
+-- auth.users, so this runs as that owner (security definer) and deletes only
+-- the caller. Everything a player owns references auth.users with
+-- "on delete cascade" and goes with them.
+create or replace function public.delete_own_account()
+returns void
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  uid uuid := auth.uid();
+begin
+  if uid is null then
+    raise exception 'Not signed in';
+  end if;
+  delete from auth.users where id = uid;
+end;
+$$;
+
+revoke all on function public.delete_own_account() from public, anon;
+grant execute on function public.delete_own_account() to authenticated;

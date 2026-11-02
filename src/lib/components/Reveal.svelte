@@ -13,11 +13,14 @@
     enabled,
     cue = 'Hover to reveal',
     tapCue = 'Tap to reveal',
+    urgent = false,
     children
   }: {
     enabled: boolean;
     cue?: string;
     tapCue?: string;
+    /** The cue pulses red: what is under it is the next thing to do. */
+    urgent?: boolean;
     children: import('svelte').Snippet;
   } = $props();
 
@@ -101,7 +104,7 @@
     onfocusout={() => (focused = false)}
   >
     <div class="inner">{@render children()}</div>
-    <span class="cue" aria-hidden="true" data-cue={cue} data-tap={tapCue}></span>
+    <span class="cue" class:urgent aria-hidden="true" data-cue={cue} data-tap={tapCue}></span>
   </div>
 {:else}
   {@render children()}
@@ -127,4 +130,15 @@
     line-height: 1; transform: translateY(-3px);
   }
   @media (hover: none) { .cue::before { content: attr(data-tap); } }
+  .urgent::before {
+    color: oklch(80% 0.12 25); border: 1px solid oklch(60% 0.2 25 / 0.7);
+    background: oklch(30% 0.09 25 / 0.35);
+    animation: beckon 1.6s ease-in-out infinite;
+  }
+  @keyframes beckon {
+    0%, 100% { box-shadow: 0 0 0 0 oklch(60% 0.2 25 / 0); }
+    50% { box-shadow: 0 0 0 4px oklch(60% 0.2 25 / 0.25), 0 0 18px 2px oklch(60% 0.2 25 / 0.35); }
+  }
+  :global([data-mode='light']) .urgent::before { color: oklch(45% 0.18 25); background: oklch(95% 0.03 25); }
+  @media (prefers-reduced-motion: reduce) { .urgent::before { animation: none; } }
 </style>
