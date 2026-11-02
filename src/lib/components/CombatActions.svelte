@@ -4,6 +4,7 @@
    * play when nobody can remember whether Disengage is an action. Collapsed by
    * default, since it is a reference rather than part of the sheet.
    */
+  import { actionsOpen } from '$lib/stores/tray';
   import InfoTip from './InfoTip.svelte';
 
   const GROUPS: { label: string; note?: string; items: string[] }[] = [
@@ -41,7 +42,7 @@
   ];
 </script>
 
-<details class="actions">
+<details class="actions" bind:open={$actionsOpen}>
   <summary><span class="cap">General actions</span></summary>
   <!-- A wrapper so browsers without ::details-content still have something to
        animate when the panel opens. -->

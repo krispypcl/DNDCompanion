@@ -64,6 +64,7 @@
     addLabel,
     groupBy,
     info,
+    extra,
     links = true,
     onpress,
     lit = null
@@ -83,6 +84,8 @@
     groupBy?: Grouping<T>;
     /** Help for whoever is editing, behind an (i) beside the add button. */
     info?: import('svelte').Snippet;
+    /** More controls between the add button and its (i). */
+    extra?: import('svelte').Snippet;
     /** 5e.tools links on the names. */
     links?: boolean;
     /** A pressable cell was pressed. */
@@ -98,8 +101,9 @@
 
   /**
    * The column the rows are grouped by is only a column while editing: when
-   * reading, the headings already say it. (So reading, there are always
-   * headings for it, even with one group.)
+   * reading, the headings already say it. A list grouped by one of its own
+   * columns always has headings, reading or editing, even for one group;
+   * rows only ever move within their own group.
    */
   const groupedColumn = $derived(Boolean(groupBy && columns.some((c) => c.key === groupBy.key)));
   const shownColumns = $derived(editable || !groupBy ? columns : columns.filter((c) => c.key !== groupBy.key));
@@ -115,13 +119,32 @@
    * and simply renumbered if the list changes from outside (undo, a reload).
    */
   let keys: number[] = [];
+  /** For rows that carry an id: the same key for as long as the row lives. */
+  const idKeys = new Map<string, number>();
   let nextKey = 0;
   const fresh = () => nextKey++;
 
   /** What is shown, in order. `index` stays the row's place in `items`, so
       every edit refers to the data and not to the screen. */
   const view = $derived.by<Row[]>(() => {
-    if (keys.length !== items.length) keys = items.map(fresh);
+    if (keys.length !== items.length) {
+      // Changed from outside (a ready-made tracker added or taken away, an
+      // undo). Rows with an id keep their key, so only the rows that really
+      // came or went animate; without ids, added rows are taken to be new
+      // ones at the end.
+      const hasIds = items.every((it) => typeof it.id === 'string' && it.id);
+      if (hasIds) {
+        keys = items.map((it) => {
+          const id = it.id as string;
+          if (!idKeys.has(id)) idKeys.set(id, fresh());
+          return idKeys.get(id)!;
+        });
+      } else if (items.length > keys.length) {
+        keys = [...keys, ...items.slice(keys.length).map(fresh)];
+      } else {
+        keys = items.map(fresh);
+      }
+    }
     const rows = items.map((item, index) => {
       const rank = groupBy ? groupBy.rank(item) : 0;
       const title = groupBy ? groupBy.title(item) : '';
@@ -137,7 +160,7 @@
   const showHeadings = $derived(
     Boolean(groupBy) &&
       view.length > 0 &&
-      (view.some((r) => r.group !== view[0].group) || (!editable && groupedColumn))
+      (view.some((r) => r.group !== view[0].group) || groupedColumn)
   );
 
   /** An inline tick lives in the name cell, as a toggle, not in a column. */
@@ -157,8 +180,11 @@
   }
 
   function add() {
-    keys = [...keys, fresh()];
-    onchange([...items, blank()]);
+    const row = blank();
+    const key = fresh();
+    if (typeof row.id === 'string' && row.id) idKeys.set(row.id, key);
+    keys = [...keys, key];
+    onchange([...items, row]);
   }
 
   function remove(index: number) {
@@ -365,8 +391,9 @@
           {#if editable}<th><span class="sr">Order</span></th>{/if}
           {#if check && tickColumn}<th class="tick" title={check.label}>{check.short ?? check.label}</th>{/if}
           {#each shownColumns as col (col.key)}
-            <th title={col.short ? col.label : undefined}>
-              {col.short ?? col.label}
+            <th title={col.short ? col.label : undefined}
+                data-flip-ghost={groupBy?.key === col.key ? `${tk}:th:${col.key}` : undefined}>
+              <span class="hd" data-flip="{tk}:h:{col.key}">{col.short ?? col.label}</span>
             </th>
           {/each}
           {#if editable}<th><span class="sr">Remove</span></th>{/if}
@@ -458,6 +485,7 @@
 
             {#each rest as col (col.key)}
               <td data-label={col.label} class:muted={col.muted} class:numeric={col.numeric}
+                  data-flip-ghost={groupBy?.key === col.key ? fk(row, `g:${col.key}`) : undefined}
                   class:wide={col.wide} class:grouped={groupBy?.key === col.key}
                   data-empty={!editable && isEmpty(item[col.key]) ? '' : undefined}>
                 {#if editable && col.options}
@@ -502,6 +530,7 @@
 {#if editable}
   <div class="addrow" transition:unfold>
     <button class="add" onclick={add}>{addLabel}</button>
+    {@render extra?.()}
     {#if info}<InfoTip label="About {addLabel.toLowerCase().replace(/^add /, '')}">{@render info()}</InfoTip>{/if}
   </div>
 {/if}
@@ -530,7 +559,7 @@
     border-bottom: 1px solid var(--line);
   }
   /* Inline boxes cannot be moved, so the words that glide are blocks. */
-  .cell, .nm, tr.group th > span { display: inline-block; max-width: 100%; }
+  .cell, .nm, .hd, tr.group th > span { display: inline-block; max-width: 100%; }
   td {
     padding: 0.4rem 0.5rem 0.4rem 0;
     border-bottom: 1px solid var(--line-soft);
