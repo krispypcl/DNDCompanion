@@ -27,6 +27,9 @@
   import LeaveDialog from '$lib/components/LeaveDialog.svelte';
   import NotFound from '$lib/components/NotFound.svelte';
   import SheetSkeleton from '$lib/components/SheetSkeleton.svelte';
+  import D20Loader from '$lib/components/D20Loader.svelte';
+  import PrintButton from '$lib/components/PrintButton.svelte';
+  import PrintSheet from '$lib/components/PrintSheet.svelte';
   import { beforeNavigate, goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import Flash from '$lib/components/Flash.svelte';
@@ -82,6 +85,8 @@
   let { id }: { id: string } = $props();
 
   let loading = $state(true);
+  /** The die has landed and been read: only then does the sheet show. */
+  let revealed = $state(false);
   let loadError = $state<string | null>(null);
   let activeTab = $state(TABS[0]);
   let editing = $state(false);
@@ -114,6 +119,12 @@
     latest(sheet?.updated_at, sheet?.texts?.notes.updatedAt, sheet?.texts?.backstory.updatedAt)
   );
   const totalLevel = $derived(definition ? characterLevel(definition) : 1);
+  /** The writing this reader may see: what the printed sheet is given. */
+  function readable(key: TextKey): string {
+    if (!definition) return '';
+    if (!isOwner && definition.privateText?.[key]) return '';
+    return sheet?.texts ? sheet.texts[key].body : (definition[key] ?? '');
+  }
 
   const CLASS_COLUMNS = [
     { key: 'name', label: 'Class', width: '38%', placeholder: 'Class' },
@@ -207,6 +218,7 @@
       return;
     }
     loading = true;
+    revealed = false;
     loadError = null;
     resetUndo();
     sheetRepo
@@ -442,8 +454,15 @@
   <title>{definition?.identity?.name?.trim() || sheet?.name || 'Character sheet'}</title>
 </svelte:head>
 
-{#if loading}
-  <SheetSkeleton />
+{#if loading || !revealed}
+  <!-- The sheet's outline, dimmed, with the die rolling over it. -->
+  <div class="loading">
+    <SheetSkeleton />
+    <div class="die">
+      <D20Loader result={loading ? null : loadError ? 1 : 20} label="Loading the sheet"
+                 onlanded={() => (revealed = true)} />
+    </div>
+  </div>
 {:else if loadError === 'notfound'}
   <NotFound title="No sheet here" message="This sheet does not exist, or it has been deleted. Check the link with whoever sent it." />
 {:else if loadError}
@@ -530,6 +549,7 @@
         {/if}
         <a class="back" href="{base}/">Back</a>
         <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Could not copy the link')} />
+        <PrintButton />
         {#if isOwner}<DownloadButton ondownload={exportNow} />{/if}
         <ModeToggle />
       </div>
@@ -880,6 +900,9 @@
   <SaveAlert />
   <!-- Floating, so saying a word costs the header nothing. -->
   <SaveIndicator />
+  <!-- Only the printer shows this. Private writing a visitor cannot read is
+       not passed in, so it is never on their paper either. -->
+  <PrintSheet {definition} state={sheetState} notes={readable('notes')} backstory={readable('backstory')} />
 {/if}
 
 <style>
@@ -897,6 +920,9 @@
   .main > :global(*:nth-child(2)) { animation-delay: 0.16s; }
   .main > :global(*:nth-child(3)) { animation-delay: 0.2s; }
 
+  .loading { position: relative; }
+  .loading > :global(.skel) { opacity: 0.45; }
+  .loading .die { position: fixed; inset: 0; display: grid; place-items: center; pointer-events: none; }
   .centred { max-width: 30rem; margin: 4rem auto; padding: 0 1rem; text-align: center; color: var(--dim); }
   /* Not positioned: the banner inside it is meant to escape this column and
      run the width of the page. */
@@ -1127,5 +1153,10 @@
     /* Six abilities over three columns leaves the names cramped; two rows of
        three with room to breathe reads better at this width. */
     .defense { gap: 0.4375rem; }
+    /* Seven controls in a phone's width: tighter, and allowed to wrap on the
+       narrowest screens rather than run off the edge. */
+    .controls { gap: 0.375rem; flex-wrap: wrap; }
+    .edit { min-width: 3.75rem; padding: 0.375rem 0.625rem; }
+    .undo, .back { padding: 0.375rem 0.625rem; }
   }
 </style>
