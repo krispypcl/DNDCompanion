@@ -21,7 +21,20 @@
  * book's: "(+1)", "+2", "x3", "[attuned]".
  */
 
+import BREW_SOURCES from '$lib/data/brew-sources.json';
+
 export const LOOKUP_BASE = 'https://5e.tools';
+
+/**
+ * The source as 5e.tools' links spell it. 5e.tools shows a homebrew book by
+ * its abbreviation ("GC:VSS'24") but links by its id ("valdagunslinger"), so
+ * a source copied off the page is translated. The table is generated from
+ * the homebrew repository by `npm run brew-sources`.
+ */
+export function sourceId(source: string): string {
+  const key = source.trim().toLowerCase();
+  return (BREW_SOURCES as Record<string, string>)[key] ?? key;
+}
 
 export type LookupCategory =
   | 'spells'
@@ -95,8 +108,9 @@ export function lookupUrl(
 ): string | null {
   if (override?.trim()) return override.trim();
 
-  const src = source?.trim().toLowerCase();
-  if (src && UNLINKABLE.has(src)) return null;
+  const written = source?.trim().toLowerCase();
+  if (written && UNLINKABLE.has(written)) return null;
+  const src = written ? sourceId(written) : written;
   const clean = lookupName(name ?? '', category);
   if (!clean) return null;
 
@@ -106,7 +120,7 @@ export function lookupUrl(
     // A subclass is its class's page, with the subclass chosen.
     const parentName = parent ? lookupName(parent.name, 'classes') : '';
     if (category === 'subclasses' && parentName) {
-      const parentSrc = (parent?.source?.trim() || src).toLowerCase();
+      const parentSrc = parent?.source?.trim() ? sourceId(parent.source) : src;
       return `${LOOKUP_BASE}/classes.html#${hashPart(parentName)}_${hashPart(parentSrc)},state:sub_${hashPart(clean)}_${hashPart(src)}=b1`;
     }
   }
