@@ -637,6 +637,17 @@
       <section class="panel rail-skills">
         <SkillRail {definition} {editable} onchange={setDefinition}
                    onroll={isOwner ? rollSkill : undefined} />
+        <div class="passives">
+          <h2 class="cap">Passives</h2>
+          <div class="defense">
+            {#each PASSIVES as skill (skill)}
+              <div class="defbox">
+                <b use:bump={passiveScore(definition, skill)}>{passiveScore(definition, skill)}</b>
+                <span class="cap">{skill[0].toUpperCase() + skill.slice(1)}</span>
+              </div>
+            {/each}
+          </div>
+        </div>
       </section>
 
       <section class="panel centre">
@@ -819,7 +830,25 @@
       </section>
 
       <section class="panel rail-right">
-        <h2 class="cap">Defenses</h2>
+        <Conditions state={sheetState} editable={isOwner} onchange={setState}
+                    looks={definition.conditionLooks ?? {}}
+                    onlooks={(conditionLooks) => setDefinition({ ...definition, conditionLooks })} />
+
+        {#if (definition.trackers ?? []).length > 0}
+          <div class="trk">
+            <h2 class="cap">Trackers</h2>
+            <TrackerGroup
+              trackers={definition.trackers}
+              spent={sheetState.trackers}
+              ctx={formulaContext(definition)}
+              editable={isOwner}
+              {refilling}
+              onchange={setTracker}
+            />
+          </div>
+        {/if}
+
+        <h2 class="cap defs-h">Defenses</h2>
         <div class="defense">
           <div class="defbox">
             <b use:bump={definition.combat?.ac}>
@@ -874,34 +903,6 @@
             <span class="cap">Inspiration</span>
           </div>
         </div>
-
-        <div class="passives">
-          <h2 class="cap">Passives</h2>
-          <div class="defense">
-            {#each PASSIVES as skill (skill)}
-              <div class="defbox">
-                <b use:bump={passiveScore(definition, skill)}>{passiveScore(definition, skill)}</b>
-                <span class="cap">{skill[0].toUpperCase() + skill.slice(1)}</span>
-              </div>
-            {/each}
-          </div>
-        </div>
-
-        <Conditions state={sheetState} editable={isOwner} onchange={setState} />
-
-        {#if (definition.trackers ?? []).length > 0}
-          <div class="trk">
-            <h2 class="cap">Trackers</h2>
-            <TrackerGroup
-              trackers={definition.trackers}
-              spent={sheetState.trackers}
-              ctx={formulaContext(definition)}
-              editable={isOwner}
-              {refilling}
-              onchange={setTracker}
-            />
-          </div>
-        {/if}
 
         <div class="money">
           <h2 class="cap">Currency</h2>
@@ -1185,6 +1186,9 @@
     width: 100%; text-align: center; font-size: 1.375rem; white-space: nowrap;
   }
   .trk { padding-top: 1.25rem; }
+  /* Conditions and trackers lead the rail: whatever comes first starts flush. */
+  .rail-right > :global(:first-child) { padding-top: 0; }
+  .defs-h { padding-top: 1.25rem; }
   .trk .cap { margin-bottom: 0.625rem; }
   /* Directly below the trackers. With equal-height rails the slack falls to
      the bottom of the panel, not into a gap above this. */
@@ -1213,8 +1217,9 @@
 
   .themerow { display: flex; align-items: center; gap: 1rem; margin: 1.25rem 0; flex-wrap: wrap; }
   .casting {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-    gap: 1rem; margin-bottom: 1.25rem; text-align: center;
+    /* Always three across, centred, so the third never sits alone on a row. */
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem; margin-bottom: 1.25rem; text-align: center; align-items: end;
   }
   .casting h3 {
     font-size: 0.6875rem; letter-spacing: 0.1em; text-transform: uppercase;
