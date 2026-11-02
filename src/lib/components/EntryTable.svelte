@@ -96,7 +96,15 @@
   const fk = (row: { key: unknown }, col: string) => `${tk}:${String(row.key)}:${col}`;
 
 
-  const [nameCol, ...rest] = $derived(columns);
+  /**
+   * The column the rows are grouped by is only a column while editing: when
+   * reading, the headings already say it. (So reading, there are always
+   * headings for it, even with one group.)
+   */
+  const groupedColumn = $derived(Boolean(groupBy && columns.some((c) => c.key === groupBy.key)));
+  const shownColumns = $derived(editable || !groupBy ? columns : columns.filter((c) => c.key !== groupBy.key));
+
+  const [nameCol, ...rest] = $derived(shownColumns);
 
   type Row = { item: T; index: number; key: number; group: string; rank: number; title: string };
 
@@ -127,12 +135,14 @@
   /** One group on its own is just a list; headings only mean something when
       there is more than one to tell apart. */
   const showHeadings = $derived(
-    Boolean(groupBy) && view.length > 0 && view.some((r) => r.group !== view[0].group)
+    Boolean(groupBy) &&
+      view.length > 0 &&
+      (view.some((r) => r.group !== view[0].group) || (!editable && groupedColumn))
   );
 
   /** An inline tick lives in the name cell, as a toggle, not in a column. */
   const tickColumn = $derived(Boolean(check && !check.inline));
-  const span = $derived(columns.length + (tickColumn ? 1 : 0) + (editable ? 2 : 0));
+  const span = $derived(shownColumns.length + (tickColumn ? 1 : 0) + (editable ? 2 : 0));
 
   function patch(index: number, key: string, raw: string, type?: string) {
     const value = type === 'number' ? (raw === '' ? undefined : Number(raw)) : raw;
@@ -347,14 +357,14 @@
       <colgroup>
         {#if editable}<col style:width="1.75rem" />{/if}
         {#if tickColumn}<col style:width="2.5rem" />{/if}
-        {#each columns as col (col.key)}<col style:width={col.width} />{/each}
+        {#each shownColumns as col (col.key)}<col style:width={col.width} />{/each}
         {#if editable}<col style:width="2rem" />{/if}
       </colgroup>
       <thead>
         <tr>
           {#if editable}<th><span class="sr">Order</span></th>{/if}
           {#if check && tickColumn}<th class="tick" title={check.label}>{check.short ?? check.label}</th>{/if}
-          {#each columns as col (col.key)}
+          {#each shownColumns as col (col.key)}
             <th title={col.short ? col.label : undefined}>
               {col.short ?? col.label}
             </th>
@@ -508,9 +518,9 @@
   }
   th {
     text-align: left;
-    /* Fixed columns do not grow for a long heading, so it wraps rather than
-       running into the next one. */
-    overflow-wrap: anywhere;
+    /* Fixed columns do not grow for a long heading, so it wraps — between
+       words, never inside one ("RANG E"). */
+    overflow-wrap: normal; word-break: keep-all;
     font-size: 0.65rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
