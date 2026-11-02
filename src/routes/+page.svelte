@@ -24,7 +24,7 @@
         `opacity: ${t}; transform: translateX(${-12 * u}px); height: ${t * h}px; overflow: hidden;`
     };
   }
-  import { blankDefinition } from '$lib/sample';
+  import { blankDefinition, blankState } from '$lib/sample';
   import { session } from '$lib/stores/session';
   import { isConfigured } from '$lib/supabase';
   import { rise } from '$lib/motion';
@@ -141,7 +141,7 @@
     if (!user) return;
     creating = true;
     try {
-      const sheet = await sheetRepo.createSheet(user.id, 'New character', blankDefinition());
+      const sheet = await sheetRepo.createSheet(user.id, 'New character', blankDefinition(), blankState());
       await goto(`${base}/s/${sheet.id}`);
     } catch (e) {
       error = friendlyError(e, 'The new sheet fizzled! Try again in a moment.');

@@ -59,6 +59,7 @@
   import { themeStyle } from '$lib/theme';
   import { bump, glow, sparkle } from '$lib/motion';
   import { glide } from '$lib/flip';
+  import { isDead } from '$lib/rules/hp';
   import { friendlyError } from '$lib/errors';
   import { session } from '$lib/stores/session';
   import { sheetStore } from '$lib/stores/sheet';
@@ -121,6 +122,7 @@
     latest(sheet?.updated_at, sheet?.texts?.notes.updatedAt, sheet?.texts?.backstory.updatedAt)
   );
   const totalLevel = $derived(definition ? characterLevel(definition) : 1);
+  const dead = $derived(sheetState ? isDead(sheetState) : false);
   /** The writing this reader may see: what the printed sheet is given. */
   function readable(key: TextKey): string {
     if (!definition) return '';
@@ -475,13 +477,25 @@
   <div class="sheet themed" class:bannered={banner} style={themeStyle(definition.identity.theme)}>
     {#if banner}<Banner url={banner} />{/if}
     <header class="identity">
-      <div class="portrait" class:has={Boolean(portraitSrc)}>
+      <div class="portrait" class:has={Boolean(portraitSrc)} class:fallen={dead}>
         {#if portraitSrc}
           <!-- A link that stops working (a Drive file that was unshared) leaves
                the frame as it is for a sheet with no art, not a broken-image icon. -->
           <img src={portraitSrc} alt="" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />
         {/if}
         <span class="lvl" use:glow={totalLevel}>LV {totalLevel}</span>
+        {#if dead}
+          <!-- Three failed death saves, or Dead written in: a skull on the portrait. -->
+          <span class="skull" title="Dead" role="img" aria-label="Dead">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <path d="M12 2.5c-4.7 0-8 3.2-8 7.6 0 2.6 1.2 4.4 3 5.5v2.6c0 .9.7 1.6 1.6 1.6h.9v-2h1.6v2h1.8v-2h1.6v2h.9c.9 0 1.6-.7 1.6-1.6v-2.6c1.8-1.1 3-2.9 3-5.5 0-4.4-3.3-7.6-8-7.6Z"
+                    fill="currentColor" />
+              <circle cx="8.8" cy="10.6" r="2" fill="var(--surface)" />
+              <circle cx="15.2" cy="10.6" r="2" fill="var(--surface)" />
+              <path d="M12 13.2l-1.1 2h2.2Z" fill="var(--surface)" />
+            </svg>
+          </span>
+        {/if}
       </div>
 
       <div class="who">
@@ -983,6 +997,20 @@
     color: var(--a); border-radius: var(--r-sm); font-size: 0.6875rem; font-weight: 650;
     padding: 0.0625rem 0.5rem; letter-spacing: 0.02em; white-space: nowrap;
   }
+  /* Dead: the portrait drains of colour and a skull sits on its top edge. */
+  .portrait img { transition: filter 0.8s ease; }
+  .portrait.fallen img { filter: grayscale(1) brightness(0.65); }
+  .skull {
+    position: absolute; right: -0.5rem; top: -0.5rem; z-index: 1;
+    width: 1.75rem; height: 1.75rem; border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--surface); border: 1px solid oklch(66% 0.22 25 / 0.7);
+    color: oklch(92% 0.01 286);
+    box-shadow: 0 0 12px -2px oklch(66% 0.22 25 / 0.7);
+    animation: skullIn 0.6s cubic-bezier(0.3, 1.5, 0.5, 1);
+  }
+  @keyframes skullIn { from { transform: scale(0) rotate(-30deg); opacity: 0; } }
+  :global([data-mode='light']) .skull { color: oklch(25% 0.01 286); }
   .who { flex: 1 1 auto; min-width: 0; }
   .controls { display: flex; align-items: center; gap: 0.5rem; flex: none; }
   .who h1 { margin: 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.015em; }

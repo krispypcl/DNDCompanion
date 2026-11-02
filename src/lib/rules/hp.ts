@@ -1,4 +1,5 @@
 import type { State } from '$lib/types';
+import { addCondition, hasCondition, removeCondition } from './conditions';
 
 /**
  * Hit point arithmetic, kept pure and apart from the component so the edges
@@ -87,4 +88,45 @@ export function vitalStatus(
   if (ratio <= 0.25) return { vital: 'critical', label: 'Critical' };
   if (ratio <= 0.5) return { vital: 'bloodied', label: 'Bloodied' };
   return { vital: 'healthy', label: 'Healthy' };
+}
+
+export const DOWNED = 'Incapacitated';
+export const DEAD = 'Dead';
+
+/**
+ * What follows on its own from a change to hit points or death saves:
+ *
+ * - dropping to 0 adds Incapacitated;
+ * - coming back above 0 takes Incapacitated and Dead away again;
+ * - a third successful death save brings the character back to 1 hit point;
+ * - a third failed one adds Dead, and taking that failure back removes it.
+ *
+ * Given the state before and after, it returns the state after with these
+ * applied. With no maximum written, nothing is decided.
+ */
+export function withVitals(before: State, after: State, hpMax: number): State {
+  if (!(hpMax > 0)) return after;
+  let next = after;
+  const wasDown = before.hpCurrent <= 0;
+  const isDown = next.hpCurrent <= 0;
+  const saves = next.deathSaves ?? { successes: 0, failures: 0 };
+  const savedBefore = before.deathSaves?.successes ?? 0;
+  const failedBefore = before.deathSaves?.failures ?? 0;
+
+  if (isDown && saves.successes >= 3 && savedBefore < 3 && saves.failures < 3) {
+    // Back on their feet, if only just.
+    next = { ...next, hpCurrent: 1, deathSaves: { successes: 0, failures: 0 } };
+    next = removeCondition(next, DOWNED);
+    return next;
+  }
+  if (isDown && !wasDown) next = addCondition(next, DOWNED);
+  if (!isDown && wasDown) next = removeCondition(removeCondition(next, DOWNED), DEAD);
+  if (isDown && saves.failures >= 3 && failedBefore < 3) next = addCondition(next, DEAD);
+  if (isDown && saves.failures < 3 && failedBefore >= 3 && hasCondition(next, DEAD)) next = removeCondition(next, DEAD);
+  return next;
+}
+
+/** Dead by the saves or by the condition, whichever was written. */
+export function isDead(state: State): boolean {
+  return (state.deathSaves?.failures ?? 0) >= 3 || hasCondition(state, DEAD);
 }
