@@ -61,9 +61,9 @@ describe('grouped table', () => {
     expect(document.querySelector('td[data-label="Level"]')).toBeNull();
   });
 
-  it('editing, the grouped column is back and one level needs no heading', () => {
+  it('editing, the grouped column is back and the heading stays', () => {
     mount(true, vi.fn(), [{ name: 'A', level: '2' }, { name: 'B', level: '2' }]);
-    expect(document.querySelectorAll('tr.group')).toHaveLength(0);
+    expect(document.querySelectorAll('tr.group')).toHaveLength(1);
     expect(document.querySelector('td[data-label="Level"]')).not.toBeNull();
   });
 

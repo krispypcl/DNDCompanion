@@ -101,8 +101,9 @@
 
   /**
    * The column the rows are grouped by is only a column while editing: when
-   * reading, the headings already say it. (So reading, there are always
-   * headings for it, even with one group.)
+   * reading, the headings already say it. A list grouped by one of its own
+   * columns always has headings, reading or editing, even for one group;
+   * rows only ever move within their own group.
    */
   const groupedColumn = $derived(Boolean(groupBy && columns.some((c) => c.key === groupBy.key)));
   const shownColumns = $derived(editable || !groupBy ? columns : columns.filter((c) => c.key !== groupBy.key));
@@ -159,7 +160,7 @@
   const showHeadings = $derived(
     Boolean(groupBy) &&
       view.length > 0 &&
-      (view.some((r) => r.group !== view[0].group) || (!editable && groupedColumn))
+      (view.some((r) => r.group !== view[0].group) || groupedColumn)
   );
 
   /** An inline tick lives in the name cell, as a toggle, not in a column. */
@@ -390,8 +391,9 @@
           {#if editable}<th><span class="sr">Order</span></th>{/if}
           {#if check && tickColumn}<th class="tick" title={check.label}>{check.short ?? check.label}</th>{/if}
           {#each shownColumns as col (col.key)}
-            <th title={col.short ? col.label : undefined}>
-              {col.short ?? col.label}
+            <th title={col.short ? col.label : undefined}
+                data-flip-ghost={groupBy?.key === col.key ? `${tk}:th:${col.key}` : undefined}>
+              <span class="hd" data-flip="{tk}:h:{col.key}">{col.short ?? col.label}</span>
             </th>
           {/each}
           {#if editable}<th><span class="sr">Remove</span></th>{/if}
@@ -483,6 +485,7 @@
 
             {#each rest as col (col.key)}
               <td data-label={col.label} class:muted={col.muted} class:numeric={col.numeric}
+                  data-flip-ghost={groupBy?.key === col.key ? fk(row, `g:${col.key}`) : undefined}
                   class:wide={col.wide} class:grouped={groupBy?.key === col.key}
                   data-empty={!editable && isEmpty(item[col.key]) ? '' : undefined}>
                 {#if editable && col.options}
@@ -556,7 +559,7 @@
     border-bottom: 1px solid var(--line);
   }
   /* Inline boxes cannot be moved, so the words that glide are blocks. */
-  .cell, .nm, tr.group th > span { display: inline-block; max-width: 100%; }
+  .cell, .nm, .hd, tr.group th > span { display: inline-block; max-width: 100%; }
   td {
     padding: 0.4rem 0.5rem 0.4rem 0;
     border-bottom: 1px solid var(--line-soft);
