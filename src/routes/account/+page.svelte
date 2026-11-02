@@ -33,6 +33,7 @@
   const link = $derived(resolveImageUrl(picture));
   let loaded = $state<Record<string, 'ok' | 'failed'>>({});
   let viewing = $state(false);
+  let viewFrom = $state<Element | null>(null);
 
   let profileMsg = $state<{ ok: boolean; text: string } | null>(null);
   let savingProfile = $state(false);
@@ -122,7 +123,7 @@
       <h2 id="profile-h">Profile</h2>
       <div class="who">
         <button type="button" class="pic" disabled={!link.url || loaded[link.url] !== 'ok'}
-                aria-label="View profile picture full screen" onclick={() => (viewing = true)}>
+                aria-label="View profile picture full screen" onclick={(e) => { viewFrom = e.currentTarget; viewing = true; }}>
           <Avatar url={picture} name={name || $session.user.email || '?'} size={72} />
         </button>
         <div class="grow">
@@ -206,7 +207,7 @@
 </main>
 
 {#if viewing && link.url}
-  <Lightbox src={link.url} alt="Profile picture" onclose={() => (viewing = false)} />
+  <Lightbox src={link.url} alt="Profile picture" from={viewFrom} onclose={() => (viewing = false)} />
 {/if}
 
 <style>

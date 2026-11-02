@@ -59,7 +59,16 @@
     // Off then on across a frame, so a second change restarts the wave.
     wave = null;
     requestAnimationFrame(() => (wave = { from, to: now }));
+    // The last one used: the tracker gives a small shake.
+    if (now === 0 && from > 0 && !accrue) {
+      emptied = false;
+      requestAnimationFrame(() => (emptied = true));
+      clearTimeout(emptyTimer);
+      emptyTimer = setTimeout(() => (emptied = false), 600);
+    }
   });
+  let emptied = $state(false);
+  let emptyTimer: ReturnType<typeof setTimeout> | undefined;
 
   /** This pip's part in the wave: whether it lit or went out, and its turn. */
   function ripple(i: number): { kind: 'gain' | 'lose'; order: number } | null {
@@ -93,7 +102,7 @@
   }
 </script>
 
-<div class="tracker" class:refilling style:--stagger={stagger}>
+<div class="tracker" class:refilling class:emptied style:--stagger={stagger}>
   <div class="head">
     <span class="label">
       {tracker.label}
@@ -167,6 +176,24 @@
     transition: background 0.18s cubic-bezier(0.2, 1.4, 0.4, 1), transform 0.18s ease;
   }
   .pip.on { background: var(--accent); border-color: var(--accent); }
+  /* Spending one: the fill drains out of the middle and a ring puffs away. */
+  .pip { position: relative; }
+  .pip.lose::after {
+    content: ''; position: absolute; inset: -1px; border-radius: 50%; pointer-events: none;
+    border: 1.5px solid var(--accent); opacity: 0;
+    animation: puff 0.5s ease-out backwards; animation-delay: var(--delay);
+  }
+  @keyframes puff { from { opacity: 0.9; transform: scale(1); } to { opacity: 0; transform: scale(2.1); } }
+  /* The last one gone: a small shake of the whole tracker. */
+  .tracker.emptied { animation: emptyShake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+  @keyframes emptyShake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-4px); }
+    40% { transform: translateX(4px); }
+    60% { transform: translateX(-2px); }
+    80% { transform: translateX(2px); }
+  }
+  @media (prefers-reduced-motion: reduce) { .tracker.emptied, .pip.lose::after { animation: none; } }
   .pip:disabled { cursor: default; }
   .pip.gain { animation: fill 0.42s backwards; animation-delay: var(--delay); }
   .pip.lose { animation: drain 0.36s backwards; animation-delay: var(--delay); }
@@ -176,8 +203,8 @@
     to   { transform: scale(1); }
   }
   @keyframes drain {
-    from { transform: scale(1); background: var(--accent); border-color: var(--accent); }
-    45%  { transform: scale(0.7); background: var(--accent); border-color: var(--accent); }
+    from { transform: scale(1); background: var(--accent); border-color: var(--accent); box-shadow: inset 0 0 0 0 var(--surface); }
+    55%  { transform: scale(0.82); background: var(--accent); border-color: var(--accent); box-shadow: inset 0 0 0 0.6rem var(--surface); }
     to   { transform: scale(1); }
   }
   .gaugerow { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }

@@ -166,7 +166,7 @@ html, body { margin: 0; height: 100%; }
    whole page be panned or zoomed sideways. The banner's slant is clipped. */
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 /* See src/lib/flip.ts: no scrollbars flashing on while edit mode glides in. */
-.gliding .scroller { overflow-x: clip !important; overflow-y: visible !important; }
+.gliding .scroller { overflow: clip !important; }
 body { overflow-x: clip; }
 /* A phone zooms in on any field under 16px when it takes focus, and stays
    zoomed after. Every field is at least that on a phone. */

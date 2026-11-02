@@ -19,6 +19,16 @@ const DURATION = 380;
 let settle: ReturnType<typeof setTimeout> | undefined;
 const EASE = 'cubic-bezier(0.2, 0.8, 0.25, 1)';
 
+/** Boxes whose height changes between the two modes (a table): the box
+    itself eases to its new height, so what follows it moves smoothly. */
+function sizes(): Map<string, number> {
+  const out = new Map<string, number>();
+  document.querySelectorAll<HTMLElement>('[data-flip-size]').forEach((el) => {
+    out.set(el.dataset.flipSize!, el.getBoundingClientRect().height);
+  });
+  return out;
+}
+
 function measure(): Map<string, DOMRect> {
   const out = new Map<string, DOMRect>();
   document.querySelectorAll<HTMLElement>('[data-flip]').forEach((el) => {
@@ -34,6 +44,7 @@ export async function glide(change: () => void): Promise<void> {
     return;
   }
   const before = measure();
+  const heights = sizes();
   const scrollY = window.scrollY;
   // While things glide, a table's scroll box would flash a scrollbar for the
   // words passing over its edge; it is clipped instead until they settle.
@@ -46,6 +57,12 @@ export async function glide(change: () => void): Promise<void> {
   // Rects are measured against the viewport; if the page scrolled because it
   // grew or shrank, that is not movement of the words.
   const dyScroll = window.scrollY - scrollY;
+  document.querySelectorAll<HTMLElement>('[data-flip-size]').forEach((el) => {
+    const was = heights.get(el.dataset.flipSize!);
+    const now = el.getBoundingClientRect().height;
+    if (was === undefined || Math.abs(was - now) < 1) return;
+    el.animate([{ height: `${was}px` }, { height: `${now}px` }], { duration: DURATION, easing: EASE });
+  });
   const vh = window.innerHeight;
   document.querySelectorAll<HTMLElement>('[data-flip]').forEach((el) => {
     const was = before.get(el.dataset.flip!);
