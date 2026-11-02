@@ -792,7 +792,7 @@
                 items={trackerRows}
                 columns={TRACKER_COLUMNS}
                 {editable}
-                category="items"
+                category="any"
                 emptyText="No trackers yet."
                 addLabel="Add tracker"
                 blank={blankTracker}
