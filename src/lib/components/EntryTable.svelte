@@ -40,6 +40,8 @@
     canPress?: (value: unknown) => boolean;
     /** What pressing it does, for the button's accessible name. */
     pressVerb?: string;
+    /** How the value reads when not editing ("spell" as "+7"). */
+    show?: (value: unknown) => string;
   };
 
   /** Keep rows in groups, in a fixed order of groups. Within a group the
@@ -509,8 +511,8 @@
                 {:else if onpress && col.canPress?.(item[col.key])}
                   <button class="press" data-flip={fk(row, col.key)} onclick={() => onpress(col.key, item)}
                           aria-label="{col.pressVerb ?? 'Use'} {nameOf(item)} {col.label.toLowerCase()} {text(item[col.key])}"
-                          title="{col.pressVerb ?? 'Use'} {text(item[col.key])}">{text(item[col.key])}</button>
-                {:else}<span class="cell" data-flip={fk(row, col.key)}>{text(item[col.key])}</span>{/if}
+                          title="{col.pressVerb ?? 'Use'} {text(item[col.key])}">{col.show ? col.show(item[col.key]) : text(item[col.key])}</button>
+                {:else}<span class="cell" data-flip={fk(row, col.key)}>{col.show && item[col.key] ? col.show(item[col.key]) : text(item[col.key])}</span>{/if}
               </td>
             {/each}
 

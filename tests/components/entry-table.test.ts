@@ -102,3 +102,19 @@ describe('EntryTable', () => {
     expect(document.querySelectorAll('td.rm').length).toBe(0);
   });
 });
+
+describe('the source column', () => {
+  const columns = [
+    { key: 'name', label: 'Name', width: '70%' },
+    { key: 'source', label: 'Source', width: '30%' }
+  ];
+  const props = { columns, items: [{ name: 'Rope', source: 'xphb' }], blank: () => ({ name: '' }), onchange: () => {}, category: 'items' as const, emptyText: '', addLabel: 'Add' };
+
+  it('shows only while editing', () => {
+    const view = render(EntryTable, { props: { ...props, editable: false } });
+    expect(view.container.querySelectorAll('th').length).toBe(1);
+    view.unmount();
+    const edit = render(EntryTable, { props: { ...props, editable: true } });
+    expect([...edit.container.querySelectorAll('th')].some((th) => /Source/.test(th.textContent ?? ''))).toBe(true);
+  });
+});

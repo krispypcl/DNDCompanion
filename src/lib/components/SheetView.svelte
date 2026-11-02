@@ -50,15 +50,19 @@
     formulaContext,
     modifierOf,
     passiveScore,
+    spellAttackBonus,
     weightCarried
   } from '$lib/rules/derived';
   import { downloadText } from '$lib/download';
-  import { parseRoll } from '$lib/rules/dice';
+  import { parseRoll, type Pool } from '$lib/rules/dice';
   import { requestRoll } from '$lib/stores/dice';
   import { friendlyDate, latest } from '$lib/rules/dates';
   import { exportFileName, exportSheet } from '$lib/exchange';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
-  import { spellGroup, spellRank } from '$lib/rules/spells';
+  import { ordinal, spellGroup, spellLevel, spellRank } from '$lib/rules/spells';
+  import { spellDamage, spellHit } from '$lib/rules/spellroll';
+  import { trackerMax } from '$lib/rules/tracker';
+  import CastPicker from '$lib/components/CastPicker.svelte';
   import { slotLevel } from '$lib/rules/print';
   import { themeStyle } from '$lib/theme';
   import { bump, glow, sparkle } from '$lib/motion';
@@ -201,15 +205,25 @@
       would put a level on a spell nobody has written one for. */
   const SPELL_LEVELS = ['', 'Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] as const;
   const SPELL_COLUMNS = [
-    { key: 'name', label: 'Name', width: '15%', placeholder: 'Shield' },
-    { key: 'level', label: 'Level', width: '11%', options: SPELL_LEVELS },
-    { key: 'time', label: 'Cast time', width: '10%', placeholder: '1 reaction' },
-    { key: 'range', label: 'Range', width: '9%', placeholder: 'Self' },
-    { key: 'components', label: 'Components', short: 'Comp', width: '8%', placeholder: 'V, S, M' },
-    { key: 'duration', label: 'Duration', short: 'Dur.', width: '11%', placeholder: '1 round' },
-    { key: 'save', label: 'Save', width: '8%', placeholder: 'DEX 13' },
-    { key: 'notes', label: 'Notes', width: '19%', muted: true, wide: true, placeholder: '+5 AC' },
-    { key: 'source', label: 'Source', short: 'Src', width: '9%', muted: true, placeholder: 'xphb' }
+    { key: 'name', label: 'Name', width: '14%', placeholder: 'Shield' },
+    { key: 'level', label: 'Level', width: '9%', options: SPELL_LEVELS },
+    { key: 'time', label: 'Cast time', width: '9%', placeholder: '1 reaction' },
+    { key: 'range', label: 'Range', width: '8%', placeholder: 'Self' },
+    { key: 'components', label: 'Components', short: 'Comp', width: '7%', placeholder: 'V, S, M' },
+    { key: 'duration', label: 'Duration', short: 'Dur.', width: '9%', placeholder: '1 round' },
+    { key: 'save', label: 'Save', width: '7%', placeholder: 'DEX 13' },
+    { key: 'hit', label: 'Hit', width: '6%', numeric: true, placeholder: 'spell',
+      canPress: (v: unknown) => spellHit(v, spellAtk) !== null, pressVerb: 'Roll',
+      // "spell" reads as the bonus it rolls.
+      show: (v: unknown) => {
+        const pool = spellHit(v, spellAtk);
+        return pool && !/\d/.test(String(v)) ? (pool.modifier < 0 ? `−${-pool.modifier}` : `+${pool.modifier}`) : String(v ?? '');
+      } },
+    { key: 'damage', label: 'Damage', width: '12%', numeric: true, placeholder: '8d6 +1d6/level',
+      canPress: (v: unknown) => spellDamage(v, null, null, 1) !== null, pressVerb: 'Roll',
+      show: (v: unknown) => String(v ?? '').replace(/\s*(?:\/|per)\s*(?:slot\s*)?(?:level|lvl|slot)s?\b/i, '/lvl') },
+    { key: 'notes', label: 'Notes', width: '12%', muted: true, wide: true, placeholder: '+5 AC' },
+    { key: 'source', label: 'Source', short: 'Src', width: '7%', muted: true, placeholder: 'xphb' }
   ];
 
 
@@ -318,6 +332,77 @@
     const kind = key === 'bonus' ? 'hit' : 'damage';
     const pool = parseRoll(key === 'bonus' ? attack.bonus : attack.damage, kind);
     if (pool) requestRoll(pool, `${attack.name || 'Attack'} ${kind === 'hit' ? 'to hit' : 'damage'}`);
+  }
+
+  /** The spell attack bonus: as written, or worked out from the casting ability. */
+  const spellAtk = $derived(
+    definition
+      ? (definition.spellAttackBonus ??
+          (definition.spellcastingAbility ? spellAttackBonus(definition, definition.spellcastingAbility) : null))
+      : null
+  );
+
+  /** Shows a roll in the tray, which lives on the Combat tab. */
+  function toTray(pool: Pool, label: string) {
+    if (activeTab !== 'Combat') {
+      activeTab = 'Combat';
+      if (typeof location !== 'undefined') history.replaceState(null, '', '#combat');
+    }
+    requestRoll(pool, label);
+  }
+
+  /** Spell slots by level, for casting: how many each has and which trackers hold them. */
+  const slotsByLevel = $derived.by(() => {
+    const out = new Map<number, { max: number; left: number; trackers: { id: string; room: number }[] }>();
+    if (!definition || !sheetState) return out;
+    const ctx = formulaContext(definition);
+    for (const t of definition.trackers ?? []) {
+      const level = slotLevel(t);
+      if (level === null || t.direction === 'accrue') continue;
+      let max = 0;
+      try { max = trackerMax(t, ctx); } catch { continue; }
+      const spent = Math.min(max, Number(sheetState.trackers?.[t.id]) || 0);
+      const at = out.get(level) ?? { max: 0, left: 0, trackers: [] };
+      at.max += max;
+      at.left += max - spent;
+      at.trackers.push({ id: t.id, room: max - spent });
+      out.set(level, at);
+    }
+    return out;
+  });
+
+  /** A leveled spell's damage, pressed: choose the slot it is cast with first. */
+  let casting = $state<Spell | null>(null);
+  function rollSpell(key: string, spell: Spell) {
+    const name = spell.name || 'Spell';
+    if (key === 'hit') {
+      const pool = spellHit(spell.hit, spellAtk);
+      if (pool) toTray(pool, `${name} to hit`);
+      return;
+    }
+    const level = spellLevel(spell.level);
+    if (level !== null && level > 0) {
+      casting = spell;
+      return;
+    }
+    const pool = spellDamage(spell.damage, level, null, totalLevel);
+    if (pool) toTray(pool, level === 0 && totalLevel >= 5 ? `${name} (level ${totalLevel})` : name);
+  }
+  function castAt(spell: Spell, at: number, spend: boolean) {
+    casting = null;
+    const level = spellLevel(spell.level);
+    if (spend) {
+      const slot = slotsByLevel.get(at)?.trackers.find((t) => t.room > 0);
+      if (slot && sheetState) setTracker(slot.id, (Number(sheetState.trackers?.[slot.id]) || 0) + 1);
+    }
+    const pool = spellDamage(spell.damage, level, at, totalLevel);
+    if (pool) toTray(pool, level !== null && at > level ? `${spell.name || 'Spell'} at ${ordinal(at)} level` : spell.name || 'Spell');
+  }
+
+  /** A tracker with a die, spent, and the player said yes to rolling it. */
+  function rollTracker(t: Tracker) {
+    const pool = parseRoll(t.die, 'damage');
+    if (pool) toTray(pool, t.label);
   }
 
   /** A skill, pressed: the Combat tab comes up, and the roll is made there. */
@@ -799,6 +884,7 @@
                 emptyText="No spells or abilities recorded."
                 addLabel="Add spell"
                 blank={() => ({ name: '' }) as Spell}
+                onpress={isOwner ? (key, spell) => rollSpell(key, spell as Spell) : undefined}
                 onchange={(spells) => setDefinition({ ...definition, spells: spells as Spell[] })}
               >
                 {#snippet info()}
