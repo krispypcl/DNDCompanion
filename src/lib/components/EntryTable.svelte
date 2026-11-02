@@ -10,6 +10,7 @@
    * On a phone the table stops being a table: each entry is a card, whether
    * reading or editing, so nothing is ever wider than the screen.
    */
+  import { flipKey } from '$lib/flip';
   import EntryLink from './EntryLink.svelte';
   import InfoTip from './InfoTip.svelte';
   import { tick } from 'svelte';
@@ -85,6 +86,10 @@
     /** A pressable cell was pressed. */
     onpress?: (key: string, item: T) => void;
   } = $props();
+
+  /** Keys for gliding between reading and editing; see $lib/flip. */
+  const tk = flipKey('t');
+  const fk = (row: { key: unknown }, col: string) => `${tk}:${String(row.key)}:${col}`;
 
 
   const [nameCol, ...rest] = $derived(columns);
@@ -340,7 +345,7 @@
           {@const { item, index } = row}
           {@const title = heading(pos)}
           {#if title !== null}
-            <tr class="group"><th colspan={span} scope="colgroup">{title}</th></tr>
+            <tr class="group"><th colspan={span} scope="colgroup"><span data-flip="{tk}:g:{title}">{title}</span></th></tr>
           {/if}
           <tr bind:this={rowEls[row.key]} in:arrive out:leave
               class:lifted={drag?.key === row.key}
@@ -372,25 +377,27 @@
                 {#if editable}
                   <input
                     type="checkbox"
+                    data-flip={fk(row, '?')}
                     checked={Boolean(item[check.key])}
                     aria-label="{nameOf(item) || `Row ${index + 1}`} {check.label.toLowerCase()}"
                     onchange={(e) => setFlag(index, check.key, e.currentTarget.checked)}
                   />
                 {:else}
-                  <span class="yes" aria-label={check.label}>{item[check.key] ? '✓' : ''}</span>
+                  <span class="yes" data-flip={fk(row, '?')} aria-label={check.label}>{item[check.key] ? '✓' : ''}</span>
                 {/if}
               </td>
             {/if}
             <td class="name" data-label={nameCol.label}>
               {#if editable}
                 <input
+                  data-flip={fk(row, nameCol.key)}
                   value={nameOf(item)}
                   placeholder={nameCol.placeholder ?? ''}
                   aria-label="{nameCol.label} {index + 1}"
                   onchange={(e) => patch(index, nameCol.key, e.currentTarget.value)}
                 />
               {:else}
-                <span class="nm">{text(item[nameCol.key])}</span>
+                <span class="nm" data-flip={fk(row, nameCol.key)}>{text(item[nameCol.key])}</span>
                 {#if links}<EntryLink
                   name={nameOf(item)}
                   source={item.source as string | undefined}
@@ -406,6 +413,7 @@
                   data-empty={!editable && isEmpty(item[col.key]) ? '' : undefined}>
                 {#if editable && col.options}
                   <select
+                    data-flip={fk(row, col.key)}
                     value={String(item[col.key] ?? col.options[0])}
                     aria-label="{nameOf(item) || `Row ${index + 1}`} {col.label}"
                     onchange={(e) => patch(index, col.key, e.currentTarget.value)}
@@ -414,6 +422,7 @@
                   </select>
                 {:else if editable}
                   <input
+                    data-flip={fk(row, col.key)}
                     type={col.type === 'number' ? 'number' : 'text'}
                     value={item[col.key] ?? ''}
                     placeholder={col.placeholder ?? ''}
@@ -421,10 +430,10 @@
                     onchange={(e) => patch(index, col.key, e.currentTarget.value, col.type)}
                   />
                 {:else if onpress && col.canPress?.(item[col.key])}
-                  <button class="press" onclick={() => onpress(col.key, item)}
+                  <button class="press" data-flip={fk(row, col.key)} onclick={() => onpress(col.key, item)}
                           aria-label="{col.pressVerb ?? 'Use'} {nameOf(item)} {col.label.toLowerCase()} {text(item[col.key])}"
                           title="{col.pressVerb ?? 'Use'} {text(item[col.key])}">{text(item[col.key])}</button>
-                {:else}{text(item[col.key])}{/if}
+                {:else}<span class="cell" data-flip={fk(row, col.key)}>{text(item[col.key])}</span>{/if}
               </td>
             {/each}
 
@@ -471,6 +480,8 @@
     padding: 0 0.5rem 0.35rem 0;
     border-bottom: 1px solid var(--line);
   }
+  /* Inline boxes cannot be moved, so the words that glide are blocks. */
+  .cell, .nm, tr.group th > span { display: inline-block; max-width: 100%; }
   td {
     padding: 0.4rem 0.5rem 0.4rem 0;
     border-bottom: 1px solid var(--line-soft);

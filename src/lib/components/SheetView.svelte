@@ -58,6 +58,7 @@
   import { spellGroup, spellRank } from '$lib/rules/spells';
   import { themeStyle } from '$lib/theme';
   import { bump, glow, sparkle } from '$lib/motion';
+  import { glide } from '$lib/flip';
   import { friendlyError } from '$lib/errors';
   import { session } from '$lib/stores/session';
   import { sheetStore } from '$lib/stores/sheet';
@@ -536,7 +537,7 @@
           >
         {/if}
         {#if isOwner}
-          <button class="edit" aria-pressed={editing} onclick={() => (editing = !editing)}>
+          <button class="edit" aria-pressed={editing} onclick={() => glide(() => (editing = !editing))}>
             {#key editing}<span class="edlabel">{editing ? 'Done' : 'Edit'}</span>{/key}
           </button>
         {/if}
