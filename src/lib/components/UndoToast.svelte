@@ -37,7 +37,9 @@
     width: min(24rem, calc(100% - 2rem));
     background: var(--surface);
     border: 1px solid var(--line);
+    border-left: 3px solid var(--a);
     border-radius: 8px;
+    box-shadow: 0 8px 28px rgb(0 0 0 / 0.3);
     padding: 0.65rem 0.9rem;
     display: flex;
     align-items: center;
@@ -45,14 +47,18 @@
     gap: 1rem;
     font-size: 0.875rem;
   }
+  /* In the sheet's own accent, like every other control on it. */
   button {
-    background: none;
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    border-radius: 5px;
+    background: var(--a-wash);
+    border: 1px solid var(--a-edge);
+    color: var(--a);
+    border-radius: var(--r-sm);
     padding: 0.3rem 0.7rem;
     font: inherit;
+    font-weight: 600;
     cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
   }
-  button:hover { background: var(--accent); color: #1a1a18; }
+  button:hover { background: var(--a); border-color: var(--a); color: var(--on-accent); }
+  button:active { transform: translateY(1px); }
 </style>

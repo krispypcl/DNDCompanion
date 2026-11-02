@@ -1,4 +1,4 @@
-import type { Definition } from '$lib/types';
+import { emptyState, type Definition, type State } from '$lib/types';
 
 /** The shape a new sheet starts in. Empty, not an example character. */
 export function blankDefinition(name = 'New character'): Definition {
@@ -19,4 +19,9 @@ export function blankDefinition(name = 'New character'): Definition {
     notes: '',
     backstory: ''
   };
+}
+
+/** A new sheet starts whole: 1 of 1 hit points, not 0, which reads as down. */
+export function blankState(): State {
+  return { ...emptyState(), hpCurrent: 1 };
 }

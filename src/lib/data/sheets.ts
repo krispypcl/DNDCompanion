@@ -18,7 +18,7 @@ import {
  */
 export class StaleWriteError extends Error {
   constructor() {
-    super('This sheet was changed somewhere else. Reload to get the latest version.');
+    super('Someone got here first! This sheet was changed somewhere else. Reload to get the latest version.');
     this.name = 'StaleWriteError';
   }
 }

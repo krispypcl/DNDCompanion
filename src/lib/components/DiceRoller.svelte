@@ -273,13 +273,6 @@
     animation: land 0.3s cubic-bezier(0.2, 0.8, 0.3, 1);
   }
   @keyframes land { from { opacity: 0; transform: translateY(4px); } }
-  /* The dice rattle in the tray until they land. */
-  .result.tumbling .faces { animation: rattle 0.12s linear infinite; }
-  @keyframes rattle {
-    0%, 100% { transform: translate(0, 0) rotate(0); }
-    25% { transform: translate(-1.5px, 1px) rotate(-1.5deg); }
-    75% { transform: translate(1.5px, -1px) rotate(1.5deg); }
-  }
   /* A natural 20 bursts gold; a natural 1 sinks and greys. */
   .result { position: relative; --gold: oklch(86% 0.15 90); }
   .result.crit { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 0 26px -6px var(--gold); }

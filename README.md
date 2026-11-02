@@ -18,7 +18,10 @@ to keep as anything from the books.
   reordered by dragging, with spells grouped by level and links to 5e.tools.
 - **A dice roller** with advantage, disadvantage and modifiers; tap an attack
   to roll it.
-- **Conditions**, currency, carried weight, proficiencies, languages and senses.
+- **Conditions**, each with its own tint at the edges of the screen, plus
+  currency, carried weight, proficiencies, languages and senses.
+- **Falling to 0** marks the character Incapacitated; three successful death
+  saves bring them back to 1 hit point, three failures mark them Dead.
 - **Notes and backstory** in pages, each of which can be made private.
 - **Portrait and banner** from a link — Google Drive, Imgur, Dropbox, Pinterest
   and most image hosts — viewable full screen.

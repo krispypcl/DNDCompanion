@@ -217,3 +217,47 @@ describe('healing and temporary hit points', () => {
     expect(container.querySelector('.float.heal')?.textContent).toBe('+8');
   });
 });
+
+describe('HitPoints at 0', () => {
+  it('a hit to 0 adds Incapacitated, and the gauge pulses', async () => {
+    const onchange = vi.fn();
+    const { container } = render(HitPoints, {
+      props: { definition: definition(), state: { ...state(), hpCurrent: 3 }, editable: true, onchange }
+    });
+    const amount = screen.getByLabelText('Amount') as HTMLInputElement;
+    amount.value = '10';
+    amount.dispatchEvent(new Event('input', { bubbles: true }));
+    await Promise.resolve();
+    screen.getByText('Damage').click();
+    expect(onchange.mock.calls.at(-1)![0]).toMatchObject({ hpCurrent: 0, conditions: ['Incapacitated'] });
+    expect(container.querySelector('.hpwrap.dying')).toBeNull();
+  });
+
+  it('pulses while dying, and stops for good when dead', () => {
+    const { container, unmount } = render(HitPoints, {
+      props: { definition: definition(), state: { ...state(), hpCurrent: 0 }, editable: true, onchange: () => {} }
+    });
+    expect(container.querySelector('.hpwrap.dying')).not.toBeNull();
+    unmount();
+    const dead = render(HitPoints, {
+      props: { definition: definition(), state: { ...state(), hpCurrent: 0, deathSaves: { successes: 0, failures: 3 } }, editable: true, onchange: () => {} }
+    });
+    expect(dead.container.querySelector('.hpwrap.dying')).toBeNull();
+    expect(dead.container.querySelector('.hpwrap.dead')).not.toBeNull();
+  });
+
+  it('a third success brings them back to 1', async () => {
+    const onchange = vi.fn();
+    const { container } = render(HitPoints, {
+      props: {
+        definition: definition(),
+        state: { ...state(), hpCurrent: 0, conditions: ['Incapacitated'], deathSaves: { successes: 2, failures: 0 } },
+        editable: true,
+        onchange
+      }
+    });
+    await fireEvent.pointerEnter(container.querySelector('.reveal') as HTMLElement, { pointerType: 'mouse' });
+    await fireEvent.click(screen.getByRole('button', { name: 'successes 3' }));
+    expect(onchange.mock.calls.at(-1)![0]).toMatchObject({ hpCurrent: 1, conditions: [], deathSaves: { successes: 0, failures: 0 } });
+  });
+});

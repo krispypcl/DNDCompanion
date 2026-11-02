@@ -144,6 +144,22 @@
     transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), width 0.32s cubic-bezier(0.22, 1, 0.36, 1);
   }
   @media (prefers-reduced-motion: reduce) { .indicator.ready { transition: none; } }
+  /* On a phone the tabs are a grid of buttons, every one in view and big
+     enough to tap, rather than a strip that hides half of them off the edge. */
+  @media (max-width: 700px) {
+    .tablist {
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.375rem;
+      border-bottom: 0; overflow: visible;
+    }
+    button {
+      padding: 0.5rem 0.25rem; border: 1px solid var(--line-soft); border-radius: var(--r-sm);
+      background: var(--raised); text-align: center; font-size: 0.8125rem;
+      overflow: hidden; text-overflow: ellipsis;
+      transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+    }
+    .active { border-color: var(--a-edge); background: var(--a-wash); }
+    .indicator { display: none; }
+  }
   section { padding: 1rem 0 0; }
   /* The writing tabs fill the rest of the card, so a page has the whole
      height to be written on and its page controls sit at the foot. */

@@ -338,14 +338,14 @@ function parseJson(text: string, what: string): { ok: true; value: unknown } | {
   try {
     return { ok: true, value: JSON.parse(text) };
   } catch {
-    return { ok: false, error: `The ${what} section of that file could not be read. It may have been edited by hand.` };
+    return { ok: false, error: `The ${what} part of that file is scrambled! It may have been edited by hand.` };
   }
 }
 
 export function importSheet(input: string): ImportResult {
   const lines = input.replace(/^﻿/, '').replace(/\r\n?/g, '\n').split('\n');
   if (lines[0]?.trim() !== TITLE) {
-    return { ok: false, error: 'That is not a DND Companion sheet file.' };
+    return { ok: false, error: 'That’s not a DND Companion sheet file!' };
   }
 
   // Header: "key: value" lines, up to the first section.
@@ -355,13 +355,13 @@ export function importSheet(input: string): ImportResult {
     const m = lines[at].match(/^([a-z]+): (.*)$/);
     if (m) header[m[1]] = m[2].trim();
   }
-  if (header.format !== FORMAT) return { ok: false, error: 'That is not a DND Companion sheet file.' };
+  if (header.format !== FORMAT) return { ok: false, error: 'That’s not a DND Companion sheet file!' };
   const version = Number(header.version);
   if (!Number.isInteger(version) || version < 1) {
-    return { ok: false, error: 'That file does not say which version of the format it is.' };
+    return { ok: false, error: 'That file doesn’t say which version it is, so it can’t be read!' };
   }
   if (version > VERSION) {
-    return { ok: false, error: 'That file was made by a newer version of the site. Update the site and try again.' };
+    return { ok: false, error: 'That file is from the future, a newer version of the site! Reload the site and try again.' };
   }
 
   // Sections: a marker line, then everything up to the next one.
@@ -387,7 +387,7 @@ export function importSheet(input: string): ImportResult {
     current?.lines.push(lines[at]);
   }
   if (!ended) {
-    return { ok: false, error: 'That file looks cut short: it has no end marker. Export it again.' };
+    return { ok: false, error: 'That file looks cut short, with no end marker! Export it again.' };
   }
 
   const body = (name: string) => {
@@ -400,11 +400,11 @@ export function importSheet(input: string): ImportResult {
   };
 
   const def = body('DEFINITION');
-  if (!def) return { ok: false, error: 'That file has no character in it.' };
+  if (!def) return { ok: false, error: 'That file has no character in it, just an empty tavern!' };
   const parsedDef = parseJson(def.lines.join('\n'), 'character');
   if (!parsedDef.ok) return parsedDef;
   if (!isObj(parsedDef.value) || !isObj(parsedDef.value.identity)) {
-    return { ok: false, error: 'That file has no character in it.' };
+    return { ok: false, error: 'That file has no character in it, just an empty tavern!' };
   }
 
   const tally = new Tally();
@@ -434,7 +434,7 @@ export function importSheet(input: string): ImportResult {
   const warnings: string[] = [];
   if (tally.dropped > 0) {
     warnings.push(
-      `${tally.dropped} ${tally.dropped === 1 ? 'entry was' : 'entries were'} in a form the site could not read and ${tally.dropped === 1 ? 'was' : 'were'} left out.`
+      `${tally.dropped} ${tally.dropped === 1 ? 'entry was' : 'entries were'} in a form the site couldn’t read and ${tally.dropped === 1 ? 'was' : 'were'} left behind!`
     );
   }
   return { ok: true, value: { name: definition.identity.name, definition, state, texts }, warnings };

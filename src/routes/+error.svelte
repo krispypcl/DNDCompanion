@@ -4,7 +4,7 @@
 </script>
 
 {#if page.status === 404}
-  <NotFound title="Nothing here" message="This page does not exist. The link may be mistyped, or the page may have moved." />
+  <NotFound title="Nothing here!" message="You’ve wandered off the map. The link may be mistyped, or the page has moved on to other adventures." />
 {:else}
-  <NotFound title="Something went wrong" message={page.error?.message ?? 'The page could not be shown.'} />
+  <NotFound title="Well, that’s a critical fail!" message={page.error?.message ?? 'This page tripped over its own feet. Try again in a moment.'} />
 {/if}

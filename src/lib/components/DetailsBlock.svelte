@@ -175,7 +175,7 @@
             <button type="button" class="thumb {field.role}" class:failed={status === 'failed'} class:ready={status === 'ok'}
                     disabled={status !== 'ok'}
                     aria-label="View {field.role} full screen"
-                    title={status === 'failed' ? 'This link did not load as a picture' : 'View full screen'}
+                    title={status === 'failed' ? 'This link didn’t turn into a picture!' : 'View full screen'}
                     onclick={() => (viewing = { src: field.link.url, alt: field.label.replace(' URL', '') })}>
               {#key field.link.url}
                 <img src={field.link.url} alt=""
@@ -187,7 +187,7 @@
         </div>
         {#if status === 'failed'}
           <p class="urlnote bad" role="status">
-            That link did not load as a picture. {field.link.source === 'drive' || field.link.source === 'onedrive'
+            That link didn’t turn into a picture! {field.link.source === 'drive' || field.link.source === 'onedrive'
               ? 'Check it is shared with anyone who has the link.'
               : 'Open the picture itself, copy its image address and paste that instead.'}
           </p>

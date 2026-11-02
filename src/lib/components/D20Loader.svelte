@@ -11,17 +11,20 @@
   let {
     result = null,
     label = 'Loading',
+    failedLabel = 'Could not load',
     size = 72,
     onlanded
   }: {
     /** null while loading; 20 for success, 1 for failure. */
     result?: 20 | 1 | null;
     label?: string;
+    /** What a screen reader hears once it lands on a 1. */
+    failedLabel?: string;
     size?: number;
     onlanded?: () => void;
   } = $props();
 
-  let face = $state(1 + Math.floor(Math.random() * 19));
+  let face = $state(2 + Math.floor(Math.random() * 18));
   let spinner: ReturnType<typeof setInterval> | undefined;
   let landedTimer: ReturnType<typeof setTimeout> | undefined;
   const still = prefersReducedMotion();
@@ -51,7 +54,7 @@
 </script>
 
 <div class="loader" class:landed={result !== null} class:crit={result === 20} class:fumble={result === 1}
-     role="status" aria-live="polite" aria-label={result === null ? label : result === 20 ? 'Loaded' : 'Could not load'}>
+     role="status" aria-live="polite" aria-label={result === null ? label : result === 20 ? 'Loaded' : failedLabel}>
   <svg viewBox="0 0 48 48" width={size} height={size} aria-hidden="true">
     <g class="die">
       <polygon class="body" points="24 3 43 14 43 34 24 45 5 34 5 14" />
@@ -92,8 +95,9 @@
     40% { filter: drop-shadow(0 0 14px oklch(84% 0.15 90 / 0.8)); }
     100% { filter: drop-shadow(0 0 4px oklch(84% 0.15 90 / 0.3)); }
   }
-  .fumble { color: var(--danger); }
-  .fumble text { fill: var(--danger); }
+  /* A natural 1 is grey: a shrug, not an alarm. */
+  .fumble { color: var(--faint); }
+  .fumble text { fill: var(--dim); }
   :global([data-mode='light']) .crit { color: oklch(68% 0.16 80); }
   :global([data-mode='light']) .crit text { fill: oklch(55% 0.15 75); }
 </style>

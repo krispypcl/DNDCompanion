@@ -23,8 +23,13 @@ export const STANDARD_CONDITIONS = [
   'Prone',
   'Restrained',
   'Stunned',
-  'Unconscious'
+  'Unconscious',
+  /** Not a rule's condition but the table's: three failed death saves. */
+  'Dead'
 ] as const;
+
+/** Standard conditions with no page of their own on 5e.tools. */
+const NO_PAGE = new Set(['dead']);
 
 /** Names are compared as written, minus case and stray spaces. */
 const key = (name: string) => name.trim().replace(/\s+/g, ' ').toLowerCase();
@@ -52,5 +57,6 @@ export function removeCondition(state: State, name: string): State {
  */
 export function conditionUrl(name: string): string | null {
   const match = STANDARD_CONDITIONS.find((c) => key(c) === key(name.replace(/\s*\d+$/, '')));
+  if (match && NO_PAGE.has(key(match))) return null;
   return match ? `https://5e.tools/conditionsdiseases.html#${match.toLowerCase()}_xphb` : null;
 }

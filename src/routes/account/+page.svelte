@@ -13,6 +13,7 @@
   import { passwordStrength } from '$lib/rules/password';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
   import { session } from '$lib/stores/session';
+  import { friendlyError } from '$lib/errors';
 
   const MIN_PASSWORD = 8;
 
@@ -42,7 +43,7 @@
       await updateProfile({ displayName: name, avatarUrl: picture });
       profileMsg = { ok: true, text: 'Saved.' };
     } catch (err) {
-      profileMsg = { ok: false, text: err instanceof Error ? err.message : 'Could not save.' };
+      profileMsg = { ok: false, text: friendlyError(err, 'Your profile didn’t save! Try again in a moment.') };
     } finally {
       savingProfile = false;
     }
@@ -56,16 +57,16 @@
   async function savePassword(e: SubmitEvent) {
     e.preventDefault();
     pwMsg = null;
-    if (pw.length < MIN_PASSWORD) return (pwMsg = { ok: false, text: `Use at least ${MIN_PASSWORD} characters.` });
-    if (strength.score === 0) return (pwMsg = { ok: false, text: 'That password is too easy to guess.' });
-    if (pw !== pw2) return (pwMsg = { ok: false, text: 'The two passwords do not match.' });
+    if (pw.length < MIN_PASSWORD) return (pwMsg = { ok: false, text: `That password is a bit short! Use at least ${MIN_PASSWORD} characters.` });
+    if (strength.score === 0) return (pwMsg = { ok: false, text: 'Even a goblin could guess that password! Try a longer one.' });
+    if (pw !== pw2) return (pwMsg = { ok: false, text: 'Those two passwords don’t match! Type them again.' });
     savingPw = true;
     try {
       await updatePassword(pw);
       pw = pw2 = '';
       pwMsg = { ok: true, text: 'Password changed.' };
     } catch (err) {
-      pwMsg = { ok: false, text: err instanceof Error ? err.message : 'Could not change the password.' };
+      pwMsg = { ok: false, text: friendlyError(err, 'Your password didn’t change! Try again in a moment.') };
     } finally {
       savingPw = false;
     }
@@ -83,14 +84,14 @@
 
 <main>
   <header>
-    <a class="back" href="{base}/">← Your characters</a>
+    <a class="back" href="{base}/">Back</a>
     <ModeToggle />
   </header>
 
   {#if $session.loading}
     <div class="wait"><D20Loader size={56} label="Loading your account" /></div>
   {:else if !$session.user}
-    <section class="card"><h1>Your account</h1><p class="dim">Sign in to see your account.</p>
+    <section class="card"><h1>Who goes there?</h1><p class="dim">Sign in to see your account!</p>
       <a class="btn" href="{base}/login">Sign in</a></section>
   {:else}
     <h1 class="title">Your account</h1>
@@ -113,7 +114,7 @@
         <img class="probe" src={link.url} alt="" onload={() => (loaded[link.url] = 'ok')} onerror={() => (loaded[link.url] = 'failed')} />
       {/if}
       {#if link.url && loaded[link.url] === 'failed'}
-        <p class="note bad">That link did not load as a picture. Open the picture itself and copy its image address.</p>
+        <p class="note bad">That link didn’t turn into a picture! Open the picture itself and copy its image address.</p>
       {:else if link.note}
         <p class="note" class:bad={link.source === 'invalid'}>{link.note}</p>
       {/if}
@@ -165,8 +166,15 @@
 <style>
   main { max-width: 36rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
   header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-  .back { color: var(--dim); text-decoration: none; font-size: 0.875rem; transition: color 0.15s ease; }
-  .back:hover { color: var(--a); }
+  /* The same Back as on a sheet. */
+  .back {
+    background: var(--raised); border: 1px solid var(--line); color: var(--text);
+    border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font-size: 0.8125rem;
+    text-decoration: none; line-height: 1.5;
+    transition: border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+  }
+  .back:hover { border-color: var(--a-edge); color: var(--a); }
+  .back:active { transform: translateY(1px); }
   .title { font-size: 1.5rem; font-weight: 650; margin: 0 0 1rem; letter-spacing: -0.01em; }
   .wait { display: grid; place-items: center; padding: 4rem 0; }
   .card {

@@ -109,7 +109,7 @@
   </div>
 
   {#if error}
-    <p class="error" role="alert">Formula error: {error}</p>
+    <p class="error" role="alert">That formula fumbled! {error}.</p>
   {:else if tracker.type === 'pips' && max <= 12 && max > 0}
     <div class="pips">
       {#each Array(max) as _, i (i)}

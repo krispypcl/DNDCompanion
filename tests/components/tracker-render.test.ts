@@ -127,7 +127,7 @@ describe('Tracker', () => {
 
   it('reports a bad formula instead of rendering controls', () => {
     mount(def({ type: 'gauge', max: 'prof + ' }));
-    expect(screen.getByRole('alert').textContent).toMatch(/Formula error/);
+    expect(screen.getByRole('alert').textContent).toMatch(/formula fumbled/);
     expect(screen.queryByLabelText('Increase')).toBeNull();
   });
 });

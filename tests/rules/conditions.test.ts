@@ -47,6 +47,8 @@ describe('conditions', () => {
     expect(conditionUrl('Poisoned')).toBe('https://5e.tools/conditionsdiseases.html#poisoned_xphb');
     expect(conditionUrl('Exhaustion 3')).toBe('https://5e.tools/conditionsdiseases.html#exhaustion_xphb');
     expect(conditionUrl('Bless')).toBeNull();
-    expect(STANDARD_CONDITIONS).toHaveLength(15);
+    // The fifteen in the rules, and Dead, which has no page to link to.
+    expect(STANDARD_CONDITIONS).toHaveLength(16);
+    expect(conditionUrl('Dead')).toBeNull();
   });
 });

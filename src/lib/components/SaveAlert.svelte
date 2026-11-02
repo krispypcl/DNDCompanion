@@ -26,7 +26,7 @@
 
 {#if shown}
   <div class="stale-banner" role="alert">
-    <span>{$sheetStore.message ?? 'Could not save'}</span>
+    <span>{$sheetStore.message ?? 'Your changes didn’t save! Trying again shortly.'}</span>
     {#if stale}
       <button onclick={() => location.reload()}>Reload</button>
     {/if}

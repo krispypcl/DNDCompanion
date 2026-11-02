@@ -90,7 +90,7 @@ export function resolveImageUrl(input: string | null | undefined): ResolvedImage
   if (!raw) return none;
 
   const url = parse(raw);
-  if (!url) return invalid('That does not look like a web address.');
+  if (!url) return invalid('That doesn’t look like a web address!');
 
   const host = url.hostname.toLowerCase().replace(/^www\./, '');
 
@@ -107,10 +107,10 @@ export function resolveImageUrl(input: string | null | undefined): ResolvedImage
   // is, for a file shared as "Anyone with the link".
   if (host === 'drive.google.com' || host === 'docs.google.com' || host === 'drive.usercontent.google.com') {
     if (/\/folders\//.test(url.pathname)) {
-      return invalid('That is a Drive folder. Share one picture and copy its link instead.');
+      return invalid('That’s a whole Drive folder! Share one picture and copy its link instead.');
     }
     const id = driveId(url);
-    if (!id) return invalid('That Drive link does not name a file. Use the file’s Share link.');
+    if (!id) return invalid('That Drive link doesn’t point at a file! Use the file’s Share link.');
     return ok(
       `https://lh3.googleusercontent.com/d/${id}`,
       'drive',
@@ -128,7 +128,7 @@ export function resolveImageUrl(input: string | null | undefined): ResolvedImage
       return ok(file.toString(), 'dropbox');
     }
     if (host !== 'dropbox.com') return ok(url.toString(), 'dropbox');
-    return invalid('That Dropbox link is not a shared file. Use Share → Copy link on the picture.');
+    return invalid('That Dropbox link isn’t a shared file! Use Share → Copy link on the picture.');
   }
 
   // OneDrive share links, long or short.
@@ -144,12 +144,12 @@ export function resolveImageUrl(input: string | null | undefined): ResolvedImage
 
   if (host === 'imgur.com' || host === 'm.imgur.com') {
     const [first] = url.pathname.split('/').filter(Boolean);
-    if (!first) return invalid('That Imgur link does not name a picture.');
+    if (!first) return invalid('That Imgur link doesn’t point at a picture!');
     if (['a', 'gallery', 't', 'r', 'user'].includes(first)) {
-      return invalid(`That is an Imgur album or gallery. Open the picture, ${COPY_ADDRESS}.`);
+      return invalid(`That’s an Imgur album or gallery! Open the picture, ${COPY_ADDRESS}.`);
     }
     const [id, ext] = first.split('.');
-    if (!IMGUR_ID.test(id)) return invalid('That Imgur link does not name a picture.');
+    if (!IMGUR_ID.test(id)) return invalid('That Imgur link doesn’t point at a picture!');
     return ok(`https://i.imgur.com/${id}.${ext || 'jpg'}`, 'imgur');
   }
   if (host === 'i.imgur.com') return ok(url.toString(), 'imgur');
@@ -173,7 +173,7 @@ export function resolveImageUrl(input: string | null | undefined): ResolvedImage
 
   const page = PAGE_ONLY.find((p) => p.test(host));
   if (page) {
-    return invalid(`That is ${page.name}, not the picture. Open it, ${COPY_ADDRESS}, and paste that here.`);
+    return invalid(`That’s ${page.name}, not the picture itself! Open it, ${COPY_ADDRESS}, and paste that here.`);
   }
 
   return ok(url.toString(), 'direct');

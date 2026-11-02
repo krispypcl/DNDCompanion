@@ -7,7 +7,7 @@
   import CountUp from './CountUp.svelte';
   import EditableField from './EditableField.svelte';
   import Reveal from './Reveal.svelte';
-  import { applyDamage, applyHealing, hitSeverity, setDeathSave, setTempHp, vitalStatus } from '$lib/rules/hp';
+  import { applyDamage, applyHealing, hitSeverity, isDead, setDeathSave, setTempHp, vitalStatus, withVitals } from '$lib/rules/hp';
   import { snapshot } from '$lib/stores/undo';
   import { prefersReducedMotion } from '$lib/motion';
   import { backOut } from 'svelte/easing';
@@ -48,27 +48,42 @@
   let healed = $state(false);
   /** Temporary hit points were just gained: the outline flares. */
   let shored = $state(false);
+  /** Damage just landed: the same glow and light as a heal, in red. */
+  let wounded = $state(false);
+  /** A third death save brought them back: a white flare, once. */
+  let rallied = $state(false);
+  /** Set while a rally lands, so its return to 1 HP is not also a green heal. */
+  let quietHeal = false;
   /** The amount that just changed, floated up off the gauge. */
-  let float = $state<{ text: string; kind: 'heal' | 'temp'; id: number } | null>(null);
+  let float = $state<{ text: string; kind: 'heal' | 'temp' | 'hurt'; id: number } | null>(null);
   let healTimer: ReturnType<typeof setTimeout> | undefined;
+  let hurtTimer: ReturnType<typeof setTimeout> | undefined;
+  let rallyTimer: ReturnType<typeof setTimeout> | undefined;
   let tempTimer: ReturnType<typeof setTimeout> | undefined;
   let floatTimer: ReturnType<typeof setTimeout> | undefined;
   let previousTemp = -1;
 
   /** Off then on across a frame, so a second one restarts the animation. */
-  function replay(set: (on: boolean) => void, ms: number, timer: 'heal' | 'temp') {
+  function replay(set: (on: boolean) => void, ms: number, timer: 'heal' | 'temp' | 'hurt' | 'rally') {
     set(false);
     requestAnimationFrame(() => set(true));
+    const done = setTimeout(() => set(false), ms);
     if (timer === 'heal') {
       clearTimeout(healTimer);
-      healTimer = setTimeout(() => set(false), ms);
+      healTimer = done;
+    } else if (timer === 'hurt') {
+      clearTimeout(hurtTimer);
+      hurtTimer = done;
+    } else if (timer === 'rally') {
+      clearTimeout(rallyTimer);
+      rallyTimer = done;
     } else {
       clearTimeout(tempTimer);
-      tempTimer = setTimeout(() => set(false), ms);
+      tempTimer = done;
     }
   }
 
-  function floatUp(text: string, kind: 'heal' | 'temp') {
+  function floatUp(text: string, kind: 'heal' | 'temp' | 'hurt') {
     float = { text, kind, id: (float?.id ?? 0) + 1 };
     clearTimeout(floatTimer);
     floatTimer = setTimeout(() => (float = null), 1100);
@@ -83,6 +98,10 @@
     if (temp > previousTemp) {
       replay((on) => (shored = on), 1000, 'temp');
       floatUp(`+${temp - previousTemp} temp`, 'temp');
+    } else if (temp < previousTemp && sheetState.hpCurrent === previous) {
+      // A hit the temporary hit points took all of: the red glow still says so.
+      replay((on) => (wounded = on), 950, 'hurt');
+      floatUp(`−${previousTemp - temp} temp`, 'hurt');
     }
     previousTemp = temp;
   });
@@ -115,11 +134,15 @@
     previous = current;
     seq += 1;
     pulse = seq;
-    if (!damaged) {
+    if (!damaged && quietHeal) {
+      quietHeal = false;
+    } else if (!damaged) {
       replay((on) => (healed = on), 950, 'heal');
       floatUp(`+${-lost}`, 'heal');
     }
     if (damaged) {
+      replay((on) => (wounded = on), 950, 'hurt');
+      floatUp(`−${lost}`, 'hurt');
       // A heavier blow moves the gauge further, longer and with more weight:
       // sideways, then up and down, then a lean, then a thickening. A scratch
       // keeps the small nudge it always had.
@@ -151,6 +174,9 @@
   const barTotal = $derived(hpMax + sheetState.hpTemp);
   const pct = (n: number) => (barTotal > 0 ? (n / barTotal) * 100 : 0);
   const down = $derived(sheetState.hpCurrent === 0);
+  const dead = $derived(isDead(sheetState));
+  /** At 0 and still fighting for it: the gauge's red pulse. */
+  const dying = $derived(down && hpMax > 0 && !dead);
   const bloodied = $derived(ratio > 0 && ratio <= 0.5);
   const status = $derived(vitalStatus(sheetState.hpCurrent, hpMax, sheetState.deathSaves));
   const percent = $derived(hpMax > 0 ? Math.round(ratio * 100) : null);
@@ -165,7 +191,13 @@
 
   function act(label: string, next: State) {
     snapshot(sheetState, label);
-    onchange(next);
+    const settled = withVitals(sheetState, next, hpMax);
+    if (sheetState.hpCurrent <= 0 && settled.hpCurrent > 0 && next.hpCurrent <= 0) {
+      // A third success: a white flare rather than a green heal.
+      quietHeal = true;
+      replay((on) => (rallied = on), 1000, 'rally');
+    }
+    onchange(settled);
   }
 
   function patchCombat(key: string, value: string | number) {
@@ -173,7 +205,8 @@
   }
 </script>
 
-<div class="hpwrap" class:struck class:healed class:shored class:reading={!editable} style={blow}>
+<div class="hpwrap" class:struck class:healed class:shored class:wounded class:rallied class:dying class:dead
+     class:reading={!editable} style={blow}>
 <span class="cap">Hit points</span>
 
 <div class="meter">
@@ -211,6 +244,7 @@
 <div class="bar" class:shielded={sheetState.hpTemp > 0} aria-hidden="true">
   <i class="cur" class:bloodied class:down style:width="{pct(sheetState.hpCurrent)}%"></i>
   {#if healed}<i class="sweep"></i>{/if}
+  {#if wounded}<i class="sweep hurt"></i>{/if}
   {#key sheetState.hpTemp}
     <i class="tmp" style:width="{pct(sheetState.hpTemp)}%"></i>
   {/key}
@@ -388,9 +422,9 @@
 
   /* Healing: green, always, whatever the character's colours. The gauge
      glows, a light runs along the filled part, and the number brightens. */
-  .hpwrap { --heal-green: oklch(74% 0.17 150); --shield: oklch(91% 0.11 95); }
-  /* On a light page, pale gold vanishes; a deeper gold and green read. */
-  :global([data-mode='light']) .hpwrap { --heal-green: oklch(58% 0.16 150); --shield: oklch(76% 0.15 85); }
+  .hpwrap { --heal-green: oklch(74% 0.17 150); --shield: oklch(91% 0.11 95); --hurt-red: oklch(66% 0.22 25); }
+  /* On a light page, pale gold vanishes; a deeper gold, green and red read. */
+  :global([data-mode='light']) .hpwrap { --heal-green: oklch(58% 0.16 150); --shield: oklch(76% 0.15 85); --hurt-red: oklch(56% 0.21 25); }
   .gauge { position: relative; }
   .healed .bar { animation: healGlow 0.95s ease-out; }
   @keyframes healGlow {
@@ -407,6 +441,45 @@
   @keyframes sweep {
     from { transform: translateX(-110%); }
     to { transform: translateX(260%); opacity: 0; }
+  }
+  /* Damage: the same glow, light and number, in red, running the other way. */
+  .wounded .bar { animation: hurtGlow 0.95s ease-out; }
+  @keyframes hurtGlow {
+    0% { box-shadow: 0 0 0 0 transparent; }
+    30% { box-shadow: 0 0 0 1px var(--hurt-red), 0 0 18px 2px color-mix(in oklch, var(--hurt-red) 55%, transparent); }
+    100% { box-shadow: 0 0 0 0 transparent; }
+  }
+  .sweep.hurt {
+    background: linear-gradient(90deg, transparent 0%, color-mix(in oklch, var(--hurt-red) 80%, white) 50%, transparent 100%);
+    animation-name: sweepBack;
+  }
+  @keyframes sweepBack {
+    from { transform: translateX(260%); }
+    to { transform: translateX(-110%); opacity: 0; }
+  }
+  .wounded .hp-readout strong { animation: hurtNum 0.8s ease-out; }
+  @keyframes hurtNum {
+    0% { transform: scale(1); }
+    30% { color: var(--hurt-red); transform: scale(1.08); text-shadow: 0 0 14px color-mix(in oklch, var(--hurt-red) 60%, transparent); }
+    100% { transform: scale(1); }
+  }
+
+  /* At 0: a red glow that breathes round the gauge for as long as the
+     character is dying. Dead, it stops breathing and stays. A third success
+     instead flares white, once. Each takes the place of the one before. */
+  .dying .bar { animation: dyingPulse 1.6s ease-in-out infinite; }
+  @keyframes dyingPulse {
+    0%, 100% { box-shadow: 0 0 0 1px color-mix(in oklch, var(--hurt-red) 55%, transparent), 0 0 6px 0 color-mix(in oklch, var(--hurt-red) 25%, transparent); }
+    50% { box-shadow: 0 0 0 1.5px var(--hurt-red), 0 0 22px 4px color-mix(in oklch, var(--hurt-red) 60%, transparent); }
+  }
+  .dead .bar {
+    box-shadow: 0 0 0 1.5px var(--hurt-red), 0 0 20px 3px color-mix(in oklch, var(--hurt-red) 55%, transparent);
+  }
+  .rallied .bar { animation: rally 1s ease-out; }
+  @keyframes rally {
+    0% { box-shadow: 0 0 0 0 transparent; }
+    30% { box-shadow: 0 0 0 2px white, 0 0 26px 6px rgb(255 255 255 / 0.65); }
+    100% { box-shadow: 0 0 0 0 transparent; }
   }
   .healed .hp-readout strong { animation: healNum 0.8s ease-out; }
   @keyframes healNum {
@@ -430,20 +503,22 @@
 
   /* What just changed, rising off the gauge and fading. */
   .float {
-    position: absolute; bottom: 0; line-height: 14px; pointer-events: none;
+    /* Starts just above the gauge, so the bar never covers it. */
+    position: absolute; bottom: 18px; line-height: 14px; pointer-events: none;
     translate: -50% 0; text-shadow: 0 1px 3px rgb(0 0 0 / 0.55);
     font-size: 0.75rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap;
     animation: floatUp 1.1s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
   }
   .float.heal { color: var(--heal-green); }
   .float.temp { color: var(--shield); }
+  .float.hurt { color: var(--hurt-red); }
   /* From the gauge up into the gap above it, never as far as the line of
      numbers. */
   @keyframes floatUp {
-    0% { opacity: 0; transform: translateY(0); }
-    20% { opacity: 1; transform: translateY(-6px); }
+    0% { opacity: 0; transform: translateY(4px); }
+    20% { opacity: 1; transform: translateY(-2px); }
     70% { opacity: 1; }
-    100% { opacity: 0; transform: translateY(-14px); }
+    100% { opacity: 0; transform: translateY(-10px); }
   }
   @media (prefers-reduced-motion: reduce) {
     .sweep, .float { display: none; }
@@ -473,20 +548,7 @@
   .pip[aria-pressed='true'] { background: var(--a); border-color: var(--a); animation: pipPop 0.35s cubic-bezier(0.3, 1.6, 0.5, 1); }
   @keyframes pipPop { from { transform: scale(0.3); } 60% { transform: scale(1.3); } }
   .pip { transition: background-color 0.2s ease, border-color 0.2s ease; }
-  /* Three successes: the saves glow once and settle. Three failures: a slow
-     red pulse that stays. */
-  .deaths { border-radius: 999px; padding: 0.25rem 0.625rem; transition: box-shadow 0.4s ease; }
-  .deaths.stable { animation: stableGlow 1.4s ease-out; }
-  @keyframes stableGlow {
-    0% { box-shadow: 0 0 0 0 transparent; }
-    35% { box-shadow: 0 0 0 1px var(--a), 0 0 24px 2px color-mix(in oklch, var(--a) 50%, transparent); }
-    100% { box-shadow: 0 0 0 0 transparent; }
-  }
-  .deaths.dead { animation: deadPulse 2.4s ease-in-out infinite; }
-  @keyframes deadPulse {
-    0%, 100% { box-shadow: 0 0 0 0 transparent; }
-    50% { box-shadow: 0 0 0 1px var(--danger), 0 0 20px 1px color-mix(in oklch, var(--danger) 45%, transparent); }
-  }
+  .deaths { padding: 0.25rem 0.625rem; }
   .pip.fail[aria-pressed='true'] { background: var(--danger); border-color: var(--danger); }
   /* Two groups, not one wrapping row: what changes hit points now, and what
      restores them on a rest. The rule between says which is which. */

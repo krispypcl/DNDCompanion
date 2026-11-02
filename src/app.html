@@ -3,7 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <link rel="icon" href="%sveltekit.assets%/favicon.svg" />
+    <link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="%sveltekit.assets%/icon-192.png" type="image/png" sizes="192x192" />
     <!--
       What a chat app shows when a link to the site is pasted. Every page,
       sheets included, carries the same card: the site is static, so there is
@@ -11,7 +12,7 @@
       need absolute addresses, so the site's own is supplied at build time
       (PUBLIC_SITE_URL, set by the deploy workflow).
     -->
-    <meta name="description" content="An online D&amp;D 5e character sheet. Open the link to see it." />
+    <meta name="description" content="An online D&amp;D 5e character sheet." />
     <meta name="theme-color" content="#0b0b0d" />
     <!-- Home-screen app: the manifest for Android, the apple-* tags for iPhone. -->
     <link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
@@ -22,15 +23,15 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="DND Companion" />
-    <meta property="og:title" content="DND Companion — a character sheet" />
-    <meta property="og:description" content="An online D&amp;D 5e character sheet. Open the link to see it." />
+    <meta property="og:title" content="DND Companion" />
+    <meta property="og:description" content="An online D&amp;D 5e character sheet." />
     <meta property="og:image" content="%sveltekit.env.PUBLIC_SITE_URL%/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="DND Companion: your character, at the table." />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="DND Companion — a character sheet" />
-    <meta name="twitter:description" content="An online D&amp;D 5e character sheet. Open the link to see it." />
+    <meta name="twitter:title" content="DND Companion" />
+    <meta name="twitter:description" content="An online D&amp;D 5e character sheet." />
     <meta name="twitter:image" content="%sveltekit.env.PUBLIC_SITE_URL%/og.png" />
     <!--
       The splash is in the document itself, with its own styles, because this
@@ -117,11 +118,13 @@
   <body data-sveltekit-preload-data="hover">
     <div id="splash" aria-hidden="true">
       <!-- A plain twenty-sided outline: the shape of the hobby, not anyone's logo. -->
-      <svg viewBox="0 0 48 48" width="48" height="48">
-        <polygon points="24 3 43 14 43 34 24 45 5 34 5 14" fill="none" stroke="currentColor"
-                 stroke-width="1.5" stroke-linejoin="round" />
+      <svg viewBox="0 0 48 48" width="52" height="52">
+        <polygon points="24 3 43 14 43 34 24 45 5 34 5 14" fill="currentColor" fill-opacity="0.06"
+                 stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
         <polygon points="24 12 34 29 14 29" fill="none" stroke="currentColor"
-                 stroke-width="1.5" stroke-linejoin="round" />
+                 stroke-width="1.6" stroke-linejoin="round" />
+        <path d="M24 12 24 3M24 12 43 14M24 12 5 14M34 29 43 14M34 29 43 34M34 29 24 45M14 29 24 45M14 29 5 34M14 29 5 14"
+              fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" opacity="0.5" />
       </svg>
       <span>DND Companion</span>
     </div>
