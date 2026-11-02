@@ -214,9 +214,70 @@
     onchange([...items, row]);
   }
 
-  function remove(index: number) {
+  /**
+   * Removing a row by its button: the row (and its group's heading, when it
+   * was the last of the group) fades as a copy over where it stood while the
+   * rows below glide up into the gap and the table eases to its new height.
+   * Left in place to fade, the row held its room and everything under it
+   * jumped up when it went.
+   */
+  let scrollBox = $state<HTMLElement>();
+  let quick = false;
+  async function remove(index: number) {
+    const body = scrollBox?.querySelector('tbody');
+    const tableEl = scrollBox?.querySelector('table');
+    if (!scrollBox || !body || !tableEl || prefersReducedMotion()) {
+      keys = keys.filter((_, n) => n !== index);
+      onchange(items.filter((_, n) => n !== index));
+      return;
+    }
+    const rows = Array.from(body.querySelectorAll<HTMLTableRowElement>(':scope > tr'));
+    const before = new Map(rows.map((tr) => [tr, tr.getBoundingClientRect()]));
+    const height = scrollBox.getBoundingClientRect().height;
+    const box = scrollBox.getBoundingClientRect();
+    quick = true;
     keys = keys.filter((_, n) => n !== index);
     onchange(items.filter((_, n) => n !== index));
+    await tick();
+    quick = false;
+    const left = new Set(body.querySelectorAll(':scope > tr'));
+    for (const tr of rows) {
+      if (left.has(tr)) continue;
+      const r = before.get(tr)!;
+      // A one-row table of the same build, so the copy keeps its columns.
+      const copy = tableEl.cloneNode(false) as HTMLTableElement;
+      const cols = tableEl.querySelector('colgroup');
+      if (cols) copy.appendChild(cols.cloneNode(true));
+      const tb = body.cloneNode(false) as HTMLElement;
+      tb.appendChild(tr.cloneNode(true));
+      copy.appendChild(tb);
+      Object.assign(copy.style, {
+        position: 'absolute', left: `${r.left - box.left + scrollBox.scrollLeft}px`,
+        top: `${r.top - box.top}px`, width: `${tableEl.getBoundingClientRect().width}px`,
+        margin: '0', pointerEvents: 'none', minWidth: '0'
+      });
+      copy.setAttribute('aria-hidden', 'true');
+      scrollBox.appendChild(copy);
+      const fade = copy.animate([{ opacity: 1 }, { opacity: 0, transform: 'scale(0.985)' }], {
+        duration: 200, easing: 'cubic-bezier(0.4, 0, 0.7, 0.2)', fill: 'forwards'
+      });
+      fade.onfinish = () => copy.remove();
+    }
+    for (const tr of left as Set<HTMLTableRowElement>) {
+      const was = before.get(tr);
+      if (!was) continue;
+      const dy = was.top - tr.getBoundingClientRect().top;
+      if (Math.abs(dy) < 0.5) continue;
+      tr.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], {
+        duration: 320, easing: 'cubic-bezier(0.2, 0.8, 0.25, 1)'
+      });
+    }
+    const now = scrollBox.getBoundingClientRect().height;
+    if (Math.abs(now - height) >= 1) {
+      scrollBox.animate([{ height: `${height}px`, overflow: 'hidden' }, { height: `${now}px`, overflow: 'hidden' }], {
+        duration: 320, easing: 'cubic-bezier(0.2, 0.8, 0.25, 1)'
+      });
+    }
   }
 
   /** The rows of one group, in screen order. */
@@ -382,7 +443,8 @@
   }
   function leave(_node: Element) {
     return {
-      duration: prefersReducedMotion() ? 0 : 180,
+      // Removed by its button, a copy does the fading (see remove()).
+      duration: quick || prefersReducedMotion() ? 0 : 180,
       easing: cubicOut,
       // Fades and settles in place. Moving sideways pushed the row past the
       // table's edge for a moment, and the scroller showed a scrollbar.
@@ -405,7 +467,7 @@
 {#if items.length === 0 && !editable}
   <p class="empty">{emptyText}</p>
 {:else}
-  <div class="scroller" data-flip-size={tk}>
+  <div class="scroller" data-flip-size={tk} bind:this={scrollBox}>
     <table class:editing={editable} class:headed={showHeadings} class:dragging={drag !== null} class:landing>
       <colgroup>
         {#if editable}<col style:width="1.75rem" />{/if}
@@ -431,7 +493,7 @@
           {@const { item, index } = row}
           {@const title = heading(pos)}
           {#if title !== null}
-            <tr class="group" class:lit={lit === title} in:arrive out:leave|global><th colspan={span} scope="colgroup"><span data-flip="{tk}:g:{title}">{title}</span></th></tr>
+            <tr class="group" class:lit={lit === title} in:arrive out:leave><th colspan={span} scope="colgroup"><span data-flip="{tk}:g:{title}">{title}</span></th></tr>
           {/if}
           <tr bind:this={rowEls[row.key]} in:arrive out:leave
               class:lifted={drag?.key === row.key}
@@ -563,7 +625,7 @@
 {/if}
 
 <style>
-  .scroller { overflow-x: auto; }
+  .scroller { overflow-x: auto; position: relative; }
   table {
     width: 100%;
     border-collapse: collapse;

@@ -53,7 +53,7 @@
 
 {#if open}
     <!-- Global: it folds away even when edit mode ends and takes it with it. -->
-    <div class="panel" transition:slide|global={{ duration: still ? 0 : 260, easing: cubicOut }}>
+    <div class="panel" transition:slide={{ duration: still ? 0 : 260, easing: cubicOut }}>
       {#each [{ title: 'For your classes', list: groups.yours }, { title: 'Other classes', list: groups.others }] as g (g.title)}
         {#if g.list.length}
           <h4>{g.title}</h4>
