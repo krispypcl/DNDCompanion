@@ -22,7 +22,9 @@
   const dying = $derived(down && !dead);
 
   let beat = $state(0);
-  let impact = $state<{ kind: 'save' | 'fail'; id: number } | null>(null);
+  /** The last death save, and how many of its kind there now are: the first
+      lands softly and the third hits hardest. */
+  let impact = $state<{ kind: 'save' | 'fail'; id: number; level: number } | null>(null);
   let before: { hp: number; s: number; f: number } | null = null;
   let clear: ReturnType<typeof setTimeout> | undefined;
   const still = prefersReducedMotion();
@@ -42,7 +44,8 @@
     const saved = now.s > was.s || (was.hp <= 0 && now.hp > 0 && was.s === 2);
     const failed = now.f > was.f && now.hp <= 0;
     if (saved || failed) {
-      impact = { kind: failed ? 'fail' : 'save', id: (impact?.id ?? 0) + 1 };
+      const level = failed ? Math.min(3, now.f) : now.hp > 0 ? 3 : Math.min(3, now.s);
+      impact = { kind: failed ? 'fail' : 'save', id: (impact?.id ?? 0) + 1, level };
       clearTimeout(clear);
       clear = setTimeout(() => (impact = null), 900);
     }
@@ -51,14 +54,14 @@
 
 {#if down}
   <div class="vignette" class:dead aria-hidden="true">
-    {#key impact?.id}<i class:thud={impact?.kind === 'fail'}></i>{/key}
+    {#key impact?.id}<i class:thud={impact?.kind === 'fail'} style:--k={(impact?.level ?? 1) / 3}></i>{/key}
   </div>
 {/if}
 {#key beat}
   {#if beat > 0}<div class="heartbeat" aria-hidden="true"></div>{/if}
 {/key}
 {#if impact}
-  {#key impact.id}<div class="flash {impact.kind}" aria-hidden="true"></div>{/key}
+  {#key impact.id}<div class="flash {impact.kind}" style:--k={impact.level / 3} aria-hidden="true"></div>{/key}
 {/if}
 
 <style>
@@ -66,12 +69,16 @@
   .vignette, .heartbeat, .flash { position: fixed; inset: 0; pointer-events: none; }
   .vignette { z-index: 35; animation: close 1.2s ease-out; }
   @keyframes close { from { opacity: 0; } }
+  /* Larger than the screen, so beating or jolting never pulls an edge into view. */
+  .vignette { overflow: hidden; }
   .vignette i {
-    position: absolute; inset: 0; display: block;
+    position: absolute; inset: -8vmax; display: block;
+    /* Stops pulled in, since the box runs past the screen's edges. */
     background: radial-gradient(ellipse at center,
-      transparent 52%,
-      oklch(22% 0.09 25 / 0.35) 72%,
-      oklch(14% 0.07 25 / 0.82) 100%);
+      transparent 44%,
+      oklch(22% 0.09 25 / 0.35) 60%,
+      oklch(14% 0.07 25 / 0.82) 76%,
+      oklch(12% 0.06 25 / 0.9) 100%);
     animation: lubdub 1.5s ease-in-out infinite;
     transform-origin: center;
   }
@@ -84,16 +91,17 @@
     45% { opacity: 0.75; transform: scale(1); }
   }
   .vignette i.thud { animation: thud 0.6s cubic-bezier(0.3, 0.7, 0.4, 1), lubdub 1.5s ease-in-out 0.6s infinite; }
+  /* Harder with each failure: --k is a third, two thirds, then all. */
   @keyframes thud {
-    0% { opacity: 1; transform: scale(0.93) translateX(0); }
-    20% { transform: scale(0.95) translateX(-6px); }
-    40% { transform: scale(0.97) translateX(5px); }
-    60% { transform: scale(0.985) translateX(-3px); }
+    0% { opacity: 1; transform: scale(calc(1 - 0.07 * var(--k, 1))) translateX(0); }
+    20% { transform: scale(calc(1 - 0.05 * var(--k, 1))) translateX(calc(-9px * var(--k, 1))); }
+    40% { transform: scale(calc(1 - 0.03 * var(--k, 1))) translateX(calc(7px * var(--k, 1))); }
+    60% { transform: scale(calc(1 - 0.015 * var(--k, 1))) translateX(calc(-4px * var(--k, 1))); }
     100% { opacity: 0.8; transform: scale(1); }
   }
   /* Dead: it stops beating, and stays. */
   .vignette.dead i { animation: none; opacity: 1;
-    background: radial-gradient(ellipse at center, transparent 45%, oklch(16% 0.04 25 / 0.5) 70%, oklch(10% 0.03 25 / 0.9) 100%); }
+    background: radial-gradient(ellipse at center, transparent 38%, oklch(16% 0.04 25 / 0.5) 58%, oklch(10% 0.03 25 / 0.9) 76%, oklch(8% 0.02 25 / 0.95) 100%); }
 
   /* Going down: two heartbeats of blur and dark across everything. */
   .heartbeat {
@@ -111,9 +119,17 @@
   }
 
   /* Each death save, across the whole screen. */
-  .flash { z-index: 36; opacity: 0; animation: flash 0.85s ease-out forwards; }
-  .flash.save { background: radial-gradient(ellipse at center, transparent 40%, rgb(255 255 255 / 0.55) 100%); }
-  .flash.fail { background: radial-gradient(ellipse at center, oklch(40% 0.2 25 / 0.15) 30%, oklch(45% 0.22 25 / 0.75) 100%); }
+  /* Weak on the first pip, strong on the third: the strength, the reach in
+     from the edges and the time it holds all grow with --k. */
+  .flash { z-index: 36; opacity: 0; animation: flash calc(0.55s + 0.6s * var(--k, 1)) ease-out forwards; }
+  .flash.save {
+    background: radial-gradient(ellipse at center, transparent calc(62% - 26% * var(--k, 1)),
+      rgb(255 255 255 / calc(0.15 + 0.5 * var(--k, 1))) 100%);
+  }
+  .flash.fail {
+    background: radial-gradient(ellipse at center, oklch(40% 0.2 25 / calc(0.05 * var(--k, 1))) 30%,
+      oklch(45% 0.22 25 / calc(0.2 + 0.6 * var(--k, 1))) 100%);
+  }
   @keyframes flash { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
 
   @media (prefers-reduced-motion: reduce) {

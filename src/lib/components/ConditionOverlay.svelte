@@ -71,13 +71,19 @@
   @media (max-width: 700px) {
     .overlay { --side: calc(var(--hurt) * clamp(2.5rem, 14vw, 6rem)); }
   }
-  .tint { position: absolute; inset: 0; opacity: 0; transition: opacity 1.1s ease; }
+  /* The entrance is on the wrapper and the movement on the band inside it,
+     so the two never fight over one transform: the movement starts from
+     exactly where the entrance ends, with no jump between them. */
+  .tint { position: absolute; inset: 0; opacity: 0; transition: opacity 1.1s ease; transform-origin: center bottom; }
   .tint.on { opacity: 1; }
+  .tint { animation: rise 1s cubic-bezier(0.2, 0.8, 0.3, 1); }
+  @keyframes rise { from { transform: scaleY(0.55); } }
   /* From the bottom only, high, with a long soft feather into nothing. */
   .tint i {
     position: absolute; left: 0; right: 0; bottom: 0; display: block;
     height: clamp(16rem, 62vh, 40rem);
     transform-origin: center bottom;
+    will-change: transform, opacity;
     background: linear-gradient(to top,
       color-mix(in oklch, var(--tint) 58%, transparent) 0%,
       color-mix(in oklch, var(--tint) 42%, transparent) 12%,
@@ -86,21 +92,20 @@
       color-mix(in oklch, var(--tint) 7%, transparent) 70%,
       color-mix(in oklch, var(--tint) 2%, transparent) 86%,
       transparent 100%);
-    animation: rise 0.9s cubic-bezier(0.2, 0.8, 0.3, 1);
   }
-  @keyframes rise { from { transform: scaleY(0.6); opacity: 0; } }
 
-  .pulse i { animation: rise 0.9s cubic-bezier(0.2, 0.8, 0.3, 1), pulse 2.8s ease-in-out 0.9s infinite; }
-  @keyframes pulse { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
-  .heavy i { animation: rise 0.9s cubic-bezier(0.2, 0.8, 0.3, 1), heavy 4.5s ease-in-out 0.9s infinite; }
-  @keyframes heavy { 0%, 100% { opacity: 0.85; transform: scaleY(1); } 50% { opacity: 1; transform: scaleY(1.1); } }
-  /* Stunned: a slow dazed swell, not a flicker. */
-  .daze i { animation: rise 0.9s cubic-bezier(0.2, 0.8, 0.3, 1), daze 1.8s ease-in-out 0.9s infinite; }
-  @keyframes daze { 0%, 100% { opacity: 0.6; transform: scaleY(0.96); } 50% { opacity: 1; transform: scaleY(1.04); } }
-  .shimmer i { animation: rise 0.9s cubic-bezier(0.2, 0.8, 0.3, 1), shimmer 3.4s ease-in-out 0.9s infinite; }
-  @keyframes shimmer { 0%, 100% { opacity: 0.45; filter: blur(0); } 50% { opacity: 0.9; filter: blur(6px); } }
-  .shiver i { animation: rise 0.9s cubic-bezier(0.2, 0.8, 0.3, 1), shiver 0.4s ease-in-out 0.9s infinite alternate; }
-  @keyframes shiver { from { transform: translateY(-2px); opacity: 0.85; } to { transform: translateY(2px); opacity: 1; } }
+  /* Every movement begins and ends at rest (full strength, full height). */
+  .pulse i { animation: pulse 2.8s ease-in-out 1s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+  .heavy i { animation: heavy 4.5s ease-in-out 1s infinite; }
+  @keyframes heavy { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.1); } }
+  /* Stunned: a slow dazed swell. */
+  .daze i { animation: daze 2.2s ease-in-out 1s infinite; }
+  @keyframes daze { 0%, 100% { opacity: 1; transform: scaleY(1); } 50% { opacity: 0.7; transform: scaleY(0.94); } }
+  .shimmer i { animation: shimmer 3.4s ease-in-out 1s infinite; }
+  @keyframes shimmer { 0%, 100% { opacity: 1; filter: blur(0); } 50% { opacity: 0.55; filter: blur(6px); } }
+  .shiver i { animation: shiver 0.8s ease-in-out 1s infinite; }
+  @keyframes shiver { 0%, 100% { transform: translateY(0); } 25% { transform: translateY(-2px); } 75% { transform: translateY(2px); } }
 
   @media (prefers-reduced-motion: reduce) {
     .tint i { animation: none !important; }
