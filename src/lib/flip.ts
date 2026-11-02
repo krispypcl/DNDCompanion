@@ -16,6 +16,7 @@ let counter = 0;
 export const flipKey = (prefix = 'f') => `${prefix}${++counter}`;
 
 const DURATION = 380;
+let settle: ReturnType<typeof setTimeout> | undefined;
 const EASE = 'cubic-bezier(0.2, 0.8, 0.25, 1)';
 
 function measure(): Map<string, DOMRect> {
@@ -34,6 +35,12 @@ export async function glide(change: () => void): Promise<void> {
   }
   const before = measure();
   const scrollY = window.scrollY;
+  // While things glide, a table's scroll box would flash a scrollbar for the
+  // words passing over its edge; it is clipped instead until they settle.
+  const root = document.documentElement;
+  root.classList.add('gliding');
+  clearTimeout(settle);
+  settle = setTimeout(() => root.classList.remove('gliding'), DURATION + 80);
   change();
   await tick();
   // Rects are measured against the viewport; if the page scrolled because it

@@ -311,10 +311,7 @@ export function readDefinition(raw: unknown, tally = new Tally()): Definition {
     }
     if (Object.keys(looks).length) def.conditionLooks = looks;
   }
-  {
-    const n = optNum(src.attunementSlots);
-    if (n !== undefined) def.attunementSlots = Math.max(0, Math.min(20, Math.round(n)));
-  }
+
   if (ABILITIES.includes(src.spellcastingAbility as Ability)) {
     def.spellcastingAbility = src.spellcastingAbility as Ability;
   }

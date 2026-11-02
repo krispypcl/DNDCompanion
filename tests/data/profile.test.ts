@@ -47,9 +47,10 @@ describe('deleteAccount', () => {
     expect(rpc).toHaveBeenCalledWith('delete_own_account');
     expect(signOut).toHaveBeenLastCalledWith({ scope: 'local' });
   });
-  it('says so when the database has not been given the function yet', async () => {
-    const { deleteAccount, DeleteNotAvailable } = await import('$lib/data/session');
-    rpc.mockResolvedValueOnce({ error: { code: 'PGRST202', message: 'Could not find the function public.delete_own_account' } });
-    await expect(deleteAccount()).rejects.toBeInstanceOf(DeleteNotAvailable);
+  it('says so when it fails', async () => {
+    const { deleteAccount } = await import('$lib/data/session');
+    rpc.mockResolvedValueOnce({ error: { message: 'boom' } });
+    await expect(deleteAccount()).rejects.toThrow('boom');
   });
+
 });

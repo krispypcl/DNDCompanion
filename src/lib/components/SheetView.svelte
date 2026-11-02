@@ -192,8 +192,8 @@
   ];
 
 
-  /** Attunement: three slots by the rules, more if the table allows. */
-  const attuneSlots = $derived(definition?.attunementSlots ?? 3);
+  /** Attunement: three items at most, by the rules. */
+  const ATTUNE_SLOTS = 3;
   const attunedCount = $derived((definition?.equipment ?? []).filter((i) => i.attuned).length);
   const ITEM_COLUMNS = [
     { key: 'name', label: 'Item', width: '38%', placeholder: 'Longsword' },
@@ -603,6 +603,8 @@
         {/if}
         <a class="back" href="{base}/">Back</a>
         <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
+        <PrintButton />
+        {#if isOwner}<DownloadButton ondownload={exportNow} />{/if}
         <button class="keys" onclick={() => (showKeys = true)} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
             <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -611,8 +613,6 @@
             </g>
           </svg>
         </button>
-        <PrintButton />
-        {#if isOwner}<DownloadButton ondownload={exportNow} />{/if}
         <ModeToggle />
       </div>
     </header>
@@ -666,8 +666,9 @@
                 blank={() => ({ name: '' }) as Attack}
                 onchange={(attacks) => setDefinition({ ...definition, attacks: attacks as Attack[] })}
               />
-              {#if isOwner}<DiceRoller />{/if}
-              <CombatActions />
+              <!-- Below the table, so they move when it changes size: they glide too. -->
+              {#if isOwner}<div class="flipbox" data-flip="dice"><DiceRoller /></div>{/if}
+              <div class="flipbox" data-flip="actions"><CombatActions /></div>
             {:else if tab === 'Spells'}
               <div class="casting">
                 <div>
@@ -729,22 +730,13 @@
                 {/snippet}
               </EntryTable>
             {:else if tab === 'Equipment'}
-              {#if editable || attunedCount > 0}
-                <div class="attune">
-                  <span class="cap">Attunement</span>
-                  <span class="attn"><b>{attunedCount}</b> of
-                    <EditableField value={attuneSlots} {editable} type="number" label="Attunement slots"
-                                   onchange={(v) => setDefinition({ ...definition, attunementSlots: v === '' ? undefined : Math.max(0, Number(v)) })} />
-                    slots</span>
-                </div>
-              {/if}
               <EntryTable
                 items={definition.equipment ?? []}
                 columns={ITEM_COLUMNS}
-                check={{ key: 'attuned', label: 'Attuned', short: 'Att', limit: attuneSlots,
-                         full: `All ${attuneSlots} attunement slots are in use!` }}
+                check={{ key: 'attuned', label: 'Attuned', inline: true, limit: ATTUNE_SLOTS,
+                         full: `All ${ATTUNE_SLOTS} attunement slots are in use!` }}
                 groupBy={{ key: 'attuned', rank: (item) => (item.attuned ? 0 : 1),
-                           title: (item) => (item.attuned ? `Attuned · ${attunedCount} of ${attuneSlots}` : 'Carried') }}
+                           title: (item) => (item.attuned ? `Attuned · ${attunedCount} of ${ATTUNE_SLOTS}` : 'Carried') }}
                 {editable}
                 category="items"
                 emptyText="Nothing carried."
@@ -1194,6 +1186,9 @@
      the bottom of the panel, not into a gap above this. */
   .passives { padding-top: 1.25rem; }
   .passives .cap:first-child { margin-bottom: 0.625rem; }
+  /* In the narrower skills card "Investigation" only fits a little smaller. */
+  .rail-skills .passives .defbox { padding-inline: 0.125rem; }
+  .rail-skills .passives .defbox .cap { font-size: 0.5rem; letter-spacing: 0; }
   .money { padding-top: 1.25rem; }
   .money .cap { margin-bottom: 0.5rem; }
   .profs { padding-top: 1.25rem; }
@@ -1245,11 +1240,6 @@
   .keys:hover { border-color: var(--a-edge); color: var(--a); }
   .keys:active { transform: translateY(1px); }
   @media (hover: hover) and (pointer: fine) { .keys { display: inline-grid; } }
-  .attune { display: flex; align-items: baseline; gap: 0.625rem; margin-bottom: 0.75rem; }
-  .attune .cap { margin: 0; }
-  .attn { color: var(--dim); font-size: 0.875rem; display: inline-flex; align-items: baseline; gap: 0.25rem; }
-  .attn b { color: var(--a); font-weight: 650; }
-  .attn :global(.field) { width: 2.75rem; field-sizing: fixed; text-align: center; color: var(--text); font-weight: 600; }
   @media (max-width: 860px) {
     .sheet { padding: 0.875rem; }
     .band, .main { grid-template-columns: 1fr; }

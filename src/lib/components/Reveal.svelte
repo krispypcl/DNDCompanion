@@ -131,6 +131,8 @@
   }
   @media (hover: none) { .cue::before { content: attr(data-tap); } }
   .urgent::before {
+    /* Sits in the middle of the space under the rule above it. */
+    transform: translateY(2px);
     color: oklch(80% 0.12 25); border: 1px solid oklch(60% 0.2 25 / 0.7);
     background: oklch(30% 0.09 25 / 0.35);
     animation: beckon 1.6s ease-in-out infinite;

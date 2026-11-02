@@ -498,6 +498,24 @@
   }
   .grip:hover:not(:disabled) { color: var(--text); }
   .grip:disabled { opacity: 0.35; cursor: default; }
+  /* With a mouse, the star and the delete (or grip) wait until the card is
+     pointed at, then slide in from their own sides. On a touch screen there is
+     no pointing, so they stay, quietly. */
+  @media (hover: hover) and (pointer: fine) {
+    .star, .trash, .grip {
+      opacity: 0;
+      transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.2, 0.8, 0.3, 1), color 0.15s ease;
+    }
+    .star { transform: translateX(-6px) scale(0.8); }
+    .trash, .grip { transform: translateX(6px) scale(0.8); }
+    li:hover .star, li:focus-within .star,
+    li:hover .trash, li:focus-within .trash,
+    li:hover .grip, li:focus-within .grip, .dragging li.lifted .grip {
+      opacity: 1; transform: none;
+    }
+    li:hover .trash, li:hover .grip { transition-delay: 0.04s; }
+    li .star:hover { transform: scale(1.15); }
+  }
   .dragging li { transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1); }
   .dragging li.lifted { transition: none; z-index: 2; position: relative; box-shadow: 0 12px 28px -10px rgb(0 0 0 / 0.6); border-color: var(--a-edge); cursor: grabbing; }
   @media (max-width: 420px) {

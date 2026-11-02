@@ -9,7 +9,7 @@
   import Lightbox from '$lib/components/Lightbox.svelte';
   import ModeToggle from '$lib/components/ModeToggle.svelte';
   import D20Loader from '$lib/components/D20Loader.svelte';
-  import { DeleteNotAvailable, deleteAccount, profileOf, signOut, signOutEverywhere, updatePassword, updateProfile } from '$lib/data/session';
+  import { deleteAccount, profileOf, signOut, signOutEverywhere, updatePassword, updateProfile } from '$lib/data/session';
   import { slide } from 'svelte/transition';
   import { passwordStrength } from '$lib/rules/password';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
@@ -90,9 +90,7 @@
       await deleteAccount();
       goto(`${base}/`);
     } catch (err) {
-      deleteMsg = err instanceof DeleteNotAvailable
-        ? 'Deleting accounts isn’t switched on yet! The site’s owner has to run one more database update first.'
-        : friendlyError(err, 'Your account refused to go! Try again in a moment.');
+      deleteMsg = friendlyError(err, 'Your account refused to go! Try again in a moment.');
     } finally {
       deleting = false;
     }
