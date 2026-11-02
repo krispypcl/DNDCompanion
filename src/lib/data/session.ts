@@ -68,3 +68,26 @@ export function pinnedOf(user: { user_metadata?: Record<string, unknown> } | nul
 export async function savePinned(ids: string[]) {
   await unwrap(supabase.auth.updateUser({ data: { pinned_sheets: [...new Set(ids)] } }));
 }
+
+/**
+ * Deletes the signed-in player's account and, by the database's cascades,
+ * every sheet and piece of writing they made. Needs the delete_own_account
+ * function (database/0003); without it this throws `NotAvailable`.
+ */
+export class DeleteNotAvailable extends Error {
+  constructor() {
+    super('Deleting accounts isn’t switched on yet!');
+    this.name = 'DeleteNotAvailable';
+  }
+}
+export async function deleteAccount() {
+  const { error } = await supabase.rpc('delete_own_account');
+  if (error) {
+    if (error.code === 'PGRST202' || /could not find the function|does not exist/i.test(error.message)) {
+      throw new DeleteNotAvailable();
+    }
+    throw new Error(error.message);
+  }
+  // The session belonged to an account that no longer exists.
+  await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+}
