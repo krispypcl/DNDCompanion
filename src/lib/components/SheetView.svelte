@@ -1019,6 +1019,7 @@
               editable={isOwner}
               {refilling}
               onchange={setTracker}
+              onroll={isOwner ? rollTracker : undefined}
             />
           </div>
         {/if}

@@ -11,7 +11,8 @@
     ctx,
     editable,
     refilling = false,
-    onchange
+    onchange,
+    onroll
   }: {
     trackers: TrackerT[];
     spent: Record<string, number>;
@@ -19,6 +20,8 @@
     editable: boolean;
     refilling?: boolean;
     onchange: (id: string, value: number) => void;
+    /** Rolls a tracker's die, after asking. */
+    onroll?: (t: TrackerT) => void;
   } = $props();
 
   /**
@@ -65,6 +68,7 @@
             {refilling}
             stagger={trackers.findIndex((x) => x.id === t.id)}
             onchange={(v) => onchange(t.id, v)}
+            onroll={onroll ? () => onroll(t) : undefined}
           />
         {/each}
       </div>
@@ -79,6 +83,7 @@
         {refilling}
         stagger={trackers.findIndex((x) => x.id === t.id)}
         onchange={(v) => onchange(t.id, v)}
+        onroll={onroll ? () => onroll(t) : undefined}
       />
     {/each}
   {/if}

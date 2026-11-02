@@ -131,3 +131,32 @@ describe('Tracker', () => {
     expect(screen.queryByLabelText('Increase')).toBeNull();
   });
 });
+
+import { fireEvent } from '@testing-library/svelte';
+
+describe('offering a roll on spending', () => {
+  it('asks before rolling the die, and rolls only on yes', async () => {
+    const onroll = vi.fn();
+    render(Tracker, { props: { tracker: def({ die: 'd8' }), spent: 0, ctx, editable: true, onchange: () => {}, onroll } });
+    await fireEvent.click(screen.getByLabelText('Risk Dice 4'));
+    expect(onroll).not.toHaveBeenCalled();
+    await fireEvent.click(screen.getByRole('button', { name: 'Roll' }));
+    expect(onroll).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('group', { name: 'Roll d8?' })).toBeNull();
+  });
+
+  it('can be waved off', async () => {
+    const onroll = vi.fn();
+    render(Tracker, { props: { tracker: def({ die: 'd8', type: 'gauge' }), spent: 0, ctx, editable: true, onchange: () => {}, onroll } });
+    await fireEvent.click(screen.getByLabelText('Decrease'));
+    await fireEvent.click(screen.getByRole('button', { name: 'No' }));
+    expect(onroll).not.toHaveBeenCalled();
+  });
+
+  it('does not ask without a die, or when restoring one', async () => {
+    const onroll = vi.fn();
+    render(Tracker, { props: { tracker: def(), spent: 2, ctx, editable: true, onchange: () => {}, onroll } });
+    await fireEvent.click(screen.getByLabelText('Risk Dice 1'));
+    expect(screen.queryByRole('button', { name: 'Roll' })).toBeNull();
+  });
+});
