@@ -1,0 +1,62 @@
+/**
+ * One movement, used everywhere a view changes: a short fade with a small
+ * rise. Keeping it in a single place is what makes the app feel like one
+ * thing rather than a collection of animated parts.
+ *
+ * CSS animations are flattened by the `prefers-reduced-motion` block in
+ * app.css, but Svelte transitions run in JavaScript and are not, so they ask
+ * here instead.
+ */
+import { cubicOut } from 'svelte/easing';
+
+export function prefersReducedMotion(): boolean {
+  return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+type RiseOptions = { y?: number; duration?: number; delay?: number };
+
+export function rise(_node: Element, { y = 8, duration = 220, delay = 0 }: RiseOptions = {}) {
+  const span = prefersReducedMotion() ? 0 : duration;
+  return {
+    duration: span,
+    delay: span === 0 ? 0 : delay,
+    easing: cubicOut,
+    css: (t: number, u: number) => `opacity: ${t}; transform: translate3d(0, ${u * y}px, 0);`
+  };
+}
+
+/**
+ * A number that changed gives a small pop, so the eye catches it: an ability
+ * modifier after a score changes, a skill after proficiency is toggled, AC.
+ * Not on the first render, only on a change. `kind` picks the effect:
+ * "bump" (the pop), "glow" (a soft accent glow, for the level badge) or
+ * "sparkle" (a burst, for gaining Inspiration; only when the value rises).
+ */
+function fx(node: HTMLElement, value: unknown, kind: 'bump' | 'glow' | 'sparkle') {
+  let last = value;
+  const fire = (cls: string) => {
+    node.classList.remove(cls);
+    void node.offsetWidth; // restart the animation
+    node.classList.add(cls);
+  };
+  const end = (e: AnimationEvent) => {
+    if (e.target === node) node.classList.remove('fx-bump', 'fx-glow', 'fx-sparkle');
+  };
+  node.addEventListener('animationend', end);
+  return {
+    update(next: unknown) {
+      if (next === last) return;
+      const rose = typeof next === 'number' && typeof last === 'number' ? next > last : true;
+      last = next;
+      if (kind === 'sparkle' && !rose) return fire('fx-bump');
+      fire(`fx-${kind}`);
+    },
+    destroy() {
+      node.removeEventListener('animationend', end);
+    }
+  };
+}
+
+export const bump = (node: HTMLElement, value: unknown) => fx(node, value, 'bump');
+export const glow = (node: HTMLElement, value: unknown) => fx(node, value, 'glow');
+export const sparkle = (node: HTMLElement, value: unknown) => fx(node, value, 'sparkle');
