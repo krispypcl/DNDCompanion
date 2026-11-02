@@ -21,6 +21,8 @@
   type Column = {
     key: string;
     label: string;
+    /** Shown only while editing. A Source column always is. */
+    editOnly?: boolean;
     /** A heading for a column too narrow for its name. The name is still what
         the field is called, and still what a screen reader announces. */
     short?: string;
@@ -40,6 +42,8 @@
     canPress?: (value: unknown) => boolean;
     /** What pressing it does, for the button's accessible name. */
     pressVerb?: string;
+    /** How the value reads when not editing ("spell" as "+7"). */
+    show?: (value: unknown) => string;
   };
 
   /** Keep rows in groups, in a fixed order of groups. Within a group the
@@ -106,7 +110,10 @@
    * rows only ever move within their own group.
    */
   const groupedColumn = $derived(Boolean(groupBy && columns.some((c) => c.key === groupBy.key)));
-  const shownColumns = $derived(editable || !groupBy ? columns : columns.filter((c) => c.key !== groupBy.key));
+  /** Only while editing: the grouped column, and the book a row comes from
+      (reading, the 5e.tools link beside the name already uses it). */
+  const editOnly = (c: Column) => c.key === groupBy?.key || c.key === 'source' || Boolean(c.editOnly);
+  const shownColumns = $derived(editable ? columns : columns.filter((c) => !editOnly(c)));
 
   const [nameCol, ...rest] = $derived(shownColumns);
 
@@ -162,6 +169,26 @@
       view.length > 0 &&
       (view.some((r) => r.group !== view[0].group) || groupedColumn)
   );
+
+  /**
+   * Columns hidden while reading leave their share to the others, the notes
+   * taking a double helping, rather than to the narrow tick column.
+   */
+  const pct = (w: string) => (/^[\d.]+%$/.test(w) ? parseFloat(w) : null);
+  const spare = $derived.by(() => {
+    if (editable) return 0;
+    const ws = shownColumns.map((c) => pct(c.width));
+    if (ws.some((w) => w === null)) return 0;
+    return Math.max(0, 100 - ws.reduce<number>((a, w) => a + (w ?? 0), 0));
+  });
+  const spareTo = $derived(shownColumns.find((c) => c.key === 'notes')?.key ?? null);
+  function widthOf(col: Column): string {
+    const w = pct(col.width);
+    if (!spare || w === null) return col.width;
+    const notes = spareTo ? (pct(shownColumns.find((c) => c.key === spareTo)!.width) ?? 0) : 0;
+    const weight = col.key === spareTo ? 2 * w : w;
+    return `${w + (spare * weight) / (100 - spare + notes)}%`;
+  }
 
   /** An inline tick lives in the name cell, as a toggle, not in a column. */
   const tickColumn = $derived(Boolean(check && !check.inline));
@@ -382,8 +409,8 @@
     <table class:editing={editable} class:headed={showHeadings} class:dragging={drag !== null} class:landing>
       <colgroup>
         {#if editable}<col style:width="1.75rem" />{/if}
-        {#if tickColumn}<col style:width="2.5rem" />{/if}
-        {#each shownColumns as col (col.key)}<col style:width={col.width} />{/each}
+        {#if tickColumn}<col style:width="2rem" />{/if}
+        {#each shownColumns as col (col.key)}<col style:width={widthOf(col)} />{/each}
         {#if editable}<col style:width="2rem" />{/if}
       </colgroup>
       <thead>
@@ -392,7 +419,7 @@
           {#if check && tickColumn}<th class="tick" title={check.label}>{check.short ?? check.label}</th>{/if}
           {#each shownColumns as col (col.key)}
             <th title={col.short ? col.label : undefined}
-                data-flip-ghost={groupBy?.key === col.key ? `${tk}:th:${col.key}` : undefined}>
+                data-flip-ghost={editOnly(col) ? `${tk}:th:${col.key}` : undefined}>
               <span class="hd" data-flip="{tk}:h:{col.key}">{col.short ?? col.label}</span>
             </th>
           {/each}
@@ -404,7 +431,7 @@
           {@const { item, index } = row}
           {@const title = heading(pos)}
           {#if title !== null}
-            <tr class="group" class:lit={lit === title}><th colspan={span} scope="colgroup"><span data-flip="{tk}:g:{title}">{title}</span></th></tr>
+            <tr class="group" class:lit={lit === title} in:arrive out:leave|global><th colspan={span} scope="colgroup"><span data-flip="{tk}:g:{title}">{title}</span></th></tr>
           {/if}
           <tr bind:this={rowEls[row.key]} in:arrive out:leave
               class:lifted={drag?.key === row.key}
@@ -485,7 +512,7 @@
 
             {#each rest as col (col.key)}
               <td data-label={col.label} class:muted={col.muted} class:numeric={col.numeric}
-                  data-flip-ghost={groupBy?.key === col.key ? fk(row, `g:${col.key}`) : undefined}
+                  data-flip-ghost={editOnly(col) ? fk(row, `g:${col.key}`) : undefined}
                   class:wide={col.wide} class:grouped={groupBy?.key === col.key}
                   data-empty={!editable && isEmpty(item[col.key]) ? '' : undefined}>
                 {#if editable && col.options}
@@ -509,8 +536,8 @@
                 {:else if onpress && col.canPress?.(item[col.key])}
                   <button class="press" data-flip={fk(row, col.key)} onclick={() => onpress(col.key, item)}
                           aria-label="{col.pressVerb ?? 'Use'} {nameOf(item)} {col.label.toLowerCase()} {text(item[col.key])}"
-                          title="{col.pressVerb ?? 'Use'} {text(item[col.key])}">{text(item[col.key])}</button>
-                {:else}<span class="cell" data-flip={fk(row, col.key)}>{text(item[col.key])}</span>{/if}
+                          title="{col.pressVerb ?? 'Use'} {text(item[col.key])}">{col.show ? col.show(item[col.key]) : text(item[col.key])}</button>
+                {:else}<span class="cell" data-flip={fk(row, col.key)}>{col.show && item[col.key] ? col.show(item[col.key]) : text(item[col.key])}</span>{/if}
               </td>
             {/each}
 
@@ -565,6 +592,8 @@
     border-bottom: 1px solid var(--line-soft);
     vertical-align: top;
     overflow-wrap: anywhere;
+    /* A squeezed column breaks a word with a hyphen, not mid-letter. */
+    hyphens: auto;
   }
   tr:last-child td { border-bottom: 0; }
   /* A heading for the rows under it: spells by level. Quiet, and accent
@@ -650,7 +679,7 @@
   }
 
   /* The tick column is the width of the mark and nothing more. */
-  .tick { text-align: center; vertical-align: middle; }
+  .tick { text-align: left; vertical-align: middle; }
   th.tick { color: var(--label); }
   .tick span.yes { color: var(--a); font-weight: 600; }
   .tick input {

@@ -50,15 +50,19 @@
     formulaContext,
     modifierOf,
     passiveScore,
+    spellAttackBonus,
     weightCarried
   } from '$lib/rules/derived';
   import { downloadText } from '$lib/download';
-  import { parseRoll } from '$lib/rules/dice';
+  import { parseRoll, type Pool } from '$lib/rules/dice';
   import { requestRoll } from '$lib/stores/dice';
   import { friendlyDate, latest } from '$lib/rules/dates';
   import { exportFileName, exportSheet } from '$lib/exchange';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
-  import { spellGroup, spellRank } from '$lib/rules/spells';
+  import { ordinal, spellGroup, spellLevel, spellRank } from '$lib/rules/spells';
+  import { spellDamage, spellHit } from '$lib/rules/spellroll';
+  import { trackerMax } from '$lib/rules/tracker';
+  import CastPicker from '$lib/components/CastPicker.svelte';
   import { slotLevel } from '$lib/rules/print';
   import { themeStyle } from '$lib/theme';
   import { bump, glow, sparkle } from '$lib/motion';
@@ -140,10 +144,15 @@
     lastLevel = now;
   });
   /** The sheet's panels arrive one after another when it first appears. */
-  let entering = $state(false);
+  // On from the start, so the sheet's very first frame is already the start
+  // of the animation; switched on only once it showed, the panels appeared,
+  // vanished and faded in again.
+  let entering = $state(true);
   $effect(() => {
-    if (!revealed) return;
-    entering = true;
+    if (!revealed) {
+      entering = true;
+      return;
+    }
     const t = setTimeout(() => (entering = false), 1200);
     return () => clearTimeout(t);
   });
@@ -201,15 +210,25 @@
       would put a level on a spell nobody has written one for. */
   const SPELL_LEVELS = ['', 'Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] as const;
   const SPELL_COLUMNS = [
-    { key: 'name', label: 'Name', width: '15%', placeholder: 'Shield' },
-    { key: 'level', label: 'Level', width: '11%', options: SPELL_LEVELS },
-    { key: 'time', label: 'Cast time', width: '10%', placeholder: '1 reaction' },
-    { key: 'range', label: 'Range', width: '9%', placeholder: 'Self' },
-    { key: 'components', label: 'Components', short: 'Comp', width: '8%', placeholder: 'V, S, M' },
-    { key: 'duration', label: 'Duration', short: 'Dur.', width: '11%', placeholder: '1 round' },
-    { key: 'save', label: 'Save', width: '8%', placeholder: 'DEX 13' },
-    { key: 'notes', label: 'Notes', width: '19%', muted: true, wide: true, placeholder: '+5 AC' },
-    { key: 'source', label: 'Source', short: 'Src', width: '9%', muted: true, placeholder: 'xphb' }
+    { key: 'name', label: 'Name', width: '14%', placeholder: 'Shield' },
+    { key: 'level', label: 'Level', width: '9%', options: SPELL_LEVELS },
+    { key: 'time', label: 'Cast time', width: '9%', placeholder: '1 reaction' },
+    { key: 'range', label: 'Range', width: '8%', placeholder: 'Self' },
+    { key: 'components', label: 'Components', short: 'Comp', width: '7%', placeholder: 'V, S, M' },
+    { key: 'duration', label: 'Duration', short: 'Dur.', width: '9%', placeholder: '1 round' },
+    { key: 'save', label: 'Save', width: '7%', placeholder: 'DEX 13' },
+    { key: 'hit', label: 'Hit', width: '6%', numeric: true, placeholder: 'spell',
+      canPress: (v: unknown) => spellHit(v, spellAtk) !== null, pressVerb: 'Roll',
+      // "spell" reads as the bonus it rolls.
+      show: (v: unknown) => {
+        const pool = spellHit(v, spellAtk);
+        return pool && !/\d/.test(String(v)) ? (pool.modifier < 0 ? `−${-pool.modifier}` : `+${pool.modifier}`) : String(v ?? '');
+      } },
+    { key: 'damage', label: 'Damage', width: '12%', numeric: true, placeholder: '8d6 +1d6/level',
+      canPress: (v: unknown) => spellDamage(v, null, null, 1) !== null, pressVerb: 'Roll',
+      show: (v: unknown) => String(v ?? '').replace(/\s*(?:\/|per)\s*(?:slot\s*)?(?:level|lvl|slot)s?\b/i, '/lvl') },
+    { key: 'notes', label: 'Notes', width: '12%', muted: true, wide: true, placeholder: '+5 AC' },
+    { key: 'source', label: 'Source', short: 'Src', width: '7%', muted: true, placeholder: 'xphb' }
   ];
 
 
@@ -318,6 +337,77 @@
     const kind = key === 'bonus' ? 'hit' : 'damage';
     const pool = parseRoll(key === 'bonus' ? attack.bonus : attack.damage, kind);
     if (pool) requestRoll(pool, `${attack.name || 'Attack'} ${kind === 'hit' ? 'to hit' : 'damage'}`);
+  }
+
+  /** The spell attack bonus: as written, or worked out from the casting ability. */
+  const spellAtk = $derived(
+    definition
+      ? (definition.spellAttackBonus ??
+          (definition.spellcastingAbility ? spellAttackBonus(definition, definition.spellcastingAbility) : null))
+      : null
+  );
+
+  /** Shows a roll in the tray, which lives on the Combat tab. */
+  function toTray(pool: Pool, label: string) {
+    if (activeTab !== 'Combat') {
+      activeTab = 'Combat';
+      if (typeof location !== 'undefined') history.replaceState(null, '', '#combat');
+    }
+    requestRoll(pool, label);
+  }
+
+  /** Spell slots by level, for casting: how many each has and which trackers hold them. */
+  const slotsByLevel = $derived.by(() => {
+    const out = new Map<number, { max: number; left: number; trackers: { id: string; room: number }[] }>();
+    if (!definition || !sheetState) return out;
+    const ctx = formulaContext(definition);
+    for (const t of definition.trackers ?? []) {
+      const level = slotLevel(t);
+      if (level === null || t.direction === 'accrue') continue;
+      let max = 0;
+      try { max = trackerMax(t, ctx); } catch { continue; }
+      const spent = Math.min(max, Number(sheetState.trackers?.[t.id]) || 0);
+      const at = out.get(level) ?? { max: 0, left: 0, trackers: [] };
+      at.max += max;
+      at.left += max - spent;
+      at.trackers.push({ id: t.id, room: max - spent });
+      out.set(level, at);
+    }
+    return out;
+  });
+
+  /** A leveled spell's damage, pressed: choose the slot it is cast with first. */
+  let casting = $state<Spell | null>(null);
+  function rollSpell(key: string, spell: Spell) {
+    const name = spell.name || 'Spell';
+    if (key === 'hit') {
+      const pool = spellHit(spell.hit, spellAtk);
+      if (pool) toTray(pool, `${name} to hit`);
+      return;
+    }
+    const level = spellLevel(spell.level);
+    if (level !== null && level > 0) {
+      casting = spell;
+      return;
+    }
+    const pool = spellDamage(spell.damage, level, null, totalLevel);
+    if (pool) toTray(pool, level === 0 && totalLevel >= 5 ? `${name} (level ${totalLevel})` : name);
+  }
+  function castAt(spell: Spell, at: number, spend: boolean) {
+    casting = null;
+    const level = spellLevel(spell.level);
+    if (spend) {
+      const slot = slotsByLevel.get(at)?.trackers.find((t) => t.room > 0);
+      if (slot && sheetState) setTracker(slot.id, (Number(sheetState.trackers?.[slot.id]) || 0) + 1);
+    }
+    const pool = spellDamage(spell.damage, level, at, totalLevel);
+    if (pool) toTray(pool, level !== null && at > level ? `${spell.name || 'Spell'} at ${ordinal(at)} level` : spell.name || 'Spell');
+  }
+
+  /** A tracker with a die, spent, and the player said yes to rolling it. */
+  function rollTracker(t: Tracker) {
+    const pool = parseRoll(t.die, 'damage');
+    if (pool) toTray(pool, t.label);
   }
 
   /** A skill, pressed: the Combat tab comes up, and the roll is made there. */
@@ -510,6 +600,12 @@
   }
 
   let presetsOpen = $state(false);
+  // Switching modes either way folds the ready-made list: it is never
+  // waiting open on returning to edit mode.
+  $effect(() => {
+    editing;
+    presetsOpen = false;
+  });
   function addPreset(added: Tracker[], label: string) {
     if (!definition) return;
     setDefinition({ ...definition, trackers: [...(definition.trackers ?? []), ...added] });
@@ -799,6 +895,7 @@
                 emptyText="No spells or abilities recorded."
                 addLabel="Add spell"
                 blank={() => ({ name: '' }) as Spell}
+                onpress={isOwner ? (key, spell) => rollSpell(key, spell as Spell) : undefined}
                 onchange={(spells) => setDefinition({ ...definition, spells: spells as Spell[] })}
               >
                 {#snippet info()}
@@ -806,9 +903,15 @@
                   charges belong here as much as a cantrip does. Source is the book it is from, as
                   5e.tools writes it — <code>xphb</code>, <code>phb</code>, <code>tce</code> — and
                   sets where the name links to. <code>homebrew</code> marks an entry as yours and
-                  drops the link.
+                  drops the link. Hit is <code>spell</code> for a spell attack. Damage is written
+                  like an attack's, with what each higher slot adds after it:
+                  <code>8d6 fire +1d6/level</code>. A cantrip's dice grow with your level by themselves.
                 {/snippet}
               </EntryTable>
+              {#if casting}
+                <CastPicker spell={casting} slots={slotsByLevel} themeCss={themeStyle(definition.identity.theme)}
+                            oncast={(at, spend) => castAt(casting!, at, spend)} oncancel={() => (casting = null)} />
+              {/if}
             {:else if tab === 'Equipment'}
               <EntryTable
                 items={definition.equipment ?? []}
@@ -933,6 +1036,7 @@
               editable={isOwner}
               {refilling}
               onchange={setTracker}
+              onroll={isOwner ? rollTracker : undefined}
             />
           </div>
         {/if}
@@ -1079,19 +1183,13 @@
 {/if}
 
 <style>
-  /* Panels arrive in reading order rather than all at once. */
+  /* The heading rises in with the panels, and only on arrival: as a lasting
+     rule, it played a second time the moment the arrival ended. */
   @keyframes rise {
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: none; }
   }
-  .identity, .band > :global(*), .main > :global(*) {
-    animation: rise 0.3s cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
-  }
-  .band > :global(*:nth-child(1)) { animation-delay: 0.04s; }
-  .band > :global(*:nth-child(2)) { animation-delay: 0.08s; }
-  .main > :global(*:nth-child(1)) { animation-delay: 0.12s; }
-  .main > :global(*:nth-child(2)) { animation-delay: 0.16s; }
-  .main > :global(*:nth-child(3)) { animation-delay: 0.2s; }
+  .entering .identity { animation: rise 0.3s cubic-bezier(0.2, 0.7, 0.3, 1) backwards; }
 
   .loading { position: relative; }
   .loading > :global(.skel) { opacity: 0.45; }
@@ -1380,7 +1478,7 @@
     100% { opacity: 0; transform: translate(-50%, -20px); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .entering .panel, .defbox.inspired, .burst, .levelup { animation: none; }
+    .entering .panel, .entering .identity, .defbox.inspired, .burst, .levelup { animation: none; }
     .burst { display: none; }
   }
   /* Shortcuts are for a keyboard: the button only shows where there is a mouse. */

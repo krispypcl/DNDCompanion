@@ -85,10 +85,9 @@ export const PRESETS: Preset[] = [
     label: 'Pact Magic slots',
     className: 'Warlock',
     blurb: 'Back on a short rest; all at one level',
-    build: (lvl) => [
+    build: () => [
       resource('Pact Magic slots', 'Warlock', 'pact()', 'short', {
-        group: 'Spell slots',
-        description: `All cast at ${ordinal(Math.min(5, Math.max(1, Math.ceil(lvl / 2))))} level now; that rises every two levels to 5th.`
+        group: 'Spell slots'
       })
     ]
   },
@@ -98,9 +97,7 @@ export const PRESETS: Preset[] = [
     label: 'Rage',
     className: 'Barbarian',
     blurb: '2 to 6 by level; long rest',
-    build: () => [resource('Rage', 'Barbarian', 'at(1, 2, 3, 3, 6, 4, 12, 5, 17, 6)', 'long', {
-      description: 'One comes back on a short rest.'
-    })]
+    build: () => [resource('Rage', 'Barbarian', 'at(1, 2, 3, 3, 6, 4, 12, 5, 17, 6)', 'long')]
   },
   {
     id: 'bardic',
@@ -137,9 +134,7 @@ export const PRESETS: Preset[] = [
     label: 'Wild Shape',
     className: 'Druid',
     blurb: '2 to 4 by level; short rest',
-    build: () => [resource('Wild Shape', 'Druid', 'at(2, 2, 6, 3, 17, 4)', 'short', {
-      description: 'One comes back on a short rest; all on a long rest.'
-    })]
+    build: () => [resource('Wild Shape', 'Druid', 'at(2, 2, 6, 3, 17, 4)', 'short')]
   },
   {
     id: 'focus',
@@ -161,8 +156,7 @@ export const PRESETS: Preset[] = [
     className: 'Fighter',
     blurb: '2 to 4 by level; short rest',
     build: () => [resource('Second Wind', 'Fighter', 'at(1, 2, 4, 3, 10, 4)', 'short', {
-      die: 'd10',
-      description: 'One comes back on a short rest; all on a long rest.'
+      die: 'd10'
     })]
   },
   {
@@ -193,9 +187,7 @@ export const PRESETS: Preset[] = [
     label: 'Arcane Recovery',
     className: 'Wizard',
     blurb: 'Once a day, after a short rest',
-    build: () => [resource('Arcane Recovery', 'Wizard', '1', 'long', {
-      description: 'Recover slots totalling up to half your wizard level (rounded up), none above 5th.'
-    })]
+    build: () => [resource('Arcane Recovery', 'Wizard', '1', 'long')]
   }
 ];
 

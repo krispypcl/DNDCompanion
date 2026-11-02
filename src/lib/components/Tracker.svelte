@@ -4,6 +4,8 @@
   import { FormulaError } from '$lib/rules/formula';
   import type { FormulaContext } from '$lib/rules/formula';
   import type { Tracker } from '$lib/types';
+  import { parseRoll } from '$lib/rules/dice';
+  import { fade, slide } from 'svelte/transition';
 
   let {
     tracker,
@@ -12,7 +14,8 @@
     editable,
     refilling = false,
     stagger = 0,
-    onchange
+    onchange,
+    onroll
   }: {
     tracker: Tracker;
     spent: number;
@@ -22,7 +25,28 @@
     /** Its place in the rail, so a rest refills trackers one after another. */
     stagger?: number;
     onchange: (spent: number) => void;
+    /** Rolls the tracker's die. Given, spending one offers the roll first. */
+    onroll?: () => void;
   } = $props();
+
+  /** Only a die that reads as a roll can be offered. */
+  const rollable = $derived(Boolean(onroll && tracker.die && parseRoll(tracker.die, 'damage')));
+  let asking = $state(false);
+  let askTimer: ReturnType<typeof setTimeout> | undefined;
+  function offer() {
+    if (!rollable) return;
+    asking = true;
+    clearTimeout(askTimer);
+    askTimer = setTimeout(() => (asking = false), 6000);
+  }
+  function answer(roll: boolean) {
+    clearTimeout(askTimer);
+    asking = false;
+    if (roll) onroll?.();
+  }
+  $effect(() => () => clearTimeout(askTimer));
+  // Leaving edit rights (or the owner's view) drops the question.
+  $effect(() => { if (!editable) asking = false; });
 
   // One derived value carries both results. Assigning to separate $state from
   // inside a $derived is forbidden in Svelte 5 and throws at render time.
@@ -86,8 +110,11 @@
    */
   function tapPip(n: number) {
     if (!editable) return;
-    const next = remaining === n ? n - 1 : n;
+    // Read before the change: the parent updates `remaining` at once.
+    const was = remaining;
+    const next = was === n ? n - 1 : n;
     onchange(clampSpent(accrue ? next : max - next, max));
+    if (!accrue && next < was) offer();
   }
 
   /**
@@ -97,14 +124,16 @@
    */
   function stepRemaining(delta: number) {
     if (!editable) return;
-    const next = remaining + delta;
+    const was = remaining;
+    const next = was + delta;
     onchange(clampSpent(accrue ? next : max - next, max));
+    if (!accrue && delta < 0 && was > 0) offer();
   }
 </script>
 
 <div class="tracker" class:refilling class:emptied style:--stagger={stagger}>
   <div class="head">
-    <span class="label">
+    <span class="label" title={tracker.description || undefined}>
       {tracker.label}
       {#if tracker.die}<span class="die">{tracker.die}</span>{/if}
       <EntryLink
@@ -129,7 +158,7 @@
           aria-pressed={i < remaining}
           aria-label="{tracker.label} {i + 1}"
           disabled={!editable}
-          style:--delay="{(r?.order ?? 0) * 60 + (refilling ? stagger * 110 : 0)}ms"
+          style:--delay="{(r?.order ?? 0) * (r?.kind === 'lose' ? 28 : 60) + (refilling ? stagger * 110 : 0)}ms"
           onclick={() => tapPip(i + 1)}
         ></button>
       {/each}
@@ -148,7 +177,13 @@
     </div>
   {/if}
 
-  {#if tracker.description}<p class="desc">{tracker.description}</p>{/if}
+  {#if asking}
+    <div class="ask" role="group" aria-label="Roll {tracker.die}?" transition:slide={{ duration: 180 }}>
+      <span in:fade={{ duration: 160, delay: 60 }}>Roll {tracker.die}?</span>
+      <button class="yes" onclick={() => answer(true)}>Roll</button>
+      <button class="no" onclick={() => answer(false)}>No</button>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -183,7 +218,7 @@
   .pip.lose::after {
     content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
     background: var(--accent); opacity: 0;
-    animation: puff 0.6s cubic-bezier(0.2, 0.7, 0.3, 1) both; animation-delay: var(--delay);
+    animation: puff 0.42s cubic-bezier(0.2, 0.7, 0.3, 1) both; animation-delay: var(--delay);
   }
   /* A soft cloud of the pip's colour, swelling and thinning to nothing. */
   @keyframes puff {
@@ -203,7 +238,8 @@
   @media (prefers-reduced-motion: reduce) { .tracker.emptied, .pip.lose::after { animation: none; } }
   .pip:disabled { cursor: default; }
   .pip.gain { animation: fill 0.42s backwards; animation-delay: var(--delay); }
-  .pip.lose { animation: drain 0.36s backwards; animation-delay: var(--delay); }
+  /* Spending is quick: several go out almost together, at once on tapping. */
+  .pip.lose { animation: drain 0.26s ease-out backwards; animation-delay: var(--delay); }
   @keyframes fill {
     from { transform: scale(0.4); background: transparent; border-color: var(--dim); }
     60%  { transform: scale(1.22); }
@@ -231,6 +267,17 @@
   .gauge { flex: 1; height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
   .gauge i { display: block; height: 100%; background: var(--accent); transition: width 0.3s ease; }
   .refilling .gauge i { transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1) calc(var(--stagger, 0) * 110ms); }
-  .desc { margin: 0.4rem 0 0; font-size: 0.78rem; color: var(--dim); }
+  .ask {
+    display: flex; align-items: center; gap: 0.4rem; margin-top: 0.5rem;
+    font-size: 0.8rem; color: var(--dim);
+  }
+  .ask span { flex: 1; }
+  .ask button {
+    font: inherit; font-size: 0.78rem; padding: 0.15rem 0.6rem; cursor: pointer;
+    border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--bg); color: var(--text);
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .ask .yes { border-color: var(--a-edge); color: var(--a); }
+  .ask button:hover { border-color: var(--a-edge); }
   .error { margin: 0.4rem 0 0; font-size: 0.78rem; color: var(--bad); }
 </style>

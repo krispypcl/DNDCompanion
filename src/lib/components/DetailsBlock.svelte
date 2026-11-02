@@ -76,9 +76,11 @@
 
 <!-- Species and background, each beside the book it comes from: the book is
      what lets the header link straight to the entry on 5e.tools. -->
-<dl class="origin">
-  {#each ORIGIN as field (field.key)}
-    <div>
+<!-- The books are only for editing: reading, the links beside the names
+     already use them. -->
+<dl class="origin" class:reading={!editable}>
+  {#each ORIGIN.filter((f) => editable || !f.key.endsWith('Source')) as field (field.key)}
+    <div data-flip-ghost="origin:{field.key}">
       <dt>{field.label}</dt>
       <dd>
         <EditableField
@@ -97,13 +99,13 @@
   <!-- Editing, the preview beside the link field does this job. -->
   {#if !editable}
     {#if portrait}
-      <button class="portrait-btn" data-flip-ghost="details:portrait" aria-label="View portrait full screen"
+      <button class="portrait-btn" data-flip-ghost="details:portrait" data-ghost-scale="0.8" aria-label="View portrait full screen"
               onclick={(e) => (viewing = { src: portrait, alt: `Portrait of ${definition.identity.name}`, from: e.currentTarget })}>
         <img class="portrait" src={portrait} alt="Portrait of {definition.identity.name}" />
       </button>
     {:else}
       <!-- A placeholder keeps the row the same height whether or not there is art. -->
-      <div class="portrait empty-portrait" data-flip-ghost="details:portrait" aria-hidden="true">
+      <div class="portrait empty-portrait" data-flip-ghost="details:portrait" data-ghost-scale="0.8" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="26" height="26">
           <circle cx="12" cy="9" r="4" fill="none" stroke="currentColor" stroke-width="1.5" />
           <path d="M4.5 20a7.5 7.5 0 0 1 15 0" fill="none" stroke="currentColor" stroke-width="1.5"
@@ -134,13 +136,13 @@
   <!-- The banner, opposite the portrait, the same way: press for full screen. -->
   {#if !editable}
     {#if bannerSrc && !broken[bannerSrc]}
-      <button class="banner-btn" data-flip-ghost="details:banner" aria-label="View banner full screen"
+      <button class="banner-btn" data-flip-ghost="details:banner" data-ghost-scale="0.8" aria-label="View banner full screen"
               onclick={(e) => (viewing = { src: bannerSrc, alt: `Banner of ${definition.identity.name}`, from: e.currentTarget })}>
         <img class="banner" src={bannerSrc} alt="Banner of {definition.identity.name}"
              onerror={() => (broken[bannerSrc] = true)} />
       </button>
     {:else}
-      <div class="banner empty-portrait" data-flip-ghost="details:banner" aria-hidden="true">
+      <div class="banner empty-portrait" data-flip-ghost="details:banner" data-ghost-scale="0.8" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="26" height="26">
           <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5" />
           <path d="m3 16 5-5 4 4 3-3 6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
@@ -159,7 +161,7 @@
       { role: 'banner', label: 'Banner URL', key: 'bannerUrl', link: bannerLink, placeholder: 'Optional: a wide picture shown behind the sheet' }
     ] as const as field (field.role)}
       {@const status = loadState(field.link.url)}
-      <div class="wide" data-flip-ghost="details:url:{field.role}">
+      <div class="wide" data-flip-ghost="details:url:{field.role}" data-ghost-scale="0.94">
         <dt>{field.label}</dt>
         <div class="urlrow">
           <div class="urlfield">
@@ -229,6 +231,7 @@
     gap: 0.75rem 1.25rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--line-soft);
   }
   .origin > div { text-align: center; min-width: 0; }
+  .origin.reading { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   @media (max-width: 560px) { .origin { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .details {
     display: flex;

@@ -87,6 +87,12 @@ export type Spell = LinkableEntry & {
   duration?: string;
   notes?: string;
   prepared?: boolean;
+  /** "spell" for a spell attack (the tray adds the spell attack bonus), or a
+      bonus written out. */
+  hit?: string;
+  /** Its damage or healing roll; "+1d6/level" after it is what each slot
+      level above its own adds. See rules/spellroll.ts. */
+  damage?: string;
 };
 export type Item = LinkableEntry & {
   qty?: number;

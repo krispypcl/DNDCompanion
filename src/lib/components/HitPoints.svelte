@@ -238,8 +238,9 @@
 {#if float}
   {#key float.id}
     <!-- Rises from where the gauge now ends. -->
+    <!-- Never further right than clears the hit dice above the gauge's end. -->
     <span class="float {float.kind}" aria-hidden="true"
-          style:left="clamp(1.5rem, {pct(sheetState.hpCurrent + (float.kind === 'temp' ? sheetState.hpTemp : 0))}%, calc(100% - 2.5rem))">{float.text}</span>
+          style:left="clamp(1.5rem, {pct(sheetState.hpCurrent + (float.kind === 'temp' ? sheetState.hpTemp : 0))}%, calc(100% - 9.5rem))">{float.text}</span>
   {/key}
 {/if}
 <div class="bar" class:shielded={sheetState.hpTemp > 0} aria-hidden="true">
