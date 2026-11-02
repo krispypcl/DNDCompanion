@@ -192,8 +192,8 @@
   ];
 
 
-  /** Attunement: three slots by the rules, more if the table allows. */
-  const attuneSlots = $derived(definition?.attunementSlots ?? 3);
+  /** Attunement: three items at most, by the rules. */
+  const ATTUNE_SLOTS = 3;
   const attunedCount = $derived((definition?.equipment ?? []).filter((i) => i.attuned).length);
   const ITEM_COLUMNS = [
     { key: 'name', label: 'Item', width: '38%', placeholder: 'Longsword' },
@@ -729,22 +729,13 @@
                 {/snippet}
               </EntryTable>
             {:else if tab === 'Equipment'}
-              {#if editable || attunedCount > 0}
-                <div class="attune">
-                  <span class="cap">Attunement</span>
-                  <span class="attn"><b>{attunedCount}</b> of
-                    <EditableField value={attuneSlots} {editable} type="number" label="Attunement slots"
-                                   onchange={(v) => setDefinition({ ...definition, attunementSlots: v === '' ? undefined : Math.max(0, Number(v)) })} />
-                    slots</span>
-                </div>
-              {/if}
               <EntryTable
                 items={definition.equipment ?? []}
                 columns={ITEM_COLUMNS}
-                check={{ key: 'attuned', label: 'Attuned', short: 'Att', limit: attuneSlots,
-                         full: `All ${attuneSlots} attunement slots are in use!` }}
+                check={{ key: 'attuned', label: 'Attuned', inline: true, limit: ATTUNE_SLOTS,
+                         full: `All ${ATTUNE_SLOTS} attunement slots are in use!` }}
                 groupBy={{ key: 'attuned', rank: (item) => (item.attuned ? 0 : 1),
-                           title: (item) => (item.attuned ? `Attuned · ${attunedCount} of ${attuneSlots}` : 'Carried') }}
+                           title: (item) => (item.attuned ? `Attuned · ${attunedCount} of ${ATTUNE_SLOTS}` : 'Carried') }}
                 {editable}
                 category="items"
                 emptyText="Nothing carried."
@@ -1245,11 +1236,6 @@
   .keys:hover { border-color: var(--a-edge); color: var(--a); }
   .keys:active { transform: translateY(1px); }
   @media (hover: hover) and (pointer: fine) { .keys { display: inline-grid; } }
-  .attune { display: flex; align-items: baseline; gap: 0.625rem; margin-bottom: 0.75rem; }
-  .attune .cap { margin: 0; }
-  .attn { color: var(--dim); font-size: 0.875rem; display: inline-flex; align-items: baseline; gap: 0.25rem; }
-  .attn b { color: var(--a); font-weight: 650; }
-  .attn :global(.field) { width: 2.75rem; field-sizing: fixed; text-align: center; color: var(--text); font-weight: 600; }
   @media (max-width: 860px) {
     .sheet { padding: 0.875rem; }
     .band, .main { grid-template-columns: 1fr; }

@@ -34,7 +34,7 @@ to keep as anything from the books.
 - **Accounts** with a display name and profile picture, and the option to
   delete the account and everything in it.
 - **Pinned sheets** stay at the top of the list in your own order.
-- **Attunement**: up to three attuned items (or as many as you set), listed
+- **Attunement**: up to three attuned items, listed
   first.
 - **Keyboard shortcuts** on a computer; press <kbd>?</kbd> on a sheet.
 
