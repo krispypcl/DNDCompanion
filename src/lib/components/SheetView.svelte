@@ -58,6 +58,10 @@
   import { spellGroup, spellRank } from '$lib/rules/spells';
   import { themeStyle } from '$lib/theme';
   import { bump, glow, sparkle } from '$lib/motion';
+  import { glide } from '$lib/flip';
+  import { isDead } from '$lib/rules/hp';
+  import ConditionOverlay from '$lib/components/ConditionOverlay.svelte';
+  import { friendlyError } from '$lib/errors';
   import { session } from '$lib/stores/session';
   import { sheetStore } from '$lib/stores/sheet';
   import { canUndo, lastLabel, resetUndo, snapshot, undo } from '$lib/stores/undo';
@@ -119,6 +123,7 @@
     latest(sheet?.updated_at, sheet?.texts?.notes.updatedAt, sheet?.texts?.backstory.updatedAt)
   );
   const totalLevel = $derived(definition ? characterLevel(definition) : 1);
+  const dead = $derived(sheetState ? isDead(sheetState) : false);
   /** The writing this reader may see: what the printed sheet is given. */
   function readable(key: TextKey): string {
     if (!definition) return '';
@@ -227,7 +232,7 @@
         sheetStore.load(found);
         if (!found) loadError = 'notfound';
       })
-      .catch((e) => (loadError = e instanceof Error ? e.message : 'Could not load this sheet'))
+      .catch((e) => (loadError = friendlyError(e, 'This sheet wouldn’t load! Give it another roll in a moment.')))
       .finally(() => (loading = false));
   });
 
@@ -464,22 +469,34 @@
     </div>
   </div>
 {:else if loadError === 'notfound'}
-  <NotFound title="No sheet here" message="This sheet does not exist, or it has been deleted. Check the link with whoever sent it." />
+  <NotFound title="No sheet here!" message="This sheet has vanished like a rogue in the night. It may have been deleted, or the link is off by a letter, so check it with whoever sent it." />
 {:else if loadError}
-  <div class="centred"><h1>Could not load</h1><p>{loadError}</p></div>
+  <NotFound title="That’s a critical fail!" message={loadError} />
 {:else if sheet && definition && sheetState}
   <!-- The theme is scoped here, not to :root, so a campaign view can later show
        several characters in their own colours at once. -->
   <div class="sheet themed" class:bannered={banner} style={themeStyle(definition.identity.theme)}>
     {#if banner}<Banner url={banner} />{/if}
     <header class="identity">
-      <div class="portrait" class:has={Boolean(portraitSrc)}>
+      <div class="portrait" class:has={Boolean(portraitSrc)} class:fallen={dead}>
         {#if portraitSrc}
           <!-- A link that stops working (a Drive file that was unshared) leaves
                the frame as it is for a sheet with no art, not a broken-image icon. -->
           <img src={portraitSrc} alt="" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />
         {/if}
         <span class="lvl" use:glow={totalLevel}>LV {totalLevel}</span>
+        {#if dead}
+          <!-- Three failed death saves, or Dead written in: a skull on the portrait. -->
+          <span class="skull" title="Dead" role="img" aria-label="Dead">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <path d="M12 2.5c-4.7 0-8 3.2-8 7.6 0 2.6 1.2 4.4 3 5.5v2.6c0 .9.7 1.6 1.6 1.6h.9v-2h1.6v2h1.8v-2h1.6v2h.9c.9 0 1.6-.7 1.6-1.6v-2.6c1.8-1.1 3-2.9 3-5.5 0-4.4-3.3-7.6-8-7.6Z"
+                    fill="currentColor" />
+              <circle cx="8.8" cy="10.6" r="2" fill="var(--surface)" />
+              <circle cx="15.2" cy="10.6" r="2" fill="var(--surface)" />
+              <path d="M12 13.2l-1.1 2h2.2Z" fill="var(--surface)" />
+            </svg>
+          </span>
+        {/if}
       </div>
 
       <div class="who">
@@ -535,7 +552,7 @@
           >
         {/if}
         {#if isOwner}
-          <button class="edit" aria-pressed={editing} onclick={() => (editing = !editing)}>
+          <button class="edit" aria-pressed={editing} onclick={() => glide(() => (editing = !editing))}>
             {#key editing}<span class="edlabel">{editing ? 'Done' : 'Edit'}</span>{/key}
           </button>
         {/if}
@@ -548,7 +565,7 @@
           </dl>
         {/if}
         <a class="back" href="{base}/">Back</a>
-        <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Could not copy the link')} />
+        <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
         <PrintButton />
         {#if isOwner}<DownloadButton ondownload={exportNow} />{/if}
         <ModeToggle />
@@ -890,16 +907,21 @@
     </div>
   </div>
 
-  <Flash message={flash} />
-  {#if leaving}
-    <LeaveDialog onstay={() => (leaving = null)}
-                 onleave={() => { const t = leaving; leaving = null; letGo = true; if (t) goto(t); }} />
-  {/if}
-  <HurtEdges current={sheetState.hpCurrent} max={definition.combat?.hpMax ?? 0} />
-  <UndoToast label={toast} onundo={doUndo} onexpire={() => (toast = null)} />
-  <SaveAlert />
-  <!-- Floating, so saying a word costs the header nothing. -->
-  <SaveIndicator />
+  <!-- Floating pieces sit outside the sheet's box but take its theme, so a
+       toast's Undo is in the character's accent too. -->
+  <div class="themed floats" style={themeStyle(definition.identity.theme)}>
+    <Flash message={flash} />
+    {#if leaving}
+      <LeaveDialog onstay={() => (leaving = null)}
+                   onleave={() => { const t = leaving; leaving = null; letGo = true; if (t) goto(t); }} />
+    {/if}
+    <ConditionOverlay conditions={sheetState.conditions ?? []} />
+    <HurtEdges current={sheetState.hpCurrent} max={definition.combat?.hpMax ?? 0} />
+    <UndoToast label={toast} onundo={doUndo} onexpire={() => (toast = null)} />
+    <SaveAlert />
+    <!-- Floating, so saying a word costs the header nothing. -->
+    <SaveIndicator />
+  </div>
   <!-- Only the printer shows this. Private writing a visitor cannot read is
        not passed in, so it is never on their paper either. -->
   <PrintSheet {definition} state={sheetState} notes={readable('notes')} backstory={readable('backstory')} />
@@ -923,7 +945,6 @@
   .loading { position: relative; }
   .loading > :global(.skel) { opacity: 0.45; }
   .loading .die { position: fixed; inset: 0; display: grid; place-items: center; pointer-events: none; }
-  .centred { max-width: 30rem; margin: 4rem auto; padding: 0 1rem; text-align: center; color: var(--dim); }
   /* Not positioned: the banner inside it is meant to escape this column and
      run the width of the page. */
   .sheet { padding: 1.5rem; max-width: 110rem; margin: 0 auto; }
@@ -982,6 +1003,20 @@
     color: var(--a); border-radius: var(--r-sm); font-size: 0.6875rem; font-weight: 650;
     padding: 0.0625rem 0.5rem; letter-spacing: 0.02em; white-space: nowrap;
   }
+  /* Dead: the portrait drains of colour and a skull sits on its top edge. */
+  .portrait img { transition: filter 0.8s ease; }
+  .portrait.fallen img { filter: grayscale(1) brightness(0.65); }
+  .skull {
+    position: absolute; right: -0.5rem; top: -0.5rem; z-index: 1;
+    width: 1.75rem; height: 1.75rem; border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--surface); border: 1px solid oklch(66% 0.22 25 / 0.7);
+    color: oklch(92% 0.01 286);
+    box-shadow: 0 0 12px -2px oklch(66% 0.22 25 / 0.7);
+    animation: skullIn 0.6s cubic-bezier(0.3, 1.5, 0.5, 1);
+  }
+  @keyframes skullIn { from { transform: scale(0) rotate(-30deg); opacity: 0; } }
+  :global([data-mode='light']) .skull { color: oklch(25% 0.01 286); }
   .who { flex: 1 1 auto; min-width: 0; }
   .controls { display: flex; align-items: center; gap: 0.5rem; flex: none; }
   .who h1 { margin: 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.015em; }
@@ -1132,6 +1167,7 @@
     border-radius: var(--r-sm); padding: 0.15rem 0.3rem; font: inherit;
     font-size: 1.0625rem; font-weight: 600;
   }
+  .floats { display: contents; }
   @media (max-width: 860px) {
     .sheet { padding: 0.875rem; }
     .band, .main { grid-template-columns: 1fr; }
@@ -1155,7 +1191,7 @@
     .defense { gap: 0.4375rem; }
     /* Seven controls in a phone's width: tighter, and allowed to wrap on the
        narrowest screens rather than run off the edge. */
-    .controls { gap: 0.375rem; flex-wrap: wrap; }
+    .controls { gap: 0.375rem; flex-wrap: wrap; width: 100%; justify-content: space-between; }
     .edit { min-width: 3.75rem; padding: 0.375rem 0.625rem; }
     .undo, .back { padding: 0.375rem 0.625rem; }
   }

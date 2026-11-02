@@ -21,10 +21,10 @@
      onclick={(e) => { if (e.target === e.currentTarget) onstay(); }} role="presentation">
   <div class="box" role="alertdialog" aria-modal="true" aria-labelledby="leave-title" aria-describedby="leave-text"
        transition:scale={{ start: 0.95, duration: still ? 0 : 200, easing: cubicOut }}>
-    <h2 id="leave-title">Your latest changes are not saved</h2>
+    <h2 id="leave-title">Wait, your latest changes aren’t saved!</h2>
     <p id="leave-text">
-      They could not be saved just now. If you stay, they will be saved as soon as they can be.
-      If you leave, they are lost.
+      They couldn’t be saved just now. Stay, and they’ll save as soon as they can.
+      Leave, and they’re lost to the void.
     </p>
     <div class="row">
       <button class="leave" onclick={onleave}>Leave anyway</button>

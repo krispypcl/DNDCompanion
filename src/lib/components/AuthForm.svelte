@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Logo from './Logo.svelte';
+  import { friendlyError } from '$lib/errors';
   import type { FullAutoFill } from 'svelte/elements';
   import { passwordStrength } from '$lib/rules/password';
 
@@ -62,7 +64,7 @@
       const message = await onsubmit(values);
       if (message) notice = message;
     } catch (e) {
-      error = e instanceof Error ? e.message : String(e);
+      error = friendlyError(e, 'That didn’t work! Give it another go in a moment.');
     } finally {
       busy = false;
     }
@@ -75,12 +77,7 @@
       <!-- The same mark the splash shows, so arriving and signing in are
            plainly the same place. -->
       <div class="brand">
-        <svg viewBox="0 0 48 48" width="40" height="40" aria-hidden="true">
-          <polygon points="24 3 43 14 43 34 24 45 5 34 5 14" fill="none" stroke="currentColor"
-                   stroke-width="1.5" stroke-linejoin="round" />
-          <polygon points="24 12 34 29 14 29" fill="none" stroke="currentColor"
-                   stroke-width="1.5" stroke-linejoin="round" />
-        </svg>
+        <Logo size={44} />
         <p>DND Companion</p>
       </div>
     {/if}
@@ -154,7 +151,7 @@
     margin: 0 0 1rem;
     display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
   }
-  .brand svg { color: var(--text); }
+  .brand :global(.logo) { color: var(--text); }
   .brand p {
     margin: 0; text-align: center; font-size: 1.25rem;
     font-weight: 600; letter-spacing: -0.01em;

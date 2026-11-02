@@ -100,12 +100,16 @@ describe('the mark', () => {
   it('is the favicon as well', () => {
     const icon = source('static/favicon.svg');
     expect(icon).toMatch(/polygon/);
-    expect(icon).toMatch(/#ffffff/);
+    expect(icon).toMatch(/#f7f7f8/);
+    // The same drawing as the app's mark: the die's facets are in both.
+    expect(icon).toContain('M24 12 24 3');
+    expect(source('src/lib/components/Logo.svelte')).toContain('M24 12 24 3');
   });
 
   it('sits above the title on the sign-in screen', () => {
     const form = source('src/lib/components/AuthForm.svelte');
     const brand = form.slice(form.indexOf('<div class="brand">'), form.indexOf('</div>', form.indexOf('<div class="brand">')));
-    expect(brand.indexOf('<svg')).toBeLessThan(brand.indexOf('<p>'));
+    expect(brand.indexOf('<Logo')).toBeGreaterThanOrEqual(0);
+    expect(brand.indexOf('<Logo')).toBeLessThan(brand.indexOf('<p>'));
   });
 });

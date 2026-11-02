@@ -37,14 +37,14 @@
         <path d="M3 3l18 18" />
       </g>
     </svg>
-    <span><b>You are offline.</b> Anything you change is kept and will save when you are back.</span>
+    <span><b>You’re offline!</b> Anything you change is tucked away and will save when you’re back.</span>
   </div>
 {:else if back}
   <div class="notice on" role="status" transition:fly={move}>
     <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
       <path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
     </svg>
-    <span><b>Back online.</b> Saving your changes.</span>
+    <span><b>Back online!</b> Saving your changes.</span>
   </div>
 {/if}
 

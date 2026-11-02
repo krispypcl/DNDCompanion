@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { flipKey } from '$lib/flip';
+
   let {
     value,
     display,
@@ -27,6 +29,8 @@
     onchange: (next: string | number) => void;
   } = $props();
 
+  /** The same on the readout and the input, so the words glide between them. */
+  const key = flipKey();
   const empty = $derived(value === '' || value === undefined);
 
   /** `rows` is the floor; beyond that the box follows the text, so a long
@@ -58,12 +62,13 @@
 <!-- Both states carry `.field`, so one rule in a caller sizes the readout and
      the input together and toggling edit cannot shift the layout. -->
 {#if !editable}
-  <span class="field readout" class:empty={empty && display === undefined}
+  <span class="field readout" data-flip={key} class:empty={empty && display === undefined}
     >{display ?? (empty ? placeholder : value)}</span
   >
 {:else if type === 'textarea'}
   <textarea
     class="field"
+    data-flip={key}
     aria-label={label}
     placeholder={hint ?? (placeholder === '—' ? '' : placeholder)}
     value={String(value ?? '')}
@@ -74,6 +79,7 @@
 {:else}
   <input
     class="field"
+    data-flip={key}
     {type}
     aria-label={label}
     placeholder={hint ?? (placeholder === '—' ? '' : placeholder)}

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { lookupName, lookupUrl } from '$lib/rules/lookup';
+import { lookupName, lookupUrl, sourceId } from '$lib/rules/lookup';
 
 const query = (url: string | null) => {
   const u = new URL(url!);
@@ -75,5 +75,15 @@ describe('lookupName', () => {
     expect(lookupName("Melf's Acid Arrow")).toBe("Melf's Acid Arrow");
     expect(lookupName('Bigby’s Hand')).toBe('Bigby’s Hand');
     expect(lookupName('Half-Elf')).toBe('Half-Elf');
+  });
+});
+
+describe('homebrew sources', () => {
+  test('a book written as 5e.tools shows it links by its id', () => {
+    expect(lookupUrl('Revolver (+1)', "GC:VSS'24", 'items')).toBe('https://5e.tools/items.html#revolver_valdagunslinger');
+    expect(sourceId("gc:vss'24")).toBe('valdagunslinger');
+  });
+  test('an official book is left as written', () => {
+    expect(sourceId('XPHB')).toBe('xphb');
   });
 });

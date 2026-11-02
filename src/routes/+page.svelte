@@ -7,6 +7,8 @@
   import { MAX_BYTES, importSheet } from '$lib/exchange';
   import { profileOf, signIn } from '$lib/data/session';
   import Avatar from '$lib/components/Avatar.svelte';
+  import Logo from '$lib/components/Logo.svelte';
+  import { friendlyError } from '$lib/errors';
   import { friendlyDate } from '$lib/rules/dates';
   import D20Loader from '$lib/components/D20Loader.svelte';
   import { flip } from 'svelte/animate';
@@ -23,7 +25,7 @@
         `opacity: ${t}; transform: translateX(${-12 * u}px); height: ${t * h}px; overflow: hidden;`
     };
   }
-  import { blankDefinition } from '$lib/sample';
+  import { blankDefinition, blankState } from '$lib/sample';
   import { session } from '$lib/stores/session';
   import { isConfigured } from '$lib/supabase';
   import { rise } from '$lib/motion';
@@ -60,7 +62,7 @@
     sheetRepo
       .listMySheets(user.id)
       .then((rows) => (sheets = rows))
-      .catch((e) => (error = e instanceof Error ? e.message : 'Could not load your sheets'))
+      .catch((e) => (error = friendlyError(e, 'Your sheets wouldn’t load! Try again in a moment.')))
       .finally(() => (loading = false));
   });
 
@@ -72,7 +74,7 @@
       sheets = sheets.filter((s) => s.id !== id);
       confirming = null;
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Could not delete that sheet';
+      error = friendlyError(e, 'That sheet refused to leave! Try deleting it again.');
     } finally {
       deleting = null;
     }
@@ -91,7 +93,7 @@
     error = null;
     notice = null;
     if (file.size > MAX_BYTES) {
-      error = 'That file is too large to be a character sheet.';
+      error = 'That file is far too heavy to be a character sheet!';
       return;
     }
     importing = true;
@@ -118,7 +120,7 @@
           try {
             await sheetRepo.saveText(sheet.id, user.id, key, t.body, t.isPublic, null);
           } catch (e) {
-            error = `The sheet was imported, but its ${key} could not be saved: ${e instanceof Error ? e.message : 'unknown error'}`;
+            error = `The sheet came in, but its ${key} didn’t make it! Open the sheet and paste it in again.`;
           }
         }
       }
@@ -129,7 +131,7 @@
       }
       await goto(`${base}/s/${sheet.id}`);
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Could not import that file';
+      error = friendlyError(e, 'That file wouldn’t come in! Try exporting it again.');
     } finally {
       importing = false;
     }
@@ -140,10 +142,10 @@
     if (!user) return;
     creating = true;
     try {
-      const sheet = await sheetRepo.createSheet(user.id, 'New character', blankDefinition());
+      const sheet = await sheetRepo.createSheet(user.id, 'New character', blankDefinition(), blankState());
       await goto(`${base}/s/${sheet.id}`);
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Could not create a sheet';
+      error = friendlyError(e, 'The new sheet fizzled! Try again in a moment.');
     } finally {
       creating = false;
     }
@@ -172,7 +174,7 @@
 {:else}
 <main>
   <header>
-    <h1>DND Companion</h1>
+    <h1><Logo size={30} />DND Companion</h1>
     <div class="tools">
       <ModeToggle />
       {#if $session.user}
@@ -277,9 +279,15 @@
 
 <style>
   main { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
-  header { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
   .tools { display: flex; align-items: center; gap: 0.5rem; flex: none; }
-  h1 { font-size: 1.5rem; margin: 0 0 0.5rem; }
+  h1 { font-size: 1.5rem; margin: 0; display: flex; align-items: center; gap: 0.625rem; min-width: 0; }
+  @media (max-width: 420px) {
+    h1 { font-size: 1.3125rem; gap: 0.5rem; }
+    /* The picture alone says whose account it is. */
+    .me span { display: none; }
+    .me { padding: 0.1875rem; }
+  }
   h2 { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin: 0; }
   .bar { display: flex; align-items: center; justify-content: space-between; margin: 2rem 0 0.75rem; }
   .actions { display: flex; gap: 0.5rem; }
