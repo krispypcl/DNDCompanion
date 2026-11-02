@@ -54,9 +54,17 @@ describe('grouped table', () => {
     expect(order().filter((r) => !r.startsWith('#'))).toEqual(['B', 'A']);
   });
 
-  it('shows no headings when everything is one level', () => {
+  it('reading, the grouped column is a heading, even for one level', () => {
     mount(false, vi.fn(), [{ name: 'A', level: '2' }, { name: 'B', level: '2' }]);
-    expect(order()).toEqual(['A', 'B']);
+    expect(order()).toEqual(['# 2nd level', 'A', 'B']);
+    expect(document.querySelector('th')?.parentElement?.textContent).not.toContain('Level');
+    expect(document.querySelector('td[data-label="Level"]')).toBeNull();
+  });
+
+  it('editing, the grouped column is back and one level needs no heading', () => {
+    mount(true, vi.fn(), [{ name: 'A', level: '2' }, { name: 'B', level: '2' }]);
+    expect(document.querySelectorAll('tr.group')).toHaveLength(0);
+    expect(document.querySelector('td[data-label="Level"]')).not.toBeNull();
   });
 
   it('does not touch the stored order just by showing it', () => {
@@ -125,6 +133,7 @@ describe('grouped table', () => {
     mount(false);
     const mystery = [...document.querySelectorAll('tbody tr')].find((r) => r.textContent?.includes('Mystery'))!;
     expect(mystery.querySelector('td[data-label="Notes"]')?.hasAttribute('data-empty')).toBe(true);
-    expect(mystery.querySelector('td[data-label="Level"]')?.hasAttribute('data-empty')).toBe(true);
+    // The level is the group's heading when reading, not a cell.
+    expect(mystery.querySelector('td[data-label="Level"]')).toBeNull();
   });
 });
