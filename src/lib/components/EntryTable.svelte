@@ -69,8 +69,9 @@
   }: {
     items: T[];
     columns: Column[];
-    /** A tick in the first column, ahead of the name: prepared spells. */
-    check?: { key: string; label: string; short?: string };
+    /** A tick in the first column, ahead of the name: prepared spells,
+        attuned items. With a limit, no more than that many can be ticked. */
+    check?: { key: string; label: string; short?: string; limit?: number; full?: string };
     editable: boolean;
     blank: () => T;
     onchange: (next: T[]) => void;
@@ -132,6 +133,9 @@
     const value = type === 'number' ? (raw === '' ? undefined : Number(raw)) : raw;
     onchange(items.map((item, i) => (i === index ? { ...item, [key]: value } : item)));
   }
+
+  const ticked = $derived(check ? items.filter((it) => Boolean(it[check.key])).length : 0);
+  const full = $derived(check?.limit != null && ticked >= check.limit);
 
   function setFlag(index: number, key: string, value: boolean) {
     onchange(items.map((item, i) => (i === index ? { ...item, [key]: value } : item)));
@@ -379,6 +383,8 @@
                     type="checkbox"
                     data-flip={fk(row, '?')}
                     checked={Boolean(item[check.key])}
+                    disabled={full && !item[check.key]}
+                    title={full && !item[check.key] ? check.full : undefined}
                     aria-label="{nameOf(item) || `Row ${index + 1}`} {check.label.toLowerCase()}"
                     onchange={(e) => setFlag(index, check.key, e.currentTarget.checked)}
                   />

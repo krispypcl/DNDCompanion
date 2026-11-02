@@ -84,6 +84,8 @@ export type Spell = LinkableEntry & {
 };
 export type Item = LinkableEntry & {
   qty?: number;
+  /** Attuned to the character; attuned items are listed first. */
+  attuned?: boolean;
   weight?: number;
   /** Written as the player likes ("15 gp", "priceless"), so it is text and
       is never summed. */
@@ -174,6 +176,9 @@ export type Definition = {
       sheets saved before that, and by a database that has no table for it. */
   notes: string;
   backstory?: string;
+  /** How many magic items may be attuned at once: 3 by the rules, changed in
+      edit mode for a class or table that allows more. */
+  attunementSlots?: number;
   /** Which writings are private. The writing itself is kept from visitors by
       the database; this copy, on the public row, is only so a visitor can be
       told it is private rather than shown an empty page. */

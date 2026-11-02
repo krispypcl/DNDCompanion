@@ -190,9 +190,12 @@
   ];
 
 
+  /** Attunement: three slots by the rules, more if the table allows. */
+  const attuneSlots = $derived(definition?.attunementSlots ?? 3);
+  const attunedCount = $derived((definition?.equipment ?? []).filter((i) => i.attuned).length);
   const ITEM_COLUMNS = [
     { key: 'name', label: 'Item', width: '38%', placeholder: 'Longsword' },
-    { key: 'qty', label: 'Amount', width: '12%', type: 'number' as const, numeric: true, placeholder: '1' },
+    { key: 'qty', label: 'Amount', short: 'Qty', width: '12%', type: 'number' as const, numeric: true, placeholder: '1' },
     { key: 'weight', label: 'Weight', width: '12%', type: 'number' as const, numeric: true, placeholder: '3' },
     { key: 'value', label: 'Value', width: '22%', numeric: true, placeholder: '15 gp' },
     { key: 'source', label: 'Source', width: '16%', muted: true, placeholder: 'xphb' }
@@ -673,9 +676,22 @@
                 {/snippet}
               </EntryTable>
             {:else if tab === 'Equipment'}
+              {#if editable || attunedCount > 0}
+                <div class="attune">
+                  <span class="cap">Attunement</span>
+                  <span class="attn"><b>{attunedCount}</b> of
+                    <EditableField value={attuneSlots} {editable} type="number" label="Attunement slots"
+                                   onchange={(v) => setDefinition({ ...definition, attunementSlots: v === '' ? undefined : Math.max(0, Number(v)) })} />
+                    slots</span>
+                </div>
+              {/if}
               <EntryTable
                 items={definition.equipment ?? []}
                 columns={ITEM_COLUMNS}
+                check={{ key: 'attuned', label: 'Attuned', short: 'Att', limit: attuneSlots,
+                         full: `All ${attuneSlots} attunement slots are in use!` }}
+                groupBy={{ key: 'attuned', rank: (item) => (item.attuned ? 0 : 1),
+                           title: (item) => (item.attuned ? `Attuned · ${attunedCount} of ${attuneSlots}` : 'Carried') }}
                 {editable}
                 category="items"
                 emptyText="Nothing carried."
