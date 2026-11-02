@@ -58,6 +58,8 @@ describe('lookupName', () => {
     expect(lookupName('Revolver (+1)')).toBe('Revolver');
     expect(lookupName('Longsword +1')).toBe('Longsword');
     expect(lookupName('+2 Shield')).toBe('Shield');
+    // A magic item's own name starts with its bonus.
+    expect(lookupName('+1 Longsword', 'items')).toBe('+1 Longsword');
     expect(lookupName('Arrows x20')).toBe('Arrows');
     expect(lookupName('20x Arrows')).toBe('Arrows');
     expect(lookupName('Potion of Healing ×3')).toBe('Potion of Healing');
@@ -68,7 +70,11 @@ describe('lookupName', () => {
     expect(lookupName('Tiefling (Glasya)', 'races')).toBe('Tiefling (Glasya)');
     expect(lookupName('Elf (High)', 'races')).toBe('Elf (High)');
     expect(lookupName('Tiefling (Glasya) (+1 CHA)', 'races')).toBe('Tiefling (Glasya)');
-    expect(lookupName('Revolver (silvered)', 'items')).toBe('Revolver');
+    // Items have book names in brackets too, so words in brackets stay.
+    expect(lookupName('Potion of Healing (Greater)', 'items')).toBe('Potion of Healing (Greater)');
+    expect(lookupName('Aven (Hawk-Headed)', 'races')).toBe('Aven (Hawk-Headed)');
+    expect(lookupName('Arrows (20)', 'items')).toBe('Arrows (20)');
+    expect(lookupName('Gold Bar (5-pound)', 'items')).toBe('Gold Bar (5-pound)');
   });
 
   test('keeps names that are the book’s own', () => {
@@ -85,5 +91,17 @@ describe('homebrew sources', () => {
   });
   test('an official book is left as written', () => {
     expect(sourceId('XPHB')).toBe('xphb');
+  });
+  test('the 2024 books as other sites write them', () => {
+    for (const s of ["PHB'24", 'PHB 2024', "Player's Handbook (2024)", '2024 PHB', 'phb24']) expect(sourceId(s)).toBe('xphb');
+    expect(sourceId("DMG'24")).toBe('xdmg');
+    expect(sourceId("Player's Handbook")).toBe('phb');
+    expect(sourceId('PHB')).toBe('phb');
+  });
+  test('a subclass links by its short name', () => {
+    expect(lookupUrl('Path of the Berserker', 'xphb', 'subclasses', undefined, { name: 'Barbarian', source: 'xphb' }))
+      .toBe('https://5e.tools/classes.html#barbarian_xphb,state:sub_berserker_xphb=b1');
+    expect(lookupUrl('Battle Master', 'xphb', 'subclasses', undefined, { name: 'Fighter' }))
+      .toBe('https://5e.tools/classes.html#fighter_xphb,state:sub_battle%20master_xphb=b1');
   });
 });

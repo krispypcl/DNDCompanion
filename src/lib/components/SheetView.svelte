@@ -8,6 +8,7 @@
   import { base } from '$app/paths';
   import AbilityBand from '$lib/components/AbilityBand.svelte';
   import ModeToggle from '$lib/components/ModeToggle.svelte';
+  import SoundToggle from '$lib/components/SoundToggle.svelte';
   import Banner from '$lib/components/Banner.svelte';
   import CombatActions from '$lib/components/CombatActions.svelte';
   import Conditions from '$lib/components/Conditions.svelte';
@@ -36,6 +37,7 @@
   import ShareButton from '$lib/components/ShareButton.svelte';
   import Tabs from '$lib/components/Tabs.svelte';
   import TrackerGroup from '$lib/components/TrackerGroup.svelte';
+  import TrackerPresets from '$lib/components/TrackerPresets.svelte';
   import TextPanel from '$lib/components/TextPanel.svelte';
   import ThemePicker from '$lib/components/ThemePicker.svelte';
   import UndoToast from '$lib/components/UndoToast.svelte';
@@ -56,6 +58,7 @@
   import { exportFileName, exportSheet } from '$lib/exchange';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
   import { spellGroup, spellRank } from '$lib/rules/spells';
+  import { slotLevel } from '$lib/rules/print';
   import { themeStyle } from '$lib/theme';
   import { bump, glow, sparkle } from '$lib/motion';
   import { glide } from '$lib/flip';
@@ -126,6 +129,23 @@
   );
   const totalLevel = $derived(definition ? characterLevel(definition) : 1);
   const dead = $derived(sheetState ? isDead(sheetState) : false);
+  /** Counts level-ups seen on this page; each one plays the burst once. */
+  let levelUp = $state(0);
+  let lastLevel = 0;
+  $effect(() => {
+    const now = totalLevel;
+    if (!definition) return;
+    if (lastLevel && now > lastLevel) levelUp += 1;
+    lastLevel = now;
+  });
+  /** The sheet's panels arrive one after another when it first appears. */
+  let entering = $state(false);
+  $effect(() => {
+    if (!revealed) return;
+    entering = true;
+    const t = setTimeout(() => (entering = false), 1200);
+    return () => clearTimeout(t);
+  });
   /** The writing this reader may see: what the printed sheet is given. */
   function readable(key: TextKey): string {
     if (!definition) return '';
@@ -325,8 +345,20 @@
   });
   function setDefinition(next: Definition) { sheetStore.setDefinition(next); }
 
+  /** A spell slot just spent: that spell level lights up, and the Spells tab. */
+  let litLevel = $state<string | null>(null);
+  let litTimer: ReturnType<typeof setTimeout> | undefined;
   function setTracker(id: string, value: number) {
     if (!sheetState) return;
+    const t = definition?.trackers?.find((x) => x.id === id);
+    const level = t ? slotLevel(t) : null;
+    const before = Number(sheetState.trackers?.[id]) || 0;
+    if (level !== null && t?.direction !== 'accrue' && value > before) {
+      litLevel = null;
+      requestAnimationFrame(() => (litLevel = spellGroup(String(level))));
+      clearTimeout(litTimer);
+      litTimer = setTimeout(() => (litLevel = null), 1600);
+    }
     snapshot(sheetState, 'Tracker');
     setState({ ...sheetState, trackers: { ...sheetState.trackers, [id]: value } });
   }
@@ -437,7 +469,11 @@
 
   function saveTrackers(rows: TrackerRow[]) {
     if (!definition) return;
+    // What the table does not show (its class, description) is kept from
+    // the tracker as it was; what it shows is taken from the row.
+    const before = new Map((definition.trackers ?? []).map((t) => [t.id, t]));
     const trackers: Tracker[] = rows.map((r) => ({
+      ...withoutShown(before.get(r.id)),
       id: r.id || newId(),
       label: r.label,
       max: scalar(r.max || '0'),
@@ -452,6 +488,18 @@
       ...(r.source ? { source: r.source } : {})
     }));
     setDefinition({ ...definition, trackers });
+  }
+
+  function withoutShown(t: Tracker | undefined): Partial<Tracker> {
+    if (!t) return {};
+    const { die: _d, group: _g, source: _s, ...rest } = t;
+    return rest;
+  }
+
+  function addPreset(added: Tracker[], label: string) {
+    if (!definition) return;
+    setDefinition({ ...definition, trackers: [...(definition.trackers ?? []), ...added] });
+    say(`Added ${label}`);
   }
 
   function blankTracker(): TrackerRow {
@@ -512,7 +560,7 @@
 {:else if sheet && definition && sheetState}
   <!-- The theme is scoped here, not to :root, so a campaign view can later show
        several characters in their own colours at once. -->
-  <div class="sheet themed" class:bannered={banner} style={themeStyle(definition.identity.theme)}>
+  <div class="sheet themed" class:entering class:bannered={banner} style={themeStyle(definition.identity.theme)}>
     {#if banner}<Banner url={banner} />{/if}
     <header class="identity">
       <div class="portrait" class:has={Boolean(portraitSrc)} class:fallen={dead}>
@@ -522,6 +570,13 @@
           <img src={portraitSrc} alt="" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />
         {/if}
         <span class="lvl" use:glow={totalLevel}>LV {totalLevel}</span>
+        {#key levelUp}
+          {#if levelUp > 0}
+            <!-- Levelled up: rays burst from the portrait and the news floats up. -->
+            <span class="burst" aria-hidden="true">{#each Array(12) as _, i (i)}<i style:--r="{i * 30}deg"></i>{/each}</span>
+            <span class="levelup" role="status">Level up!</span>
+          {/if}
+        {/key}
         {#if dead}
           <!-- Three failed death saves, or Dead written in: a skull on the portrait. -->
           <span class="skull" title="Dead" role="img" aria-label="Dead">
@@ -613,12 +668,13 @@
             </g>
           </svg>
         </button>
+        <SoundToggle />
         <ModeToggle />
       </div>
     </header>
 
     <div class="band">
-      <section class="panel hp">
+      <section class="panel hp" style:--i=0>
         <HitPoints {definition} state={sheetState} editable={isOwner} editDefinition={editable}
                    onchange={setState} ondefinition={setDefinition}>
           {#snippet children()}
@@ -628,13 +684,13 @@
         </HitPoints>
       </section>
 
-      <section class="panel band-abilities">
+      <section class="panel band-abilities" style:--i=1>
         <AbilityBand {definition} {editable} onchange={setDefinition} />
       </section>
     </div>
 
     <div class="main">
-      <section class="panel rail-skills">
+      <section class="panel rail-skills" style:--i=2>
         <SkillRail {definition} {editable} onchange={setDefinition}
                    onroll={isOwner ? rollSkill : undefined} />
         <div class="passives">
@@ -650,8 +706,8 @@
         </div>
       </section>
 
-      <section class="panel centre">
-        <Tabs tabs={TABS} bind:active={activeTab}>
+      <section class="panel centre" style:--i=3>
+        <Tabs tabs={TABS} bind:active={activeTab} lit={litLevel ? 'Spells' : null}>
           {#snippet children(tab)}
             {#if tab === 'Combat'}
               <EntryTable
@@ -711,6 +767,7 @@
 
               <EntryTable
                 items={definition.spells ?? []}
+                lit={litLevel}
                 columns={SPELL_COLUMNS}
                 check={{ key: 'prepared', label: 'Prepared', short: 'Prep' }}
                 groupBy={{ key: 'level', rank: (spell) => spellRank(spell.level), title: (spell) => spellGroup(spell.level) }}
@@ -773,7 +830,7 @@
                 items={trackerRows}
                 columns={TRACKER_COLUMNS}
                 {editable}
-                category="items"
+                category="any"
                 emptyText="No trackers yet."
                 addLabel="Add tracker"
                 blank={blankTracker}
@@ -782,10 +839,16 @@
                 {#snippet info()}
                   Max accepts a number or a formula over <code>level</code>,
                   <code>classlevel</code>, <code>prof</code> and ability modifiers —
-                  <code>prof + 1</code>, <code>classlevel / 2</code>. Name the class on a
-                  feature that scales with it, or multiclassing will inflate it.
+                  <code>prof + 1</code>, <code>classlevel / 2</code>, <code>classlevel * 5</code>.
+                  <code>at(1, 2, 3, 3)</code> is 2 from 1st level and 3 from 3rd;
+                  <code>full(1)</code>, <code>half(1)</code>, <code>third(1)</code> and
+                  <code>pact()</code> are spell slots. Name the class on a feature that scales
+                  with it, or multiclassing will inflate it.
                 {/snippet}
               </EntryTable>
+              {#if editable}
+                <TrackerPresets {definition} makeId={newId} onadd={addPreset} />
+              {/if}
             {:else if tab === 'Character'}
               <EntryTable
                 items={classes}
@@ -821,7 +884,7 @@
         </Tabs>
       </section>
 
-      <section class="panel rail-right">
+      <section class="panel rail-right" style:--i=4>
         <Conditions state={sheetState} editable={isOwner} onchange={setState}
                     looks={definition.conditionLooks ?? {}}
                     onlooks={(conditionLooks) => setDefinition({ ...definition, conditionLooks })} />
@@ -886,7 +949,7 @@
             </b>
             <span class="cap">Save DC</span>
           </div>
-          <div class="defbox themed-num">
+          <div class="defbox themed-num" class:inspired={(sheetState.inspiration ?? 0) > 0}>
             <b use:sparkle={sheetState.inspiration ?? 0}>
               <EditableField value={sheetState.inspiration ?? 0} {editable} type="number"
                              label="Inspiration"
@@ -1231,6 +1294,50 @@
     font-size: 1.0625rem; font-weight: 600;
   }
   .floats { display: contents; }
+  /* The narrowest phones: the icon buttons and the dates draw in a little so
+     every control still fits on one row. */
+  @media (max-width: 400px) {
+    .identity .controls :global(:is(.share, .print, .dl, .sound, .mode)) { width: 1.875rem; height: 1.875rem; }
+    .identity .stamps { gap: 0.625rem; margin-right: 0.25rem; }
+  }
+  /* Opening a sheet: the panels arrive one after another. */
+  .entering .panel { animation: panelIn 0.5s cubic-bezier(0.2, 0.8, 0.3, 1) backwards; animation-delay: calc(var(--i, 0) * 70ms); }
+  @keyframes panelIn { from { opacity: 0; transform: translateY(12px); } }
+  /* Inspiration held: a soft glow that breathes until it is spent. */
+  .defbox.inspired { animation: inspired 2.6s ease-in-out infinite; border-color: var(--a-edge); }
+  @keyframes inspired {
+    0%, 100% { box-shadow: 0 0 0 0 transparent; }
+    50% { box-shadow: 0 0 14px 1px color-mix(in oklch, var(--a) 35%, transparent); }
+  }
+  /* Level up: twelve rays from the portrait, and the words rising off it. */
+  .burst { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+  .burst i {
+    position: absolute; left: 50%; top: 50%; width: 3px; height: 34%; margin-left: -1.5px;
+    border-radius: 2px; transform-origin: 50% 0;
+    background: linear-gradient(to bottom, var(--a-hi), transparent);
+    transform: rotate(var(--r)) translateY(30%) scaleY(0.2); opacity: 0;
+    animation: ray 0.9s cubic-bezier(0.2, 0.8, 0.3, 1);
+  }
+  @keyframes ray {
+    15% { opacity: 1; }
+    to { transform: rotate(var(--r)) translateY(120%) scaleY(1); opacity: 0; }
+  }
+  .levelup {
+    position: absolute; left: 50%; top: -0.5rem; z-index: 3; white-space: nowrap; pointer-events: none;
+    transform: translateX(-50%); font-size: 0.75rem; font-weight: 750; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--a-hi); text-shadow: 0 1px 6px rgb(0 0 0 / 0.6);
+    animation: levelRise 1.6s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+  }
+  @keyframes levelRise {
+    0% { opacity: 0; transform: translate(-50%, 6px) scale(0.8); }
+    20% { opacity: 1; transform: translate(-50%, -6px) scale(1.08); }
+    70% { opacity: 1; transform: translate(-50%, -12px) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -20px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .entering .panel, .defbox.inspired, .burst, .levelup { animation: none; }
+    .burst { display: none; }
+  }
   /* Shortcuts are for a keyboard: the button only shows where there is a mouse. */
   .keys {
     display: none; place-items: center; width: 2rem; height: 2rem; flex: none; padding: 0;
@@ -1263,8 +1370,8 @@
     .defense { gap: 0.4375rem; }
     /* Seven controls in a phone's width: tighter, and allowed to wrap on the
        narrowest screens rather than run off the edge. */
-    .controls { gap: 0.375rem; flex-wrap: wrap; width: 100%; justify-content: space-between; }
-    .edit { min-width: 3.75rem; padding: 0.375rem 0.625rem; }
-    .undo, .back { padding: 0.375rem 0.625rem; }
+    .controls { gap: 0.25rem; flex-wrap: wrap; width: 100%; justify-content: space-between; }
+    .edit { min-width: 3.25rem; padding: 0.375rem 0.5rem; }
+    .undo, .back { padding: 0.375rem 0.5rem; }
   }
 </style>

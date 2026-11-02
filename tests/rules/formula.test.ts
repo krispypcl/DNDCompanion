@@ -70,3 +70,36 @@ describe('evaluateFormula', () => {
     }
   );
 });
+
+describe('formula calls', () => {
+  const at = (classlevel: number) => ({ level: classlevel, classlevel, prof: 2, str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 3 });
+  test('at() steps by class level', () => {
+    const rage = 'at(1, 2, 3, 3, 6, 4, 12, 5, 17, 6)';
+    expect([1, 2, 3, 5, 6, 11, 12, 17, 20].map((l) => evaluateFormula(rage, at(l)))).toEqual([2, 2, 3, 3, 4, 4, 5, 6, 6]);
+    expect(evaluateFormula('at(2, 1)', at(1))).toBe(0);
+  });
+  test('spell slots for full, half and third casters, and pact magic', () => {
+    expect(evaluateFormula('full(1)', at(1))).toBe(2);
+    expect(evaluateFormula('full(3)', at(5))).toBe(2);
+    expect(evaluateFormula('full(9)', at(17))).toBe(1);
+    expect(evaluateFormula('full(9)', at(16))).toBe(0);
+    expect(evaluateFormula('half(1)', at(1))).toBe(2);
+    expect(evaluateFormula('half(2)', at(5))).toBe(2);
+    expect(evaluateFormula('third(1)', at(2))).toBe(0);
+    expect(evaluateFormula('third(1)', at(3))).toBe(2);
+    expect(evaluateFormula('third(2)', at(7))).toBe(2);
+    expect([1, 2, 11, 17].map((l) => evaluateFormula('pact()', at(l)))).toEqual([1, 2, 3, 4]);
+  });
+  test('multiplies, groups, and takes min and max', () => {
+    expect(evaluateFormula('classlevel * 5', at(4))).toBe(20);
+    expect(evaluateFormula('(classlevel + 1) / 2', at(5))).toBe(3);
+    expect(evaluateFormula('max(1, cha)', at(1))).toBe(3);
+    expect(evaluateFormula('min(classlevel, at(2, 20))', at(1))).toBe(0);
+    expect(evaluateFormula('min(classlevel, at(2, 20))', at(7))).toBe(7);
+  });
+  test('refuses what it does not know', () => {
+    expect(() => evaluateFormula('nope(1)', at(1))).toThrow(/Unknown function/);
+    expect(() => evaluateFormula('at(1)', at(1))).toThrow(/pairs/);
+    expect(() => evaluateFormula('(1 + 2', at(1))).toThrow();
+  });
+});

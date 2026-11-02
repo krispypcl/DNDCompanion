@@ -37,6 +37,10 @@ to keep as anything from the books.
 - **Attunement**: up to three attuned items, listed
   first.
 - **Keyboard shortcuts** on a computer; press <kbd>?</kbd> on a sheet.
+- **Ready-made trackers**: spell slots for every kind of caster and the common
+  class resources, growing with the class's level.
+- **Sound effects**, off until switched on: dice, criticals, a heartbeat at
+  0 hit points and the toll of death saves.
 
 ## Built with
 
