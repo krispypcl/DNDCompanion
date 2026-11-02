@@ -135,3 +135,20 @@ describe('every component renders without throwing', () => {
     expect(container.textContent?.trim()).toBe('');
   });
 });
+
+test('TrackerGroup hides spell slots of a level not reached yet', () => {
+  const { container } = render(TrackerGroup, {
+    props: {
+      trackers: [
+        { id: 'a', label: '1st-level slots', group: 'Spell slots', max: 'full(1)', type: 'pips', direction: 'spend', reset: { on: 'long', amount: 'full' } },
+        { id: 'b', label: '9th-level slots', group: 'Spell slots', max: 'full(9)', type: 'pips', direction: 'spend', reset: { on: 'long', amount: 'full' } }
+      ],
+      spent: {},
+      ctx: formulaContext(def),
+      editable: true,
+      onchange: () => {}
+    }
+  });
+  expect(container.textContent).toContain('1st-level slots');
+  expect(container.textContent).not.toContain('9th-level slots');
+});
