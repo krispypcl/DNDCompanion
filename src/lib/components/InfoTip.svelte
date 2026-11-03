@@ -7,6 +7,7 @@
    * The note is placed against the window, not inside the panel, so a narrow
    * phone column or a scrolling table cannot cut it off.
    */
+  import { portal } from '$lib/actions';
   import { onMount, tick } from 'svelte';
 
   let { label = 'More information', children }: { label?: string; children: import('svelte').Snippet } = $props();
@@ -18,14 +19,6 @@
   let note: HTMLDivElement | undefined = $state();
   let place = $state({ left: 0, top: 0, above: false });
   const id = `tip-${Math.random().toString(36).slice(2, 9)}`;
-
-  /** Moved to the end of the page: a frosted panel (backdrop-filter) becomes
-      the frame for anything fixed inside it, which would place the note
-      against the panel rather than the window. */
-  function portal(node: HTMLElement) {
-    document.body.appendChild(node);
-    return { destroy: () => node.remove() };
-  }
 
   async function position() {
     await tick();

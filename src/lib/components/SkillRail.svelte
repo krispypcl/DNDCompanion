@@ -1,6 +1,7 @@
 <script lang="ts">
   /** Skills grouped under the ability they are scored off, in the same order as
       the ability band, each group headed by that ability's modifier. */
+  import { signed as sign } from '$lib/actions';
   import { modifierOf, skillTotal } from '$lib/rules/derived';
   import { ABILITIES, SKILLS, type Ability, type Definition, type SkillName } from '$lib/types';
   import { bump } from '$lib/motion';
@@ -45,7 +46,6 @@
       empty one. Driven by the data, not by naming Constitution. */
   const withSkills = ABILITIES.filter((ability) => grouped[ability].length > 0);
 
-  const sign = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 
   /** Cycle: none → proficient → expertise → none. */
   function cycle(skill: SkillName) {

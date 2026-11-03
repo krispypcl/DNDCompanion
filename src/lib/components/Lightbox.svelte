@@ -6,6 +6,7 @@
    * Given the thumbnail it was opened from, it grows out of that thumbnail
    * and shrinks back into it on closing.
    */
+  import { portal } from '$lib/actions';
   import { onMount, tick, untrack } from 'svelte';
   import { fade, scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
@@ -65,11 +66,6 @@
   }
   let closer: HTMLButtonElement | undefined = $state();
 
-  /** On the body, so no frosted panel or transformed parent can frame it. */
-  function portal(node: HTMLElement) {
-    document.body.appendChild(node);
-    return { destroy: () => node.remove() };
-  }
 
   onMount(() => {
     const before = document.activeElement as HTMLElement | null;

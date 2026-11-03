@@ -4,11 +4,12 @@
 
   let { value, duration = 320 }: { value: number; duration?: number } = $props();
 
-  const reduce =
-    typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  import { untrack } from 'svelte';
+  import { prefersReducedMotion } from '$lib/motion';
 
-  const display = tweened(value, { duration: reduce ? 0 : duration, easing: cubicOut });
-  $effect(() => void display.set(value));
+  // Starts at the first value with no tween; later values count up to.
+  const display = tweened(untrack(() => value), { easing: cubicOut });
+  $effect(() => void display.set(value, { duration: prefersReducedMotion() ? 0 : duration }));
 </script>
 
 <span>{Math.round($display)}</span>
