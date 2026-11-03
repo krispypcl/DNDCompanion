@@ -55,6 +55,7 @@
   } from '$lib/sheet/edits';
   import { slotsByLevel, spellAttack, spellDc } from '$lib/rules/casting';
   import { featureUrl } from '$lib/rules/lookup';
+  import { brewLoaded, ensureBrewClasses } from '$lib/rules/brewClasses';
   import {
     characterLevel,
     classLine,
@@ -131,6 +132,8 @@
 
   const carried = $derived(definition ? weightCarried(definition) : 0);
   const classes = $derived(definition ? classList(definition) : []);
+  // A homebrew class's features are fetched for its links (rules/brewClasses.ts).
+  $effect(() => void ensureBrewClasses(classes));
   /** What tracker formulas read: level, class levels, proficiency, modifiers. */
   const ctx = $derived(definition ? formulaContext(definition) : null);
   /** Optional: with no banner the sheet renders exactly as it did before. */
@@ -452,7 +455,8 @@
    * The editor works on a flat, all-strings row and converts on the way back,
    * so a max of "4" is stored as 4 and "prof + 1" is stored as text.
    */
-  const trackerRowsShown = $derived(trackerRows(definition, classes));
+  // Worked out again when a homebrew class's features arrive, for its links.
+  const trackerRowsShown = $derived($brewLoaded >= 0 ? trackerRows(definition, classes) : []);
 
   function saveTrackers(rows: TrackerRow[]) {
     if (definition) setDefinition(withTrackerRows(definition, rows));
@@ -717,10 +721,10 @@
               />
               <!-- Below the table, so they move when it changes size: they glide too. -->
               {#if isOwner}<div class="flipbox" data-flip="dice"><DiceRoller /></div>{/if}
-              <div class="flipbox" data-flip="actions"><CombatActions /></div>
               <div class="flipbox" data-flip="combat-features">
                 <CombatFeatures features={definition.features ?? []} onpick={showFeature} />
               </div>
+              <div class="flipbox" data-flip="actions"><CombatActions /></div>
             {:else if tab === 'Spells'}
               <div class="casting">
                 <div>
@@ -818,7 +822,7 @@
                 {editable}
                 category="feats"
                 spot={spotFeature}
-                linkOf={(f) => featureUrl(f as Feature, definition.identity, classes)}
+                linkOf={$brewLoaded >= 0 ? (f) => featureUrl(f as Feature, definition.identity, classes) : undefined}
                 emptyText="No features yet."
                 addLabel="Add feature"
                 blank={() => ({ title: '', body: '' }) as Feature}

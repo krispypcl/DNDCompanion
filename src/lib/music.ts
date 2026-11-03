@@ -49,6 +49,11 @@ export type YTPlayer = {
   unMute(): void;
   getPlayerState(): number;
   getVideoData(): { title?: string; author?: string };
+  getPlaylist(): string[] | null;
+  getPlaylistIndex(): number;
+  setShuffle(on: boolean): void;
+  cuePlaylist(list: string[], index?: number): void;
+  loadPlaylist(list: string[], index?: number): void;
   getCurrentTime(): number;
   getDuration(): number;
   seekTo(seconds: number, allowSeekAhead: boolean): void;
@@ -94,6 +99,33 @@ export function storeVolume(v: number) {
   } catch {
     /* private mode: it lasts for this visit */
   }
+}
+
+const SHUFFLE_KEY = 'dndcompanion:shuffle';
+/** Shuffle, for a reader who is not signed in: remembered on this device. */
+export function storedShuffle(): boolean {
+  try {
+    return localStorage.getItem(SHUFFLE_KEY) === 'on';
+  } catch {
+    return false;
+  }
+}
+export function storeShuffle(on: boolean) {
+  try {
+    localStorage.setItem(SHUFFLE_KEY, on ? 'on' : 'off');
+  } catch {
+    /* private mode: it lasts for this visit */
+  }
+}
+
+/** A copy in random order (Fisher–Yates). */
+export function shuffled<T>(list: T[], random: () => number = Math.random): T[] {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
 }
 
 /** 83 → "1:23"; 3723 → "1:02:03". */

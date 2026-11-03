@@ -16,9 +16,47 @@
   import { fade } from 'svelte/transition';
   import { get } from 'svelte/store';
   import { setSound, soundOn } from '$lib/sound';
-  import { clock, loadYouTube, parsePlaylist, storeVolume, storedVolume, type Playlist, type YTPlayer } from '$lib/music';
+  import {
+    clock, loadYouTube, parsePlaylist, shuffled, storeShuffle, storeVolume, storedShuffle, storedVolume,
+    type Playlist, type YTPlayer
+  } from '$lib/music';
+  import { session } from '$lib/stores/session';
+  import { saveShuffle, shuffleOf } from '$lib/data/session';
 
   let { url }: { url: string } = $props();
+
+  /**
+   * Shuffle: the player's own choice, kept with their account (or on this
+   * device when not signed in). On, the playlist is put in a fresh random
+   * order each time the sheet opens, the first song included.
+   */
+  let shuffle = $state(false);
+  let shuffleKnown = false;
+  $effect(() => {
+    const fromAccount = shuffleOf($session.user);
+    if (shuffleKnown && fromAccount === null) return;
+    shuffle = fromAccount ?? (typeof localStorage === 'undefined' ? false : storedShuffle());
+    shuffleKnown = true;
+  });
+  /** Waiting for the playlist's songs to be known before reordering them. */
+  let pendingShuffle = false;
+  function applyShuffle() {
+    if (!pendingShuffle || !yt) return;
+    const ids = yt.getPlaylist?.();
+    if (!ids?.length) return;
+    pendingShuffle = false;
+    if (ids.length < 2) return;
+    const order = shuffled(ids);
+    if (yt.getPlayerState() === 1) yt.loadPlaylist(order, 0);
+    else yt.cuePlaylist(order, 0);
+  }
+  function toggleShuffle() {
+    shuffle = !shuffle;
+    storeShuffle(shuffle);
+    if ($session.user) void saveShuffle(shuffle).catch(() => {});
+    // Mid-song, the rest of the list is shuffled (or not) from here on.
+    try { yt?.setShuffle(shuffle); } catch { /* not ready */ }
+  }
 
   const key = $derived.by(() => {
     const p = parsePlaylist(url);
@@ -149,12 +187,15 @@
             onReady: () => {
               if (gone || !yt) return;
               ready = true;
+              pendingShuffle = shuffle && Boolean(p.list);
+              applyShuffle();
               yt.setVolume(volume);
               if (get(soundOn)) start();
               else yt.mute();
               updateTitle();
             },
             onStateChange: (e: { data: number }) => {
+              applyShuffle();
               playing = e.data === 1;
               if (e.data === 1) disarm?.();
               updateTitle();
@@ -256,6 +297,16 @@
         <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M12.5 3v10M3 3.2v9.6L10.4 8z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" /></svg>
       </button>
     </div>
+    <!-- Shuffle, in the other bottom corner. -->
+    <button class="shuf" class:on={shuffle} aria-pressed={shuffle} disabled={!playlist.list}
+            aria-label={shuffle ? 'Shuffle on' : 'Shuffle off'}
+            title={!playlist.list ? 'One song: nothing to shuffle' : shuffle ? 'Shuffle on: a new order every visit' : 'Shuffle off'}
+            onclick={toggleShuffle}>
+      <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
+        <path d="M2 4.5h2.4c1.3 0 2.2.6 2.9 1.7l1.4 3.6c.7 1.1 1.6 1.7 2.9 1.7H14M2 11.5h2.4c1.3 0 2.2-.6 2.9-1.7M9.3 5.6c.6-.7 1.4-1.1 2.3-1.1H14M12 2.6l2 1.9-2 1.9M12 9.6l2 1.9-2 1.9"
+              fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
     <!-- Volume: a speaker in the bottom corner. Hovered, focused or tapped, a
          slider slides out beside it over the module's edge, so the module's
          layout and size never change. -->
@@ -296,6 +347,14 @@
     .music { backdrop-filter: none; -webkit-backdrop-filter: none; background: color-mix(in oklch, var(--surface) 82%, transparent); }
   }
   .vol { position: absolute; right: 0.5rem; bottom: 0.5rem; z-index: 2; }
+  .shuf {
+    position: absolute; left: 0.5rem; bottom: 0.5rem; z-index: 2;
+    width: 1.75rem; height: 1.75rem; border-radius: 50%; display: grid; place-items: center; padding: 0;
+    border: 0; background: none; color: var(--dim); cursor: pointer; transition: color 0.15s ease, background-color 0.15s ease;
+  }
+  .shuf:hover:not(:disabled) { color: var(--a); }
+  .shuf.on { color: var(--a); background: var(--a-wash); }
+  .shuf:disabled { opacity: 0.35; cursor: default; }
   .volbtn {
     width: 1.75rem; height: 1.75rem; border-radius: 50%; display: grid; place-items: center; padding: 0;
     border: 0; background: none; color: var(--dim); cursor: pointer; transition: color 0.15s ease;
