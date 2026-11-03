@@ -515,25 +515,26 @@
       </div>
 
       <div class="who">
-        <div class="nameline">
-          <h1>
-            <EditableField value={definition.identity.name} {editable} label="Name"
-                           placeholder="Character Name"
-                           onchange={(v) => patchIdentity('name', v)} />
-          </h1>
-          <!-- The campaign beside the name, as on the sheet list: "(Shadowfell)".
-               While reading it is there only when written. -->
-          {#if editable || definition.identity.campaign?.trim()}
-            <span class="campaign" data-flip-ghost="identity:campaign" data-flip="identity:campaign-at">
-              {#if editable}
-                <EditableField value={definition.identity.campaign ?? ''} {editable} label="Campaign"
-                               placeholder="Campaign" onchange={(v) => patchIdentity('campaign', String(v).trim())} />
-              {:else}
-                <span title="Campaign">({definition.identity.campaign?.trim()})</span>
-              {/if}
-            </span>
-          {/if}
-        </div>
+        <!-- The campaign, small above the name, as a book's series sits above
+             its title. While reading it is there only when written. -->
+        {#if editable || definition.identity.campaign?.trim()}
+          <div class="campaign" data-flip-ghost="identity:campaign" data-flip="identity:campaign-at">
+            <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true">
+              <path d="M3 14V2.5M3 3h8.5l-1.8 2.8L11.5 8.5H3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" />
+            </svg>
+            {#if editable}
+              <EditableField value={definition.identity.campaign ?? ''} {editable} label="Campaign"
+                             placeholder="Campaign" onchange={(v) => patchIdentity('campaign', String(v).trim())} />
+            {:else}
+              <span title="Campaign">{definition.identity.campaign?.trim()}</span>
+            {/if}
+          </div>
+        {/if}
+        <h1>
+          <EditableField value={definition.identity.name} {editable} label="Name"
+                         placeholder="Character Name"
+                         onchange={(v) => patchIdentity('name', v)} />
+        </h1>
         <p class="sub">
           <!-- Class, species and background are all written on the Character
                tab; here they are only read, each with its 5e.tools link. -->
@@ -1123,16 +1124,20 @@
     .identity:has(.musicslot) .who { flex: 1 1 auto; }
   }
   .who h1 { margin: 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.015em; }
-  .nameline { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 0.625rem; row-gap: 0.125rem; min-width: 0; }
-  .nameline h1 { min-width: 0; }
   .campaign {
-    display: inline-flex; align-items: baseline; font-size: 1.0625rem; font-weight: 500; color: var(--dim);
+    display: flex; align-items: center; gap: 0.375rem; margin-bottom: 0.1875rem; min-width: 0;
+    font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--a);
     animation: campaignIn 0.4s cubic-bezier(0.2, 0.8, 0.3, 1);
   }
-  .bannered .campaign { color: var(--text); opacity: 0.8; }
+  .campaign svg { flex: none; }
+  .campaign > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .campaign :global(.field) { min-width: 0; }
-  .campaign :global(input) { width: 9rem; max-width: 40vw; font-size: inherit; }
-  @keyframes campaignIn { from { opacity: 0; transform: translateX(-6px); } }
+  .campaign :global(input) {
+    width: 12rem; max-width: 50vw; font-size: 0.75rem; letter-spacing: 0.06em; text-transform: none; font-weight: 500;
+  }
+  @keyframes campaignIn { from { opacity: 0; transform: translateY(4px); } }
+  /* On a phone the name sits under the portrait, whose level badge hangs below it. */
+  @media (max-width: 700px) { .campaign { margin-top: 0.5rem; } }
   .sub :global(input.field) { min-width: 5.5rem; }
   .sub {
     /* The name sits inside an editable field, whose padding and border push
