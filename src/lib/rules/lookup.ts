@@ -181,13 +181,29 @@ export function isHomebrew(source: string | undefined): boolean {
 }
 
 
-const FEATURES = CLASS_FEATURES as {
+type ClassIndex = {
   classes: Record<string, Record<string, string>>;
   /** Per class, the row each level's subclass features are drawn under. */
   gains: Record<string, Record<string, string>>;
-  /** Subclass feature → class|classSource|subclass|subclassSource|level. */
+  /** Subclass feature → class|classSource|subclass|subclassSource|level.
+      A homebrew class's are filed as "<class>::<feature>", so they never
+      shadow a published one of the same name. */
   subclassFeatures: Record<string, string>;
 };
+const FEATURES = CLASS_FEATURES as ClassIndex;
+
+/** Adds a homebrew class's features, fetched for a sheet that has it (rules/brewClasses.ts). */
+export function registerClassData(extra: ClassIndex) {
+  Object.assign(FEATURES.classes, extra.classes);
+  Object.assign(FEATURES.gains, extra.gains);
+  for (const [name, at] of Object.entries(extra.subclassFeatures)) {
+    FEATURES.subclassFeatures[`${at.split('|')[0]}::${name}`] = at;
+  }
+}
+/** Whether a class (by name and 5e.tools source id) is known. */
+export const knowsClass = (name: string, source: string) => `${name.trim().toLowerCase()}|${source}` in FEATURES.classes;
+const subFeature = (cls: string, name: string) =>
+  FEATURES.subclassFeatures[`${cls}::${name}`] ?? FEATURES.subclassFeatures[name];
 
 /**
  * What players call a resource, and the feature 5e.tools files it under.
@@ -246,7 +262,7 @@ export function trackerUrl(
     const feature = featureName(tracker.label);
     const at = FEATURES.classes[key][feature];
     if (at) return `${page},state:feature=s${at}`;
-    const sub = FEATURES.subclassFeatures[feature]?.split('|');
+    const sub = subFeature(cls, feature)?.split('|');
     if (sub && sub[0] === cls) {
       // The subclass chosen, and scrolled to the level it gains the feature,
       // where 5e.tools draws the subclass's features under the class's own row.
@@ -292,7 +308,7 @@ export function featureUrl(
       const key = `${c.name.trim().toLowerCase()}|`;
       const known =
         Object.keys(FEATURES.classes).some((k) => k.startsWith(key) && FEATURES.classes[k][name]) ||
-        FEATURES.subclassFeatures[name]?.startsWith(key);
+        subFeature(c.name.trim().toLowerCase(), name)?.startsWith(key);
       if (known && url) return url;
     }
     if (kind === 'subclass') {

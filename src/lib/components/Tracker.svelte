@@ -1,6 +1,7 @@
 <script lang="ts">
   import EntryLink from './EntryLink.svelte';
   import { trackerUrl } from '$lib/rules/lookup';
+  import { brewLoaded } from '$lib/rules/brewClasses';
   import { clampSpent, trackerMax } from '$lib/rules/tracker';
   import { FormulaError } from '$lib/rules/formula';
   import type { FormulaContext } from '$lib/rules/formula';
@@ -152,7 +153,7 @@
         name={tracker.label}
         source={tracker.source}
         category="any"
-        override={trackerUrl(tracker, classes) ?? undefined}
+        override={($brewLoaded >= 0 && trackerUrl(tracker, classes)) || undefined}
       />
     </span>
     <span class="count">{remaining}<span class="of">/{max}</span></span>
