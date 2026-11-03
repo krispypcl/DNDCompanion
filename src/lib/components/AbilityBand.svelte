@@ -1,6 +1,7 @@
 <script lang="ts">
   /** Abilities and saving throws. The modifier is the hero number and the
       score sits under it, because the modifier is what you use every round. */
+  import { signed as sign } from '$lib/actions';
   import EditableField from './EditableField.svelte';
   import { modifierOf, saveBonus, saveExtra } from '$lib/rules/derived';
   import { ABILITIES, type Ability, type Definition } from '$lib/types';
@@ -17,7 +18,6 @@
     int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma'
   };
 
-  const sign = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 
   function setScore(ability: Ability, score: number) {
     onchange({ ...definition, abilities: { ...definition.abilities, [ability]: score } });

@@ -1,7 +1,6 @@
 /**
- * Rolling spells. A spell's Hit is "spell" (a d20 plus the spell attack bonus)
- * or a bonus written out; its Damage is written like an attack's, with what it
- * gains for each slot level above its own after a slash:
+ * Rolling spells. A spell's Roll is written like an attack's damage, with what
+ * it gains for each slot level above its own after a slash:
  *
  *   8d6 fire +1d6/level        Fireball: 8d6, and 1d6 more per level above 3rd
  *   3d4+3 +1d4/lvl             Magic Missile (a dart per level, as 1d4+1 each)
@@ -27,7 +26,7 @@ export function cantripTier(characterLevel: number): number {
 }
 
 /** `pool` with `extra` added `times` times; null if that is too many dice. */
-export function addPool(pool: Pool, extra: Pool, times: number): Pool | null {
+function addPool(pool: Pool, extra: Pool, times: number): Pool | null {
   if (times <= 0) return pool;
   const out: Pool = { dice: { ...pool.dice }, modifier: pool.modifier + extra.modifier * times, mode: pool.mode };
   for (const sides of DIE_SIDES) {
@@ -38,7 +37,7 @@ export function addPool(pool: Pool, extra: Pool, times: number): Pool | null {
 }
 
 /** A cantrip's dice, multiplied for the character's level; its modifier is not. */
-export function scaleCantrip(pool: Pool, characterLevel: number): Pool | null {
+function scaleCantrip(pool: Pool, characterLevel: number): Pool | null {
   const tier = cantripTier(characterLevel);
   if (tier === 1) return pool;
   const out: Pool = { dice: {}, modifier: pool.modifier, mode: pool.mode };
@@ -61,15 +60,3 @@ export function spellDamage(text: unknown, spellLevel: number | null, castAt: nu
   if (per && spellLevel !== null && castAt !== null && castAt > spellLevel) return addPool(pool, per, castAt - spellLevel);
   return pool;
 }
-
-/** Words that mean "a spell attack": the tray adds the spell attack bonus. */
-const SPELL_ATTACK = /^(spell|atk|attack|yes|✓)$/i;
-
-export function spellHit(text: unknown, attackBonus: number | null): Pool | null {
-  const raw = String(text ?? '').trim();
-  if (SPELL_ATTACK.test(raw)) return attackBonus === null ? null : { dice: { 20: 1 }, modifier: attackBonus, mode: 'normal' };
-  return parseRoll(raw, 'hit');
-}
-
-/** Whether the damage grows when cast with a higher slot. */
-export const upcasts = (text: unknown) => splitUpcast(text).per !== null;

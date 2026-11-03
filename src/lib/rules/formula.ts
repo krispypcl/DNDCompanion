@@ -70,7 +70,7 @@ const FULL_SLOTS: number[][] = [
   [4, 3, 3, 3, 3, 1, 1, 1, 1], [4, 3, 3, 3, 3, 2, 1, 1, 1], [4, 3, 3, 3, 3, 2, 2, 1, 1]
 ];
 /** Slots of one spell level for a given caster level (0 for none). */
-export function slotsAt(casterLevel: number, spellLevel: number): number {
+function slotsAt(casterLevel: number, spellLevel: number): number {
   if (casterLevel < 1 || spellLevel < 1 || spellLevel > 9) return 0;
   return FULL_SLOTS[Math.min(20, casterLevel) - 1][spellLevel - 1] ?? 0;
 }
