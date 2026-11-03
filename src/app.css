@@ -165,6 +165,9 @@ html, body { margin: 0; height: 100%; }
 /* Nothing may make the page wider than the screen: on a phone that lets the
    whole page be panned or zoomed sideways. The banner's slant is clipped. */
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* Quick taps (a pip, a step, a die) never zoom the page on a phone; a pinch
+   still does. */
+*, *::before, *::after { touch-action: manipulation; }
 /* See src/lib/flip.ts: no scrollbars flashing on while edit mode glides in. */
 .gliding .scroller { overflow: clip !important; }
 body { overflow-x: clip; }

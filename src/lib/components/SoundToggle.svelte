@@ -1,11 +1,12 @@
 <script lang="ts">
-  /** Sound effects on or off, for this device. Beside the light/dark switch. */
+  /** Sound on or off, for this device: the effects, and the sheet's music
+      (off pauses it). Beside the light/dark switch. */
   import { setSound, soundOn } from '$lib/sound';
 </script>
 
 <button class="sound" class:on={$soundOn} onclick={() => setSound(!$soundOn)} aria-pressed={$soundOn}
-        aria-label={$soundOn ? 'Turn sound effects off' : 'Turn sound effects on'}
-        title={$soundOn ? 'Sound effects on' : 'Sound effects off'}>
+        aria-label={$soundOn ? 'Turn sound off' : 'Turn sound on'}
+        title={$soundOn ? 'Sound and music on' : 'Sound and music off'}>
   <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
     <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
       <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor" fill-opacity="0.12" />

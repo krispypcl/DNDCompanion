@@ -1,5 +1,6 @@
 <script lang="ts">
   import EntryLink from './EntryLink.svelte';
+  import { trackerUrl } from '$lib/rules/lookup';
   import { clampSpent, trackerMax } from '$lib/rules/tracker';
   import { FormulaError } from '$lib/rules/formula';
   import type { FormulaContext } from '$lib/rules/formula';
@@ -15,8 +16,11 @@
     refilling = false,
     stagger = 0,
     onchange,
-    onroll
+    onroll,
+    classes = []
   }: {
+    /** The character's classes, for the link to a class feature. */
+    classes?: { name: string; source?: string }[];
     tracker: Tracker;
     spent: number;
     ctx: FormulaContext;
@@ -148,7 +152,7 @@
         name={tracker.label}
         source={tracker.source}
         category="any"
-        override={undefined}
+        override={trackerUrl(tracker, classes) ?? undefined}
       />
     </span>
     <span class="count">{remaining}<span class="of">/{max}</span></span>
@@ -178,7 +182,7 @@
       <button class="step" disabled={!editable} onclick={() => stepRemaining(-1)}
               aria-label="Decrease">−</button>
       <div class="gauge" aria-hidden="true">
-        <i style:width="{max > 0 ? (remaining / max) * 100 : 0}%"></i>
+        <i style:transform="scaleX({max > 0 ? remaining / max : 0})"></i>
       </div>
       <button class="step" disabled={!editable} onclick={() => stepRemaining(1)}
               aria-label="Increase">+</button>
@@ -281,8 +285,14 @@
   .step:not(:disabled):hover { border-color: var(--a-edge); color: var(--a); }
   .step:disabled { cursor: default; opacity: 0.5; }
   .gauge { flex: 1; height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
-  .gauge i { display: block; height: 100%; background: var(--accent); transition: width 0.3s ease; }
-  .refilling .gauge i { transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1) calc(var(--stagger, 0) * 110ms); }
+  /* Scaled, not resized: a width change lays out and repaints the panel
+     every frame (and re-frosts it over a banner), which stuttered on phones. */
+  .gauge i {
+    display: block; height: 100%; background: var(--accent);
+    transform-origin: left center; will-change: transform;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.3, 1);
+  }
+  .refilling .gauge i { transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) calc(var(--stagger, 0) * 110ms); }
   .ask {
     display: flex; align-items: center; gap: 0.4rem; margin-top: 0.5rem;
     font-size: 0.8rem; color: var(--dim);

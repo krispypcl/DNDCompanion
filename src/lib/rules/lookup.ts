@@ -23,6 +23,7 @@
 
 import BREW_SOURCES from '$lib/data/brew-sources.json';
 import SUBCLASS_SHORT from '$lib/data/subclass-short.json';
+import CLASS_FEATURES from '$lib/data/class-features.json';
 
 export const LOOKUP_BASE = 'https://5e.tools';
 
@@ -177,4 +178,79 @@ export function lookupUrl(
 export function isHomebrew(source: string | undefined): boolean {
   const src = source?.trim().toLowerCase();
   return Boolean(src && UNLINKABLE.has(src));
+}
+
+
+const FEATURES = CLASS_FEATURES as {
+  classes: Record<string, Record<string, string>>;
+  subclassFeatures: Record<string, string>;
+};
+
+/**
+ * What players call a resource, and the feature 5e.tools files it under.
+ * Spell slots are the class's Spellcasting (or Pact Magic) feature.
+ */
+const FEATURE_ALIASES: Record<string, string> = {
+  'focus points': "monk's focus",
+  'focus': "monk's focus",
+  'ki': "monk's focus",
+  'ki points': "monk's focus",
+  'sorcery points': 'font of magic',
+  'superiority dice': 'combat superiority',
+  'superiority die': 'combat superiority',
+  'lay on hands pool': 'lay on hands',
+  'rages': 'rage',
+  'psionic energy dice': 'psionic power',
+  'psionic energy': 'psionic power'
+};
+
+function featureName(label: string): string {
+  const clean = lookupName(label).toLowerCase();
+  if (/\bpact\b.*\bslots?$/.test(clean)) return 'pact magic';
+  if (/\bslots?$/.test(clean)) return 'spellcasting';
+  return FEATURE_ALIASES[clean] ?? clean;
+}
+
+/**
+ * The link for a tracker, from what it is called and where it comes from.
+ *
+ * - From a class: straight to the feature on the class page
+ *   (classes.html#fighter_xphb,state:feature=s0-1 is Second Wind), or to the
+ *   subclass for a subclass feature (Combat Superiority opens Battle Master).
+ *   A feature 5e.tools does not list opens the class page itself.
+ * - From anything else (a feat such as Lucky, a species, an item): the link
+ *   is for that, since "Luck Points" is not an entry but Lucky is.
+ * - From nothing: a search for the tracker's own name, as before.
+ */
+export function trackerUrl(
+  tracker: { label: string; class?: string; source?: string },
+  classes: { name: string; source?: string }[] = []
+): string | null {
+  const written = tracker.source?.trim().toLowerCase();
+  if (written && UNLINKABLE.has(written)) return null;
+  const from = tracker.class?.trim() ?? '';
+  if (!from) return lookupUrl(tracker.label, tracker.source, 'any');
+
+  const cls = from.toLowerCase();
+  const own = classes.find((c) => c.name.trim().toLowerCase() === cls);
+  const src = sourceId(written || own?.source?.trim() || '');
+  const key = [src && `${cls}|${src}`, `${cls}|xphb`, `${cls}|phb`].find(
+    (k) => k && FEATURES.classes[k as string]
+  ) as string | undefined;
+  if (key) {
+    const [, book] = key.split('|');
+    const page = `${LOOKUP_BASE}/classes.html#${hashPart(cls)}_${hashPart(book)}`;
+    const feature = featureName(tracker.label);
+    const at = FEATURES.classes[key][feature];
+    if (at) return `${page},state:feature=s${at}`;
+    const sub = FEATURES.subclassFeatures[feature]?.split('|');
+    if (sub && sub[0] === cls) {
+      return `${LOOKUP_BASE}/classes.html#${hashPart(cls)}_${hashPart(sub[1])},state:sub_${hashPart(sub[2])}_${hashPart(sub[3])}=b1`;
+    }
+    return page;
+  }
+  // A homebrew class (one of theirs, but not on 5e.tools' class list): the
+  // tracker's own name, searched in its book.
+  if (own) return lookupUrl(tracker.label, tracker.source, 'any');
+  return lookupUrl(from, tracker.source, 'any');
 }
