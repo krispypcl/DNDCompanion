@@ -70,6 +70,7 @@
     info,
     extra,
     links = true,
+    linkOf,
     onpress,
     lit = null
   }: {
@@ -92,6 +93,9 @@
     extra?: import('svelte').Snippet;
     /** 5e.tools links on the names. */
     links?: boolean;
+    /** The 5e.tools link for a row, worked out by the list itself (a feature
+        from the species links to the species); an override typed on the row wins. */
+    linkOf?: (item: T) => string | null;
     /** A pressable cell was pressed. */
     onpress?: (key: string, item: T) => void;
     /** A group heading to light up for a moment: a spell level just cast at. */
@@ -441,6 +445,39 @@
     };
   }
 
+  /** A text box as tall as what is written in it, growing as it is typed. */
+  function autosize(node: HTMLTextAreaElement) {
+    const fit = () => {
+      node.style.height = 'auto';
+      node.style.height = `${node.scrollHeight + 2}px`;
+    };
+    // At once, so a mode switch measures the row at its real height, and again
+    // after layout in case the column was still settling.
+    fit();
+    requestAnimationFrame(fit);
+    node.addEventListener('input', fit);
+    // Refit when the column changes width (a mode switch, a phone turning),
+    // not when the height it sets itself changes.
+    let width = 0;
+    const ro =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(([entry]) => {
+            const w = Math.round(entry.contentRect.width);
+            if (w !== width) {
+              width = w;
+              fit();
+            }
+          })
+        : null;
+    ro?.observe(node);
+    return {
+      destroy() {
+        node.removeEventListener('input', fit);
+        ro?.disconnect();
+      }
+    };
+  }
+
   // ── Rows arriving and leaving ─────────────────────────────────────────────
 
   function arrive(_node: Element) {
@@ -576,7 +613,7 @@
                   name={nameOf(item)}
                   source={item.source as string | undefined}
                   {category}
-                  override={item.lookupUrl as string | undefined}
+                  override={(item.lookupUrl as string | undefined) || linkOf?.(item) || undefined}
                 />{/if}
               {/if}
             </td>
@@ -595,6 +632,18 @@
                   >
                     {#each col.options as option (option)}<option>{option}</option>{/each}
                   </select>
+                {:else if editable && col.wide}
+                  <!-- Long writing (a description, notes): grows to show all of it,
+                       and the row grows with it. -->
+                  <textarea
+                    data-flip={fk(row, col.key)}
+                    rows="1"
+                    use:autosize
+                    value={String(item[col.key] ?? '')}
+                    placeholder={col.placeholder ?? ''}
+                    aria-label="{nameOf(item) || `Row ${index + 1}`} {col.label}"
+                    onchange={(e) => patch(index, col.key, e.currentTarget.value, col.type)}
+                  ></textarea>
                 {:else if editable}
                   <input
                     data-flip={fk(row, col.key)}
@@ -712,18 +761,21 @@
   .numeric { font-variant-numeric: tabular-nums; }
   /* Centred on the row rather than aligned with the first line of text. */
   .rm { padding-right: 0; vertical-align: middle; }
-  input, select {
+  input, select, textarea {
     background: var(--bg); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.2rem 0.35rem; font: inherit;
     font-size: 0.875rem; width: 100%; min-width: 0; box-sizing: border-box;
     transition: border-color 0.15s ease;
   }
-  input:hover, select:hover { border-color: var(--a-edge); }
-  .editing input:not([type='checkbox']), .editing select { animation: fieldIn 0.32s ease; }
+  textarea { display: block; resize: none; overflow: hidden; line-height: 1.4; }
+  /* Long writing keeps the lines it was written in. */
+  td.wide .cell { white-space: pre-line; }
+  input:hover, select:hover, textarea:hover { border-color: var(--a-edge); }
+  .editing input:not([type='checkbox']), .editing select, .editing textarea { animation: fieldIn 0.32s ease; }
   @keyframes fieldIn {
     from { border-color: transparent; background-color: transparent; }
   }
-  input::placeholder { color: var(--dim); opacity: 0.6; }
+  input::placeholder, textarea::placeholder { color: var(--dim); opacity: 0.6; }
   input[type='number'] { -moz-appearance: textfield; appearance: textfield; }
   input[type='number']::-webkit-outer-spin-button,
   input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }

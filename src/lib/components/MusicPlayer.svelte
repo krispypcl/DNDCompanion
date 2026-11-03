@@ -16,7 +16,7 @@
   import { fade } from 'svelte/transition';
   import { get } from 'svelte/store';
   import { setSound, soundOn } from '$lib/sound';
-  import { clock, loadYouTube, parsePlaylist, type Playlist, type YTPlayer } from '$lib/music';
+  import { clock, loadYouTube, parsePlaylist, storeVolume, storedVolume, type Playlist, type YTPlayer } from '$lib/music';
 
   let { url }: { url: string } = $props();
 
@@ -29,6 +29,14 @@
   let host = $state<HTMLDivElement>();
   let yt: YTPlayer | null = null;
   let ready = $state(false);
+  let volume = $state(typeof localStorage === 'undefined' ? 70 : storedVolume());
+  /** The volume slider, folded into its speaker until wanted. */
+  let volOpen = $state(false);
+  function setVol(v: number) {
+    volume = v;
+    yt?.setVolume(v);
+    storeVolume(v);
+  }
   let playing = $state(false);
   let title = $state('');
   let failed = $state(false);
@@ -89,6 +97,7 @@
   function start() {
     if (!ready || !yt) return;
     yt.unMute();
+    yt.setVolume(volume);
     yt.playVideo();
     clearTimeout(checkTimer);
     checkTimer = setTimeout(() => {
@@ -138,7 +147,8 @@
             onReady: () => {
               if (gone || !yt) return;
               ready = true;
-                        if (get(soundOn)) start();
+              yt.setVolume(volume);
+              if (get(soundOn)) start();
               else yt.mute();
               updateTitle();
             },
@@ -243,6 +253,27 @@
         <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M12.5 3v10M3 3.2v9.6L10.4 8z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" /></svg>
       </button>
     </div>
+    <!-- Volume: a speaker in the bottom corner. Hovered, focused or tapped, a
+         slider slides out beside it over the module's edge, so the module's
+         layout and size never change. -->
+    <div class="vol" class:open={volOpen} role="group" aria-label="Volume"
+         onmouseleave={() => (volOpen = false)}>
+      <!-- Rises above the speaker when wanted, over the module rather than in it. -->
+      <div class="pop">
+        <input type="range" min="0" max="100" step="1" value={volume} aria-label="Volume"
+               style:--v="{volume}%" tabindex={volOpen ? 0 : -1}
+               oninput={(e) => setVol(Number(e.currentTarget.value))} />
+      </div>
+      <button class="volbtn" aria-label="Volume {volume}%" aria-expanded={volOpen} title="Volume {volume}%"
+              onclick={() => (volOpen = !volOpen)} onmouseenter={() => (volOpen = true)}>
+        <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
+          <path d="M2.5 6.2h2.3l3-2.6v8.8l-3-2.6H2.5z" fill="currentColor" />
+          {#if volume > 0}<path d="M10.4 6a2.8 2.8 0 0 1 0 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />{/if}
+          {#if volume > 50}<path d="M12.3 4.2a5.4 5.4 0 0 1 0 7.6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />{/if}
+          {#if volume === 0}<path d="M10.5 6.2l3.4 3.6M13.9 6.2l-3.4 3.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />{/if}
+        </svg>
+      </button>
+    </div>
   </div>
 {/if}
 
@@ -260,6 +291,30 @@
   @media (max-width: 720px), (pointer: coarse) {
     .music { backdrop-filter: none; -webkit-backdrop-filter: none; background: color-mix(in oklch, var(--surface) 82%, transparent); }
   }
+  .vol { position: absolute; right: 0.5rem; bottom: 0.5rem; z-index: 2; }
+  .volbtn {
+    width: 1.75rem; height: 1.75rem; border-radius: 50%; display: grid; place-items: center; padding: 0;
+    border: 0; background: none; color: var(--dim); cursor: pointer; transition: color 0.15s ease;
+  }
+  .volbtn:hover, .vol.open .volbtn { color: var(--a); }
+  /* A narrow upright pill above the speaker, holding a slider turned on end. */
+  .pop {
+    position: absolute; left: 50%; bottom: calc(100% + 0.25rem); width: 1.75rem; height: 6rem;
+    border: 1px solid var(--line); border-radius: 999px; background: color-mix(in oklch, var(--surface) 94%, transparent);
+    box-shadow: 0 6px 18px rgb(0 0 0 / 0.25);
+    opacity: 0; pointer-events: none; transform: translate(-50%, 6px) scale(0.92); transform-origin: bottom center;
+    transition: opacity 0.16s ease, transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1);
+  }
+  .vol.open .pop, .vol:focus-within .pop { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
+  .pop input {
+    -webkit-appearance: none; appearance: none; position: absolute; left: 50%; top: 50%;
+    width: 4.75rem; height: 4px; margin: 0; border-radius: 2px; transform: translate(-50%, -50%) rotate(-90deg);
+    background: linear-gradient(to right, var(--a) var(--v), var(--line) var(--v)); cursor: pointer; touch-action: none;
+  }
+  .pop input::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--a); border: 0;
+  }
+  .pop input::-moz-range-thumb { width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--a); border: 0; }
   .ythost { position: fixed; left: -10000px; top: 0; width: 200px; height: 200px; opacity: 0; pointer-events: none; }
   .title {
     max-width: 100%; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 0.4375rem;

@@ -53,6 +53,7 @@
     blankTracker, newId, trackerRows, withClasses, withTrackerRows, withoutTrackers, type TrackerRow
   } from '$lib/sheet/edits';
   import { slotsByLevel, spellAttack, spellDc } from '$lib/rules/casting';
+  import { featureUrl } from '$lib/rules/lookup';
   import {
     characterLevel,
     classLine,
@@ -71,6 +72,8 @@
   import { ordinal, spellGroup, spellLevel, spellRank } from '$lib/rules/spells';
   import { spellDamage } from '$lib/rules/spellroll';
   import CastPicker from '$lib/components/CastPicker.svelte';
+  import CampaignDialog from '$lib/components/CampaignDialog.svelte';
+  import { campaignRepo, type Campaign } from '$lib/data/campaigns';
   import { slotLevel } from '$lib/rules/print';
   import { themeStyle } from '$lib/theme';
   import { bump, glow, sparkle } from '$lib/motion';
@@ -266,6 +269,28 @@
 
   /** A spell's Roll, pressed: the cast dialog opens (slot, attack, damage). */
   let casting = $state<Spell | null>(null);
+  /** The campaign the sheet is in, read by its id; null when in none. */
+  let campaign = $state<Campaign | null>(null);
+  let campaignOpen = $state(false);
+  const campaignId = $derived(sheet?.campaign_id ?? null);
+  const campaignIsMine = $derived(Boolean(campaign && $session.user && campaign.created_by === $session.user.id));
+  $effect(() => {
+    const id = campaignId;
+    if (!id) {
+      campaign = null;
+      return;
+    }
+    let gone = false;
+    campaignRepo.get(id).then((c) => { if (!gone) campaign = c; }).catch(() => {});
+    return () => { gone = true; };
+  });
+  /** Leaving a campaign or retiring: the sheet's own row, with its stamp kept current. */
+  async function saveRow(patch: { campaign_id?: null; retired?: boolean }) {
+    const current = $sheetStore.sheet;
+    if (!current) return;
+    const stamp = await sheetRepo.saveRow(current.id, patch, current.updated_at);
+    sheetStore.adoptRow({ ...patch, updated_at: stamp });
+  }
   /** A colour being dragged to in the theme picker, shown before it is kept. */
   let themePreview = $state<string | null>(null);
   function rollSpell(_key: string, spell: Spell) {
@@ -443,6 +468,12 @@
 
 <svelte:window onkeydown={onkey} />
 
+{#snippet flag()}
+  <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true">
+    <path d="M3 14V2.5M3 3h8.5l-1.8 2.8L11.5 8.5H3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" />
+  </svg>
+{/snippet}
+
 {#snippet writing(key: TextKey, label: string)}
   {#if definition}
     <TextPanel
@@ -516,18 +547,23 @@
 
       <div class="who">
         <!-- The campaign, small above the name, as a book's series sits above
-             its title. While reading it is there only when written. -->
-        {#if editable || definition.identity.campaign?.trim()}
+             its title: a link to its page once the sheet is in one. While
+             editing it opens the campaign dialog (join, start, leave, retire). -->
+        {#if editable}
+          <button class="campaign pick" data-flip="identity:campaign-at" onclick={() => (campaignOpen = true)}
+                  title="Join, start or leave a campaign">
+            {@render flag()}
+            <span>{campaign?.name ?? definition.identity.campaign?.trim() ?? 'Add to a campaign'}</span>
+          </button>
+        {:else if campaign || definition.identity.campaign?.trim()}
           <div class="campaign" data-flip-ghost="identity:campaign" data-flip="identity:campaign-at">
-            <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true">
-              <path d="M3 14V2.5M3 3h8.5l-1.8 2.8L11.5 8.5H3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" />
-            </svg>
-            {#if editable}
-              <EditableField value={definition.identity.campaign ?? ''} {editable} label="Campaign"
-                             placeholder="Campaign" onchange={(v) => patchIdentity('campaign', String(v).trim())} />
+            {@render flag()}
+            {#if campaign}
+              <a href="{base}/c/{campaign.id}" title="Open the campaign">{campaign.name}</a>
             {:else}
               <span title="Campaign">{definition.identity.campaign?.trim()}</span>
             {/if}
+            {#if sheet.retired}<span class="retired">Retired</span>{/if}
           </div>
         {/if}
         <h1>
@@ -764,6 +800,7 @@
                            title: (f) => kindOf(f as Feature) }}
                 {editable}
                 category="feats"
+                linkOf={(f) => featureUrl(f as Feature, definition.identity, classes)}
                 emptyText="No features yet."
                 addLabel="Add feature"
                 blank={() => ({ title: '', body: '' }) as Feature}
@@ -993,6 +1030,16 @@
       <LeaveDialog onstay={() => (leaving = null)}
                    onleave={() => { const t = leaving; leaving = null; letGo = true; if (t) goto(t); }} />
     {/if}
+    {#if campaignOpen && isOwner}
+      <CampaignDialog sheetId={sheet.id} {campaign} isDm={campaignIsMine} retired={sheet.retired}
+                      suggestedName={definition.identity.campaign?.trim() ?? ''}
+                      themeCss={themeStyle(themePreview ?? definition.identity.theme)}
+                      beforeChange={() => sheetStore.retry()}
+                      onjoined={(id, stamp) => sheetStore.adoptRow({ campaign_id: id, ...(stamp ? { updated_at: stamp } : {}) })}
+                      onleave={() => saveRow({ campaign_id: null })}
+                      onretire={(on) => saveRow({ retired: on })}
+                      onclose={() => (campaignOpen = false)} />
+    {/if}
     <!-- Outside the tabs: a roll from it brings up the Combat tab, and the
          dialog stays over it until it is done with. -->
     {#if casting}
@@ -1131,10 +1178,19 @@
   }
   .campaign svg { flex: none; }
   .campaign > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .campaign :global(.field) { min-width: 0; }
-  .campaign :global(input) {
-    width: 12rem; max-width: 50vw; font-size: 0.75rem; letter-spacing: 0.06em; text-transform: none; font-weight: 500;
+  .campaign a { color: inherit; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .campaign a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .campaign .retired {
+    color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 0 0.4375rem;
+    font-size: 0.625rem; letter-spacing: 0.1em;
   }
+  /* In edit mode the label is a button that opens the campaign dialog. */
+  button.campaign {
+    font: inherit; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+    background: none; border: 1px dashed var(--a-edge); border-radius: 999px; padding: 0.125rem 0.625rem 0.125rem 0.5rem;
+    color: var(--a); cursor: pointer; transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+  button.campaign:hover { background: var(--a-wash); border-style: solid; }
   @keyframes campaignIn { from { opacity: 0; transform: translateY(4px); } }
   /* On a phone the name sits under the portrait, whose level badge hangs below it. */
   @media (max-width: 700px) { .campaign { margin-top: 0.5rem; } }

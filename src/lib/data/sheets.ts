@@ -185,6 +185,18 @@ export function makeSheetRepo(client: SupabaseClient) {
       return guardedUpdate(id, { state }, expectedUpdatedAt);
     },
 
+    /** Leaving a campaign (campaign_id null) or retiring: the owner's own update. */
+    saveRow(id: string, patch: { campaign_id?: null; retired?: boolean }, expectedUpdatedAt: string) {
+      return guardedUpdate(id, patch, expectedUpdatedAt);
+    },
+
+    /** The sheets in a campaign, for its page. */
+    async listCampaignSheets(campaignId: string): Promise<Sheet[]> {
+      const { data, error } = await client.from('sheets').select(COLUMNS).eq('campaign_id', campaignId);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Sheet[];
+    },
+
     /**
      * Permanent. Row-level security restricts this to the owner, so a refusal
      * arrives as a Postgres error and must reach the caller rather than being

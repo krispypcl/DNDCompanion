@@ -5,6 +5,7 @@
   import ModeToggle from '$lib/components/ModeToggle.svelte';
   import SoundToggle from '$lib/components/SoundToggle.svelte';
   import { sheetName, sheetRepo } from '$lib/data/sheets';
+  import { campaignMessage, campaignRepo, type Campaign } from '$lib/data/campaigns';
   import { MAX_BYTES, importSheet } from '$lib/exchange';
   import { pinnedOf, profileOf, savePinned, signIn } from '$lib/data/session';
   import { tick } from 'svelte';
@@ -50,6 +51,28 @@
   let deleting = $state<string | null>(null);
   let importing = $state(false);
   let picker = $state<HTMLInputElement>();
+  /** Campaign names by id, for the sheets' cards; and the campaigns run here. */
+  let campaignNames = $state(new Map<string, string>());
+  let running = $state<Campaign[]>([]);
+  let naming = $state(false);
+  let newCampaign = $state('');
+  let starting = $state(false);
+  async function startCampaign() {
+    if (!newCampaign.trim()) return;
+    starting = true;
+    error = null;
+    try {
+      const made = await campaignRepo.create(newCampaign.trim());
+      await goto(`${base}/c/${made.id}`);
+    } catch (e) {
+      error = campaignMessage(e, 'The campaign wouldn’t start! Try again in a moment.');
+    } finally {
+      starting = false;
+    }
+  }
+  /** The campaign a sheet's card names: its campaign's, or what was typed before campaigns. */
+  const campaignOf = (sheet: Sheet) =>
+    (sheet.campaign_id && campaignNames.get(sheet.campaign_id)) || sheet.definition?.identity?.campaign?.trim() || '';
   /** What the last import had to leave out, shown beside the new sheet. */
   let notice = $state<string | null>(null);
 
@@ -146,7 +169,12 @@
     listShown = false;
     sheetRepo
       .listMySheets(id)
-      .then((rows) => (sheets = rows))
+      .then((rows) => {
+        sheets = rows;
+        // The names of the campaigns they are in, and the ones this player runs.
+        campaignRepo.names(rows.map((r) => r.campaign_id ?? '')).then((m) => (campaignNames = m)).catch(() => {});
+        campaignRepo.mine(id).then((c) => (running = c)).catch(() => {});
+      })
       .catch((e) => (error = friendlyError(e, 'Your sheets wouldn’t load! Try again in a moment.')))
       .finally(() => (loading = false));
   });
@@ -251,8 +279,8 @@
 
 {#snippet card(sheet: Sheet)}
   <a href="{base}/s/{sheet.id}">
-    <strong>{sheet.definition?.identity?.name || sheet.name}{#if sheet.definition?.identity?.campaign?.trim()}
-      <span class="campaign">· {sheet.definition.identity.campaign.trim()}</span>{/if}</strong>
+    <strong>{sheet.definition?.identity?.name || sheet.name}{#if campaignOf(sheet)}
+      <span class="campaign">· {campaignOf(sheet)}</span>{/if}</strong>
     <span class="meta">
       {[sheet.definition?.identity?.subclass, sheet.definition?.identity?.class]
         .filter(Boolean)
@@ -397,6 +425,34 @@
         {/each}
       </ul>
     {/if}
+
+    <!-- The campaigns this player runs as DM, and starting a new one. -->
+    {#if listShown}
+      <div class="bar campaigns">
+        <h2>Campaigns you run</h2>
+        <div class="actions">
+          {#if !naming}<button class="ghost" onclick={() => (naming = true)}>New campaign</button>{/if}
+        </div>
+      </div>
+      {#if naming}
+        <div class="newcamp" in:rise>
+          <!-- svelte-ignore a11y_autofocus -->
+          <input bind:value={newCampaign} placeholder="Campaign name" aria-label="Campaign name" autofocus
+                 onkeydown={(e) => { if (e.key === 'Enter') startCampaign(); if (e.key === 'Escape') naming = false; }} />
+          <button onclick={startCampaign} disabled={starting || !newCampaign.trim()}>{starting ? 'Starting…' : 'Start'}</button>
+          <button class="ghost" onclick={() => (naming = false)}>Cancel</button>
+        </div>
+      {/if}
+      {#if running.length}
+        <ul class="camplist">
+          {#each running as c (c.id)}
+            <li><a href="{base}/c/{c.id}"><strong>{c.name}</strong><span class="meta">started {friendlyDate(c.created_at)}</span></a></li>
+          {/each}
+        </ul>
+      {:else if !naming}
+        <p class="dim">None yet. Start one to get an invite link for your players.</p>
+      {/if}
+    {/if}
   {/if}
 </main>
 {/if}
@@ -466,6 +522,14 @@
   .retired a { opacity: 0.6; }
   .meta { display: block; font-size: 0.8rem; color: var(--dim); margin-top: 0.15rem; }
   .campaign { font-weight: 400; color: var(--dim); margin-left: 0.25rem; }
+  .bar.campaigns { margin-top: 2.5rem; }
+  .newcamp { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
+  .newcamp input {
+    flex: 1; min-width: 0; font: inherit; padding: 0.5rem 0.75rem; border: 1px solid var(--line);
+    border-radius: var(--r-sm); background: var(--surface); color: var(--text);
+  }
+  .newcamp input:focus { outline: none; border-color: var(--a-edge); }
+  .camplist li { padding-left: 0.25rem; }
   .dates { color: var(--faint); }
   .me {
     display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; color: var(--text);
