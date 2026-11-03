@@ -52,6 +52,7 @@
     modifierOf,
     passiveScore,
     spellAttackBonus,
+    spellSaveDC,
     weightCarried
   } from '$lib/rules/derived';
   import { downloadText } from '$lib/download';
@@ -61,7 +62,7 @@
   import { exportFileName, exportSheet } from '$lib/exchange';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
   import { ordinal, spellGroup, spellLevel, spellRank } from '$lib/rules/spells';
-  import { spellDamage, spellHit } from '$lib/rules/spellroll';
+  import { spellDamage } from '$lib/rules/spellroll';
   import { trackerMax } from '$lib/rules/tracker';
   import CastPicker from '$lib/components/CastPicker.svelte';
   import { slotLevel } from '$lib/rules/print';
@@ -218,17 +219,10 @@
     { key: 'components', label: 'Components', short: 'Comp', width: '7%', placeholder: 'V, S, M' },
     { key: 'duration', label: 'Duration', short: 'Dur.', width: '9%', placeholder: '1 round' },
     { key: 'save', label: 'Save', width: '7%', placeholder: 'DEX 13' },
-    { key: 'hit', label: 'Hit', width: '6%', numeric: true, placeholder: 'spell',
-      canPress: (v: unknown) => spellHit(v, spellAtk) !== null, pressVerb: 'Roll',
-      // "spell" reads as the bonus it rolls.
-      show: (v: unknown) => {
-        const pool = spellHit(v, spellAtk);
-        return pool && !/\d/.test(String(v)) ? (pool.modifier < 0 ? `−${-pool.modifier}` : `+${pool.modifier}`) : String(v ?? '');
-      } },
-    { key: 'damage', label: 'Damage', width: '12%', numeric: true, placeholder: '8d6 +1d6/level',
-      canPress: (v: unknown) => spellDamage(v, null, null, 1) !== null, pressVerb: 'Roll',
+    { key: 'damage', label: 'Roll', width: '12%', numeric: true, placeholder: '8d6 +1d6/level',
+      canPress: (v: unknown) => spellDamage(v, null, null, 1) !== null, pressVerb: 'Cast',
       show: (v: unknown) => String(v ?? '').replace(/\s*(?:\/|per)\s*(?:slot\s*)?(?:level|lvl|slot)s?\b/i, '/lvl') },
-    { key: 'notes', label: 'Notes', width: '12%', muted: true, wide: true, placeholder: '+5 AC' },
+    { key: 'notes', label: 'Notes', width: '18%', muted: true, wide: true, placeholder: '+5 AC' },
     { key: 'source', label: 'Source', short: 'Src', width: '7%', muted: true, placeholder: 'xphb' }
   ];
 
@@ -377,32 +371,30 @@
     return out;
   });
 
-  /** A leveled spell's damage, pressed: choose the slot it is cast with first. */
+  /** A spell's Roll, pressed: the cast dialog opens (slot, attack, damage). */
   let casting = $state<Spell | null>(null);
-  function rollSpell(key: string, spell: Spell) {
-    const name = spell.name || 'Spell';
-    if (key === 'hit') {
-      const pool = spellHit(spell.hit, spellAtk);
-      if (pool) toTray(pool, `${name} to hit`);
-      return;
-    }
-    const level = spellLevel(spell.level);
-    if (level !== null && level > 0) {
-      casting = spell;
-      return;
-    }
-    const pool = spellDamage(spell.damage, level, null, totalLevel);
-    if (pool) toTray(pool, level === 0 && totalLevel >= 5 ? `${name} (level ${totalLevel})` : name);
+  function rollSpell(_key: string, spell: Spell) {
+    casting = spell;
   }
-  function castAt(spell: Spell, at: number, spend: boolean) {
-    casting = null;
+  const spellDc = $derived(
+    definition
+      ? (definition.spellSaveDc ?? (definition.spellcastingAbility ? spellSaveDC(definition, definition.spellcastingAbility) : null))
+      : null
+  );
+  function castRoll(spell: Spell, kind: 'attack' | 'damage', at: number | null, spend: boolean) {
+    const name = spell.name || 'Spell';
     const level = spellLevel(spell.level);
-    if (spend) {
+    if (spend && at !== null) {
       const slot = slotsByLevel.get(at)?.trackers.find((t) => t.room > 0);
       if (slot && sheetState) setTracker(slot.id, (Number(sheetState.trackers?.[slot.id]) || 0) + 1);
     }
+    const upcast = level !== null && at !== null && at > level ? ` at ${ordinal(at)} level` : '';
+    if (kind === 'attack') {
+      if (spellAtk !== null) toTray({ dice: { 20: 1 }, modifier: spellAtk, mode: 'normal' }, `${name} attack`);
+      return;
+    }
     const pool = spellDamage(spell.damage, level, at, totalLevel);
-    if (pool) toTray(pool, level !== null && at > level ? `${spell.name || 'Spell'} at ${ordinal(at)} level` : spell.name || 'Spell');
+    if (pool) toTray(pool, level === 0 && totalLevel >= 5 ? `${name} (level ${totalLevel})` : `${name}${upcast}`);
   }
 
   /** A tracker with a die, spent, and the player said yes to rolling it. */
@@ -923,14 +915,17 @@
                   charges belong here as much as a cantrip does. Source is the book it is from, as
                   5e.tools writes it — <code>xphb</code>, <code>phb</code>, <code>tce</code> — and
                   sets where the name links to. <code>homebrew</code> marks an entry as yours and
-                  drops the link. Hit is <code>spell</code> for a spell attack. Damage is written
-                  like an attack's, with what each higher slot adds after it:
-                  <code>8d6 fire +1d6/level</code>. A cantrip's dice grow with your level by themselves.
+                  drops the link. <b>Roll</b> is the damage or healing dice: press it to cast, pick the
+                  slot, and roll the attack (for a spell with no Save) and the dice. For more dice
+                  at higher slots, add what each level adds: <code>8d6 +1d6/level</code>. A
+                  cantrip's dice grow with your level by themselves.
                 {/snippet}
               </EntryTable>
               {#if casting}
                 <CastPicker spell={casting} slots={slotsByLevel} themeCss={themeStyle(definition.identity.theme)}
-                            oncast={(at, spend) => castAt(casting!, at, spend)} oncancel={() => (casting = null)} />
+                            attack={spellAtk} saveDc={spellDc} characterLevel={totalLevel}
+                            onroll={(kind, at, spend) => castRoll(casting!, kind, at, spend)}
+                            oncancel={() => (casting = null)} />
               {/if}
             {:else if tab === 'Equipment'}
               <EntryTable
