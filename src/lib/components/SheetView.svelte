@@ -5,6 +5,7 @@
    * second is a real page on the host, so a link pasted into Discord or
    * Messenger is answered with a preview card rather than "not found".
    */
+  import { trackerUrl } from '$lib/rules/lookup';
   import { base } from '$app/paths';
   import AbilityBand from '$lib/components/AbilityBand.svelte';
   import ModeToggle from '$lib/components/ModeToggle.svelte';
@@ -240,7 +241,7 @@
   const TRACKER_COLUMNS = [
     { key: 'label', label: 'Label', width: '15%', placeholder: 'Second Wind' },
     { key: 'max', label: 'Max', width: '12%', placeholder: '1 or classlevel' },
-    { key: 'cls', label: 'Class', width: '12%', placeholder: 'Fighter' },
+    { key: 'cls', label: 'From', width: '12%', placeholder: 'Fighter, Lucky' },
     { key: 'die', label: 'Die', width: '6%', placeholder: 'd10' },
     { key: 'type', label: 'Shape', width: '10%', options: ['pips', 'gauge'] as const },
     { key: 'direction', label: 'Direction', short: 'Dir.', width: '10%', options: ['spend', 'accrue'] as const },
@@ -535,6 +536,7 @@
     source: string;
     /** The class whose level `classlevel` means for this tracker. */
     cls: string;
+    lookupUrl?: string;
   };
 
   const numeric = (v: string) => /^-?\d+$/.test(v.trim());
@@ -552,7 +554,9 @@
       resetAmount: String(t.reset?.amount ?? 'full'),
       group: t.group ?? '',
       source: t.source ?? '',
-      cls: t.class ?? ''
+      cls: t.class ?? '',
+      // Shown as its link; never saved (saveTrackers takes the shown fields).
+      lookupUrl: trackerUrl(t, classes) ?? undefined
     }))
   );
 
@@ -994,8 +998,10 @@
                   <code>prof + 1</code>, <code>classlevel / 2</code>, <code>classlevel * 5</code>.
                   <code>at(1, 2, 3, 3)</code> is 2 from 1st level and 3 from 3rd;
                   <code>full(1)</code>, <code>half(1)</code>, <code>third(1)</code> and
-                  <code>pact()</code> are spell slots. Name the class on a feature that scales
-                  with it, or multiclassing will inflate it.
+                  <code>pact()</code> are spell slots. <b>From</b> is the class, feat or species
+                  it comes from: a class makes <code>classlevel</code> that class's level (so
+                  multiclassing doesn't inflate it) and links to the feature on 5e.tools; a feat
+                  or species links to that.
                 {/snippet}
               </EntryTable>
               {#if editable}
@@ -1052,6 +1058,7 @@
               {refilling}
               onchange={setTracker}
               onroll={isOwner ? rollTracker : undefined}
+              {classes}
             />
           </div>
         {/if}

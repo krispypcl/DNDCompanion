@@ -13,8 +13,11 @@ import { ordinal } from './spells';
 export type Preset = {
   id: string;
   label: string;
-  /** The class it belongs to; its trackers are scoped to that class's level. */
+  /** The class it belongs to (its trackers are scoped to that class's
+      level), or the feat or species it comes from. */
   className: string;
+  /** Not a class: a feat or species, listed apart and counting total level. */
+  kind?: 'feat' | 'species';
   /** One line on what it adds. */
   blurb: string;
   build: (classLevel: number) => Omit<Tracker, 'id'>[];
@@ -138,17 +141,17 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'focus',
-    label: 'Focus Points (Ki)',
+    label: "Monk's Focus (Focus Points)",
     className: 'Monk',
     blurb: 'Monk level, from 2nd; short rest',
-    build: () => [resource('Focus Points', 'Monk', 'min(classlevel, at(2, 20))', 'short')]
+    build: () => [resource("Monk's Focus", 'Monk', 'min(classlevel, at(2, 20))', 'short')]
   },
   {
     id: 'sorcery',
-    label: 'Sorcery Points',
+    label: 'Font of Magic (Sorcery Points)',
     className: 'Sorcerer',
     blurb: 'Sorcerer level, from 2nd; long rest',
-    build: () => [resource('Sorcery Points', 'Sorcerer', 'min(classlevel, at(2, 20))', 'long', { type: 'gauge' })]
+    build: () => [resource('Font of Magic', 'Sorcerer', 'min(classlevel, at(2, 20))', 'long', { type: 'gauge' })]
   },
   {
     id: 'second-wind',
@@ -168,10 +171,10 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'superiority',
-    label: 'Superiority Dice',
+    label: 'Combat Superiority (Battle Master)',
     className: 'Fighter',
     blurb: 'Battle Master: 4 to 6; short rest',
-    build: (lvl) => [resource('Superiority Dice', 'Fighter', 'at(3, 4, 7, 5, 15, 6)', 'short', {
+    build: (lvl) => [resource('Combat Superiority', 'Fighter', 'at(3, 4, 7, 5, 15, 6)', 'short', {
       die: dieAt(lvl, [[1, 'd8'], [10, 'd10'], [18, 'd12']])
     })]
   },
@@ -180,7 +183,7 @@ export const PRESETS: Preset[] = [
     label: "Favored Enemy (Hunter's Mark)",
     className: 'Ranger',
     blurb: 'Free castings: 2 to 6 by level; long rest',
-    build: () => [resource("Hunter's Mark", 'Ranger', 'at(1, 2, 5, 3, 9, 4, 13, 5, 17, 6)', 'long')]
+    build: () => [resource('Favored Enemy', 'Ranger', 'at(1, 2, 5, 3, 9, 4, 13, 5, 17, 6)', 'long')]
   },
   {
     id: 'arcane-recovery',
@@ -188,6 +191,49 @@ export const PRESETS: Preset[] = [
     className: 'Wizard',
     blurb: 'Once a day, after a short rest',
     build: () => [resource('Arcane Recovery', 'Wizard', '1', 'long')]
+  },
+  // Feats and species: their uses count the character's total level.
+  {
+    id: 'lucky',
+    label: 'Lucky',
+    className: 'Lucky',
+    kind: 'feat',
+    blurb: 'Luck Points: proficiency bonus; long rest',
+    build: () => [resource('Luck Points', 'Lucky', 'prof', 'long')]
+  },
+  {
+    id: 'breath-weapon',
+    label: 'Breath Weapon',
+    className: 'Dragonborn',
+    kind: 'species',
+    blurb: 'Dragonborn: proficiency bonus; long rest',
+    build: (lvl) => [resource('Breath Weapon', 'Dragonborn', 'prof', 'long', {
+      die: dieAt(lvl, [[1, '1d10'], [5, '2d10'], [11, '3d10'], [17, '4d10']])
+    })]
+  },
+  {
+    id: 'healing-hands',
+    label: 'Healing Hands',
+    className: 'Aasimar',
+    kind: 'species',
+    blurb: 'Aasimar: once; long rest',
+    build: () => [resource('Healing Hands', 'Aasimar', '1', 'long')]
+  },
+  {
+    id: 'giant-ancestry',
+    label: 'Giant Ancestry',
+    className: 'Goliath',
+    kind: 'species',
+    blurb: 'Goliath: proficiency bonus; long rest',
+    build: () => [resource('Giant Ancestry', 'Goliath', 'prof', 'long')]
+  },
+  {
+    id: 'adrenaline-rush',
+    label: 'Adrenaline Rush',
+    className: 'Orc',
+    kind: 'species',
+    blurb: 'Orc: proficiency bonus; short rest',
+    build: () => [resource('Adrenaline Rush', 'Orc', 'prof', 'short')]
   }
 ];
 
@@ -195,11 +241,12 @@ export const PRESETS: Preset[] = [
  * Presets for the classes the character has first, then the rest. A preset is
  * "theirs" when its class is one they have levels in.
  */
-export function presetsFor(classNames: string[]): { yours: Preset[]; others: Preset[] } {
+export function presetsFor(classNames: string[]): { yours: Preset[]; others: Preset[]; extras: Preset[] } {
   const have = new Set(classNames.map((c) => c.trim().toLowerCase()).filter(Boolean));
-  const yours = PRESETS.filter((p) => have.has(p.className.toLowerCase()));
-  const others = PRESETS.filter((p) => !have.has(p.className.toLowerCase()));
-  return { yours, others };
+  const classed = PRESETS.filter((p) => !p.kind);
+  const yours = classed.filter((p) => have.has(p.className.toLowerCase()));
+  const others = classed.filter((p) => !have.has(p.className.toLowerCase()));
+  return { yours, others, extras: PRESETS.filter((p) => p.kind) };
 }
 
 /** The trackers a preset adds, ready to append, with fresh ids. */

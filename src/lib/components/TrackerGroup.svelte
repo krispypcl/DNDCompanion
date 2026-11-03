@@ -12,8 +12,10 @@
     editable,
     refilling = false,
     onchange,
-    onroll
+    onroll,
+    classes = []
   }: {
+    classes?: { name: string; source?: string }[];
     trackers: TrackerT[];
     spent: Record<string, number>;
     ctx: FormulaContext;
@@ -69,6 +71,7 @@
             stagger={trackers.findIndex((x) => x.id === t.id)}
             onchange={(v) => onchange(t.id, v)}
             onroll={onroll ? () => onroll(t) : undefined}
+            {classes}
           />
         {/each}
       </div>
@@ -84,6 +87,7 @@
         stagger={trackers.findIndex((x) => x.id === t.id)}
         onchange={(v) => onchange(t.id, v)}
         onroll={onroll ? () => onroll(t) : undefined}
+            {classes}
       />
     {/each}
   {/if}

@@ -1,5 +1,6 @@
 <script lang="ts">
   import EntryLink from './EntryLink.svelte';
+  import { trackerUrl } from '$lib/rules/lookup';
   import { clampSpent, trackerMax } from '$lib/rules/tracker';
   import { FormulaError } from '$lib/rules/formula';
   import type { FormulaContext } from '$lib/rules/formula';
@@ -15,8 +16,11 @@
     refilling = false,
     stagger = 0,
     onchange,
-    onroll
+    onroll,
+    classes = []
   }: {
+    /** The character's classes, for the link to a class feature. */
+    classes?: { name: string; source?: string }[];
     tracker: Tracker;
     spent: number;
     ctx: FormulaContext;
@@ -148,7 +152,7 @@
         name={tracker.label}
         source={tracker.source}
         category="any"
-        override={undefined}
+        override={trackerUrl(tracker, classes) ?? undefined}
       />
     </span>
     <span class="count">{remaining}<span class="of">/{max}</span></span>
