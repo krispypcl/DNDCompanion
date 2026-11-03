@@ -3,6 +3,13 @@
   import { base } from '$app/paths';
   import AuthForm from '$lib/components/AuthForm.svelte';
   import { signIn } from '$lib/data/session';
+  import { page } from '$app/state';
+
+  /** Where to go after: back to the page that sent here (an invite), if it is ours. */
+  function next(): string {
+    const to = page.url.searchParams.get('next') ?? '';
+    return to.startsWith('/') && !to.startsWith('//') ? `${base}${to}` : `${base}/`;
+  }
 </script>
 
 <AuthForm
@@ -14,7 +21,7 @@
   ]}
   onsubmit={async (v) => {
     await signIn(v.email, v.password);
-    await goto(`${base}/`);
+    await goto(next());
   }}
 >
   <a href="{base}/signup">Create an account</a>
