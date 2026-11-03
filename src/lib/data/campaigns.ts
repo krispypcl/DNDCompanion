@@ -8,9 +8,18 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '$lib/supabase';
 import { friendlyError } from '$lib/errors';
 
-export type Campaign = { id: string; name: string; created_by: string; created_at: string };
+export type Campaign = { id: string; name: string; created_by: string; created_at: string; archived: boolean };
 
 const COLUMNS = 'id, name, created_by, created_at';
+
+/**
+ * Whether the database has the archived column yet (migration 0005). Until
+ * it does, every campaign reads as open and ending one says so.
+ * TODO: drop this fallback once 0005 has been run.
+ */
+let archiveMissing = false;
+const missingArchive = (error: { message?: string } | null) => Boolean(error && /archived/i.test(error.message ?? ''));
+const asCampaign = (row: Omit<Campaign, 'archived'> & { archived?: boolean }): Campaign => ({ ...row, archived: Boolean(row.archived) });
 
 /** A refusal already worded for the player, shown as it is. */
 export class CampaignError extends Error {
@@ -28,6 +37,7 @@ export function campaignMessage(error: unknown, fallback: string): string {
 /** The friendly words for what the database said no to. */
 function refusal(error: { code?: string; message?: string }): Error {
   const m = error.message ?? '';
+  if (/campaign has ended/i.test(m)) return new CampaignError('That campaign’s story is already told! Ask your DM if it’s coming back.');
   if (/no campaign has that invite/i.test(m)) return new CampaignError('That invite doesn’t open any door! Check the link, or ask your DM for a fresh one.');
   if (/not yours/i.test(m)) return new CampaignError('That sheet isn’t yours to bring along!');
   if (/needs a name/i.test(m)) return new CampaignError('Every campaign needs a name, even a working title!');
@@ -43,11 +53,21 @@ export function inviteCode(text: string): string {
 }
 
 export function makeCampaignRepo(client: SupabaseClient) {
+  /** Campaign rows, with archived when the database has it. */
+  async function rows<T>(run: (columns: string) => PromiseLike<{ data: T; error: { message?: string } | null }>): Promise<T> {
+    let result = await run(archiveMissing ? COLUMNS : `${COLUMNS}, archived`);
+    if (!archiveMissing && missingArchive(result.error)) {
+      archiveMissing = true;
+      result = await run(COLUMNS);
+    }
+    if (result.error) throw new Error(result.error.message);
+    return result.data;
+  }
+
   return {
     async get(id: string): Promise<Campaign | null> {
-      const { data, error } = await client.from('campaigns').select(COLUMNS).eq('id', id).maybeSingle();
-      if (error) throw new Error(error.message);
-      return (data as Campaign | null) ?? null;
+      const row = await rows((c) => client.from('campaigns').select(c).eq('id', id).maybeSingle());
+      return row ? asCampaign(row as unknown as Campaign) : null;
     },
 
     /** Names for the campaigns a list of sheets is in. */
@@ -61,10 +81,9 @@ export function makeCampaignRepo(client: SupabaseClient) {
 
     /** The campaigns this player runs. */
     async mine(userId: string): Promise<Campaign[]> {
-      const { data, error } = await client.from('campaigns').select(COLUMNS).eq('created_by', userId)
-        .order('created_at', { ascending: true });
-      if (error) throw new Error(error.message);
-      return (data ?? []) as Campaign[];
+      const data = await rows((c) => client.from('campaigns').select(c).eq('created_by', userId)
+        .order('created_at', { ascending: true }));
+      return ((data ?? []) as unknown as Campaign[]).map(asCampaign);
     },
 
     /** A new campaign run by the caller, with one of their sheets in it if given. */
@@ -111,6 +130,14 @@ export function makeCampaignRepo(client: SupabaseClient) {
     async rename(id: string, name: string): Promise<void> {
       const { error } = await client.from('campaigns').update({ name }).eq('id', id);
       if (error) throw new Error(error.message);
+    },
+
+    /** Ended (archived) or reopened; only its DM can. */
+    async archive(id: string, archived: boolean): Promise<void> {
+      const { data, error } = await client.from('campaigns').update({ archived }).eq('id', id).select('id');
+      if (missingArchive(error)) throw new CampaignError('Ending campaigns isn’t set up yet! Run the 0005 migration and try again.');
+      if (error) throw new Error(error.message);
+      if (!data?.length) throw new CampaignError('Only the DM can do that!');
     },
 
     /** Gone for good; its sheets stay, out of any campaign. */

@@ -16,7 +16,11 @@
   import D20Loader from '$lib/components/D20Loader.svelte';
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
-  import { prefersReducedMotion } from '$lib/motion';
+  import { prefersReducedMotion, rise } from '$lib/motion';
+  import { blankDefinition, blankState } from '$lib/sample';
+  import { session } from '$lib/stores/session';
+  import { isConfigured } from '$lib/supabase';
+  import type { Sheet } from '$lib/types';
 
   /** A deleted sheet folds away: fades, slides aside and closes its gap. */
   function fold(node: Element) {
@@ -28,11 +32,6 @@
         `opacity: ${t}; transform: translateX(${-12 * u}px); height: ${t * h}px; overflow: hidden;`
     };
   }
-  import { blankDefinition, blankState } from '$lib/sample';
-  import { session } from '$lib/stores/session';
-  import { isConfigured } from '$lib/supabase';
-  import { rise } from '$lib/motion';
-  import type { Sheet } from '$lib/types';
 
   /** Which of the three faces of this page is showing; signing in or out
       swaps one for another, and the swap is worth animating. */
@@ -70,6 +69,8 @@
       starting = false;
     }
   }
+  /** What a sheet's card is called: its character's name, or the sheet's. */
+  const nameOf = (sheet: Sheet) => sheet.definition?.identity?.name || sheet.name;
   /** The campaign a sheet's card names: its campaign's, or what was typed before campaigns. */
   const campaignOf = (sheet: Sheet) =>
     (sheet.campaign_id && campaignNames.get(sheet.campaign_id)) || sheet.definition?.identity?.campaign?.trim() || '';
@@ -79,7 +80,8 @@
   /**
    * Pinned sheets and campaigns sit on top in the player's own order (pinned
    * sheets cannot be deleted until unpinned). The rest follow: sheets most
-   * recently updated first, campaigns oldest first.
+   * recently updated first, campaigns oldest first. Retired sheets and ended
+   * campaigns go last, in a group of their own, pinned or not.
    */
   type Kind = 'sheets' | 'campaigns';
   let pinned = $state<string[]>([]);
@@ -89,15 +91,16 @@
     pinnedCamps = pinnedCampaignsOf($session.user);
   });
   const byId = $derived(new Map(sheets.map((s) => [s.id, s])));
-  const pinnedSheets = $derived(pinned.map((id) => byId.get(id)).filter((s): s is Sheet => Boolean(s)));
-  const otherSheets = $derived(
-    sheets
-      .filter((s) => !pinned.includes(s.id))
-      .sort((a, b) => (b.updated_at ?? '').localeCompare(a.updated_at ?? ''))
-  );
+  const pinnedSheets = $derived(pinned.map((id) => byId.get(id)).filter((s): s is Sheet => Boolean(s && !s.retired)));
+  const byRecent = (a: Sheet, b: Sheet) => (b.updated_at ?? '').localeCompare(a.updated_at ?? '');
+  const otherSheets = $derived(sheets.filter((s) => !s.retired && !pinned.includes(s.id)).sort(byRecent));
+  const retiredSheets = $derived(sheets.filter((s) => s.retired).sort(byRecent));
   const campById = $derived(new Map(running.map((c) => [c.id, c])));
-  const pinnedCampaigns = $derived(pinnedCamps.map((id) => campById.get(id)).filter((c): c is Campaign => Boolean(c)));
-  const otherCampaigns = $derived(running.filter((c) => !pinnedCamps.includes(c.id)));
+  const pinnedCampaigns = $derived(
+    pinnedCamps.map((id) => campById.get(id)).filter((c): c is Campaign => Boolean(c && !c.archived))
+  );
+  const otherCampaigns = $derived(running.filter((c) => !c.archived && !pinnedCamps.includes(c.id)));
+  const endedCampaigns = $derived(running.filter((c) => c.archived));
 
   async function setPinned(next: string[], kind: Kind = 'sheets') {
     const previous = kind === 'sheets' ? pinned : pinnedCamps;
@@ -290,7 +293,7 @@
 {/snippet}
 
 {#snippet pin(sheet: Sheet, on: boolean)}
-  {@render star(sheet.id, sheet.definition?.identity?.name || sheet.name, on, 'sheets')}
+  {@render star(sheet.id, nameOf(sheet), on, 'sheets')}
 {/snippet}
 
 {#snippet grip(id: string, name: string, count: number, kind: Kind)}
@@ -307,24 +310,41 @@
 {/snippet}
 
 {#snippet campcard(c: Campaign)}
-  <a href="{base}/c/{c.id}"><strong>{c.name}</strong><span class="meta">started {friendlyDate(c.created_at)}</span></a>
+  <a href="{base}/c/{c.id}"><strong>{c.name}</strong><span class="meta">started {friendlyDate(c.created_at)}{#if c.archived}{' '}· ended{/if}</span></a>
 {/snippet}
 
 {#snippet card(sheet: Sheet)}
   <a href="{base}/s/{sheet.id}">
-    <strong>{sheet.definition?.identity?.name || sheet.name}{#if campaignOf(sheet)}
+    <strong>{nameOf(sheet)}{#if campaignOf(sheet)}
       <span class="campaign">· {campaignOf(sheet)}</span>{/if}</strong>
     <span class="meta">
       {[sheet.definition?.identity?.subclass, sheet.definition?.identity?.class]
         .filter(Boolean)
         .join(' ') || 'No class'}
       {#if sheet.definition?.identity?.level}· level {sheet.definition.identity.level}{/if}
-      {#if sheet.retired}· retired{/if}
       <span class="dates">
         · created {friendlyDate(sheet.created_at)} · updated {friendlyDate(sheet.updated_at)}
       </span>
     </span>
   </a>
+{/snippet}
+
+{#snippet row(sheet: Sheet)}
+  <!-- A sheet that is not pinned: its star (none once retired), its card, and deleting it. -->
+  {#if !sheet.retired}{@render pin(sheet, false)}{/if}
+  {@render card(sheet)}
+  {#if confirming === sheet.id}
+    <div class="confirm" role="group" aria-label="Confirm deleting {nameOf(sheet)}">
+      <span>Delete for good?</span>
+      <button class="danger" disabled={deleting === sheet.id} onclick={() => remove(sheet.id)}>
+        {deleting === sheet.id ? 'Deleting…' : 'Delete'}
+      </button>
+      <button class="ghost" onclick={() => (confirming = null)}>Keep</button>
+    </div>
+  {:else}
+    <button class="trash" aria-label="Delete {nameOf(sheet)}"
+            onclick={() => (confirming = sheet.id)}>×</button>
+  {/if}
 {/snippet}
 
 <svelte:head><title>DND Companion</title></svelte:head>
@@ -406,48 +426,32 @@
     {:else}
       {#if pinnedSheets.length}
         <h3 class="group">Pinned</h3>
-        <ul class="pinned" class:dragging={drag?.kind === "sheets"} class:landing>
+        <ul class="pinned" class:dragging={drag?.kind === 'sheets'} class:landing>
           {#each pinnedSheets as sheet (sheet.id)}
-            <li bind:this={rowEls[sheet.id]} class:retired={sheet.retired} class:lifted={drag?.id === sheet.id}
+            <li bind:this={rowEls[sheet.id]} class:lifted={drag?.id === sheet.id}
                 style:transform={drag ? `translateY(${shift(sheet.id)}px)` : undefined}
                 animate:flip={{ duration: drag || landing ? 0 : 260, easing: cubicOut }} out:fold>
               {@render pin(sheet, true)}
               {@render card(sheet)}
-              {@render grip(sheet.id, sheet.definition?.identity?.name || sheet.name, pinnedSheets.length, 'sheets')}
+              {@render grip(sheet.id, nameOf(sheet), pinnedSheets.length, 'sheets')}
             </li>
           {/each}
         </ul>
-        {#if otherSheets.length}<h3 class="group">Everything else</h3>{/if}
       {/if}
+      {#if otherSheets.length && (pinnedSheets.length || retiredSheets.length)}<h3 class="group">Everything else</h3>{/if}
       <ul>
         {#each otherSheets as sheet (sheet.id)}
-          <li class:retired={sheet.retired} animate:flip={{ duration: 260, easing: cubicOut }} out:fold>
-            {@render pin(sheet, false)}
-            {@render card(sheet)}
-            {#if confirming === sheet.id}
-              <div class="confirm" role="group" aria-label="Confirm deleting {sheet.definition?.identity?.name || sheet.name}">
-                <span>Delete for good?</span>
-                <button
-                  class="danger"
-                  disabled={deleting === sheet.id}
-                  onclick={() => remove(sheet.id)}
-                >
-                  {deleting === sheet.id ? 'Deleting…' : 'Delete'}
-                </button>
-                <button class="ghost" onclick={() => (confirming = null)}>Keep</button>
-              </div>
-            {:else}
-              <button
-                class="trash"
-                aria-label="Delete {sheet.definition?.identity?.name || sheet.name}"
-                onclick={() => (confirming = sheet.id)}
-              >
-                ×
-              </button>
-            {/if}
-          </li>
+          <li animate:flip={{ duration: 260, easing: cubicOut }} out:fold>{@render row(sheet)}</li>
         {/each}
       </ul>
+      {#if retiredSheets.length}
+        <h3 class="group">Retired</h3>
+        <ul>
+          {#each retiredSheets as sheet (sheet.id)}
+            <li class="retired" animate:flip={{ duration: 260, easing: cubicOut }} out:fold>{@render row(sheet)}</li>
+          {/each}
+        </ul>
+      {/if}
     {/if}
 
     <!-- The campaigns this player runs as DM, and starting a new one. -->
@@ -481,8 +485,8 @@
               </li>
             {/each}
           </ul>
-          {#if otherCampaigns.length}<h3 class="group">Everything else</h3>{/if}
         {/if}
+        {#if otherCampaigns.length && (pinnedCampaigns.length || endedCampaigns.length)}<h3 class="group">Everything else</h3>{/if}
         <ul>
           {#each otherCampaigns as c (c.id)}
             <li animate:flip={{ duration: 260, easing: cubicOut }}>
@@ -491,6 +495,14 @@
             </li>
           {/each}
         </ul>
+        {#if endedCampaigns.length}
+          <h3 class="group">Archived</h3>
+          <ul>
+            {#each endedCampaigns as c (c.id)}
+              <li class="retired" animate:flip={{ duration: 260, easing: cubicOut }}>{@render campcard(c)}</li>
+            {/each}
+          </ul>
+        {/if}
       {:else if !naming}
         <p class="dim">None yet. Start one to get an invite link for your players.</p>
       {/if}
@@ -561,7 +573,7 @@
   .confirm span { color: var(--dim); }
   .danger { border-color: var(--bad); color: var(--bad); padding: 0.25rem 0.6rem; font-size: 0.82rem; }
   .danger:hover:not(:disabled) { background: var(--bad); color: var(--bg); border-color: var(--bad); }
-  .retired a { opacity: 0.6; }
+  .retired a { opacity: 0.6; padding-left: 0.9rem; }
   .meta { display: block; font-size: 0.8rem; color: var(--dim); margin-top: 0.15rem; }
   .campaign { font-weight: 400; color: var(--dim); margin-left: 0.25rem; }
   .bar.campaigns { margin-top: 2.5rem; }
