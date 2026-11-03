@@ -25,7 +25,7 @@ import BREW_SOURCES from '$lib/data/brew-sources.json';
 import SUBCLASS_SHORT from '$lib/data/subclass-short.json';
 import CLASS_FEATURES from '$lib/data/class-features.json';
 
-export const LOOKUP_BASE = 'https://5e.tools';
+const LOOKUP_BASE = 'https://5e.tools';
 
 /**
  * The source as 5e.tools' links spell it. 5e.tools shows a homebrew book by
@@ -134,7 +134,7 @@ export function lookupName(name: string, category: LookupCategory = 'any'): stri
 }
 
 /** "Path of the Berserker" is "Berserker" in a 5e.tools link. */
-export function subclassShortName(name: string): string {
+function subclassShortName(name: string): string {
   const key = name.trim().toLowerCase();
   return (SUBCLASS_SHORT as Record<string, string>)[key] ?? key;
 }

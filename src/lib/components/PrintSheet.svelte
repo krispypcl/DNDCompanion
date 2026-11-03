@@ -8,6 +8,9 @@
    * prints it too, not only the Print button. Writing the reader may not see
    * is never passed in, so a visitor's print leaves private text out.
    */
+  import { spellAttack, spellDc } from '$lib/rules/casting';
+  import { signed as sign } from '$lib/actions';
+  import { portal } from '$lib/actions';
   import { ABILITIES, SKILLS, type Ability, type Definition, type SkillName, type State } from '$lib/types';
   import {
     characterLevel,
@@ -16,8 +19,6 @@
     passiveScore,
     saveBonus,
     skillTotal,
-    spellAttackBonus,
-    spellSaveDC,
     weightCarried
   } from '$lib/rules/derived';
   import { countedForPrint, spellBlocks, MAX_BOXES } from '$lib/rules/print';
@@ -42,7 +43,6 @@
     performance: 'Performance', persuasion: 'Persuasion', religion: 'Religion',
     sleightOfHand: 'Sleight of Hand', stealth: 'Stealth', survival: 'Survival'
   };
-  const sign = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
   const id = $derived(def.identity);
   const classes = $derived(classList(def));
   const classAndLevel = $derived(
@@ -54,8 +54,8 @@
   const counted = $derived(countedForPrint(def, state));
   const blocks = $derived(spellBlocks(def, counted.slots));
   const casting = $derived(def.spellcastingAbility);
-  const saveDc = $derived(def.spellSaveDc ?? (casting ? spellSaveDC(def, casting) : null));
-  const spellAtk = $derived(def.spellAttackBonus ?? (casting ? spellAttackBonus(def, casting) : null));
+  const saveDc = $derived(spellDc(def));
+  const spellAtk = $derived(spellAttack(def));
   const hasSpellPage = $derived(blocks.length > 0 || Boolean(casting));
   const portrait = $derived(resolveImageUrl(id.portraitUrl).url);
   const t = $derived(def.traits ?? {});
@@ -63,10 +63,6 @@
   const hitDiceLeft = $derived(state.hitDiceUsed ? `${state.hitDiceUsed} spent` : '');
   const COINS = ['cp', 'sp', 'ep', 'gp', 'pp'] as const;
 
-  function portal(node: HTMLElement) {
-    document.body.appendChild(node);
-    return { destroy: () => node.remove() };
-  }
 </script>
 
 {#snippet bubble(on: boolean, double = false)}

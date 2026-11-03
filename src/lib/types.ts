@@ -87,9 +87,6 @@ export type Spell = LinkableEntry & {
   duration?: string;
   notes?: string;
   prepared?: boolean;
-  /** "spell" for a spell attack (the tray adds the spell attack bonus), or a
-      bonus written out. */
-  hit?: string;
   /** Its damage or healing roll; "+1d6/level" after it is what each slot
       level above its own adds. See rules/spellroll.ts. */
   damage?: string;
@@ -146,7 +143,7 @@ export type Definition = {
     /** The campaign the character plays in, shown beside the name. Free text
         until campaigns are their own records. */
     campaign?: string;
-    /** A YouTube (or YouTube Music) or Spotify playlist that plays on the sheet. */
+    /** A YouTube (or YouTube Music) playlist or video that plays on the sheet. */
     playlistUrl?: string;
     /** A theme name from src/lib/theme.ts; anything else falls back. */
     theme?: string;

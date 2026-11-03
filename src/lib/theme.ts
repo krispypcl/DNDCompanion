@@ -55,7 +55,7 @@ export function isHexColor(value: unknown): value is string {
 const srgbToLinear = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
 
 /** sRGB hex to OKLCH. Returns null for anything that is not a six-digit hex. */
-export function hexToOklch(hex: string): { l: number; c: number; h: number } | null {
+function hexToOklch(hex: string): { l: number; c: number; h: number } | null {
   if (!isHexColor(hex)) return null;
   const n = parseInt(hex.trim().replace('#', ''), 16);
   const r = srgbToLinear(((n >> 16) & 255) / 255);

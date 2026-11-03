@@ -66,7 +66,7 @@ export function conditionUrl(name: string): string | null {
  * Dead has one too. A condition written in by hand gets whatever its owner
  * chose for it, kept on the sheet in `conditionLooks`.
  */
-export const STANDARD_LOOKS: Record<string, ConditionLook> = {
+const STANDARD_LOOKS: Record<string, ConditionLook> = {
   blinded: { color: 'oklch(14% 0.005 286)', motion: 'heavy' },
   charmed: { color: 'oklch(68% 0.2 350)', motion: 'pulse' },
   deafened: { color: 'oklch(58% 0.06 245)', motion: 'still' },

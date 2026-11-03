@@ -6,6 +6,7 @@
    * attack roll, if the spell has no save, and the damage or healing roll.
    * The slot is spent once, by whichever is rolled first.
    */
+  import { portal } from '$lib/actions';
   import { onMount } from 'svelte';
   import { fade, scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
@@ -39,11 +40,6 @@
   } = $props();
 
   const still = prefersReducedMotion();
-  /** On the body: a frosted panel around it would otherwise frame it. */
-  function portal(node: HTMLElement) {
-    document.body.appendChild(node);
-    return { destroy: () => node.remove() };
-  }
 
   const base = $derived(spellLevel(spell.level));
   const leveled = $derived(base !== null && base > 0);

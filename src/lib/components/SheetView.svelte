@@ -5,7 +5,7 @@
    * second is a real page on the host, so a link pasted into Discord or
    * Messenger is answered with a preview card rather than "not found".
    */
-  import { trackerUrl } from '$lib/rules/lookup';
+  import { signed as sign } from '$lib/actions';
   import { base } from '$app/paths';
   import AbilityBand from '$lib/components/AbilityBand.svelte';
   import ModeToggle from '$lib/components/ModeToggle.svelte';
@@ -46,14 +46,20 @@
   import UndoToast from '$lib/components/UndoToast.svelte';
   import { sheetRepo } from '$lib/data/sheets';
   import {
+    ATTACK_COLUMNS, ATTUNE_SLOTS, CLASS_COLUMNS, FEATURE_COLUMNS, FEATURE_KINDS, ITEM_COLUMNS,
+    PASSIVES, SPELL_COLUMNS, TABS, TRACKER_COLUMNS, kindOf
+  } from '$lib/sheet/columns';
+  import {
+    blankTracker, newId, trackerRows, withClasses, withTrackerRows, withoutTrackers, type TrackerRow
+  } from '$lib/sheet/edits';
+  import { slotsByLevel, spellAttack, spellDc } from '$lib/rules/casting';
+  import {
     characterLevel,
     classLine,
     classList,
     formulaContext,
     modifierOf,
     passiveScore,
-    spellAttackBonus,
-    spellSaveDC,
     weightCarried
   } from '$lib/rules/derived';
   import { downloadText } from '$lib/download';
@@ -64,7 +70,6 @@
   import { resolveImageUrl } from '$lib/rules/imageUrl';
   import { ordinal, spellGroup, spellLevel, spellRank } from '$lib/rules/spells';
   import { spellDamage } from '$lib/rules/spellroll';
-  import { trackerMax } from '$lib/rules/tracker';
   import CastPicker from '$lib/components/CastPicker.svelte';
   import { slotLevel } from '$lib/rules/print';
   import { themeStyle } from '$lib/theme';
@@ -87,17 +92,12 @@
     Definition,
     Feature,
     Item,
-    RestKind,
     Sheet,
     Spell,
     State,
-    Tracker,
-    TrackerDirection,
-    TrackerType
+    Tracker
   } from '$lib/types';
 
-  const TABS = ['Combat', 'Spells', 'Equipment', 'Features', 'Trackers', 'Character', 'Notes', 'Backstory'];
-  const PASSIVES = ['perception', 'insight', 'investigation'] as const;
 
   let { id }: { id: string } = $props();
 
@@ -124,10 +124,11 @@
   const sheetState = $derived(sheet?.state as State | undefined);
   const isOwner = $derived(Boolean($session.user && sheet && $session.user.id === sheet.owner_id));
   const editable = $derived(isOwner && editing);
-  const sign = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 
   const carried = $derived(definition ? weightCarried(definition) : 0);
   const classes = $derived(definition ? classList(definition) : []);
+  /** What tracker formulas read: level, class levels, proficiency, modifiers. */
+  const ctx = $derived(definition ? formulaContext(definition) : null);
   /** Optional: with no banner the sheet renders exactly as it did before. */
   const banner = $derived(resolveImageUrl(definition?.identity?.bannerUrl).url);
   const portraitSrc = $derived(resolveImageUrl(definition?.identity?.portraitUrl).url);
@@ -166,100 +167,14 @@
     return sheet?.texts ? sheet.texts[key].body : (definition[key] ?? '');
   }
 
-  const CLASS_COLUMNS = [
-    { key: 'name', label: 'Class', width: '38%', placeholder: 'Class' },
-    { key: 'subclass', label: 'Subclass', width: '30%', placeholder: 'Subclass' },
-    { key: 'level', label: 'Level', width: '14%', type: 'number' as const, numeric: true, placeholder: '1' },
-    { key: 'source', label: 'Source', width: '18%', muted: true, placeholder: 'xphb' }
-  ];
 
-  /**
-   * Classes are the source; the older single-class fields and the character
-   * level are kept in step so existing sheets, the sheet list and `level`
-   * formulas all keep working.
-   */
   function saveClasses(rows: ClassEntry[]) {
-    if (!definition) return;
-    const list = rows.map((r) => ({
-      name: String(r.name ?? ''),
-      ...(r.subclass ? { subclass: String(r.subclass) } : {}),
-      level: Number(r.level) || 0,
-      ...(r.source ? { source: String(r.source) } : {})
-    }));
-    const total = list.reduce((sum, c) => sum + c.level, 0);
-    const [first] = list;
-    setDefinition({
-      ...definition,
-      identity: {
-        ...definition.identity,
-        classes: list,
-        class: first?.name ?? definition.identity.class,
-        subclass: first?.subclass,
-        level: total || definition.identity.level
-      }
-    });
+    if (definition) setDefinition(withClasses(definition, rows));
   }
 
-  const ATTACK_COLUMNS = [
-    { key: 'name', label: 'Name', width: '24%', placeholder: 'Longsword' },
-    { key: 'bonus', label: 'Hit', width: '9%', numeric: true, placeholder: '+5',
-      canPress: (v: unknown) => parseRoll(v, 'hit') !== null, pressVerb: 'Roll' },
-    { key: 'damage', label: 'Damage', width: '14%', numeric: true, placeholder: '1d8 + 3',
-      canPress: (v: unknown) => parseRoll(v, 'damage') !== null, pressVerb: 'Roll' },
-    { key: 'damageType', label: 'Type', width: '12%', placeholder: 'slashing' },
-    { key: 'notes', label: 'Notes', width: '41%', muted: true, wide: true, placeholder: 'Versatile (1d10)' }
-  ];
-  /** Blank first: a new row has no level yet, and defaulting it to Cantrip
-      would put a level on a spell nobody has written one for. */
-  const SPELL_LEVELS = ['', 'Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] as const;
-  const SPELL_COLUMNS = [
-    { key: 'name', label: 'Name', width: '14%', placeholder: 'Shield' },
-    { key: 'level', label: 'Level', width: '9%', options: SPELL_LEVELS },
-    { key: 'time', label: 'Cast time', width: '9%', placeholder: '1 reaction' },
-    { key: 'range', label: 'Range', width: '8%', placeholder: 'Self' },
-    { key: 'components', label: 'Components', short: 'Comp', width: '7%', placeholder: 'V, S, M' },
-    { key: 'duration', label: 'Duration', short: 'Dur.', width: '9%', placeholder: '1 round' },
-    { key: 'save', label: 'Save', width: '7%', placeholder: 'DEX 13' },
-    { key: 'damage', label: 'Roll', width: '12%', numeric: true, placeholder: '8d6 +1d6/level',
-      canPress: (v: unknown) => spellDamage(v, null, null, 1) !== null, pressVerb: 'Cast',
-      show: (v: unknown) => String(v ?? '').replace(/\s*(?:\/|per)\s*(?:slot\s*)?(?:level|lvl|slot)s?\b/i, '/lvl') },
-    { key: 'notes', label: 'Notes', width: '18%', muted: true, wide: true, placeholder: '+5 AC' },
-    { key: 'source', label: 'Source', short: 'Src', width: '7%', muted: true, placeholder: 'xphb' }
-  ];
 
 
-  /** Attunement: three items at most, by the rules. */
-  const ATTUNE_SLOTS = 3;
   const attunedCount = $derived((definition?.equipment ?? []).filter((i) => i.attuned).length);
-  const ITEM_COLUMNS = [
-    { key: 'name', label: 'Item', width: '38%', placeholder: 'Longsword' },
-    { key: 'qty', label: 'Amount', short: 'Qty', width: '12%', type: 'number' as const, numeric: true, placeholder: '1' },
-    { key: 'weight', label: 'Weight', width: '12%', type: 'number' as const, numeric: true, placeholder: '3' },
-    { key: 'value', label: 'Value', width: '22%', numeric: true, placeholder: '15 gp' },
-    { key: 'source', label: 'Source', width: '16%', muted: true, placeholder: 'xphb' }
-  ];
-  const TRACKER_COLUMNS = [
-    { key: 'label', label: 'Label', width: '15%', placeholder: 'Second Wind' },
-    { key: 'max', label: 'Max', width: '12%', placeholder: '1 or classlevel' },
-    { key: 'cls', label: 'From', width: '12%', placeholder: 'Fighter, Lucky' },
-    { key: 'die', label: 'Die', width: '6%', placeholder: 'd10' },
-    { key: 'type', label: 'Shape', width: '10%', options: ['pips', 'gauge'] as const },
-    { key: 'direction', label: 'Direction', short: 'Dir.', width: '10%', options: ['spend', 'accrue'] as const },
-    { key: 'resetOn', label: 'Resets on', short: 'Resets', width: '11%', options: ['manual', 'short', 'long', 'dawn'] as const },
-    { key: 'resetAmount', label: 'Refill', width: '9%', placeholder: 'full' },
-    { key: 'source', label: 'Source', short: 'Src', width: '15%', muted: true, placeholder: 'phb' }
-  ];
-  /** Where a feature comes from, in the order the groups are listed. A
-      feature with none written is under Other, last. */
-  const FEATURE_KINDS = ['Class', 'Subclass', 'Species', 'Background', 'Feat', 'Fighting Style',
-    'Weapon Mastery', 'Maneuver', 'Invocation', 'Metamagic', 'Item', 'Other'];
-  const kindOf = (f: Feature) => (FEATURE_KINDS.includes(f.kind ?? '') ? f.kind! : 'Other');
-  const FEATURE_COLUMNS = [
-    { key: 'title', label: 'Title', width: '24%', placeholder: 'Second Wind' },
-    { key: 'kind', label: 'Type', width: '14%', options: ['Other', ...FEATURE_KINDS.slice(0, -1)] },
-    { key: 'body', label: 'Description', width: '48%', wide: true, placeholder: 'Regain 1d10 + level hit points' },
-    { key: 'source', label: 'Source', width: '14%', muted: true, placeholder: 'phb' }
-  ];
   const initiative = $derived(
     definition ? (definition.combat?.initiative ?? modifierOf(definition, 'dex')) : 0
   );
@@ -335,13 +250,7 @@
     if (pool) requestRoll(pool, `${attack.name || 'Attack'} ${kind === 'hit' ? 'to hit' : 'damage'}`);
   }
 
-  /** The spell attack bonus: as written, or worked out from the casting ability. */
-  const spellAtk = $derived(
-    definition
-      ? (definition.spellAttackBonus ??
-          (definition.spellcastingAbility ? spellAttackBonus(definition, definition.spellcastingAbility) : null))
-      : null
-  );
+  const spellAtk = $derived(spellAttack(definition));
 
   /** Shows a roll in the tray, which lives on the Combat tab. */
   function toTray(pool: Pool, label: string) {
@@ -353,40 +262,21 @@
   }
 
   /** Spell slots by level, for casting: how many each has and which trackers hold them. */
-  const slotsByLevel = $derived.by(() => {
-    const out = new Map<number, { max: number; left: number; trackers: { id: string; room: number }[] }>();
-    if (!definition || !sheetState) return out;
-    const ctx = formulaContext(definition);
-    for (const t of definition.trackers ?? []) {
-      const level = slotLevel(t);
-      if (level === null || t.direction === 'accrue') continue;
-      let max = 0;
-      try { max = trackerMax(t, ctx); } catch { continue; }
-      const spent = Math.min(max, Number(sheetState.trackers?.[t.id]) || 0);
-      const at = out.get(level) ?? { max: 0, left: 0, trackers: [] };
-      at.max += max;
-      at.left += max - spent;
-      at.trackers.push({ id: t.id, room: max - spent });
-      out.set(level, at);
-    }
-    return out;
-  });
+  const slots = $derived(slotsByLevel(definition, sheetState));
 
   /** A spell's Roll, pressed: the cast dialog opens (slot, attack, damage). */
   let casting = $state<Spell | null>(null);
+  /** A colour being dragged to in the theme picker, shown before it is kept. */
+  let themePreview = $state<string | null>(null);
   function rollSpell(_key: string, spell: Spell) {
     casting = spell;
   }
-  const spellDc = $derived(
-    definition
-      ? (definition.spellSaveDc ?? (definition.spellcastingAbility ? spellSaveDC(definition, definition.spellcastingAbility) : null))
-      : null
-  );
+  const saveDc = $derived(spellDc(definition));
   function castRoll(spell: Spell, kind: 'attack' | 'damage', at: number | null, spend: boolean) {
     const name = spell.name || 'Spell';
     const level = spellLevel(spell.level);
     if (spend && at !== null) {
-      const slot = slotsByLevel.get(at)?.trackers.find((t) => t.room > 0);
+      const slot = slots.get(at)?.trackers.find((t) => t.room > 0);
       if (slot && sheetState) setTracker(slot.id, (Number(sheetState.trackers?.[slot.id]) || 0) + 1);
     }
     const upcast = level !== null && at !== null && at > level ? ` at ${ordinal(at)} level` : '';
@@ -523,77 +413,10 @@
    * The editor works on a flat, all-strings row and converts on the way back,
    * so a max of "4" is stored as 4 and "prof + 1" is stored as text.
    */
-  type TrackerRow = {
-    id: string;
-    label: string;
-    max: string;
-    die: string;
-    type: string;
-    direction: string;
-    resetOn: string;
-    resetAmount: string;
-    group: string;
-    source: string;
-    /** The class whose level `classlevel` means for this tracker. */
-    cls: string;
-    lookupUrl?: string;
-  };
-
-  const numeric = (v: string) => /^-?\d+$/.test(v.trim());
-  const scalar = (v: string): number | string => (numeric(v) ? Number(v) : v.trim());
-
-  const trackerRows = $derived<TrackerRow[]>(
-    (definition?.trackers ?? []).map((t) => ({
-      id: t.id,
-      label: t.label ?? '',
-      max: String(t.max ?? ''),
-      die: t.die ?? '',
-      type: t.type ?? 'pips',
-      direction: t.direction ?? 'spend',
-      resetOn: t.reset?.on ?? 'manual',
-      resetAmount: String(t.reset?.amount ?? 'full'),
-      group: t.group ?? '',
-      source: t.source ?? '',
-      cls: t.class ?? '',
-      // Shown as its link; never saved (saveTrackers takes the shown fields).
-      lookupUrl: trackerUrl(t, classes) ?? undefined
-    }))
-  );
-
-  function newId() {
-    return typeof crypto !== 'undefined' && crypto.randomUUID
-      ? crypto.randomUUID()
-      : `t${Date.now()}${Math.random().toString(36).slice(2, 7)}`;
-  }
+  const trackerRowsShown = $derived(trackerRows(definition, classes));
 
   function saveTrackers(rows: TrackerRow[]) {
-    if (!definition) return;
-    // What the table does not show (its class, description) is kept from
-    // the tracker as it was; what it shows is taken from the row.
-    const before = new Map((definition.trackers ?? []).map((t) => [t.id, t]));
-    const trackers: Tracker[] = rows.map((r) => ({
-      ...withoutShown(before.get(r.id)),
-      id: r.id || newId(),
-      label: r.label,
-      max: scalar(r.max || '0'),
-      ...(r.die ? { die: r.die } : {}),
-      type: r.type as TrackerType,
-      direction: r.direction as TrackerDirection,
-      reset: {
-        on: r.resetOn as RestKind | 'manual',
-        amount: r.resetAmount.trim() === 'full' ? 'full' : scalar(r.resetAmount || 'full')
-      },
-      ...(r.group ? { group: r.group } : {}),
-      ...(r.source ? { source: r.source } : {}),
-      ...(r.cls?.trim() ? { class: r.cls.trim() } : {})
-    }));
-    setDefinition({ ...definition, trackers });
-  }
-
-  function withoutShown(t: Tracker | undefined): Partial<Tracker> {
-    if (!t) return {};
-    const { die: _d, group: _g, source: _s, class: _c, ...rest } = t;
-    return rest;
+    if (definition) setDefinition(withTrackerRows(definition, rows));
   }
 
   let presetsOpen = $state(false);
@@ -610,28 +433,12 @@
   }
   function removePreset(ids: string[], label: string) {
     if (!definition || !sheetState) return;
-    const gone = new Set(ids);
-    setDefinition({ ...definition, trackers: (definition.trackers ?? []).filter((t) => !gone.has(t.id)) });
-    const spent = Object.fromEntries(Object.entries(sheetState.trackers ?? {}).filter(([k]) => !gone.has(k)));
-    setState({ ...sheetState, trackers: spent });
+    const next = withoutTrackers(definition, sheetState, ids);
+    setDefinition(next.definition);
+    setState(next.state);
     say(`Removed ${label}`);
   }
 
-  function blankTracker(): TrackerRow {
-    return {
-      id: newId(),
-      label: 'New tracker',
-      max: '1',
-      die: '',
-      type: 'pips',
-      direction: 'spend',
-      resetOn: 'long',
-      resetAmount: 'full',
-      group: '',
-      source: '',
-      cls: ''
-    };
-  }
 </script>
 
 <svelte:window onkeydown={onkey} />
@@ -676,7 +483,7 @@
 {:else if sheet && definition && sheetState}
   <!-- The theme is scoped here, not to :root, so a campaign view can later show
        several characters in their own colours at once. -->
-  <div class="sheet themed" class:entering class:bannered={banner} style={themeStyle(definition.identity.theme)}>
+  <div class="sheet themed" class:entering class:bannered={banner} style={themeStyle(themePreview ?? definition.identity.theme)}>
     {#if banner}<Banner url={banner} />{/if}
     <header class="identity">
       <div class="portrait" class:has={Boolean(portraitSrc)} class:fallen={dead}>
@@ -925,12 +732,6 @@
                   cantrip's dice grow with your level by themselves.
                 {/snippet}
               </EntryTable>
-              {#if casting}
-                <CastPicker spell={casting} slots={slotsByLevel} themeCss={themeStyle(definition.identity.theme)}
-                            attack={spellAtk} saveDc={spellDc} characterLevel={totalLevel}
-                            onroll={(kind, at, spend) => castRoll(casting!, kind, at, spend)}
-                            oncancel={() => (casting = null)} />
-              {/if}
             {:else if tab === 'Equipment'}
               <EntryTable
                 items={definition.equipment ?? []}
@@ -974,7 +775,7 @@
               </EntryTable>
             {:else if tab === 'Trackers'}
               <EntryTable
-                items={trackerRows}
+                items={trackerRowsShown}
                 columns={TRACKER_COLUMNS}
                 {editable}
                 category="any"
@@ -1030,6 +831,7 @@
                 <div class="themerow">
                   <span class="cap">Character theme</span>
                   <ThemePicker value={definition.identity.theme}
+                               onpreview={(hex) => (themePreview = hex)}
                                onchange={(name) => patchIdentity('theme', name)} />
                 </div>
               {/if}
@@ -1053,7 +855,7 @@
             <TrackerGroup
               trackers={definition.trackers}
               spent={sheetState.trackers}
-              ctx={formulaContext(definition)}
+              ctx={ctx ?? formulaContext(definition)}
               editable={isOwner}
               {refilling}
               onchange={setTracker}
@@ -1183,12 +985,20 @@
 
   <!-- Floating pieces sit outside the sheet's box but take its theme, so a
        toast's Undo is in the character's accent too. -->
-  <div class="themed floats" style={themeStyle(definition.identity.theme)}>
+  <div class="themed floats" style={themeStyle(themePreview ?? definition.identity.theme)}>
     {#if showKeys}<ShortcutHelp owner={isOwner} onclose={() => (showKeys = false)} />{/if}
     <Flash message={flash} />
     {#if leaving}
       <LeaveDialog onstay={() => (leaving = null)}
                    onleave={() => { const t = leaving; leaving = null; letGo = true; if (t) goto(t); }} />
+    {/if}
+    <!-- Outside the tabs: a roll from it brings up the Combat tab, and the
+         dialog stays over it until it is done with. -->
+    {#if casting}
+      <CastPicker spell={casting} slots={slots} themeCss={themeStyle(themePreview ?? definition.identity.theme)}
+                  attack={spellAtk} saveDc={saveDc} characterLevel={totalLevel}
+                  onroll={(kind, at, spend) => castRoll(casting!, kind, at, spend)}
+                  oncancel={() => (casting = null)} />
     {/if}
     <ConditionOverlay conditions={sheetState.conditions ?? []} looks={definition.conditionLooks}
                       current={sheetState.hpCurrent} max={definition.combat?.hpMax ?? 0} />

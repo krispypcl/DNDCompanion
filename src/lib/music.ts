@@ -1,11 +1,9 @@
 /**
- * A sheet's playlist: a YouTube (or YouTube Music) playlist or video, or a
- * Spotify playlist, album or track, read from the link its owner pasted.
+ * A sheet's playlist: a YouTube (or YouTube Music) playlist, or one video
+ * whose sound plays on loop, read from the link its owner pasted.
  */
 
-export type Playlist =
-  | { kind: 'youtube'; list?: string; video?: string }
-  | { kind: 'spotify'; type: string; id: string };
+export type Playlist = { kind: 'youtube'; list?: string; video?: string };
 
 const YT_HOSTS = /(^|\.)(youtube\.com|youtube-nocookie\.com)$/i;
 const ID = /^[\w-]{6,64}$/;
@@ -14,10 +12,6 @@ export function parsePlaylist(raw: string | undefined | null): Playlist | null {
   const text = String(raw ?? '').trim();
   if (!text) return null;
 
-  // spotify:playlist:37i9dQZF1DXcBWIGoYBM5M
-  const uri = text.match(/^spotify:(playlist|album|track|artist|show|episode):([A-Za-z0-9]+)$/);
-  if (uri) return { kind: 'spotify', type: uri[1], id: uri[2] };
-
   let url: URL;
   try {
     url = new URL(/^https?:\/\//i.test(text) ? text : `https://${text}`);
@@ -25,12 +19,6 @@ export function parsePlaylist(raw: string | undefined | null): Playlist | null {
     return null;
   }
   const host = url.hostname.replace(/^www\./i, '');
-
-  if (host === 'open.spotify.com' || host === 'play.spotify.com') {
-    // /playlist/ID, or /intl-de/playlist/ID
-    const m = url.pathname.match(/\/(playlist|album|track|artist|show|episode)\/([A-Za-z0-9]+)/);
-    return m ? { kind: 'spotify', type: m[1], id: m[2] } : null;
-  }
 
   if (host === 'youtu.be') {
     const video = url.pathname.slice(1).split('/')[0];
@@ -61,6 +49,9 @@ export type YTPlayer = {
   unMute(): void;
   getPlayerState(): number;
   getVideoData(): { title?: string; author?: string };
+  getCurrentTime(): number;
+  getDuration(): number;
+  seekTo(seconds: number, allowSeekAhead: boolean): void;
   destroy(): void;
 };
 
@@ -86,35 +77,7 @@ export function loadYouTube(): Promise<YTNamespace> {
   return ytLoading;
 }
 
-export type SpotifyController = {
-  togglePlay(): void;
-  resume(): void;
-  pause(): void;
-  destroy(): void;
-  addListener(event: string, fn: (e: { data: { isPaused: boolean; isBuffering?: boolean } }) => void): void;
-};
-type SpotifyApi = {
-  createController(el: HTMLElement, opts: unknown, cb: (c: SpotifyController) => void): void;
-};
-
-let spLoading: Promise<SpotifyApi> | null = null;
-export function loadSpotify(): Promise<SpotifyApi> {
-  const w = window as unknown as { onSpotifyIframeApiReady?: (api: SpotifyApi) => void };
-  spLoading ??= new Promise((resolve, reject) => {
-    w.onSpotifyIframeApiReady = (api) => resolve(api);
-    const s = document.createElement('script');
-    s.src = 'https://open.spotify.com/embed/iframe-api/v1';
-    s.async = true;
-    s.onerror = () => {
-      spLoading = null;
-      reject(new Error('Spotify did not load'));
-    };
-    document.head.appendChild(s);
-  });
-  return spLoading;
-}
-
-export const VOLUME_KEY = 'dndcompanion:volume';
+const VOLUME_KEY = 'dndcompanion:volume';
 export function storedVolume(): number {
   try {
     const v = Number(localStorage.getItem(VOLUME_KEY));
@@ -129,4 +92,13 @@ export function storeVolume(v: number) {
   } catch {
     /* private mode: it lasts for this visit */
   }
+}
+
+/** 83 → "1:23"; 3723 → "1:02:03". */
+export function clock(seconds: number): string {
+  const t = Math.max(0, Math.floor(Number.isFinite(seconds) ? seconds : 0));
+  const h = Math.floor(t / 3600);
+  const m = Math.floor((t % 3600) / 60);
+  const s = String(t % 60).padStart(2, '0');
+  return h ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`;
 }

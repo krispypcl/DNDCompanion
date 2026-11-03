@@ -7,7 +7,7 @@
  */
 import { get, writable } from 'svelte/store';
 
-export const SOUND_KEY = 'dndcompanion:sound';
+const SOUND_KEY = 'dndcompanion:sound';
 
 function stored(): boolean {
   try {
@@ -93,7 +93,7 @@ function burst(ac: AudioContext, at: number, dur: number, gain: number, freq: nu
 }
 
 /** The toggle's own confirmation. */
-export function click() {
+function click() {
   const ac = ready();
   if (!ac) return;
   tone(ac, ac.currentTime, 1400, 0.05, 0.12, 'triangle');

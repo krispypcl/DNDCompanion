@@ -166,6 +166,88 @@
     }
   }
 
+  /**
+   * Light mode. The tint is mixed from the page colour, which here is near
+   * white, so the same strengths as dark mode bleached the picture to a
+   * pastel. Over a light page it is held back far less, and the picture
+   * keeps a little more of its own colour and depth; the left still clears
+   * for the name, which is dark text and reads on a light ground.
+   */
+  :global(:root[data-mode='light']) img { filter: saturate(1.12) contrast(1.06); }
+  :global(:root[data-mode='light']) .tint {
+    background:
+      linear-gradient(
+        to bottom,
+        color-mix(in oklch, var(--bg) 34%, transparent) 0%,
+        color-mix(in oklch, var(--bg) 26%, transparent) 20%,
+        color-mix(in oklch, var(--bg) 12%, transparent) 52%,
+        color-mix(in oklch, var(--bg) 10%, transparent) 88%,
+        var(--bg) 100%
+      ),
+      linear-gradient(
+        to right,
+        color-mix(in oklch, var(--bg) 88%, transparent) 0%,
+        color-mix(in oklch, var(--bg) 52%, transparent) 26%,
+        color-mix(in oklch, var(--bg) 10%, transparent) 62%,
+        transparent 100%
+      ),
+      linear-gradient(to right, var(--bg) 0%, transparent 6%, transparent 92%, var(--bg) 100%);
+  }
+  @media (max-width: 700px) {
+    :global(:root[data-mode='light']) .tint {
+      background:
+        linear-gradient(
+          to bottom,
+          color-mix(in oklch, var(--bg) 58%, transparent) 0%,
+          color-mix(in oklch, var(--bg) 50%, transparent) 26%,
+          color-mix(in oklch, var(--bg) 18%, transparent) 60%,
+          color-mix(in oklch, var(--bg) 14%, transparent) 90%,
+          var(--bg) 100%
+        ),
+        linear-gradient(to right, var(--bg) 0%, transparent 10%, transparent 90%, var(--bg) 100%);
+    }
+  }
+
+  /**
+   * Light mode. The same tint in the page's near-white milked the picture into
+   * a haze, so it is lighter: held only where the name and class line sit,
+   * and open elsewhere, with the picture's own colour brought back up.
+   */
+  :global([data-mode='light']) img { filter: saturate(1.15) contrast(1.06); }
+  :global([data-mode='light']) .tint {
+    background:
+      linear-gradient(
+        to bottom,
+        color-mix(in oklch, var(--bg) 40%, transparent) 0%,
+        color-mix(in oklch, var(--bg) 30%, transparent) 22%,
+        color-mix(in oklch, var(--bg) 14%, transparent) 52%,
+        color-mix(in oklch, var(--bg) 12%, transparent) 86%,
+        var(--bg) 100%
+      ),
+      linear-gradient(
+        to right,
+        color-mix(in oklch, var(--bg) 88%, transparent) 0%,
+        color-mix(in oklch, var(--bg) 52%, transparent) 26%,
+        color-mix(in oklch, var(--bg) 10%, transparent) 62%,
+        transparent 100%
+      ),
+      linear-gradient(to right, var(--bg) 0%, transparent 8%, transparent 90%, var(--bg) 100%);
+  }
+  @media (max-width: 700px) {
+    :global([data-mode='light']) .tint {
+      background:
+        linear-gradient(
+          to bottom,
+          color-mix(in oklch, var(--bg) 62%, transparent) 0%,
+          color-mix(in oklch, var(--bg) 56%, transparent) 26%,
+          color-mix(in oklch, var(--bg) 20%, transparent) 60%,
+          color-mix(in oklch, var(--bg) 16%, transparent) 90%,
+          var(--bg) 100%
+        ),
+        linear-gradient(to right, var(--bg) 0%, transparent 10%, transparent 90%, var(--bg) 100%);
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     img { transform: none; }
   }

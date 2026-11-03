@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { cantripTier, spellDamage, spellHit, splitUpcast, upcasts } from '$lib/rules/spellroll';
+import { cantripTier, spellDamage, splitUpcast } from '$lib/rules/spellroll';
 
 describe('spell rolls', () => {
   it('reads what a spell gains per level', () => {
     expect(splitUpcast('8d6 fire +1d6/level').per).toEqual({ dice: { 6: 1 }, modifier: 0, mode: 'normal' });
     expect(splitUpcast('3d4+3 + 1d4+1 per slot level').per).toEqual({ dice: { 4: 1 }, modifier: 1, mode: 'normal' });
-    expect(upcasts('1d10 fire')).toBe(false);
+    expect(splitUpcast('1d10 fire').per).toBeNull();
   });
 
   it('adds the dice for each level above the spell’s own', () => {
@@ -20,12 +20,5 @@ describe('spell rolls', () => {
     expect([1, 5, 11, 17].map(cantripTier)).toEqual([1, 2, 3, 4]);
     expect(spellDamage('1d10 fire', 0, null, 11)).toEqual({ dice: { 10: 3 }, modifier: 0, mode: 'normal' });
     expect(spellDamage('1d8+2', 0, null, 5)).toEqual({ dice: { 8: 2 }, modifier: 2, mode: 'normal' });
-  });
-
-  it('rolls a spell attack with the spell attack bonus', () => {
-    expect(spellHit('spell', 7)).toEqual({ dice: { 20: 1 }, modifier: 7, mode: 'normal' });
-    expect(spellHit('Attack', null)).toBeNull();
-    expect(spellHit('+5', null)).toEqual({ dice: { 20: 1 }, modifier: 5, mode: 'normal' });
-    expect(spellHit('', 7)).toBeNull();
   });
 });

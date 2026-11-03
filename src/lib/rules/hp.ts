@@ -90,8 +90,8 @@ export function vitalStatus(
   return { vital: 'healthy', label: 'Healthy' };
 }
 
-export const DOWNED = 'Incapacitated';
-export const DEAD = 'Dead';
+const DOWNED = 'Incapacitated';
+const DEAD = 'Dead';
 
 /**
  * What follows on its own from a change to hit points or death saves:
