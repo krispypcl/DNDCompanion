@@ -32,6 +32,8 @@
   let volume = $state(typeof localStorage === 'undefined' ? 70 : storedVolume());
   /** The volume slider, folded into its speaker until wanted. */
   let volOpen = $state(false);
+  /** Leaving the speaker gives the pointer a moment to reach the slider. */
+  let volTimer: ReturnType<typeof setTimeout> | undefined;
   function setVol(v: number) {
     volume = v;
     yt?.setVolume(v);
@@ -187,6 +189,7 @@
     unsub();
     clearTimeout(checkTimer);
     clearInterval(ticker);
+    clearTimeout(volTimer);
     disarm?.();
   });
 
@@ -257,7 +260,8 @@
          slider slides out beside it over the module's edge, so the module's
          layout and size never change. -->
     <div class="vol" class:open={volOpen} role="group" aria-label="Volume"
-         onmouseleave={() => (volOpen = false)}>
+         onmouseenter={() => clearTimeout(volTimer)}
+         onmouseleave={() => { clearTimeout(volTimer); volTimer = setTimeout(() => (volOpen = false), 450); }}>
       <!-- Rises above the speaker when wanted, over the module rather than in it. -->
       <div class="pop">
         <input type="range" min="0" max="100" step="1" value={volume} aria-label="Volume"
@@ -299,16 +303,18 @@
   .volbtn:hover, .vol.open .volbtn { color: var(--a); }
   /* A narrow upright pill above the speaker, holding a slider turned on end. */
   .pop {
-    position: absolute; left: 50%; bottom: calc(100% + 0.25rem); width: 1.75rem; height: 6rem;
+    position: absolute; left: 50%; bottom: calc(100% + 0.25rem); width: 1.625rem; height: 4.25rem;
     border: 1px solid var(--line); border-radius: 999px; background: color-mix(in oklch, var(--surface) 94%, transparent);
     box-shadow: 0 6px 18px rgb(0 0 0 / 0.25);
     opacity: 0; pointer-events: none; transform: translate(-50%, 6px) scale(0.92); transform-origin: bottom center;
     transition: opacity 0.16s ease, transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1);
   }
   .vol.open .pop, .vol:focus-within .pop { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
+  /* Bridges the gap down to the speaker, so the pointer never leaves on the way up. */
+  .pop::after { content: ''; position: absolute; left: -0.25rem; right: -0.25rem; top: 100%; height: 0.5rem; }
   .pop input {
     -webkit-appearance: none; appearance: none; position: absolute; left: 50%; top: 50%;
-    width: 4.75rem; height: 4px; margin: 0; border-radius: 2px; transform: translate(-50%, -50%) rotate(-90deg);
+    width: 3.125rem; height: 4px; margin: 0; border-radius: 2px; transform: translate(-50%, -50%) rotate(-90deg);
     background: linear-gradient(to right, var(--a) var(--v), var(--line) var(--v)); cursor: pointer; touch-action: none;
   }
   .pop input::-webkit-slider-thumb {
