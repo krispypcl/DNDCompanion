@@ -4,6 +4,7 @@
    * and the long-form writing. Spellcasting lives on the Spells tab, since it
    * is about casting rather than about the person.
    */
+  import { parsePlaylist } from '$lib/music';
   import EditableField from './EditableField.svelte';
   import Lightbox from './Lightbox.svelte';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
@@ -198,6 +199,29 @@
         {/if}
       </div>
     {/each}
+    <!-- The sheet's music: a YouTube / YouTube Music or Spotify link. -->
+    <div class="wide" data-flip-ghost="details:url:playlist" data-ghost-scale="0.94">
+      <dt>Playlist URL</dt>
+      <div class="urlrow">
+        <div class="urlfield">
+          <EditableField
+            value={definition.identity.playlistUrl ?? ''}
+            editable={true}
+            label="Playlist URL"
+            placeholder="Optional: a YouTube, YouTube Music or Spotify playlist"
+            onchange={(v) => patchIdentity('playlistUrl', String(v).trim())}
+          />
+        </div>
+      </div>
+      {#if definition.identity.playlistUrl?.trim()}
+        {@const found = parsePlaylist(definition.identity.playlistUrl)}
+        <p class="urlnote" class:bad={!found} role="status">
+          {#if !found}That’s not a tune we know! Paste a YouTube, YouTube Music or Spotify link.
+          {:else if found.kind === 'spotify'}Spotify plays in its own little player up top; without a Spotify login in this browser it plays 30-second previews.
+          {:else}Plays up top. The speaker button is its mute.{/if}
+        </p>
+      {/if}
+    </div>
   {/if}
 </section>
 

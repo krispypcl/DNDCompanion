@@ -5,10 +5,12 @@
    * second is a real page on the host, so a link pasted into Discord or
    * Messenger is answered with a preview card rather than "not found".
    */
+  import { trackerUrl } from '$lib/rules/lookup';
   import { base } from '$app/paths';
   import AbilityBand from '$lib/components/AbilityBand.svelte';
   import ModeToggle from '$lib/components/ModeToggle.svelte';
   import SoundToggle from '$lib/components/SoundToggle.svelte';
+  import MusicPlayer from '$lib/components/MusicPlayer.svelte';
   import Banner from '$lib/components/Banner.svelte';
   import CombatActions from '$lib/components/CombatActions.svelte';
   import Conditions from '$lib/components/Conditions.svelte';
@@ -51,6 +53,7 @@
     modifierOf,
     passiveScore,
     spellAttackBonus,
+    spellSaveDC,
     weightCarried
   } from '$lib/rules/derived';
   import { downloadText } from '$lib/download';
@@ -60,7 +63,7 @@
   import { exportFileName, exportSheet } from '$lib/exchange';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
   import { ordinal, spellGroup, spellLevel, spellRank } from '$lib/rules/spells';
-  import { spellDamage, spellHit } from '$lib/rules/spellroll';
+  import { spellDamage } from '$lib/rules/spellroll';
   import { trackerMax } from '$lib/rules/tracker';
   import CastPicker from '$lib/components/CastPicker.svelte';
   import { slotLevel } from '$lib/rules/print';
@@ -217,17 +220,10 @@
     { key: 'components', label: 'Components', short: 'Comp', width: '7%', placeholder: 'V, S, M' },
     { key: 'duration', label: 'Duration', short: 'Dur.', width: '9%', placeholder: '1 round' },
     { key: 'save', label: 'Save', width: '7%', placeholder: 'DEX 13' },
-    { key: 'hit', label: 'Hit', width: '6%', numeric: true, placeholder: 'spell',
-      canPress: (v: unknown) => spellHit(v, spellAtk) !== null, pressVerb: 'Roll',
-      // "spell" reads as the bonus it rolls.
-      show: (v: unknown) => {
-        const pool = spellHit(v, spellAtk);
-        return pool && !/\d/.test(String(v)) ? (pool.modifier < 0 ? `−${-pool.modifier}` : `+${pool.modifier}`) : String(v ?? '');
-      } },
-    { key: 'damage', label: 'Damage', width: '12%', numeric: true, placeholder: '8d6 +1d6/level',
-      canPress: (v: unknown) => spellDamage(v, null, null, 1) !== null, pressVerb: 'Roll',
+    { key: 'damage', label: 'Roll', width: '12%', numeric: true, placeholder: '8d6 +1d6/level',
+      canPress: (v: unknown) => spellDamage(v, null, null, 1) !== null, pressVerb: 'Cast',
       show: (v: unknown) => String(v ?? '').replace(/\s*(?:\/|per)\s*(?:slot\s*)?(?:level|lvl|slot)s?\b/i, '/lvl') },
-    { key: 'notes', label: 'Notes', width: '12%', muted: true, wide: true, placeholder: '+5 AC' },
+    { key: 'notes', label: 'Notes', width: '18%', muted: true, wide: true, placeholder: '+5 AC' },
     { key: 'source', label: 'Source', short: 'Src', width: '7%', muted: true, placeholder: 'xphb' }
   ];
 
@@ -245,7 +241,7 @@
   const TRACKER_COLUMNS = [
     { key: 'label', label: 'Label', width: '15%', placeholder: 'Second Wind' },
     { key: 'max', label: 'Max', width: '12%', placeholder: '1 or classlevel' },
-    { key: 'cls', label: 'Class', width: '12%', placeholder: 'Fighter' },
+    { key: 'cls', label: 'From', width: '12%', placeholder: 'Fighter, Lucky' },
     { key: 'die', label: 'Die', width: '6%', placeholder: 'd10' },
     { key: 'type', label: 'Shape', width: '10%', options: ['pips', 'gauge'] as const },
     { key: 'direction', label: 'Direction', short: 'Dir.', width: '10%', options: ['spend', 'accrue'] as const },
@@ -376,32 +372,30 @@
     return out;
   });
 
-  /** A leveled spell's damage, pressed: choose the slot it is cast with first. */
+  /** A spell's Roll, pressed: the cast dialog opens (slot, attack, damage). */
   let casting = $state<Spell | null>(null);
-  function rollSpell(key: string, spell: Spell) {
-    const name = spell.name || 'Spell';
-    if (key === 'hit') {
-      const pool = spellHit(spell.hit, spellAtk);
-      if (pool) toTray(pool, `${name} to hit`);
-      return;
-    }
-    const level = spellLevel(spell.level);
-    if (level !== null && level > 0) {
-      casting = spell;
-      return;
-    }
-    const pool = spellDamage(spell.damage, level, null, totalLevel);
-    if (pool) toTray(pool, level === 0 && totalLevel >= 5 ? `${name} (level ${totalLevel})` : name);
+  function rollSpell(_key: string, spell: Spell) {
+    casting = spell;
   }
-  function castAt(spell: Spell, at: number, spend: boolean) {
-    casting = null;
+  const spellDc = $derived(
+    definition
+      ? (definition.spellSaveDc ?? (definition.spellcastingAbility ? spellSaveDC(definition, definition.spellcastingAbility) : null))
+      : null
+  );
+  function castRoll(spell: Spell, kind: 'attack' | 'damage', at: number | null, spend: boolean) {
+    const name = spell.name || 'Spell';
     const level = spellLevel(spell.level);
-    if (spend) {
+    if (spend && at !== null) {
       const slot = slotsByLevel.get(at)?.trackers.find((t) => t.room > 0);
       if (slot && sheetState) setTracker(slot.id, (Number(sheetState.trackers?.[slot.id]) || 0) + 1);
     }
+    const upcast = level !== null && at !== null && at > level ? ` at ${ordinal(at)} level` : '';
+    if (kind === 'attack') {
+      if (spellAtk !== null) toTray({ dice: { 20: 1 }, modifier: spellAtk, mode: 'normal' }, `${name} attack`);
+      return;
+    }
     const pool = spellDamage(spell.damage, level, at, totalLevel);
-    if (pool) toTray(pool, level !== null && at > level ? `${spell.name || 'Spell'} at ${ordinal(at)} level` : spell.name || 'Spell');
+    if (pool) toTray(pool, level === 0 && totalLevel >= 5 ? `${name} (level ${totalLevel})` : `${name}${upcast}`);
   }
 
   /** A tracker with a die, spent, and the player said yes to rolling it. */
@@ -542,6 +536,7 @@
     source: string;
     /** The class whose level `classlevel` means for this tracker. */
     cls: string;
+    lookupUrl?: string;
   };
 
   const numeric = (v: string) => /^-?\d+$/.test(v.trim());
@@ -559,7 +554,9 @@
       resetAmount: String(t.reset?.amount ?? 'full'),
       group: t.group ?? '',
       source: t.source ?? '',
-      cls: t.class ?? ''
+      cls: t.class ?? '',
+      // Shown as its link; never saved (saveTrackers takes the shown fields).
+      lookupUrl: trackerUrl(t, classes) ?? undefined
     }))
   );
 
@@ -711,11 +708,25 @@
       </div>
 
       <div class="who">
-        <h1>
-          <EditableField value={definition.identity.name} {editable} label="Name"
-                         placeholder="Character Name"
-                         onchange={(v) => patchIdentity('name', v)} />
-        </h1>
+        <div class="nameline">
+          <h1>
+            <EditableField value={definition.identity.name} {editable} label="Name"
+                           placeholder="Character Name"
+                           onchange={(v) => patchIdentity('name', v)} />
+          </h1>
+          <!-- The campaign beside the name, as on the sheet list: "(Shadowfell)".
+               While reading it is there only when written. -->
+          {#if editable || definition.identity.campaign?.trim()}
+            <span class="campaign" data-flip-ghost="identity:campaign" data-flip="identity:campaign-at">
+              {#if editable}
+                <EditableField value={definition.identity.campaign ?? ''} {editable} label="Campaign"
+                               placeholder="Campaign" onchange={(v) => patchIdentity('campaign', String(v).trim())} />
+              {:else}
+                <span title="Campaign">({definition.identity.campaign?.trim()})</span>
+              {/if}
+            </span>
+          {/if}
+        </div>
         <p class="sub">
           <!-- Class, species and background are all written on the Character
                tab; here they are only read, each with its 5e.tools link. -->
@@ -746,6 +757,11 @@
           </span>
         </p>
       </div>
+
+      {#if definition.identity.playlistUrl?.trim()}
+        <!-- Top centre: the sheet's music. -->
+        <div class="musicslot" data-flip="identity:music"><MusicPlayer url={definition.identity.playlistUrl} /></div>
+      {/if}
 
       <!-- One group, so they wrap together: loose in the header the status
            dot was left stranded at the end of the name's line on a phone. -->
@@ -903,14 +919,17 @@
                   charges belong here as much as a cantrip does. Source is the book it is from, as
                   5e.tools writes it — <code>xphb</code>, <code>phb</code>, <code>tce</code> — and
                   sets where the name links to. <code>homebrew</code> marks an entry as yours and
-                  drops the link. Hit is <code>spell</code> for a spell attack. Damage is written
-                  like an attack's, with what each higher slot adds after it:
-                  <code>8d6 fire +1d6/level</code>. A cantrip's dice grow with your level by themselves.
+                  drops the link. <b>Roll</b> is the damage or healing dice: press it to cast, pick the
+                  slot, and roll the attack (for a spell with no Save) and the dice. For more dice
+                  at higher slots, add what each level adds: <code>8d6 +1d6/level</code>. A
+                  cantrip's dice grow with your level by themselves.
                 {/snippet}
               </EntryTable>
               {#if casting}
                 <CastPicker spell={casting} slots={slotsByLevel} themeCss={themeStyle(definition.identity.theme)}
-                            oncast={(at, spend) => castAt(casting!, at, spend)} oncancel={() => (casting = null)} />
+                            attack={spellAtk} saveDc={spellDc} characterLevel={totalLevel}
+                            onroll={(kind, at, spend) => castRoll(casting!, kind, at, spend)}
+                            oncancel={() => (casting = null)} />
               {/if}
             {:else if tab === 'Equipment'}
               <EntryTable
@@ -979,8 +998,10 @@
                   <code>prof + 1</code>, <code>classlevel / 2</code>, <code>classlevel * 5</code>.
                   <code>at(1, 2, 3, 3)</code> is 2 from 1st level and 3 from 3rd;
                   <code>full(1)</code>, <code>half(1)</code>, <code>third(1)</code> and
-                  <code>pact()</code> are spell slots. Name the class on a feature that scales
-                  with it, or multiclassing will inflate it.
+                  <code>pact()</code> are spell slots. <b>From</b> is the class, feat or species
+                  it comes from: a class makes <code>classlevel</code> that class's level (so
+                  multiclassing doesn't inflate it) and links to the feature on 5e.tools; a feat
+                  or species links to that.
                 {/snippet}
               </EntryTable>
               {#if editable}
@@ -1037,6 +1058,7 @@
               {refilling}
               onchange={setTracker}
               onroll={isOwner ? rollTracker : undefined}
+              {classes}
             />
           </div>
         {/if}
@@ -1225,6 +1247,15 @@
    */
   .bannered .sub { color: var(--text); }
   .bannered .sub :global(.field.readout.empty) { color: var(--label); }
+  /* On a phone the frost is dropped for a nearly solid module: blurring the
+     banner behind every module again on each animated frame (a gauge, a pip,
+     a condition's tint) is what made changes stutter there. */
+  @media (max-width: 720px), (pointer: coarse) {
+    .bannered .panel {
+      backdrop-filter: none; -webkit-backdrop-filter: none;
+      background: color-mix(in oklch, var(--surface) 93%, transparent);
+    }
+  }
   /* No backdrop-filter, no frost: the module stays readable by being solid. */
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .bannered .panel { background: var(--surface); }
@@ -1270,7 +1301,28 @@
   @keyframes skullIn { from { transform: scale(1.6); opacity: 0; } }
   .who { flex: 1 1 auto; min-width: 0; }
   .controls { display: flex; align-items: center; gap: 0.5rem; flex: none; }
+  /* The player sits in the middle of the header: the name and the buttons
+     each take an equal share either side of it. */
+  .musicslot { flex: 1 1 14rem; min-width: 11rem; display: flex; justify-content: center; }
+  .identity:has(.musicslot) .who { flex: 0 1 auto; }
+  /* Without room for all three in a row, the player takes a row of its own
+     under the header, full width. */
+  @media (max-width: 1100px) {
+    .musicslot { order: 5; flex: 1 1 100%; min-width: 0; }
+    .musicslot :global(.music) { width: 100%; }
+    .identity:has(.musicslot) .who { flex: 1 1 auto; }
+  }
   .who h1 { margin: 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.015em; }
+  .nameline { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 0.625rem; row-gap: 0.125rem; min-width: 0; }
+  .nameline h1 { min-width: 0; }
+  .campaign {
+    display: inline-flex; align-items: baseline; font-size: 1.0625rem; font-weight: 500; color: var(--dim);
+    animation: campaignIn 0.4s cubic-bezier(0.2, 0.8, 0.3, 1);
+  }
+  .bannered .campaign { color: var(--text); opacity: 0.8; }
+  .campaign :global(.field) { min-width: 0; }
+  .campaign :global(input) { width: 9rem; max-width: 40vw; font-size: inherit; }
+  @keyframes campaignIn { from { opacity: 0; transform: translateX(-6px); } }
   .sub :global(input.field) { min-width: 5.5rem; }
   .sub {
     /* The name sits inside an editable field, whose padding and border push
@@ -1379,7 +1431,7 @@
   .trk .cap { margin-bottom: 0.625rem; }
   /* Directly below the trackers. With equal-height rails the slack falls to
      the bottom of the panel, not into a gap above this. */
-  .passives { padding-top: 1.25rem; }
+  .passives { padding-top: 0.25rem; }
   .passives .cap:first-child { margin-bottom: 0.625rem; }
   /* In the narrower skills card "Investigation" only fits a little smaller. */
   .rail-skills .passives .defbox { padding-inline: 0.125rem; }
@@ -1447,11 +1499,15 @@
   .entering .panel { animation: panelIn 0.5s cubic-bezier(0.2, 0.8, 0.3, 1) backwards; animation-delay: calc(var(--i, 0) * 70ms); }
   @keyframes panelIn { from { opacity: 0; transform: translateY(12px); } }
   /* Inspiration held: a soft glow that breathes until it is spent. */
-  .defbox.inspired { animation: inspired 2.6s ease-in-out infinite; border-color: var(--a-edge); }
-  @keyframes inspired {
-    0%, 100% { box-shadow: 0 0 0 0 transparent; }
-    50% { box-shadow: 0 0 14px 1px color-mix(in oklch, var(--a) 35%, transparent); }
+  /* The glow is a layer whose opacity breathes; animating the shadow itself
+     repainted the box on every frame. */
+  .defbox.inspired { border-color: var(--a-edge); position: relative; }
+  .defbox.inspired::after {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    box-shadow: 0 0 14px 1px color-mix(in oklch, var(--a) 35%, transparent);
+    opacity: 0; animation: inspired 2.6s ease-in-out infinite; will-change: opacity;
   }
+  @keyframes inspired { 50% { opacity: 1; } }
   /* Level up: twelve rays from the portrait, and the words rising off it. */
   .burst { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
   .burst i {
@@ -1478,7 +1534,7 @@
     100% { opacity: 0; transform: translate(-50%, -20px); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .entering .panel, .entering .identity, .defbox.inspired, .burst, .levelup { animation: none; }
+    .entering .panel, .entering .identity, .defbox.inspired::after, .burst, .levelup { animation: none; }
     .burst { display: none; }
   }
   /* Shortcuts are for a keyboard: the button only shows where there is a mouse. */

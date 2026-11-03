@@ -143,6 +143,11 @@ export type Definition = {
         without it the sheet looks exactly as it did. */
     bannerUrl?: string;
     lookupUrl?: string;
+    /** The campaign the character plays in, shown beside the name. Free text
+        until campaigns are their own records. */
+    campaign?: string;
+    /** A YouTube (or YouTube Music) or Spotify playlist that plays on the sheet. */
+    playlistUrl?: string;
     /** A theme name from src/lib/theme.ts; anything else falls back. */
     theme?: string;
     /**

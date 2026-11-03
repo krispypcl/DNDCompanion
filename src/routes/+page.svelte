@@ -251,7 +251,8 @@
 
 {#snippet card(sheet: Sheet)}
   <a href="{base}/s/{sheet.id}">
-    <strong>{sheet.definition?.identity?.name || sheet.name}</strong>
+    <strong>{sheet.definition?.identity?.name || sheet.name}{#if sheet.definition?.identity?.campaign?.trim()}
+      <span class="campaign">({sheet.definition.identity.campaign.trim()})</span>{/if}</strong>
     <span class="meta">
       {[sheet.definition?.identity?.subclass, sheet.definition?.identity?.class]
         .filter(Boolean)
@@ -464,6 +465,7 @@
   .danger:hover:not(:disabled) { background: var(--bad); color: var(--bg); border-color: var(--bad); }
   .retired a { opacity: 0.6; }
   .meta { display: block; font-size: 0.8rem; color: var(--dim); margin-top: 0.15rem; }
+  .campaign { font-weight: 400; color: var(--dim); margin-left: 0.125rem; }
   .dates { color: var(--faint); }
   .me {
     display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; color: var(--text);

@@ -47,11 +47,24 @@
   const timer = setInterval(() => (turn += 1), prefersReducedMotion() ? 6000 : 3200);
   onDestroy(() => clearInterval(timer));
   const on = $derived(shown.length ? turn % shown.length : 0);
+
+  /** A condition removed: its tint sinks back down and fades, the way it
+      rose, rather than vanishing. */
+  function sink(node: Element) {
+    const from = Number(getComputedStyle(node).opacity) || 0;
+    return {
+      duration: prefersReducedMotion() ? 0 : 700,
+      css: (t: number) => {
+        const e = t * t * (3 - 2 * t);
+        return `opacity: ${from * e}; transform: scaleY(${0.55 + 0.45 * e}); animation: none;`;
+      }
+    };
+  }
 </script>
 
 <div class="overlay" style:--hurt={hurt} aria-hidden="true">
   {#each shown as look, i (look.key)}
-    <div class="tint {look.motion}" class:on={i === on} data-condition={look.key} style:--tint={look.color}>
+    <div class="tint {look.motion}" class:on={i === on} data-condition={look.key} style:--tint={look.color} out:sink>
       <i></i>
     </div>
   {/each}
@@ -103,7 +116,9 @@
   .daze i { animation: daze 2.2s ease-in-out 1s infinite; }
   @keyframes daze { 0%, 100% { opacity: 1; transform: scaleY(1); } 50% { opacity: 0.7; transform: scaleY(0.94); } }
   .shimmer i { animation: shimmer 3.4s ease-in-out 1s infinite; }
-  @keyframes shimmer { 0%, 100% { opacity: 1; filter: blur(0); } 50% { opacity: 0.55; filter: blur(6px); } }
+  /* Opacity and a stretch only: an animated blur over the whole screen was
+     the heaviest thing on a phone. */
+  @keyframes shimmer { 0%, 100% { opacity: 1; transform: scaleY(1); } 50% { opacity: 0.5; transform: scaleY(1.06); } }
   .shiver i { animation: shiver 0.8s ease-in-out 1s infinite; }
   @keyframes shiver { 0%, 100% { transform: translateY(0); } 25% { transform: translateY(-2px); } 75% { transform: translateY(2px); } }
 

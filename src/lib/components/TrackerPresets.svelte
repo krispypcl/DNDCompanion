@@ -28,6 +28,7 @@
   } = $props();
   const groups = $derived(presetsFor(classList(definition).map((c) => c.name)));
   const levels = $derived(classLevels(definition));
+  const totalLevel = $derived(Object.values(levels).reduce((a, b) => a + b, 0) || Number(definition.identity?.level) || 1);
   const key = (t: { label: string; class?: string }) => `${t.label.toLowerCase()}|${(t.class ?? '').toLowerCase()}`;
   const have = $derived(new Set((definition.trackers ?? []).map(key)));
 
@@ -43,7 +44,7 @@
       onremove(ids, p.label);
       return;
     }
-    const level = levels[p.className.toLowerCase()] ?? 0;
+    const level = p.kind ? totalLevel : (levels[p.className.toLowerCase()] ?? 0);
     const fresh = buildPreset(p, level, makeId).filter((t) => !have.has(key(t)));
     if (fresh.length) onadd(fresh, p.label);
   }
@@ -54,7 +55,7 @@
 {#if open}
     <!-- Global: it folds away even when edit mode ends and takes it with it. -->
     <div class="panel" transition:slide={{ duration: still ? 0 : 260, easing: cubicOut }}>
-      {#each [{ title: 'For your classes', list: groups.yours }, { title: 'Other classes', list: groups.others }] as g (g.title)}
+      {#each [{ title: 'For your classes', list: groups.yours }, { title: 'Other classes', list: groups.others }, { title: 'Feats and species', list: groups.extras }] as g (g.title)}
         {#if g.list.length}
           <h4>{g.title}</h4>
           <div class="grid">
@@ -64,14 +65,14 @@
                       title={done ? `Remove ${p.label}` : `Add ${p.label}`}>
                 <b>{p.label}</b>
                 <span>{done ? 'Added · press again to remove' : p.blurb}</span>
-                {#if !mine.has(p.id)}<em>Counts {p.className} levels: none on this sheet yet</em>{/if}
+                {#if !p.kind && !mine.has(p.id)}<em>Counts {p.className} levels: none on this sheet yet</em>{/if}
               </button>
             {/each}
           </div>
         {/if}
       {/each}
-      <p class="note">Each tracker counts the level of its own class, set in its Class column
-        and taken from the classes on the Character tab.<br />Numbers follow the 2024 Player’s Handbook and grow with the class’s level.
+      <p class="note">Each tracker counts the level of the class in its From column, taken from
+        the classes on the Character tab; one from a feat or species counts your total level.<br />Numbers follow the 2024 Player’s Handbook and grow with the class’s level.
         A die or rest that changes with level is set for the level you are now.</p>
     </div>
 {/if}
