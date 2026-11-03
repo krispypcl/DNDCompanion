@@ -31,3 +31,27 @@ describe('classlevel for a tracker from a feat', () => {
     expect(trackerMax({ id: 'c', label: 'X', max: 'classlevel', class: 'Paladin', type: 'pips', direction: 'spend', reset: { on: 'long', amount: 'full' } }, ctx as never)).toBe(0);
   });
 });
+
+import { featureUrl } from '$lib/rules/lookup';
+
+describe('featureUrl', () => {
+  const identity = { ancestry: 'Tiefling (Asmodeus)', ancestrySource: 'xphb', background: 'Criminal', backgroundSource: 'xphb' };
+  const classes = [{ name: 'Fighter', subclass: 'Battle Master', level: 3, source: 'xphb' }];
+  it('sends every species feature to the species on the Character tab', () => {
+    const a = featureUrl({ title: 'Hellish Resistance', kind: 'Species' }, identity, classes);
+    const b = featureUrl({ title: 'Legacy of Malbolge', kind: 'Species' }, identity, classes);
+    expect(a).toBe('https://5e.tools/races.html#tiefling%20(asmodeus)_xphb');
+    expect(b).toBe(a);
+  });
+  it('sends a background feature to the background', () => {
+    expect(featureUrl({ title: 'Criminal Contact', kind: 'Background' }, identity, classes)).toBe('https://5e.tools/backgrounds.html#criminal_xphb');
+  });
+  it('finds a class feature on its class page, and a subclass feature on its subclass', () => {
+    expect(featureUrl({ title: 'Second Wind', kind: 'Class' }, identity, classes)).toBe('https://5e.tools/classes.html#fighter_xphb,state:feature=s0-1');
+    expect(featureUrl({ title: 'Combat Superiority', kind: 'Subclass' }, identity, classes)).toMatch(/fighter_xphb,state:sub_battle%20master_xphb=b1$/);
+    expect(featureUrl({ title: 'Something homemade', kind: 'Subclass' }, identity, classes)).toMatch(/classes\.html#fighter_.*state:sub_battle%20master/);
+  });
+  it('keeps a feat, or anything else, to its own name', () => {
+    expect(featureUrl({ title: 'Lucky', kind: 'Feat' }, identity, classes)).toMatch(/search\.html\?q=Lucky/);
+  });
+});

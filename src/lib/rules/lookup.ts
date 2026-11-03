@@ -254,3 +254,47 @@ export function trackerUrl(
   if (own) return lookupUrl(tracker.label, tracker.source, 'any');
   return lookupUrl(from, tracker.source, 'any');
 }
+
+/**
+ * The link for a feature, from where it comes from. A feature on the sheet is
+ * usually a piece of something bigger: Hellish Resistance and Legacy of
+ * Malbolge are both part of the Tiefling entry, so a species feature links to
+ * the species written on the Character tab, a background feature to the
+ * background, and a class or subclass feature to its place on the class page.
+ * A feat, or anything else, keeps its own name.
+ */
+export function featureUrl(
+  feature: { title: string; kind?: string; source?: string },
+  identity: { ancestry?: string; ancestrySource?: string; background?: string; backgroundSource?: string },
+  classes: { name: string; subclass?: string; source?: string }[] = []
+): string | null {
+  const written = feature.source?.trim().toLowerCase();
+  if (written && UNLINKABLE.has(written)) return null;
+  const kind = (feature.kind ?? '').toLowerCase();
+  if (kind === 'species' && identity.ancestry?.trim()) {
+    return lookupUrl(identity.ancestry, identity.ancestrySource, 'races');
+  }
+  if (kind === 'background' && identity.background?.trim()) {
+    return lookupUrl(identity.background, identity.backgroundSource, 'backgrounds');
+  }
+  if ((kind === 'class' || kind === 'subclass') && classes.length) {
+    const name = featureName(feature.title);
+    // The class whose features include it, or the first one.
+    for (const c of classes) {
+      const url = trackerUrl({ label: feature.title, class: c.name, source: feature.source || c.source }, classes);
+      const key = `${c.name.trim().toLowerCase()}|`;
+      const known =
+        Object.keys(FEATURES.classes).some((k) => k.startsWith(key) && FEATURES.classes[k][name]) ||
+        FEATURES.subclassFeatures[name]?.startsWith(key);
+      if (known && url) return url;
+    }
+    if (kind === 'subclass') {
+      const withSub = classes.find((c) => c.subclass?.trim());
+      if (withSub) {
+        return lookupUrl(withSub.subclass!, withSub.source, 'subclasses', undefined, { name: withSub.name, source: withSub.source });
+      }
+    }
+    return trackerUrl({ label: feature.title, class: classes[0].name, source: feature.source || classes[0].source }, classes);
+  }
+  return lookupUrl(feature.title, feature.source, 'feats');
+}

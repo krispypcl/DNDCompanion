@@ -202,6 +202,15 @@ function createSheetStore() {
 
     flushNow: flush,
 
+    /**
+     * Take on a change made to the sheet's row elsewhere (joining a campaign,
+     * retiring), with the row's new stamp, so the next save does not mistake
+     * it for someone else's write.
+     */
+    adoptRow(patch: Partial<Pick<Sheet, 'campaign_id' | 'retired' | 'updated_at'>>) {
+      store.update((s) => (s.sheet ? { ...s, sheet: { ...s.sheet, ...patch } } : s));
+    },
+
     /** Whether anything typed has not reached the database yet. */
     hasUnsaved() {
       const status = get(store).status;
