@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
    * The sheet's music, top centre: the song playing, then back, play/pause and
-   * next, then the volume, over a YouTube player kept out of sight. It plays
+   * next, over a YouTube player kept out of sight. It plays
    * a YouTube (or YouTube Music) playlist, or a single video's sound on loop.
    *
    * The speaker beside the light/dark switch is its mute: off (the default),
@@ -16,7 +16,7 @@
   import { fade } from 'svelte/transition';
   import { get } from 'svelte/store';
   import { setSound, soundOn } from '$lib/sound';
-  import { clock, loadYouTube, parsePlaylist, storeVolume, storedVolume, type Playlist, type YTPlayer } from '$lib/music';
+  import { clock, loadYouTube, parsePlaylist, type Playlist, type YTPlayer } from '$lib/music';
 
   let { url }: { url: string } = $props();
 
@@ -33,7 +33,6 @@
   let title = $state('');
   let failed = $state(false);
   let waiting = $state(false);
-  let volume = $state(typeof localStorage === 'undefined' ? 50 : storedVolume());
   /** Paused by its own button: sound coming on again does not override it. */
   let userPaused = false;
   let checkTimer: ReturnType<typeof setTimeout> | undefined;
@@ -90,7 +89,6 @@
   function start() {
     if (!ready || !yt) return;
     yt.unMute();
-    yt.setVolume(volume);
     yt.playVideo();
     clearTimeout(checkTimer);
     checkTimer = setTimeout(() => {
@@ -140,8 +138,7 @@
             onReady: () => {
               if (gone || !yt) return;
               ready = true;
-              yt.setVolume(volume);
-              if (get(soundOn)) start();
+                        if (get(soundOn)) start();
               else yt.mute();
               updateTitle();
             },
@@ -195,12 +192,6 @@
     else start();
   }
 
-  function setVol(v: number) {
-    volume = v;
-    yt?.setVolume(v);
-    storeVolume(v);
-  }
-
   const status = $derived(
     failed
       ? 'That playlist won’t play! It may be private, or the link is off.'
@@ -252,22 +243,22 @@
         <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M12.5 3v10M3 3.2v9.6L10.4 8z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" /></svg>
       </button>
     </div>
-    <label class="vol" title="Volume {volume}%">
-      <span class="sr">Volume</span>
-      <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M2.5 6.2h2.3l3-2.6v8.8l-3-2.6H2.5z" fill="currentColor" /><path d="M10.4 6a2.8 2.8 0 0 1 0 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /></svg>
-      <input type="range" min="0" max="100" step="1" value={volume}
-             style:--v="{volume}%" oninput={(e) => setVol(Number(e.currentTarget.value))} />
-    </label>
   </div>
 {/if}
 
 <style>
+  /* Frosted like the modules, and a little more see-through than they are. */
   .music {
     position: relative; min-width: 0; width: min(19rem, 100%);
     display: grid; justify-items: center; gap: 0.25rem;
-    border: 1px solid var(--line); border-radius: var(--r);
-    background: color-mix(in oklch, var(--surface) 88%, transparent);
+    border: 1px solid color-mix(in oklch, var(--line) 70%, transparent); border-radius: var(--r);
+    background: color-mix(in oklch, var(--surface) 58%, transparent);
+    backdrop-filter: blur(16px) saturate(1.1); -webkit-backdrop-filter: blur(16px) saturate(1.1);
     padding: 0.4375rem 0.75rem 0.5rem;
+  }
+  /* As with the modules, no frost on a phone: it is costly to keep redrawing. */
+  @media (max-width: 720px), (pointer: coarse) {
+    .music { backdrop-filter: none; -webkit-backdrop-filter: none; background: color-mix(in oklch, var(--surface) 82%, transparent); }
   }
   .ythost { position: fixed; left: -10000px; top: 0; width: 200px; height: 200px; opacity: 0; pointer-events: none; }
   .title {
@@ -314,16 +305,5 @@
   .ctl:active:not(:disabled) { transform: scale(0.92); }
   .ctl:disabled { opacity: 0.4; cursor: default; }
   .ctl.play { width: 2.125rem; height: 2.125rem; background: var(--a-wash); color: var(--a); border-color: var(--a-edge); }
-  .vol { display: flex; align-items: center; gap: 0.4375rem; color: var(--dim); width: min(10rem, 100%); cursor: pointer; }
-  .vol:hover, .vol:focus-within { color: var(--a); }
-  .vol input {
-    -webkit-appearance: none; appearance: none; flex: 1; min-width: 0; height: 4px; border-radius: 2px; margin: 0;
-    background: linear-gradient(to right, var(--a) var(--v), var(--line) var(--v)); cursor: pointer;
-  }
-  .vol input::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--a); border: 0;
-  }
-  .vol input::-moz-range-thumb { width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--a); border: 0; }
-  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   @media (prefers-reduced-motion: reduce) { .playing .eq i { animation: none; } }
 </style>

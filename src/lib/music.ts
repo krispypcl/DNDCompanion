@@ -77,23 +77,6 @@ export function loadYouTube(): Promise<YTNamespace> {
   return ytLoading;
 }
 
-const VOLUME_KEY = 'dndcompanion:volume';
-export function storedVolume(): number {
-  try {
-    const v = Number(localStorage.getItem(VOLUME_KEY));
-    return Number.isFinite(v) && localStorage.getItem(VOLUME_KEY) !== null ? Math.min(100, Math.max(0, v)) : 50;
-  } catch {
-    return 50;
-  }
-}
-export function storeVolume(v: number) {
-  try {
-    localStorage.setItem(VOLUME_KEY, String(Math.round(v)));
-  } catch {
-    /* private mode: it lasts for this visit */
-  }
-}
-
 /** 83 → "1:23"; 3723 → "1:02:03". */
 export function clock(seconds: number): string {
   const t = Math.max(0, Math.floor(Number.isFinite(seconds) ? seconds : 0));
