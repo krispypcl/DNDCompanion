@@ -33,6 +33,8 @@
   let campaign = $state<Campaign | null>(null);
   let sheets = $state<Sheet[]>([]);
   let loading = $state(true);
+  /** The die has landed: the page shows (as a sheet does). */
+  let landed = $state(false);
   let missing = $state(false);
   let error = $state<string | null>(null);
   let invite = $state<string | null>(null);
@@ -133,8 +135,11 @@
 
 <svelte:head><title>{campaign?.name ?? 'Campaign'}</title></svelte:head>
 
-{#if loading}
-  <div class="loading"><D20Loader size={56} label="Loading the campaign" /></div>
+{#if loading || !landed}
+  <div class="loading">
+    <D20Loader size={56} label="Loading the campaign" result={loading ? null : missing || (error && !campaign) ? 1 : 20}
+               onlanded={() => (landed = true)} />
+  </div>
 {:else if missing}
   <NotFound title="No campaign here!" message="This campaign has wandered off the map. It may have ended, or the link is off by a letter, so check it with your DM." />
 {:else if error && !campaign}
@@ -155,6 +160,7 @@
         </h1>
       </div>
       <div class="tools">
+        <a class="back" href="{base}/">Back</a>
         <button class="ghost" onclick={() => copy(location.href, 'page')}>{copied === 'page' ? 'Copied!' : 'Share page'}</button>
         <ModeToggle />
       </div>
@@ -175,7 +181,7 @@
     {#if error}<p class="err" role="alert">{error}</p>{/if}
 
     {#if active.length === 0}
-      <p class="empty">No characters yet.{#if isDm} Send your players the invite link.{/if}</p>
+      <p class="empty">No characters yet.{#if isDm}{' '}Send your players the invite link.{/if}</p>
     {:else}
       <ul class="cards">
         {#each active as s (s.id)}
@@ -275,6 +281,13 @@
   button:hover:not(:disabled) { border-color: var(--a); }
   button:disabled { opacity: 0.5; cursor: default; }
   .ghost { border-color: var(--line); background: var(--surface); color: var(--text); }
+  .back {
+    font-size: 0.875rem; padding: 0.4375rem 0.875rem; border-radius: var(--r-sm); text-decoration: none;
+    border: 1px solid var(--line); background: var(--surface); color: var(--text);
+    transition: border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+  }
+  .back:hover { border-color: var(--a-edge); color: var(--a); }
+  .back:active { transform: translateY(1px); }
   .danger { border-color: var(--bad); background: none; color: var(--bad); }
   .dangerish:hover { color: var(--bad); border-color: var(--bad); }
 

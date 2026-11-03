@@ -69,6 +69,26 @@ export async function savePinned(ids: string[]) {
   await unwrap(supabase.auth.updateUser({ data: { pinned_sheets: [...new Set(ids)] } }));
 }
 
+/** Pinned campaigns, in the player's own order, as for sheets. */
+export function pinnedCampaignsOf(user: { user_metadata?: Record<string, unknown> } | null | undefined): string[] {
+  const raw = user?.user_metadata?.pinned_campaigns;
+  return Array.isArray(raw) ? raw.filter((id): id is string => typeof id === 'string') : [];
+}
+
+export async function savePinnedCampaigns(ids: string[]) {
+  await unwrap(supabase.auth.updateUser({ data: { pinned_campaigns: [...new Set(ids)] } }));
+}
+
+/** Whether this player wants the sheets' music shuffled; kept with their account. */
+export function shuffleOf(user: { user_metadata?: Record<string, unknown> } | null | undefined): boolean | null {
+  const raw = user?.user_metadata?.music_shuffle;
+  return typeof raw === 'boolean' ? raw : null;
+}
+
+export async function saveShuffle(on: boolean) {
+  await unwrap(supabase.auth.updateUser({ data: { music_shuffle: on } }));
+}
+
 /**
  * Deletes the signed-in player's account and, by the database's cascades,
  * every sheet and piece of writing they made (delete_own_account in

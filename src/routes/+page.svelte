@@ -7,7 +7,7 @@
   import { sheetName, sheetRepo } from '$lib/data/sheets';
   import { campaignMessage, campaignRepo, type Campaign } from '$lib/data/campaigns';
   import { MAX_BYTES, importSheet } from '$lib/exchange';
-  import { pinnedOf, profileOf, savePinned, signIn } from '$lib/data/session';
+  import { pinnedCampaignsOf, pinnedOf, profileOf, savePinned, savePinnedCampaigns, signIn } from '$lib/data/session';
   import { tick } from 'svelte';
   import Avatar from '$lib/components/Avatar.svelte';
   import Logo from '$lib/components/Logo.svelte';
@@ -77,12 +77,16 @@
   let notice = $state<string | null>(null);
 
   /**
-   * Pinned sheets sit on top in the player's own order and cannot be deleted
-   * until unpinned. The rest follow, most recently updated first.
+   * Pinned sheets and campaigns sit on top in the player's own order (pinned
+   * sheets cannot be deleted until unpinned). The rest follow: sheets most
+   * recently updated first, campaigns oldest first.
    */
+  type Kind = 'sheets' | 'campaigns';
   let pinned = $state<string[]>([]);
+  let pinnedCamps = $state<string[]>([]);
   $effect(() => {
     pinned = pinnedOf($session.user);
+    pinnedCamps = pinnedCampaignsOf($session.user);
   });
   const byId = $derived(new Map(sheets.map((s) => [s.id, s])));
   const pinnedSheets = $derived(pinned.map((id) => byId.get(id)).filter((s): s is Sheet => Boolean(s)));
@@ -91,30 +95,37 @@
       .filter((s) => !pinned.includes(s.id))
       .sort((a, b) => (b.updated_at ?? '').localeCompare(a.updated_at ?? ''))
   );
+  const campById = $derived(new Map(running.map((c) => [c.id, c])));
+  const pinnedCampaigns = $derived(pinnedCamps.map((id) => campById.get(id)).filter((c): c is Campaign => Boolean(c)));
+  const otherCampaigns = $derived(running.filter((c) => !pinnedCamps.includes(c.id)));
 
-  async function setPinned(next: string[]) {
-    const previous = pinned;
-    pinned = next;
+  async function setPinned(next: string[], kind: Kind = 'sheets') {
+    const previous = kind === 'sheets' ? pinned : pinnedCamps;
+    if (kind === 'sheets') pinned = next;
+    else pinnedCamps = next;
     try {
-      await savePinned(next);
+      await (kind === 'sheets' ? savePinned(next) : savePinnedCampaigns(next));
     } catch (e) {
-      pinned = previous;
+      if (kind === 'sheets') pinned = previous;
+      else pinnedCamps = previous;
       error = friendlyError(e, 'That pin didn’t stick! Try again in a moment.');
     }
   }
-  function togglePin(id: string) {
+  function togglePin(id: string, kind: Kind = 'sheets') {
     if (confirming === id) confirming = null;
-    void setPinned(pinned.includes(id) ? pinned.filter((p) => p !== id) : [...pinned, id]);
+    const list = kind === 'sheets' ? pinned : pinnedCamps;
+    void setPinned(list.includes(id) ? list.filter((p) => p !== id) : [...list, id], kind);
   }
 
-  // Dragging a pinned sheet by its grip, the same way table rows move.
+  // Dragging a pinned card by its grip, the same way table rows move.
   let rowEls = $state<Record<string, HTMLElement>>({});
-  let drag = $state<{ id: string; from: number; to: number; dy: number; height: number; middles: number[]; startY: number; pointerId: number } | null>(null);
+  let drag = $state<{ kind: Kind; id: string; from: number; to: number; dy: number; height: number; middles: number[]; startY: number; pointerId: number } | null>(null);
   let landing = $state(false);
-  function grab(event: PointerEvent, id: string) {
-    if (event.button !== 0 || pinnedSheets.length < 2) return;
+  const pinnedIds = (kind: Kind) => (kind === 'sheets' ? pinnedSheets : pinnedCampaigns).map((x) => x.id);
+  function grab(event: PointerEvent, id: string, kind: Kind = 'sheets') {
+    const ids = pinnedIds(kind);
+    if (event.button !== 0 || ids.length < 2) return;
     event.preventDefault();
-    const ids = pinnedSheets.map((s) => s.id);
     const middles = ids.map((k) => {
       const r = rowEls[k]?.getBoundingClientRect();
       return r ? r.top + window.scrollY + r.height / 2 : 0;
@@ -122,7 +133,7 @@
     const from = ids.indexOf(id);
     const gap = middles.length > 1 ? Math.abs(middles[1] - middles[0]) : (rowEls[id]?.offsetHeight ?? 0);
     (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
-    drag = { id, from, to: from, dy: 0, height: gap, middles, startY: event.clientY + window.scrollY, pointerId: event.pointerId };
+    drag = { kind, id, from, to: from, dy: 0, height: gap, middles, startY: event.clientY + window.scrollY, pointerId: event.pointerId };
   }
   function moveDrag(event: PointerEvent) {
     if (!drag || event.pointerId !== drag.pointerId) return;
@@ -135,14 +146,14 @@
   }
   async function dropDrag(event: PointerEvent) {
     if (!drag || event.pointerId !== drag.pointerId) return;
-    const { from, to } = drag;
+    const { from, to, kind } = drag;
     landing = true;
     drag = null;
     if (from !== to) {
-      const ids = pinnedSheets.map((s) => s.id);
+      const ids = pinnedIds(kind);
       const [moved] = ids.splice(from, 1);
       ids.splice(to, 0, moved);
-      await setPinned(ids);
+      await setPinned(ids, kind);
     }
     await tick();
     requestAnimationFrame(() => (landing = false));
@@ -150,7 +161,8 @@
   function shift(id: string): number {
     if (!drag) return 0;
     if (id === drag.id) return drag.dy;
-    const i = pinnedSheets.findIndex((s) => s.id === id);
+    const i = pinnedIds(drag.kind).indexOf(id);
+    if (i < 0) return 0;
     if (drag.from < drag.to && i > drag.from && i <= drag.to) return -drag.height;
     if (drag.to < drag.from && i >= drag.to && i < drag.from) return drag.height;
     return 0;
@@ -265,16 +277,37 @@
   }
 </script>
 
-{#snippet pin(sheet: Sheet, on: boolean)}
-  <!-- A star on the left: pinned sheets go to the top and cannot be deleted. -->
+{#snippet star(id: string, name: string, on: boolean, kind: Kind)}
+  <!-- A star on the left: pinned cards go to the top (and sheets cannot be deleted). -->
   <button class="star" class:on aria-pressed={on}
-          aria-label="{on ? 'Unpin' : 'Pin'} {sheet.definition?.identity?.name || sheet.name}"
-          title={on ? 'Unpin' : 'Pin to the top'} onclick={() => togglePin(sheet.id)}>
+          aria-label="{on ? 'Unpin' : 'Pin'} {name}"
+          title={on ? 'Unpin' : 'Pin to the top'} onclick={() => togglePin(id, kind)}>
     <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
       <path d="M12 3.2l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3.1-5.4 3.1 1.2-6-4.5-4.2 6.1-.7z"
             stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
     </svg>
   </button>
+{/snippet}
+
+{#snippet pin(sheet: Sheet, on: boolean)}
+  {@render star(sheet.id, sheet.definition?.identity?.name || sheet.name, on, 'sheets')}
+{/snippet}
+
+{#snippet grip(id: string, name: string, count: number, kind: Kind)}
+  <button class="grip" aria-label="Drag to reorder {name}"
+          title="Drag to reorder" disabled={count < 2}
+          onpointerdown={(e) => grab(e, id, kind)} onpointermove={moveDrag}
+          onpointerup={dropDrag} onpointercancel={() => (drag = null)}>
+    <svg viewBox="0 0 12 18" width="10" height="15" aria-hidden="true">
+      {#each [3, 9, 15] as y (y)}
+        <circle cx="3" cy={y} r="1.5" fill="currentColor" /><circle cx="9" cy={y} r="1.5" fill="currentColor" />
+      {/each}
+    </svg>
+  </button>
+{/snippet}
+
+{#snippet campcard(c: Campaign)}
+  <a href="{base}/c/{c.id}"><strong>{c.name}</strong><span class="meta">started {friendlyDate(c.created_at)}</span></a>
 {/snippet}
 
 {#snippet card(sheet: Sheet)}
@@ -373,23 +406,14 @@
     {:else}
       {#if pinnedSheets.length}
         <h3 class="group">Pinned</h3>
-        <ul class="pinned" class:dragging={drag} class:landing>
+        <ul class="pinned" class:dragging={drag?.kind === "sheets"} class:landing>
           {#each pinnedSheets as sheet (sheet.id)}
             <li bind:this={rowEls[sheet.id]} class:retired={sheet.retired} class:lifted={drag?.id === sheet.id}
                 style:transform={drag ? `translateY(${shift(sheet.id)}px)` : undefined}
                 animate:flip={{ duration: drag || landing ? 0 : 260, easing: cubicOut }} out:fold>
               {@render pin(sheet, true)}
               {@render card(sheet)}
-              <button class="grip" aria-label="Drag to reorder {sheet.definition?.identity?.name || sheet.name}"
-                      title="Drag to reorder" disabled={pinnedSheets.length < 2}
-                      onpointerdown={(e) => grab(e, sheet.id)} onpointermove={moveDrag}
-                      onpointerup={dropDrag} onpointercancel={() => (drag = null)}>
-                <svg viewBox="0 0 12 18" width="10" height="15" aria-hidden="true">
-                  {#each [3, 9, 15] as y (y)}
-                    <circle cx="3" cy={y} r="1.5" fill="currentColor" /><circle cx="9" cy={y} r="1.5" fill="currentColor" />
-                  {/each}
-                </svg>
-              </button>
+              {@render grip(sheet.id, sheet.definition?.identity?.name || sheet.name, pinnedSheets.length, 'sheets')}
             </li>
           {/each}
         </ul>
@@ -444,9 +468,27 @@
         </div>
       {/if}
       {#if running.length}
-        <ul class="camplist">
-          {#each running as c (c.id)}
-            <li><a href="{base}/c/{c.id}"><strong>{c.name}</strong><span class="meta">started {friendlyDate(c.created_at)}</span></a></li>
+        {#if pinnedCampaigns.length}
+          <h3 class="group">Pinned</h3>
+          <ul class="pinned" class:dragging={drag?.kind === 'campaigns'} class:landing>
+            {#each pinnedCampaigns as c (c.id)}
+              <li bind:this={rowEls[c.id]} class:lifted={drag?.id === c.id}
+                  style:transform={drag?.kind === 'campaigns' ? `translateY(${shift(c.id)}px)` : undefined}
+                  animate:flip={{ duration: drag || landing ? 0 : 260, easing: cubicOut }}>
+                {@render star(c.id, c.name, true, 'campaigns')}
+                {@render campcard(c)}
+                {@render grip(c.id, c.name, pinnedCampaigns.length, 'campaigns')}
+              </li>
+            {/each}
+          </ul>
+          {#if otherCampaigns.length}<h3 class="group">Everything else</h3>{/if}
+        {/if}
+        <ul>
+          {#each otherCampaigns as c (c.id)}
+            <li animate:flip={{ duration: 260, easing: cubicOut }}>
+              {@render star(c.id, c.name, false, 'campaigns')}
+              {@render campcard(c)}
+            </li>
           {/each}
         </ul>
       {:else if !naming}
@@ -529,7 +571,6 @@
     border-radius: var(--r-sm); background: var(--surface); color: var(--text);
   }
   .newcamp input:focus { outline: none; border-color: var(--a-edge); }
-  .camplist li { padding-left: 0.25rem; }
   .dates { color: var(--faint); }
   .me {
     display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; color: var(--text);
