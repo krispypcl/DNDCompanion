@@ -6,8 +6,8 @@
 -- Authorization lives here, not in the client: the anon key is public, so
 -- these policies are the only thing standing between a request and the data.
 --
--- `campaigns` and `entries` are not used by the app yet; they are here so the
--- shared library and campaigns can arrive without changing live data.
+-- `entries` is not used by the app; it is here in case a shared library is
+-- ever wanted. Campaigns are set up in the section at the end.
 
 create table if not exists campaigns (
   id          uuid primary key default gen_random_uuid(),
@@ -192,3 +192,167 @@ $$;
 
 revoke all on function public.delete_own_account() from public, anon;
 grant execute on function public.delete_own_account() to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Campaigns: invite links, joining, and the DM's tools. A campaign's page is
+-- readable by anyone with its link, like a sheet; joining needs its invite
+-- code, which only the DM can read. See database/0004_campaigns.sql.
+
+-- The invite code: ten hex characters, made up for every campaign.
+alter table campaigns add column if not exists invite_code text;
+update campaigns
+  set invite_code = substr(replace(gen_random_uuid()::text, '-', ''), 1, 10)
+  where invite_code is null;
+alter table campaigns
+  alter column invite_code set default substr(replace(gen_random_uuid()::text, '-', ''), 1, 10);
+alter table campaigns alter column invite_code set not null;
+create unique index if not exists campaigns_invite_idx on campaigns (invite_code);
+
+-- Everything but the code is readable; only a name can be written directly.
+revoke select, insert, update on campaigns from anon, authenticated;
+grant select (id, name, created_by, created_at) on campaigns to anon, authenticated;
+grant insert (name, created_by) on campaigns to authenticated;
+grant update (name) on campaigns to authenticated;
+grant delete on campaigns to authenticated;
+
+-- A sheet's campaign is set only by the functions below (they switch this
+-- guard off for their own update). Setting it to nothing, to leave, is free.
+create or replace function public.guard_sheet_campaign()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.campaign_id is not null
+     and (tg_op = 'INSERT' or new.campaign_id is distinct from old.campaign_id)
+     and coalesce(current_setting('dnd.campaign_join', true), '') <> 'on' then
+    raise exception 'A sheet joins a campaign through its invite link';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists sheets_campaign_guard on sheets;
+create trigger sheets_campaign_guard
+  before insert or update of campaign_id on sheets
+  for each row execute function public.guard_sheet_campaign();
+
+-- Make a campaign, run by the caller, and optionally put one of their sheets in it.
+create or replace function public.create_campaign(p_name text, p_sheet uuid default null)
+returns table (id uuid, invite_code text, sheet_updated_at timestamptz)
+language plpgsql
+security definer
+set search_path = public
+as $$
+#variable_conflict use_column
+declare
+  uid uuid := auth.uid();
+  c campaigns%rowtype;
+  stamp timestamptz;
+begin
+  if uid is null then raise exception 'Not signed in'; end if;
+  if coalesce(trim(p_name), '') = '' then raise exception 'A campaign needs a name'; end if;
+  insert into campaigns (name, created_by) values (trim(p_name), uid) returning * into c;
+  if p_sheet is not null then
+    perform set_config('dnd.campaign_join', 'on', true);
+    update sheets set campaign_id = c.id
+      where sheets.id = p_sheet and owner_id = uid
+      returning updated_at into stamp;
+    perform set_config('dnd.campaign_join', '', true);
+  end if;
+  return query select c.id, c.invite_code, stamp;
+end;
+$$;
+
+-- What an invite is for, so the join page can name the campaign first.
+create or replace function public.campaign_by_invite(p_code text)
+returns table (id uuid, name text)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select c.id, c.name from campaigns c where c.invite_code = lower(trim(p_code));
+$$;
+
+-- Put one of the caller's sheets in the campaign the invite is for.
+create or replace function public.join_campaign(p_code text, p_sheet uuid)
+returns table (campaign_id uuid, sheet_updated_at timestamptz)
+language plpgsql
+security definer
+set search_path = public
+as $$
+#variable_conflict use_column
+declare
+  uid uuid := auth.uid();
+  cid uuid;
+  stamp timestamptz;
+begin
+  if uid is null then raise exception 'Not signed in'; end if;
+  select c.id into cid from campaigns c where c.invite_code = lower(trim(p_code));
+  if cid is null then raise exception 'No campaign has that invite'; end if;
+  perform set_config('dnd.campaign_join', 'on', true);
+  update sheets set campaign_id = cid
+    where sheets.id = p_sheet and owner_id = uid
+    returning updated_at into stamp;
+  perform set_config('dnd.campaign_join', '', true);
+  if stamp is null then raise exception 'That sheet is not yours'; end if;
+  return query select cid, stamp;
+end;
+$$;
+
+-- The DM's view of their own invite, and a fresh one if it has spread too far.
+create or replace function public.campaign_invite(p_campaign uuid)
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select c.invite_code from campaigns c where c.id = p_campaign and c.created_by = auth.uid();
+$$;
+
+create or replace function public.reset_campaign_invite(p_campaign uuid)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  code text;
+begin
+  update campaigns
+    set invite_code = substr(replace(gen_random_uuid()::text, '-', ''), 1, 10)
+    where id = p_campaign and created_by = auth.uid()
+    returning invite_code into code;
+  if code is null then raise exception 'Only the DM can change the invite'; end if;
+  return code;
+end;
+$$;
+
+-- The DM takes a sheet out of their campaign. (Its owner can simply leave.)
+create or replace function public.remove_from_campaign(p_sheet uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update sheets set campaign_id = null
+    where id = p_sheet
+      and campaign_id in (select c.id from campaigns c where c.created_by = auth.uid());
+  if not found then raise exception 'Only the DM can remove a sheet'; end if;
+end;
+$$;
+
+revoke all on function public.create_campaign(text, uuid) from public, anon;
+revoke all on function public.join_campaign(text, uuid) from public, anon;
+revoke all on function public.campaign_invite(uuid) from public, anon;
+revoke all on function public.reset_campaign_invite(uuid) from public, anon;
+revoke all on function public.remove_from_campaign(uuid) from public, anon;
+revoke all on function public.campaign_by_invite(text) from public;
+grant execute on function public.create_campaign(text, uuid) to authenticated;
+grant execute on function public.join_campaign(text, uuid) to authenticated;
+grant execute on function public.campaign_invite(uuid) to authenticated;
+grant execute on function public.reset_campaign_invite(uuid) to authenticated;
+grant execute on function public.remove_from_campaign(uuid) to authenticated;
+grant execute on function public.campaign_by_invite(text) to anon, authenticated;
