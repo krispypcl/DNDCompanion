@@ -77,6 +77,25 @@ export function loadYouTube(): Promise<YTNamespace> {
   return ytLoading;
 }
 
+const VOLUME_KEY = 'dndcompanion:volume';
+/** The music's volume, 0 to 100, remembered on this device. */
+export function storedVolume(): number {
+  try {
+    const raw = localStorage.getItem(VOLUME_KEY);
+    const v = Number(raw);
+    return raw !== null && Number.isFinite(v) ? Math.min(100, Math.max(0, v)) : 70;
+  } catch {
+    return 70;
+  }
+}
+export function storeVolume(v: number) {
+  try {
+    localStorage.setItem(VOLUME_KEY, String(Math.round(v)));
+  } catch {
+    /* private mode: it lasts for this visit */
+  }
+}
+
 /** 83 → "1:23"; 3723 → "1:02:03". */
 export function clock(seconds: number): string {
   const t = Math.max(0, Math.floor(Number.isFinite(seconds) ? seconds : 0));
