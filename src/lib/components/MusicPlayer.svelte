@@ -31,31 +31,55 @@
    * order each time the sheet opens, the first song included.
    */
   let shuffle = $state(false);
-  let shuffleKnown = false;
+  /** What the player wants, read when it is needed rather than when the page
+      happened to render: the account's choice, or this device's. */
+  const wantShuffle = () => shuffleOf(get(session).user) ?? (typeof localStorage === 'undefined' ? false : storedShuffle());
   $effect(() => {
     const fromAccount = shuffleOf($session.user);
-    if (shuffleKnown && fromAccount === null) return;
     shuffle = fromAccount ?? (typeof localStorage === 'undefined' ? false : storedShuffle());
-    shuffleKnown = true;
+    // The device follows the account, so the next visit knows before sign-in finishes.
+    if (fromAccount !== null) storeShuffle(fromAccount);
   });
-  /** Waiting for the playlist's songs to be known before reordering them. */
+  /**
+   * The new order is made once per visit, as soon as YouTube says which songs
+   * the playlist has (on loading, or at the latest when it starts). Playing
+   * the shuffled list itself is what makes the first song random: pressing
+   * play while one is pending loads the shuffled list instead of starting the
+   * list's own first song.
+   */
   let pendingShuffle = false;
-  function applyShuffle() {
-    if (!pendingShuffle || !yt) return;
+  /** Whether a song has started this visit. */
+  let hasPlayed = false;
+  let hushed = false;
+  function applyShuffle(play: boolean): boolean {
+    if (!pendingShuffle || !yt) return false;
     const ids = yt.getPlaylist?.();
-    if (!ids?.length) return;
+    if (!ids?.length) return false;
     pendingShuffle = false;
-    if (ids.length < 2) return;
-    const order = shuffled(ids);
-    if (yt.getPlayerState() === 1) yt.loadPlaylist(order, 0);
-    else yt.cuePlaylist(order, 0);
+    if (ids.length >= 2) {
+      const order = shuffled(ids);
+      if (play) yt.loadPlaylist(order, 0);
+      else yt.cuePlaylist(order, 0);
+    }
+    if (hushed) {
+      hushed = false;
+      if (get(soundOn)) yt.unMute();
+    }
+    return play && ids.length >= 2;
   }
   function toggleShuffle() {
     shuffle = !shuffle;
     storeShuffle(shuffle);
     if ($session.user) void saveShuffle(shuffle).catch(() => {});
-    // Mid-song, the rest of the list is shuffled (or not) from here on.
-    try { yt?.setShuffle(shuffle); } catch { /* not ready */ }
+    // Before anything has played, the whole list (first song too) is
+    // reshuffled; mid-song, the rest of it is shuffled (or not) from here on.
+    if (shuffle && !hasPlayed && playlist?.list) {
+      pendingShuffle = true;
+      applyShuffle(false);
+    } else {
+      pendingShuffle = false;
+      try { yt?.setShuffle(shuffle); } catch { /* not ready */ }
+    }
   }
 
   const key = $derived.by(() => {
@@ -138,7 +162,16 @@
     if (!ready || !yt) return;
     yt.unMute();
     yt.setVolume(volume);
-    yt.playVideo();
+    // A shuffle still waiting is played from its first song; otherwise go on.
+    // If YouTube has not said what the songs are yet, the list's own first
+    // song starts silently and gives way to the shuffled one once it has.
+    if (!applyShuffle(true)) {
+      if (pendingShuffle) {
+        hushed = true;
+        yt.mute();
+      }
+      yt.playVideo();
+    }
     clearTimeout(checkTimer);
     checkTimer = setTimeout(() => {
       const state = yt?.getPlayerState();
@@ -159,6 +192,7 @@
     playing = false;
     title = '';
     failed = false;
+    hasPlayed = false;
     at = 0;
     length = 0;
     if (host) host.innerHTML = '';
@@ -187,17 +221,22 @@
             onReady: () => {
               if (gone || !yt) return;
               ready = true;
-              pendingShuffle = shuffle && Boolean(p.list);
-              applyShuffle();
+              pendingShuffle = wantShuffle() && Boolean(p.list);
+              applyShuffle(false);
               yt.setVolume(volume);
               if (get(soundOn)) start();
               else yt.mute();
               updateTitle();
             },
             onStateChange: (e: { data: number }) => {
-              applyShuffle();
+              // 1 playing, 3 buffering: the list's own first song has begun, so
+              // the shuffled one replaces it straight away.
+              if (applyShuffle(e.data === 1 || e.data === 3)) return;
               playing = e.data === 1;
-              if (e.data === 1) disarm?.();
+              if (e.data === 1) {
+                hasPlayed = true;
+                disarm?.();
+              }
               updateTitle();
               readTime();
             },
