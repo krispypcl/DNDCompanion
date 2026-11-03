@@ -1247,6 +1247,15 @@
    */
   .bannered .sub { color: var(--text); }
   .bannered .sub :global(.field.readout.empty) { color: var(--label); }
+  /* On a phone the frost is dropped for a nearly solid module: blurring the
+     banner behind every module again on each animated frame (a gauge, a pip,
+     a condition's tint) is what made changes stutter there. */
+  @media (max-width: 720px), (pointer: coarse) {
+    .bannered .panel {
+      backdrop-filter: none; -webkit-backdrop-filter: none;
+      background: color-mix(in oklch, var(--surface) 93%, transparent);
+    }
+  }
   /* No backdrop-filter, no frost: the module stays readable by being solid. */
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .bannered .panel { background: var(--surface); }
@@ -1422,7 +1431,7 @@
   .trk .cap { margin-bottom: 0.625rem; }
   /* Directly below the trackers. With equal-height rails the slack falls to
      the bottom of the panel, not into a gap above this. */
-  .passives { padding-top: 1.25rem; }
+  .passives { padding-top: 0.25rem; }
   .passives .cap:first-child { margin-bottom: 0.625rem; }
   /* In the narrower skills card "Investigation" only fits a little smaller. */
   .rail-skills .passives .defbox { padding-inline: 0.125rem; }
@@ -1490,11 +1499,15 @@
   .entering .panel { animation: panelIn 0.5s cubic-bezier(0.2, 0.8, 0.3, 1) backwards; animation-delay: calc(var(--i, 0) * 70ms); }
   @keyframes panelIn { from { opacity: 0; transform: translateY(12px); } }
   /* Inspiration held: a soft glow that breathes until it is spent. */
-  .defbox.inspired { animation: inspired 2.6s ease-in-out infinite; border-color: var(--a-edge); }
-  @keyframes inspired {
-    0%, 100% { box-shadow: 0 0 0 0 transparent; }
-    50% { box-shadow: 0 0 14px 1px color-mix(in oklch, var(--a) 35%, transparent); }
+  /* The glow is a layer whose opacity breathes; animating the shadow itself
+     repainted the box on every frame. */
+  .defbox.inspired { border-color: var(--a-edge); position: relative; }
+  .defbox.inspired::after {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    box-shadow: 0 0 14px 1px color-mix(in oklch, var(--a) 35%, transparent);
+    opacity: 0; animation: inspired 2.6s ease-in-out infinite; will-change: opacity;
   }
+  @keyframes inspired { 50% { opacity: 1; } }
   /* Level up: twelve rays from the portrait, and the words rising off it. */
   .burst { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
   .burst i {
@@ -1521,7 +1534,7 @@
     100% { opacity: 0; transform: translate(-50%, -20px); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .entering .panel, .entering .identity, .defbox.inspired, .burst, .levelup { animation: none; }
+    .entering .panel, .entering .identity, .defbox.inspired::after, .burst, .levelup { animation: none; }
     .burst { display: none; }
   }
   /* Shortcuts are for a keyboard: the button only shows where there is a mouse. */

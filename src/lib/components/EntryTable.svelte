@@ -206,12 +206,26 @@
     onchange(items.map((item, i) => (i === index ? { ...item, [key]: value } : item)));
   }
 
-  function add() {
+  async function add() {
     const row = blank();
     const key = fresh();
     if (typeof row.id === 'string' && row.id) idKeys.set(row.id, key);
+    const height = scrollBox?.getBoundingClientRect().height;
     keys = [...keys, key];
     onchange([...items, row]);
+    // The table eases open to take the new row, so the add button below it
+    // slides down rather than jumping.
+    await tick();
+    easeHeight(height);
+  }
+
+  function easeHeight(from: number | undefined) {
+    if (!scrollBox || from === undefined || prefersReducedMotion()) return;
+    const to = scrollBox.getBoundingClientRect().height;
+    if (Math.abs(to - from) < 1) return;
+    scrollBox.animate([{ height: `${from}px`, overflow: 'hidden' }, { height: `${to}px`, overflow: 'hidden' }], {
+      duration: 320, easing: 'cubic-bezier(0.2, 0.8, 0.25, 1)'
+    });
   }
 
   /**
@@ -272,12 +286,7 @@
         duration: 320, easing: 'cubic-bezier(0.2, 0.8, 0.25, 1)'
       });
     }
-    const now = scrollBox.getBoundingClientRect().height;
-    if (Math.abs(now - height) >= 1) {
-      scrollBox.animate([{ height: `${height}px`, overflow: 'hidden' }, { height: `${now}px`, overflow: 'hidden' }], {
-        duration: 320, easing: 'cubic-bezier(0.2, 0.8, 0.25, 1)'
-      });
-    }
+    easeHeight(height);
   }
 
   /** The rows of one group, in screen order. */
