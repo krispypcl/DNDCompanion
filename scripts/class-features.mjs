@@ -11,6 +11,9 @@ const index = await get('index.json');
 const SKIP = new Set(['mystic', 'sidekick']);
 
 const classes = {};
+/** Per class, the level of each "gain a subclass feature" row and its place:
+    subclass features are drawn just below it, so a link scrolls there. */
+const gains = {};
 const subclassFeatures = {};
 const clash = new Set();
 for (const [key, file] of Object.entries(index)) {
@@ -25,6 +28,7 @@ for (const [key, file] of Object.entries(index)) {
   for (const cls of data.class ?? []) {
     const perLevel = {};
     const out = {};
+    const gain = {};
     for (const entry of cls.classFeatures ?? []) {
       const ref = typeof entry === 'string' ? entry : entry.classFeature;
       const [name, className, classSource, level, source] = ref.split('|');
@@ -34,8 +38,10 @@ for (const [key, file] of Object.entries(index)) {
       const ixFeature = (perLevel[ixLevel] = (perLevel[ixLevel] ?? -1) + 1);
       const k = name.toLowerCase();
       if (!(k in out)) out[k] = `${ixLevel}-${ixFeature}`;
+      if (typeof entry === 'object' && entry.gainSubclassFeature) gain[level] = `${ixLevel}-${ixFeature}`;
     }
     classes[`${cls.name.toLowerCase()}|${cls.source.toLowerCase()}`] = out;
+    gains[`${cls.name.toLowerCase()}|${cls.source.toLowerCase()}`] = gain;
   }
   // Every subclass feature, including those nested under the subclass's
   // first one ("Combat Superiority" sits inside "Battle Master").
@@ -43,18 +49,22 @@ for (const [key, file] of Object.entries(index)) {
     if (f.type === 'inset' || !f.name) continue;
     const name = f.name.toLowerCase();
     const value = [f.className, f.classSource, f.subclassShortName, f.subclassSource].map((s) => String(s).toLowerCase()).join('|');
-    if (name in subclassFeatures && subclassFeatures[name] !== value) {
+    const at = `${value}|${f.level}`;
+    const known = subclassFeatures[name];
+    const base = known?.split('|').slice(0, 4).join('|');
+    if (known && base !== value) {
       // The newer book wins a clash with an older one; others are dropped.
-      if (value.endsWith('|xphb') && !subclassFeatures[name].endsWith('|xphb')) subclassFeatures[name] = value;
-      else if (!subclassFeatures[name].endsWith('|xphb')) clash.add(name);
+      if (value.endsWith('|xphb') && !base.endsWith('|xphb')) subclassFeatures[name] = at;
+      else if (!base.endsWith('|xphb')) clash.add(name);
       continue;
     }
-    subclassFeatures[name] = value;
+    // The first level it is gained at.
+    if (!known) subclassFeatures[name] = at;
   }
 }
-for (const k of clash) if (!subclassFeatures[k].endsWith("|xphb")) delete subclassFeatures[k];
+for (const k of clash) if (!subclassFeatures[k].split('|').slice(0, 4).join('|').endsWith('|xphb')) delete subclassFeatures[k];
 await writeFile(
   new URL('../src/lib/data/class-features.json', import.meta.url),
-  JSON.stringify({ classes, subclassFeatures }) + '\n'
+  JSON.stringify({ classes, gains, subclassFeatures }) + '\n'
 );
 console.log(`${Object.keys(classes).length} classes, ${Object.keys(subclassFeatures).length} subclass features`);

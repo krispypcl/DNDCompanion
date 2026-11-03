@@ -20,28 +20,13 @@ export class CampaignError extends Error {
   }
 }
 
-/** The database has not been given campaigns yet (migration 0004 not run). */
-export class CampaignsMissing extends CampaignError {
-  constructor() {
-    super('Campaigns aren’t set up yet! The database needs its campaign update first.');
-    this.name = 'CampaignsMissing';
-  }
-}
-
 /** What to tell the player about a failed campaign call. */
 export function campaignMessage(error: unknown, fallback: string): string {
   return error instanceof CampaignError ? error.message : friendlyError(error, fallback);
 }
 
-export function isMissingFunction(error: { code?: string; message?: string } | null | undefined): boolean {
-  if (!error) return false;
-  // PGRST202: PostgREST, no such function in its schema cache. 42883: Postgres, undefined function.
-  return error.code === 'PGRST202' || error.code === '42883' || /could not find the function/i.test(error.message ?? '');
-}
-
 /** The friendly words for what the database said no to. */
 function refusal(error: { code?: string; message?: string }): Error {
-  if (isMissingFunction(error)) return new CampaignsMissing();
   const m = error.message ?? '';
   if (/no campaign has that invite/i.test(m)) return new CampaignError('That invite doesn’t open any door! Check the link, or ask your DM for a fresh one.');
   if (/not yours/i.test(m)) return new CampaignError('That sheet isn’t yours to bring along!');

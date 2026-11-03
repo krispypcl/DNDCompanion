@@ -183,6 +183,9 @@ export function isHomebrew(source: string | undefined): boolean {
 
 const FEATURES = CLASS_FEATURES as {
   classes: Record<string, Record<string, string>>;
+  /** Per class, the row each level's subclass features are drawn under. */
+  gains: Record<string, Record<string, string>>;
+  /** Subclass feature → class|classSource|subclass|subclassSource|level. */
   subclassFeatures: Record<string, string>;
 };
 
@@ -245,7 +248,11 @@ export function trackerUrl(
     if (at) return `${page},state:feature=s${at}`;
     const sub = FEATURES.subclassFeatures[feature]?.split('|');
     if (sub && sub[0] === cls) {
-      return `${LOOKUP_BASE}/classes.html#${hashPart(cls)}_${hashPart(sub[1])},state:sub_${hashPart(sub[2])}_${hashPart(sub[3])}=b1`;
+      // The subclass chosen, and scrolled to the level it gains the feature,
+      // where 5e.tools draws the subclass's features under the class's own row.
+      const gain = FEATURES.gains[`${cls}|${sub[1]}`]?.[sub[4]];
+      const chosen = `sub_${hashPart(sub[2])}_${hashPart(sub[3])}=b1`;
+      return `${LOOKUP_BASE}/classes.html#${hashPart(cls)}_${hashPart(sub[1])},state:${gain ? `feature=s${gain}~` : ''}${chosen}`;
     }
     return page;
   }
@@ -291,7 +298,12 @@ export function featureUrl(
     if (kind === 'subclass') {
       const withSub = classes.find((c) => c.subclass?.trim());
       if (withSub) {
-        return lookupUrl(withSub.subclass!, withSub.source, 'subclasses', undefined, { name: withSub.name, source: withSub.source });
+        const url = lookupUrl(withSub.subclass!, withSub.source, 'subclasses', undefined, { name: withSub.name, source: withSub.source });
+        // Scrolled to where the subclass is chosen, its first features below.
+        const book = sourceId(withSub.source?.trim() || 'xphb');
+        const gain = Object.entries(FEATURES.gains[`${withSub.name.trim().toLowerCase()}|${book}`] ?? {})
+          .sort(([a], [b]) => Number(a) - Number(b))[0]?.[1];
+        return url && gain && url.includes(',state:') ? url.replace(',state:', `,state:feature=s${gain}~`) : url;
       }
     }
     return trackerUrl({ label: feature.title, class: classes[0].name, source: feature.source || classes[0].source }, classes);
