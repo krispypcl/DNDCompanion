@@ -13,7 +13,7 @@
   import { flipKey } from '$lib/flip';
   import EntryLink from './EntryLink.svelte';
   import InfoTip from './InfoTip.svelte';
-  import { tick, untrack } from 'svelte';
+  import { onDestroy, tick, untrack } from 'svelte';
   import { cubicOut } from 'svelte/easing';
   import { prefersReducedMotion } from '$lib/motion';
   import type { LookupCategory } from '$lib/rules/lookup';
@@ -484,7 +484,6 @@
 
   // ── A row asked for from elsewhere ────────────────────────────────────────
   let spotted = $state<number | null>(null);
-  let spotTimer: ReturnType<typeof setTimeout> | undefined;
   $effect(() => {
     const index = spot;
     if (index === null || index === undefined) return;
@@ -505,15 +504,19 @@
       };
       toRow();
       // Again once the tab has finished changing, in case the page was still
-      // settling (the old tab fading out, the table growing in) the first time.
-      setTimeout(toRow, 420);
+      // settling (the old tab fading out, the table growing in) the first time;
+      // then the row lights, once the page has stopped moving under it.
+      for (const t of spotTimers) clearTimeout(t);
       spotted = null;
-      requestAnimationFrame(() => (spotted = row.key));
-      clearTimeout(spotTimer);
-      spotTimer = setTimeout(() => (spotted = null), 1800);
+      spotTimers = [
+        setTimeout(toRow, 380),
+        setTimeout(() => (spotted = row.key), 620),
+        setTimeout(() => (spotted = null), 620 + 900)
+      ];
     });
-    return () => clearTimeout(spotTimer);
   });
+  let spotTimers: ReturnType<typeof setTimeout>[] = [];
+  onDestroy(() => spotTimers.forEach(clearTimeout));
 
   // ── Rows arriving and leaving ─────────────────────────────────────────────
 
@@ -723,7 +726,10 @@
   .scroller { overflow-x: auto; position: relative; }
   table {
     width: 100%;
-    border-collapse: collapse;
+    /* Separate, with no spacing: looks the same as collapsed, and lets each
+       row's end cells round their corners. */
+    border-collapse: separate;
+    border-spacing: 0;
     font-size: 0.9rem;
     /* Columns keep their declared width whether or not there are rows. */
     table-layout: fixed;
@@ -753,6 +759,9 @@
     hyphens: auto;
   }
   tr:last-child td { border-bottom: 0; }
+  /* Every row's ends are softly rounded, for anything that colours a row. */
+  tbody tr > td:first-child { border-top-left-radius: var(--r-sm); border-bottom-left-radius: var(--r-sm); }
+  tbody tr > td:last-child { border-top-right-radius: var(--r-sm); border-bottom-right-radius: var(--r-sm); }
   /* A heading for the rows under it: spells by level. Quiet, and accent
      coloured so the eye finds the breaks without a rule between them. */
   tr.group th {
@@ -776,19 +785,12 @@
   .nm { overflow-wrap: anywhere; }
   /* A slot of this level was just spent: the heading flares. */
   tr.group.lit th { animation: castFlare 1.5s ease-out; }
-  /* A row brought here from elsewhere: a wash of the accent that fades. */
-  tr.spotted > td { animation: spotted 1.8s ease-out; }
-  @keyframes spotted {
-    0%, 25% { background-color: var(--a-wash); box-shadow: inset 0 0 0 9999px color-mix(in oklch, var(--a) 8%, transparent); }
-    100% { background-color: transparent; box-shadow: none; }
-  }
-  /* On a phone a row is a card: the card's edge lights as well. */
-  tr.spotted { animation: spotRing 1.8s ease-out; }
-  @keyframes spotRing {
-    0%, 25% { outline: 2px solid var(--a-edge); outline-offset: 2px; }
-    100% { outline: 2px solid transparent; outline-offset: 2px; }
-  }
-  @media (prefers-reduced-motion: reduce) { tr.spotted > td, tr.spotted { animation-duration: 0.01s; } }
+  /* A row brought here from elsewhere: washed in the accent, its ends rounded
+     with the row's, then let go to fade. Transitions, not keyframes: the
+     theme's accent only switches in keyframes, it never fades. */
+  tbody tr:not(.group) > td { transition: background-color 1.1s ease-out; }
+  tr.spotted > td { background-color: var(--a-wash); transition-duration: 0.25s; }
+  @media (prefers-reduced-motion: reduce) { tr.spotted > td, tr.spotted, tbody tr:not(.group) > td { transition-duration: 0.01s; } }
   @keyframes castFlare {
     0% { color: var(--label); text-shadow: none; }
     18% { color: var(--a-hi); text-shadow: 0 0 12px color-mix(in oklch, var(--a) 70%, transparent); }
@@ -902,6 +904,10 @@
       margin-bottom: 0.5rem;
     }
     table:not(.editing) td { border: 0; padding: 0; }
+    /* A card lights as a whole, rather than cell by cell. */
+    table:not(.editing) tr.spotted > td { background-color: transparent; }
+    table:not(.editing) tr:not(.group) { transition: background-color 1.1s ease-out, border-color 1.1s ease-out; }
+    table:not(.editing) tr.spotted { background-color: var(--a-wash); border-color: var(--a-edge); transition-duration: 0.25s; }
     table:not(.editing) td[data-empty],
     table.headed:not(.editing) td.grouped { display: none; }
     table:not(.editing) td.name,
