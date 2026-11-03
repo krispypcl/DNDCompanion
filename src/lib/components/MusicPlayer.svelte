@@ -61,11 +61,41 @@
       if (play) yt.loadPlaylist(order, 0);
       else yt.cuePlaylist(order, 0);
     }
-    if (hushed) {
-      hushed = false;
-      if (get(soundOn)) yt.unMute();
-    }
+    stopWatch();
+    unhush();
     return play && ids.length >= 2;
+  }
+  /** Sound back on for a song started silently while the shuffle waited. */
+  function unhush() {
+    if (!hushed) return;
+    hushed = false;
+    if (get(soundOn)) yt?.unMute();
+  }
+  /**
+   * YouTube fills in a playlist's songs when it gets round to it: often not
+   * by the time the player is ready, sometimes not until a song has started.
+   * So while a shuffle is waiting, it asks every few tenths of a second, and
+   * gives up after a while (unmuting anything it had hushed) rather than for ever.
+   */
+  let watch: ReturnType<typeof setInterval> | undefined;
+  let watchUntil = 0;
+  function startWatch() {
+    stopWatch();
+    watchUntil = Date.now() + 20000;
+    watch = setInterval(() => {
+      if (!pendingShuffle || !yt) return stopWatch();
+      const state = yt.getPlayerState();
+      if (applyShuffle(state === 1 || state === 3)) return;
+      if (Date.now() > watchUntil) {
+        pendingShuffle = false;
+        stopWatch();
+        unhush();
+      }
+    }, 300);
+  }
+  function stopWatch() {
+    clearInterval(watch);
+    watch = undefined;
   }
   function toggleShuffle() {
     shuffle = !shuffle;
@@ -75,7 +105,7 @@
     // reshuffled; mid-song, the rest of it is shuffled (or not) from here on.
     if (shuffle && !hasPlayed && playlist?.list) {
       pendingShuffle = true;
-      applyShuffle(false);
+      if (!applyShuffle(false) && pendingShuffle) startWatch();
     } else {
       pendingShuffle = false;
       try { yt?.setShuffle(shuffle); } catch { /* not ready */ }
@@ -169,6 +199,7 @@
       if (pendingShuffle) {
         hushed = true;
         yt.mute();
+        if (!watch) startWatch();
       }
       yt.playVideo();
     }
@@ -185,6 +216,9 @@
 
   function teardown() {
     clearTimeout(checkTimer);
+    stopWatch();
+    pendingShuffle = false;
+    hushed = false;
     disarm?.();
     try { yt?.destroy(); } catch { /* already gone */ }
     yt = null;
@@ -222,7 +256,12 @@
               if (gone || !yt) return;
               ready = true;
               pendingShuffle = wantShuffle() && Boolean(p.list);
-              applyShuffle(false);
+              if (pendingShuffle && !applyShuffle(false) && pendingShuffle) {
+                // Ask for the list itself (not the one song the link opened
+                // on), so its songs are fetched, then wait for them.
+                try { yt.cuePlaylist({ list: p.list!, listType: 'playlist' }); } catch { /* older player */ }
+                startWatch();
+              }
               yt.setVolume(volume);
               if (get(soundOn)) start();
               else yt.mute();

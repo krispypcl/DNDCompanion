@@ -4,7 +4,8 @@
    * DM glances at mid-fight (hit points, AC, passive Perception, conditions),
    * kept current while the page is open. Readable by anyone with the link,
    * like a sheet. Its DM also gets the invite link, a rename, removing a
-   * character, and deleting the campaign.
+   * character, ending the campaign (it is archived, and can be reopened) and
+   * deleting it.
    */
   import { onMount } from 'svelte';
   import { fade } from 'svelte/transition';
@@ -40,9 +41,11 @@
   let invite = $state<string | null>(null);
   let copied = $state<'invite' | 'page' | null>(null);
   let removing = $state<string | null>(null);
-  let confirmDelete = $state(false);
+  /** Which of the campaign's last two buttons is asking to be sure. */
+  let confirming = $state<'end' | 'delete' | null>(null);
 
   const isDm = $derived(Boolean(campaign && $session.user && campaign.created_by === $session.user.id));
+  const ended = $derived(Boolean(campaign?.archived));
   const active = $derived(
     sheets.filter((s) => !s.retired).sort((a, b) => (a.definition?.identity?.name ?? '').localeCompare(b.definition?.identity?.name ?? ''))
   );
@@ -81,7 +84,7 @@
   });
 
   $effect(() => {
-    if (!isDm || !campaign) return;
+    if (!isDm || !campaign || ended) return;
     campaignRepo.invite(campaign.id).then((c) => (invite = c)).catch(() => {});
   });
 
@@ -120,11 +123,18 @@
     removing = null;
   }, 'That character held on! Try again.');
 
+  const setEnded = (archived: boolean) => act(async () => {
+    if (!campaign) return;
+    await campaignRepo.archive(campaign.id, archived);
+    campaign = { ...campaign, archived };
+    confirming = null;
+  }, archived ? 'The story refused to end! Try again.' : 'The campaign stayed shut! Try again.');
+
   const destroy = () => act(async () => {
     if (!campaign) return;
     await campaignRepo.delete(campaign.id);
     await goto(`${base}/`);
-  }, 'The campaign refused to end! Try again.');
+  }, 'The campaign refused to vanish! Try again.');
 
   const hpOf = (s: Sheet) => {
     const max = Number(s.definition?.combat?.hpMax) || 0;
@@ -149,7 +159,7 @@
     <header>
       <a class="home" href="{base}/" title="Your characters"><Logo size={26} /></a>
       <div class="title">
-        <span class="eyebrow">Campaign{#if isDm}<span class="sep">·</span>you’re the DM{/if}</span>
+        <span class="eyebrow">Campaign{#if ended}<span class="sep">·</span>ended{/if}{#if isDm}<span class="sep">·</span>you’re the DM{/if}</span>
         <h1>
           {#if isDm}
             <EditableField value={campaign.name} editable={true} label="Campaign name" placeholder="Campaign name"
@@ -166,7 +176,9 @@
       </div>
     </header>
 
-    {#if isDm}
+    {#if ended}
+      <p class="ended">This campaign has ended. Its characters stay here as the story left them{#if isDm}, and nobody new can join{/if}.</p>
+    {:else if isDm}
       <section class="dm">
         <div class="invite">
           <span class="label">Invite link</span>
@@ -220,7 +232,7 @@
                 {#each s.state.conditions as c (c)}<li>{c}</li>{/each}
               </ul>
             {/if}
-            {#if isDm}
+            {#if isDm && !ended}
               {#if removing === s.id}
                 <div class="confirm" role="group" aria-label="Remove {def?.identity?.name}">
                   <span>Take out of the campaign?</span>
@@ -251,12 +263,21 @@
 
     {#if isDm}
       <div class="end">
-        {#if confirmDelete}
-          <span>End this campaign for good? Its characters stay, out of any campaign.</span>
-          <button class="danger" onclick={destroy}>End it</button>
-          <button class="ghost" onclick={() => (confirmDelete = false)}>Keep</button>
+        {#if confirming === 'end'}
+          <span>End this campaign? It moves to your archived campaigns, its characters stay in it, and you can reopen it later.</span>
+          <button class="danger" onclick={() => setEnded(true)}>End it</button>
+          <button class="ghost" onclick={() => (confirming = null)}>Keep playing</button>
+        {:else if confirming === 'delete'}
+          <span>Delete this campaign for good? Its characters stay, out of any campaign.</span>
+          <button class="danger" onclick={destroy}>Delete it</button>
+          <button class="ghost" onclick={() => (confirming = null)}>Keep</button>
         {:else}
-          <button class="ghost dangerish" onclick={() => (confirmDelete = true)}>End campaign</button>
+          {#if ended}
+            <button class="ghost" onclick={() => setEnded(false)}>Reopen campaign</button>
+          {:else}
+            <button class="ghost" onclick={() => (confirming = 'end')}>End campaign</button>
+          {/if}
+          <button class="ghost dangerish" onclick={() => (confirming = 'delete')}>Delete campaign</button>
         {/if}
       </div>
     {/if}
@@ -303,6 +324,10 @@
   }
   .hint { margin: 0.5rem 0 0; font-size: 0.8125rem; color: var(--dim); line-height: 1.45; }
   .err { color: var(--bad); font-size: 0.875rem; }
+  .ended {
+    margin: 1.5rem 0 0; padding: 0.75rem 1rem; border: 1px solid var(--line-soft); border-radius: var(--r);
+    background: var(--surface); color: var(--dim); font-size: 0.875rem; line-height: 1.45;
+  }
   .empty { color: var(--dim); margin-top: 2rem; }
 
   .cards {

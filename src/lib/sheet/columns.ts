@@ -30,7 +30,7 @@ export const ATTACK_COLUMNS = [
 
 /** Blank first: a new row has no level yet, and defaulting it to Cantrip
     would put a level on a spell nobody has written one for. */
-export const SPELL_LEVELS = ['', 'Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] as const;
+const SPELL_LEVELS = ['', 'Cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] as const;
 export const SPELL_COLUMNS = [
   { key: 'name', label: 'Name', width: '14%', placeholder: 'Shield' },
   { key: 'level', label: 'Level', width: '9%', options: SPELL_LEVELS },

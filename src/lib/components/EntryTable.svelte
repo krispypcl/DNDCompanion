@@ -484,6 +484,8 @@
 
   // ── A row asked for from elsewhere ────────────────────────────────────────
   let spotted = $state<number | null>(null);
+  /** The row letting go of that light, slowly; any other row changes quickly. */
+  let fading = $state<number | null>(null);
   $effect(() => {
     const index = spot;
     if (index === null || index === undefined) return;
@@ -508,10 +510,12 @@
       // then the row lights, once the page has stopped moving under it.
       for (const t of spotTimers) clearTimeout(t);
       spotted = null;
+      fading = null;
       spotTimers = [
         setTimeout(toRow, 380),
         setTimeout(() => (spotted = row.key), 620),
-        setTimeout(() => (spotted = null), 620 + 900)
+        setTimeout(() => ((spotted = null), (fading = row.key)), 620 + 900),
+        setTimeout(() => (fading = null), 620 + 900 + 1100)
       ];
     });
   });
@@ -581,7 +585,7 @@
           {#if title !== null}
             <tr class="group" class:lit={lit === title} in:arrive out:leave><th colspan={span} scope="colgroup"><span data-flip="{tk}:g:{title}">{title}</span></th></tr>
           {/if}
-          <tr bind:this={rowEls[row.key]} in:arrive out:leave class:spotted={spotted === row.key}
+          <tr bind:this={rowEls[row.key]} in:arrive out:leave class:spotted={spotted === row.key} class:fading={fading === row.key}
               class:lifted={drag?.key === row.key}
               style:transform={drag ? `translateY(${offset(row.key)}px)` : undefined}>
             <!-- The handle leads the row: the remove button holds the other end. -->
@@ -788,9 +792,17 @@
   /* A row brought here from elsewhere: washed in the accent, its ends rounded
      with the row's, then let go to fade. Transitions, not keyframes: the
      theme's accent only switches in keyframes, it never fades. */
-  tbody tr:not(.group) > td { transition: background-color 1.1s ease-out; }
+  tbody tr:not(.group) > td { transition: background-color 0.2s ease-out; }
+  tr.fading > td { transition-duration: 1.1s; }
   tr.spotted > td { background-color: var(--a-wash); transition-duration: 0.25s; }
-  @media (prefers-reduced-motion: reduce) { tr.spotted > td, tr.spotted, tbody tr:not(.group) > td { transition-duration: 0.01s; } }
+  /* Reading, the row under the pointer is picked out, softly, as the skills
+     are. Not while editing, where the fields carry their own hover. */
+  @media (hover: hover) {
+    table:not(.editing) tbody tr:not(.group):not(.spotted):hover > td {
+      background-color: var(--hover-bg); transition-duration: 0.12s;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) { tr.spotted > td, tr.spotted, tr.fading > td, tr.fading, tbody tr:not(.group) > td { transition-duration: 0.01s; } }
   @keyframes castFlare {
     0% { color: var(--label); text-shadow: none; }
     18% { color: var(--a-hi); text-shadow: 0 0 12px color-mix(in oklch, var(--a) 70%, transparent); }
@@ -906,8 +918,13 @@
     table:not(.editing) td { border: 0; padding: 0; }
     /* A card lights as a whole, rather than cell by cell. */
     table:not(.editing) tr.spotted > td { background-color: transparent; }
-    table:not(.editing) tr:not(.group) { transition: background-color 1.1s ease-out, border-color 1.1s ease-out; }
+    table:not(.editing) tr:not(.group) { transition: background-color 0.2s ease-out, border-color 0.2s ease-out; }
+    table:not(.editing) tr.fading { transition-duration: 1.1s; }
     table:not(.editing) tr.spotted { background-color: var(--a-wash); border-color: var(--a-edge); transition-duration: 0.25s; }
+    table:not(.editing) tbody tr:not(.group):not(.spotted):hover > td { background-color: transparent; }
+    @media (hover: hover) {
+      table:not(.editing) tbody tr:not(.group):not(.spotted):hover { background-color: var(--hover-bg); transition-duration: 0.12s; }
+    }
     table:not(.editing) td[data-empty],
     table.headed:not(.editing) td.grouped { display: none; }
     table:not(.editing) td.name,

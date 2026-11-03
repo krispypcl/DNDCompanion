@@ -208,11 +208,14 @@ alter table campaigns
 alter table campaigns alter column invite_code set not null;
 create unique index if not exists campaigns_invite_idx on campaigns (invite_code);
 
+-- An ended campaign is archived: still readable, but its invite opens nothing.
+alter table campaigns add column if not exists archived boolean not null default false;
+
 -- Everything but the code is readable; only a name can be written directly.
 revoke select, insert, update on campaigns from anon, authenticated;
-grant select (id, name, created_by, created_at) on campaigns to anon, authenticated;
+grant select (id, name, created_by, created_at, archived) on campaigns to anon, authenticated;
 grant insert (name, created_by) on campaigns to authenticated;
-grant update (name) on campaigns to authenticated;
+grant update (name, archived) on campaigns to authenticated;
 grant delete on campaigns to authenticated;
 
 -- A sheet's campaign is set only by the functions below (they switch this
@@ -271,7 +274,8 @@ stable
 security definer
 set search_path = public
 as $$
-  select c.id, c.name from campaigns c where c.invite_code = lower(trim(p_code));
+  select c.id, c.name from campaigns c
+  where c.invite_code = lower(trim(p_code)) and not c.archived;
 $$;
 
 -- Put one of the caller's sheets in the campaign the invite is for.
@@ -285,11 +289,13 @@ as $$
 declare
   uid uuid := auth.uid();
   cid uuid;
+  ended boolean;
   stamp timestamptz;
 begin
   if uid is null then raise exception 'Not signed in'; end if;
-  select c.id into cid from campaigns c where c.invite_code = lower(trim(p_code));
+  select c.id, c.archived into cid, ended from campaigns c where c.invite_code = lower(trim(p_code));
   if cid is null then raise exception 'No campaign has that invite'; end if;
+  if ended then raise exception 'That campaign has ended'; end if;
   perform set_config('dnd.campaign_join', 'on', true);
   update sheets set campaign_id = cid
     where sheets.id = p_sheet and owner_id = uid

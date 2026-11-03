@@ -52,7 +52,7 @@ export type YTPlayer = {
   getPlaylist(): string[] | null;
   getPlaylistIndex(): number;
   setShuffle(on: boolean): void;
-  cuePlaylist(list: string[], index?: number): void;
+  cuePlaylist(list: string[] | { list: string; listType: 'playlist'; index?: number }, index?: number): void;
   loadPlaylist(list: string[], index?: number): void;
   getCurrentTime(): number;
   getDuration(): number;
