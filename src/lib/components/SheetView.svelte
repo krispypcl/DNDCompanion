@@ -9,6 +9,7 @@
   import AbilityBand from '$lib/components/AbilityBand.svelte';
   import ModeToggle from '$lib/components/ModeToggle.svelte';
   import SoundToggle from '$lib/components/SoundToggle.svelte';
+  import MusicPlayer from '$lib/components/MusicPlayer.svelte';
   import Banner from '$lib/components/Banner.svelte';
   import CombatActions from '$lib/components/CombatActions.svelte';
   import Conditions from '$lib/components/Conditions.svelte';
@@ -747,6 +748,11 @@
         </p>
       </div>
 
+      {#if definition.identity.playlistUrl?.trim()}
+        <!-- Top centre: the sheet's music. -->
+        <div class="musicslot" data-flip="identity:music"><MusicPlayer url={definition.identity.playlistUrl} /></div>
+      {/if}
+
       <!-- One group, so they wrap together: loose in the header the status
            dot was left stranded at the end of the name's line on a phone. -->
       <div class="controls">
@@ -1270,6 +1276,17 @@
   @keyframes skullIn { from { transform: scale(1.6); opacity: 0; } }
   .who { flex: 1 1 auto; min-width: 0; }
   .controls { display: flex; align-items: center; gap: 0.5rem; flex: none; }
+  /* The player sits in the middle of the header: the name and the buttons
+     each take an equal share either side of it. */
+  .musicslot { flex: 1 1 14rem; min-width: 11rem; display: flex; justify-content: center; }
+  .identity:has(.musicslot) .who { flex: 0 1 auto; }
+  /* Without room for all three in a row, the player takes a row of its own
+     under the header, full width. */
+  @media (max-width: 1100px) {
+    .musicslot { order: 5; flex: 1 1 100%; min-width: 0; }
+    .musicslot :global(.music) { width: 100%; }
+    .identity:has(.musicslot) .who { flex: 1 1 auto; }
+  }
   .who h1 { margin: 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.015em; }
   .sub :global(input.field) { min-width: 5.5rem; }
   .sub {
