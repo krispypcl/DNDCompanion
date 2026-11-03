@@ -12,7 +12,7 @@ describe('trackerUrl', () => {
     expect(trackerUrl({ label: 'Second Wind', class: 'Fighter' }, [{ name: 'Fighter', source: 'phb' }])).toMatch(/#fighter_phb,state:feature=s0-1$/);
   });
   it('opens the subclass for a subclass feature', () => {
-    expect(trackerUrl({ label: 'Superiority Dice', class: 'Fighter' })).toBe('https://5e.tools/classes.html#fighter_xphb,state:sub_battle%20master_xphb=b1');
+    expect(trackerUrl({ label: 'Superiority Dice', class: 'Fighter' })).toBe('https://5e.tools/classes.html#fighter_xphb,state:feature=s2-0~sub_battle%20master_xphb=b1');
   });
   it('links what a feat or species tracker comes from', () => {
     expect(trackerUrl({ label: 'Luck Points', class: 'Lucky' })).toBe('https://5e.tools/search.html?q=Lucky&lucky');
@@ -48,8 +48,8 @@ describe('featureUrl', () => {
   });
   it('finds a class feature on its class page, and a subclass feature on its subclass', () => {
     expect(featureUrl({ title: 'Second Wind', kind: 'Class' }, identity, classes)).toBe('https://5e.tools/classes.html#fighter_xphb,state:feature=s0-1');
-    expect(featureUrl({ title: 'Combat Superiority', kind: 'Subclass' }, identity, classes)).toMatch(/fighter_xphb,state:sub_battle%20master_xphb=b1$/);
-    expect(featureUrl({ title: 'Something homemade', kind: 'Subclass' }, identity, classes)).toMatch(/classes\.html#fighter_.*state:sub_battle%20master/);
+    expect(featureUrl({ title: 'Combat Superiority', kind: 'Subclass' }, identity, classes)).toMatch(/fighter_xphb,state:feature=s2-0~sub_battle%20master_xphb=b1$/);
+    expect(featureUrl({ title: 'Something homemade', kind: 'Subclass' }, identity, classes)).toMatch(/classes\.html#fighter_xphb,state:feature=s2-0~sub_battle%20master_xphb=b1$/);
   });
   it('keeps a feat, or anything else, to its own name', () => {
     expect(featureUrl({ title: 'Lucky', kind: 'Feat' }, identity, classes)).toMatch(/search\.html\?q=Lucky/);
