@@ -332,7 +332,7 @@
     requestAnimationFrame(() => (spotFeature = index));
     // Once shown, forgotten: coming back to Features later does not jump again.
     clearTimeout(spotTimer);
-    spotTimer = setTimeout(() => (spotFeature = null), 2000);
+    spotTimer = setTimeout(() => (spotFeature = null), 3000);
   }
   let spotTimer: ReturnType<typeof setTimeout> | undefined;
 
