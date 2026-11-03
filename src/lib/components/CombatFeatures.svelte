@@ -6,6 +6,7 @@
    * actions; each one is a button that opens it where it is written.
    */
   import { featuresOpen } from '$lib/stores/tray';
+  import Fold from './Fold.svelte';
   import type { Feature } from '$lib/types';
 
   let { features, onpick }: { features: Feature[]; onpick: (index: number) => void } = $props();
@@ -36,70 +37,24 @@
 </script>
 
 {#if groups.length}
-  <details class="features" bind:open={$featuresOpen}>
-    <summary><span class="cap">Combat features</span></summary>
-    <div class="inner">
-      {#each groups as group (group.kind)}
-        <section>
-          <h3>{group.label}</h3>
-          <ul>
-            {#each group.items as { f, index } (index)}
-              <li>
-                <button onclick={() => onpick(index)} title={hint(f) || `Open ${f.title} in Features`}
-                        aria-label="{f.title}: open in Features">{f.title}</button>
-              </li>
-            {/each}
-          </ul>
-        </section>
-      {/each}
-    </div>
-  </details>
+  <Fold label="Combat features" bind:open={$featuresOpen}>
+    {#each groups as group (group.kind)}
+      <section>
+        <h3>{group.label}</h3>
+        <ul>
+          {#each group.items as { f, index } (index)}
+            <li>
+              <button onclick={() => onpick(index)} title={hint(f) || `Open ${f.title} in Features`}
+                      aria-label="{f.title}: open in Features">{f.title}</button>
+            </li>
+          {/each}
+        </ul>
+      </section>
+    {/each}
+  </Fold>
 {/if}
 
 <style>
-  .features { padding-top: 1.25rem; }
-  summary {
-    cursor: pointer;
-    list-style: none;
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-  }
-  summary::-webkit-details-marker { display: none; }
-  summary::after {
-    content: '';
-    width: 0.4rem;
-    height: 0.4rem;
-    border-right: 1.5px solid var(--dim);
-    border-bottom: 1.5px solid var(--dim);
-    transform: rotate(45deg) translateY(-1px);
-    transition: transform 0.2s ease;
-  }
-  details[open] summary::after { transform: rotate(-135deg) translateY(-1px); }
-  .features::details-content {
-    block-size: 0;
-    opacity: 0;
-    overflow: hidden;
-    transition:
-      block-size 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-      opacity 0.26s ease,
-      content-visibility 0.32s allow-discrete;
-  }
-  .features[open]::details-content { block-size: auto; opacity: 1; }
-  @supports not selector(::details-content) {
-    .features[open] .inner { animation: unfold 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
-  }
-  @keyframes unfold {
-    from { opacity: 0; transform: translateY(-5px); }
-    to { opacity: 1; transform: none; }
-  }
-  .cap {
-    font-size: 0.6875rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--label);
-    font-weight: 600;
-  }
   section { margin-top: 0.875rem; }
   h3 {
     margin: 0;
