@@ -494,12 +494,19 @@
       // The page itself is scrolled, to put the row mid-screen: the row's own
       // scrollIntoView also tried the table's sideways scroller and, on a
       // phone, went nowhere.
-      const el = rowEls[row.key];
-      if (el) {
+      const toRow = () => {
+        const el = rowEls[row.key];
+        if (!el) return;
         const r = el.getBoundingClientRect();
+        // Already comfortably on screen: leave the page where it is.
+        if (r.top >= 80 && r.bottom <= window.innerHeight - 40) return;
         const top = window.scrollY + r.top - Math.max(0, (window.innerHeight - r.height) / 2);
         window.scrollTo({ top: Math.max(0, top), behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
-      }
+      };
+      toRow();
+      // Again once the tab has finished changing, in case the page was still
+      // settling (the old tab fading out, the table growing in) the first time.
+      setTimeout(toRow, 420);
       spotted = null;
       requestAnimationFrame(() => (spotted = row.key));
       clearTimeout(spotTimer);

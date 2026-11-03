@@ -721,10 +721,10 @@
               />
               <!-- Below the table, so they move when it changes size: they glide too. -->
               {#if isOwner}<div class="flipbox" data-flip="dice"><DiceRoller /></div>{/if}
-              <div class="flipbox" data-flip="actions"><CombatActions /></div>
               <div class="flipbox" data-flip="combat-features">
                 <CombatFeatures features={definition.features ?? []} onpick={showFeature} />
               </div>
+              <div class="flipbox" data-flip="actions"><CombatActions /></div>
             {:else if tab === 'Spells'}
               <div class="casting">
                 <div>

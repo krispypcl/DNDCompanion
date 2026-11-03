@@ -20,6 +20,7 @@
   const code = $derived(inviteCode(page.url.searchParams.get('code') ?? ''));
   let target = $state<{ id: string; name: string } | null>(null);
   let looked = $state(false);
+  let landed = $state(false);
   let sheets = $state<Sheet[]>([]);
   let busy = $state<string | null>(null);
   let error = $state<string | null>(null);
@@ -60,8 +61,11 @@
 
 <svelte:head><title>{target ? `Join ${target.name}` : 'Join a campaign'}</title></svelte:head>
 
-{#if !looked || $session.loading}
-  <div class="loading"><D20Loader size={56} label="Opening the invite" /></div>
+{#if !looked || $session.loading || !landed}
+  <div class="loading">
+    <D20Loader size={56} label="Opening the invite" result={!looked || $session.loading ? null : target ? 20 : 1}
+               onlanded={() => (landed = true)} />
+  </div>
 {:else if !target}
   <NotFound title="That invite doesn’t open any door!"
             message={error ?? 'It may have been replaced with a new one. Ask your DM for the current link.'} />
