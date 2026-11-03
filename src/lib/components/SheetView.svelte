@@ -13,6 +13,7 @@
   import MusicPlayer from '$lib/components/MusicPlayer.svelte';
   import Banner from '$lib/components/Banner.svelte';
   import CombatActions from '$lib/components/CombatActions.svelte';
+  import CombatFeatures from '$lib/components/CombatFeatures.svelte';
   import Conditions from '$lib/components/Conditions.svelte';
   import Currency from '$lib/components/Currency.svelte';
   import DetailsBlock from '$lib/components/DetailsBlock.svelte';
@@ -318,6 +319,19 @@
     const pool = parseRoll(t.die, 'damage');
     if (pool) toTray(pool, t.label);
   }
+
+  /** A feature picked on the Combat tab: the Features tab, at that feature. */
+  let spotFeature = $state<number | null>(null);
+  function showFeature(index: number) {
+    activeTab = 'Features';
+    if (typeof location !== 'undefined') history.replaceState(null, '', '#features');
+    spotFeature = null;
+    requestAnimationFrame(() => (spotFeature = index));
+    // Once shown, forgotten: coming back to Features later does not jump again.
+    clearTimeout(spotTimer);
+    spotTimer = setTimeout(() => (spotFeature = null), 2000);
+  }
+  let spotTimer: ReturnType<typeof setTimeout> | undefined;
 
   /** A skill, pressed: the Combat tab comes up, and the roll is made there. */
   function rollSkill(label: string, bonus: number) {
@@ -704,6 +718,9 @@
               <!-- Below the table, so they move when it changes size: they glide too. -->
               {#if isOwner}<div class="flipbox" data-flip="dice"><DiceRoller /></div>{/if}
               <div class="flipbox" data-flip="actions"><CombatActions /></div>
+              <div class="flipbox" data-flip="combat-features">
+                <CombatFeatures features={definition.features ?? []} onpick={showFeature} />
+              </div>
             {:else if tab === 'Spells'}
               <div class="casting">
                 <div>
@@ -800,6 +817,7 @@
                            title: (f) => kindOf(f as Feature) }}
                 {editable}
                 category="feats"
+                spot={spotFeature}
                 linkOf={(f) => featureUrl(f as Feature, definition.identity, classes)}
                 emptyText="No features yet."
                 addLabel="Add feature"

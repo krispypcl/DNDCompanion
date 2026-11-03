@@ -19,9 +19,12 @@ const fresh = (): TrayMemory => ({
 export const trayMemory = writable<TrayMemory>(fresh());
 
 export const actionsOpen = writable(false);
+/** The Combat tab's list of the character's own options (maneuvers, feats…). */
+export const featuresOpen = writable(false);
 
 /** Another sheet opened: its tray starts folded and empty. */
 export function resetTray() {
   trayMemory.set(fresh());
   actionsOpen.set(false);
+  featuresOpen.set(false);
 }

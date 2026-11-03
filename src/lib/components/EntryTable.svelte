@@ -13,7 +13,7 @@
   import { flipKey } from '$lib/flip';
   import EntryLink from './EntryLink.svelte';
   import InfoTip from './InfoTip.svelte';
-  import { tick } from 'svelte';
+  import { tick, untrack } from 'svelte';
   import { cubicOut } from 'svelte/easing';
   import { prefersReducedMotion } from '$lib/motion';
   import type { LookupCategory } from '$lib/rules/lookup';
@@ -72,7 +72,8 @@
     links = true,
     linkOf,
     onpress,
-    lit = null
+    lit = null,
+    spot = null
   }: {
     items: T[];
     columns: Column[];
@@ -96,6 +97,9 @@
     /** The 5e.tools link for a row, worked out by the list itself (a feature
         from the species links to the species); an override typed on the row wins. */
     linkOf?: (item: T) => string | null;
+    /** A row to bring into view and flash: the index of an item, pressed
+        somewhere else (a feature picked on the Combat tab). */
+    spot?: number | null;
     /** A pressable cell was pressed. */
     onpress?: (key: string, item: T) => void;
     /** A group heading to light up for a moment: a spell level just cast at. */
@@ -478,6 +482,32 @@
     };
   }
 
+  // ── A row asked for from elsewhere ────────────────────────────────────────
+  let spotted = $state<number | null>(null);
+  let spotTimer: ReturnType<typeof setTimeout> | undefined;
+  $effect(() => {
+    const index = spot;
+    if (index === null || index === undefined) return;
+    const row = untrack(() => view.find((r) => r.index === index));
+    if (!row) return;
+    tick().then(() => {
+      // The page itself is scrolled, to put the row mid-screen: the row's own
+      // scrollIntoView also tried the table's sideways scroller and, on a
+      // phone, went nowhere.
+      const el = rowEls[row.key];
+      if (el) {
+        const r = el.getBoundingClientRect();
+        const top = window.scrollY + r.top - Math.max(0, (window.innerHeight - r.height) / 2);
+        window.scrollTo({ top: Math.max(0, top), behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+      }
+      spotted = null;
+      requestAnimationFrame(() => (spotted = row.key));
+      clearTimeout(spotTimer);
+      spotTimer = setTimeout(() => (spotted = null), 1800);
+    });
+    return () => clearTimeout(spotTimer);
+  });
+
   // ── Rows arriving and leaving ─────────────────────────────────────────────
 
   function arrive(_node: Element) {
@@ -541,7 +571,7 @@
           {#if title !== null}
             <tr class="group" class:lit={lit === title} in:arrive out:leave><th colspan={span} scope="colgroup"><span data-flip="{tk}:g:{title}">{title}</span></th></tr>
           {/if}
-          <tr bind:this={rowEls[row.key]} in:arrive out:leave
+          <tr bind:this={rowEls[row.key]} in:arrive out:leave class:spotted={spotted === row.key}
               class:lifted={drag?.key === row.key}
               style:transform={drag ? `translateY(${offset(row.key)}px)` : undefined}>
             <!-- The handle leads the row: the remove button holds the other end. -->
@@ -739,6 +769,19 @@
   .nm { overflow-wrap: anywhere; }
   /* A slot of this level was just spent: the heading flares. */
   tr.group.lit th { animation: castFlare 1.5s ease-out; }
+  /* A row brought here from elsewhere: a wash of the accent that fades. */
+  tr.spotted > td { animation: spotted 1.8s ease-out; }
+  @keyframes spotted {
+    0%, 25% { background-color: var(--a-wash); box-shadow: inset 0 0 0 9999px color-mix(in oklch, var(--a) 8%, transparent); }
+    100% { background-color: transparent; box-shadow: none; }
+  }
+  /* On a phone a row is a card: the card's edge lights as well. */
+  tr.spotted { animation: spotRing 1.8s ease-out; }
+  @keyframes spotRing {
+    0%, 25% { outline: 2px solid var(--a-edge); outline-offset: 2px; }
+    100% { outline: 2px solid transparent; outline-offset: 2px; }
+  }
+  @media (prefers-reduced-motion: reduce) { tr.spotted > td, tr.spotted { animation-duration: 0.01s; } }
   @keyframes castFlare {
     0% { color: var(--label); text-shadow: none; }
     18% { color: var(--a-hi); text-shadow: 0 0 12px color-mix(in oklch, var(--a) 70%, transparent); }
