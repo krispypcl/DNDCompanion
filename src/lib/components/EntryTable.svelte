@@ -70,6 +70,7 @@
     info,
     extra,
     links = true,
+    linkOf,
     onpress,
     lit = null
   }: {
@@ -92,6 +93,9 @@
     extra?: import('svelte').Snippet;
     /** 5e.tools links on the names. */
     links?: boolean;
+    /** The 5e.tools link for a row, worked out by the list itself (a feature
+        from the species links to the species); an override typed on the row wins. */
+    linkOf?: (item: T) => string | null;
     /** A pressable cell was pressed. */
     onpress?: (key: string, item: T) => void;
     /** A group heading to light up for a moment: a spell level just cast at. */
@@ -576,7 +580,7 @@
                   name={nameOf(item)}
                   source={item.source as string | undefined}
                   {category}
-                  override={item.lookupUrl as string | undefined}
+                  override={(item.lookupUrl as string | undefined) || linkOf?.(item) || undefined}
                 />{/if}
               {/if}
             </td>

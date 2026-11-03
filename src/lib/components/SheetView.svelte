@@ -53,6 +53,7 @@
     blankTracker, newId, trackerRows, withClasses, withTrackerRows, withoutTrackers, type TrackerRow
   } from '$lib/sheet/edits';
   import { slotsByLevel, spellAttack, spellDc } from '$lib/rules/casting';
+  import { featureUrl } from '$lib/rules/lookup';
   import {
     characterLevel,
     classLine,
@@ -799,6 +800,7 @@
                            title: (f) => kindOf(f as Feature) }}
                 {editable}
                 category="feats"
+                linkOf={(f) => featureUrl(f as Feature, definition.identity, classes)}
                 emptyText="No features yet."
                 addLabel="Add feature"
                 blank={() => ({ title: '', body: '' }) as Feature}
