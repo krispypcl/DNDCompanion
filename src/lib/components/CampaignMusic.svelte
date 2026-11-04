@@ -2,7 +2,8 @@
   /**
    * The DM's jukebox: a list of YouTube links (songs or whole playlists) and
    * the sheet's own music player for whichever is chosen. Choosing one plays
-   * it; when a single song ends, the next on the list follows. The list is
+   * it; when one ends, the next on the list follows (unless the player's
+   * loop is on). The list is
    * kept with the campaign; which one is playing is kept on this device.
    */
   import { flip } from 'svelte/animate';
@@ -75,7 +76,7 @@
   <div class="body">
     <div class="player">
       {#if playingSong}
-        <MusicPlayer url={playingSong.url} loop={songs.length < 2} onended={next} ontitle={learnTitle} />
+        <MusicPlayer url={playingSong.url} place="campaign" onended={next} ontitle={learnTitle} />
       {:else}
         <p class="none">Add a song or a playlist and it plays here, for you alone.</p>
       {/if}
