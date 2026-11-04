@@ -79,3 +79,45 @@ export function foldRow(node: Element, { duration = 240, x = -10 }: { duration?:
       ` padding-top: ${t * pt}px; padding-bottom: ${t * pb}px;`
   };
 }
+
+/**
+ * A box that eases to its new height when what is inside it grows or
+ * shrinks (a chip arriving, a line wrapping), so what is below it, and the
+ * card or row around it, slide rather than jump. Watches its first child.
+ */
+export function followHeight(node: HTMLElement) {
+  const inner = node.firstElementChild as HTMLElement | null;
+  if (!inner || typeof ResizeObserver === 'undefined') return;
+  let last = inner.getBoundingClientRect().height;
+  let running: Animation | null = null;
+  const watch = new ResizeObserver(() => {
+    const now = inner.getBoundingClientRect().height;
+    if (Math.abs(now - last) < 0.5) return;
+    const from = running ? node.getBoundingClientRect().height : last;
+    last = now;
+    running?.cancel();
+    if (prefersReducedMotion()) return;
+    running = node.animate([{ height: `${from}px`, overflow: 'hidden' }, { height: `${now}px`, overflow: 'hidden' }], {
+      duration: 300, easing: 'cubic-bezier(0.2, 0.8, 0.25, 1)'
+    });
+    running.onfinish = () => (running = null);
+  });
+  watch.observe(inner);
+  return { destroy: () => watch.disconnect() };
+}
+
+/**
+ * A keyed item moving to its new place (animate:glideTo): it slides there,
+ * and only slides. Svelte's own flip also scales an item whose size changed,
+ * which squashed a card for a moment whenever its contents grew.
+ */
+export function glideTo(_node: Element, { from, to }: { from: DOMRect; to: DOMRect }, { duration = 260 } = {}) {
+  const dx = from.left - to.left;
+  const dy = from.top - to.top;
+  if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return { duration: 0 };
+  return {
+    duration: prefersReducedMotion() ? 0 : duration,
+    easing: (t: number) => 1 - Math.pow(1 - t, 3),
+    css: (_t: number, u: number) => `transform: translate(${u * dx}px, ${u * dy}px);`
+  };
+}

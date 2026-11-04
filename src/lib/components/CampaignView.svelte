@@ -9,7 +9,6 @@
    */
   import { onMount } from 'svelte';
   import { fade, scale, slide } from 'svelte/transition';
-  import { flip } from 'svelte/animate';
   import { backOut, cubicOut } from 'svelte/easing';
   import { base } from '$app/paths';
   import { goto } from '$app/navigation';
@@ -22,7 +21,7 @@
   import { resolveImageUrl } from '$lib/rules/imageUrl';
   import { themeStyle } from '$lib/theme';
   import { friendlyError } from '$lib/errors';
-  import { prefersReducedMotion } from '$lib/motion';
+  import { followHeight, glideTo, prefersReducedMotion } from '$lib/motion';
   import { glide } from '$lib/flip';
   import Banner from './Banner.svelte';
   import CampaignMusic from './CampaignMusic.svelte';
@@ -303,7 +302,7 @@
           {@const v = vitalStatus(hp.cur, hp.max, s.state?.deathSaves)}
           {@const portrait = resolveImageUrl(def?.identity?.portraitUrl).url}
           <li class="card themed {v.vital}" style={themeStyle(def?.identity?.theme)}
-              animate:flip={{ duration: 260, easing: cubicOut }} in:fade={{ duration: 200 }}>
+              animate:glideTo in:fade={{ duration: 200 }}>
             <a class="open" href="{base}/s/{s.id}">
               <span class="portrait">
                 {#if portrait}<img src={portrait} alt="" />{/if}
@@ -317,14 +316,16 @@
             <CardHp cur={hp.cur} max={hp.max} temp={hp.temp} vital={v.vital} label={v.label} />
             <dl class="stats">
               <div><dt>AC</dt><dd>{def?.combat?.ac ?? '—'}</dd></div>
-              <div><dt>Passive Perc.</dt><dd>{passiveScore(def, 'perception')}</dd></div>
-              <div><dt>Insight</dt><dd>{passiveScore(def, 'insight')}</dd></div>
+              <!-- In full where the box has room, shortened where it does not. -->
+              <div class="perc"><dt><span class="long">Passive Perception</span><span class="short">Passive Perc.</span></dt><dd>{passiveScore(def, 'perception')}</dd></div>
+              <div class="ins"><dt><span class="long">Passive Insight</span><span class="short">Passive Ins.</span></dt><dd>{passiveScore(def, 'insight')}</dd></div>
             </dl>
-            {#if s.state?.conditions?.length}
+            <!-- Conditions: the card eases to its new height as they come and go. -->
+            <div class="condbox" use:followHeight>
               <ul class="conds" aria-label="Conditions">
-                {#each s.state.conditions as c (c)}<li transition:scale={{ start: 0.6, duration: 220, easing: backOut }}>{c}</li>{/each}
+                {#each s.state?.conditions ?? [] as c (c)}<li transition:scale={{ start: 0.6, duration: 220, easing: backOut }}>{c}</li>{/each}
               </ul>
-            {/if}
+            </div>
             {#if isDm && !ended && editing}
               {#if removing === s.id}
                 <div class="confirm" role="group" aria-label="Remove {def?.identity?.name}" transition:slide={unfold()}>
@@ -496,12 +497,10 @@
   :global([data-mode='light']) .card { --hurt-red: oklch(56% 0.21 25); }
   .card {
     position: relative; border: 1px solid var(--line-soft); border-radius: var(--r); background: var(--surface);
-    padding: 0.875rem; display: grid; gap: 0.75rem; align-content: start;
+    padding: 0.875rem; display: flex; flex-direction: column;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
   .card:hover { border-color: var(--a-edge); }
-  .card.bloodied { border-color: color-mix(in oklch, var(--hurt-red) 35%, var(--line-soft)); }
-  .card.critical, .card.down { border-color: color-mix(in oklch, var(--hurt-red) 70%, transparent); }
   .card.dead { opacity: 0.7; }
   .open { display: flex; gap: 0.75rem; align-items: center; color: inherit; text-decoration: none; min-width: 0; padding-right: 1.5rem; }
   .portrait {
@@ -518,10 +517,27 @@
   .who strong { font-size: 1.0625rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sub { font-size: 0.8125rem; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.375rem; margin: 0; }
-  .stats div { background: var(--raised); border: 1px solid var(--line-soft); border-radius: var(--r-sm); padding: 0.375rem; text-align: center; }
+  .stats div { background: var(--raised); border: 1px solid var(--line-soft); border-radius: var(--r-sm); padding: 0.375rem 0.25rem; text-align: center; }
   .stats dt { font-size: 0.5625rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--label); }
   .stats dd { margin: 0.125rem 0 0; font-size: 1.0625rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  /* Spaced by margins rather than a gap, so the conditions' space can be
+     their own: an empty list takes none, and it eases in with the first. */
+  .card > :global(*) + :global(*) { margin-top: 0.75rem; }
+  .card > .condbox, .card > .x { margin-top: 0; }
   .conds { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.3125rem; }
+  .conds:has(li) { padding-top: 0.75rem; }
+  .stats div { container-type: inline-size; }
+  .stats dt { white-space: nowrap; }
+  .stats .long { display: none; }
+  /* Each in full once its box (less its padding) holds the whole label. */
+  @container (min-width: 5.5rem) {
+    .ins .long { display: inline; }
+    .ins .short { display: none; }
+  }
+  @container (min-width: 7rem) {
+    .perc .long { display: inline; }
+    .perc .short { display: none; }
+  }
   .conds li {
     font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 999px;
     border: 1px solid var(--a-edge); background: var(--a-wash); color: var(--a);
