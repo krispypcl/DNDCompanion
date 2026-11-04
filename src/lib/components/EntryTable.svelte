@@ -763,6 +763,9 @@
     hyphens: auto;
   }
   tr:last-child td { border-bottom: 0; }
+  /* Room at the row's left edge, so the words sit inside its rounded ends
+     (and its hover) rather than against them; headings line up with them. */
+  td:first-child, thead th:first-child, tr.group th { padding-left: 0.625rem; }
   /* Every row's ends are softly rounded, for anything that colours a row. */
   tbody tr > td:first-child { border-top-left-radius: var(--r-sm); border-bottom-left-radius: var(--r-sm); }
   tbody tr > td:last-child { border-top-right-radius: var(--r-sm); border-bottom-right-radius: var(--r-sm); }
