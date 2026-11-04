@@ -125,15 +125,16 @@ export function storeShuffle(on: boolean) {
 
 /**
  * Loop, for a reader who is not signed in, remembered on this device. A
- * sheet's music loops unless told not to; a jukebox moves on to the next song.
+ * sheet's music plays through once unless told to loop; a jukebox repeats
+ * the chosen song unless told to move on.
  */
 const loopKey = (place: 'sheet' | 'campaign') => (place === 'sheet' ? 'dndcompanion:loop' : 'dndcompanion:jukebox-loop');
 export function storedLoop(place: 'sheet' | 'campaign'): boolean {
   try {
     const v = localStorage.getItem(loopKey(place));
-    return v === null ? place === 'sheet' : v === 'on';
+    return v === null ? place === 'campaign' : v === 'on';
   } catch {
-    return place === 'sheet';
+    return place === 'campaign';
   }
 }
 export function storeLoop(place: 'sheet' | 'campaign', on: boolean) {
