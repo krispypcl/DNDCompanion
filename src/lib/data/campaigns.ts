@@ -22,15 +22,7 @@ export type Campaign = {
   details: CampaignDetails;
 };
 
-const COLUMNS = 'id, name, created_by, created_at, archived';
-
-/**
- * Whether the database has the details column yet (migration 0006). Until it
- * does, campaigns have no banner or songs and saving them says so.
- * TODO: drop this fallback once 0006 has been run.
- */
-let detailsMissing = false;
-const missingDetails = (error: { message?: string } | null) => Boolean(error && /details/i.test(error.message ?? ''));
+const COLUMNS = 'id, name, created_by, created_at, archived, details';
 const asCampaign = (row: Omit<Campaign, 'details'> & { details?: CampaignDetails | null }): Campaign => ({
   ...row,
   details: row.details && typeof row.details === 'object' ? row.details : {}
@@ -68,21 +60,11 @@ export function inviteCode(text: string): string {
 }
 
 export function makeCampaignRepo(client: SupabaseClient) {
-  /** Campaign rows, with details when the database has them. */
-  async function rows<T>(run: (columns: string) => PromiseLike<{ data: T; error: { message?: string } | null }>): Promise<T> {
-    let result = await run(detailsMissing ? COLUMNS : `${COLUMNS}, details`);
-    if (!detailsMissing && missingDetails(result.error)) {
-      detailsMissing = true;
-      result = await run(COLUMNS);
-    }
-    if (result.error) throw new Error(result.error.message);
-    return result.data;
-  }
-
   return {
     async get(id: string): Promise<Campaign | null> {
-      const row = await rows((c) => client.from('campaigns').select(c).eq('id', id).maybeSingle());
-      return row ? asCampaign(row as unknown as Campaign) : null;
+      const { data, error } = await client.from('campaigns').select(COLUMNS).eq('id', id).maybeSingle();
+      if (error) throw new Error(error.message);
+      return data ? asCampaign(data as Campaign) : null;
     },
 
     /** Names for the campaigns a list of sheets is in. */
@@ -96,9 +78,10 @@ export function makeCampaignRepo(client: SupabaseClient) {
 
     /** The campaigns this player runs. */
     async mine(userId: string): Promise<Campaign[]> {
-      const data = await rows((c) => client.from('campaigns').select(c).eq('created_by', userId)
-        .order('created_at', { ascending: true }));
-      return ((data ?? []) as unknown as Campaign[]).map(asCampaign);
+      const { data, error } = await client.from('campaigns').select(COLUMNS).eq('created_by', userId)
+        .order('created_at', { ascending: true });
+      if (error) throw new Error(error.message);
+      return ((data ?? []) as Campaign[]).map(asCampaign);
     },
 
     /** A new campaign run by the caller, with one of their sheets in it if given. */
@@ -157,7 +140,6 @@ export function makeCampaignRepo(client: SupabaseClient) {
     /** The banner and songs, all at once; only its DM can. */
     async saveDetails(id: string, details: CampaignDetails): Promise<void> {
       const { data, error } = await client.from('campaigns').update({ details }).eq('id', id).select('id');
-      if (missingDetails(error)) throw new CampaignError('Banners and music for campaigns aren’t set up yet! Run the 0006 migration and try again.');
       if (error) throw new Error(error.message);
       if (!data?.length) throw new CampaignError('Only the DM can do that!');
     },
