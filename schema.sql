@@ -369,3 +369,21 @@ grant execute on function public.campaign_invite(uuid) to authenticated;
 grant execute on function public.reset_campaign_invite(uuid) to authenticated;
 grant execute on function public.remove_from_campaign(uuid) to authenticated;
 grant execute on function public.campaign_by_invite(text) to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Live campaign pages: changes to sheets are announced (Supabase Realtime),
+-- so a campaign page hears hit points change as soon as a sheet saves.
+-- See database/0007_live_sheets.sql.
+do $$
+begin
+  if not exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    create publication supabase_realtime;
+  end if;
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'sheets'
+  ) then
+    alter publication supabase_realtime add table public.sheets;
+  end if;
+end;
+$$;

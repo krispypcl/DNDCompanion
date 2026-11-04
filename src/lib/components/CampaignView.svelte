@@ -8,13 +8,14 @@
    * deleting it, a banner like a sheet's, and a jukebox of their own music.
    */
   import { onMount } from 'svelte';
-  import { fade, slide } from 'svelte/transition';
+  import { fade, scale, slide } from 'svelte/transition';
   import { flip } from 'svelte/animate';
-  import { cubicOut } from 'svelte/easing';
+  import { backOut, cubicOut } from 'svelte/easing';
   import { base } from '$app/paths';
   import { goto } from '$app/navigation';
   import { campaignMessage, campaignRepo, type Campaign, type CampaignDetails } from '$lib/data/campaigns';
   import { sheetRepo } from '$lib/data/sheets';
+  import { isConfigured, supabase } from '$lib/supabase';
   import { session } from '$lib/stores/session';
   import { characterLevel, classLine, passiveScore } from '$lib/rules/derived';
   import { vitalStatus } from '$lib/rules/hp';
@@ -25,6 +26,7 @@
   import { glide } from '$lib/flip';
   import Banner from './Banner.svelte';
   import CampaignMusic from './CampaignMusic.svelte';
+  import CardHp from './CardHp.svelte';
   import D20Loader from './D20Loader.svelte';
   import EditableField from './EditableField.svelte';
   import ModeToggle from './ModeToggle.svelte';
@@ -119,18 +121,35 @@
     }
   }
 
-  // The table keeps playing while this is open: what changed shows up within
-  // a few seconds, and nothing is asked for while the tab is hidden.
+  /*
+   * The table keeps playing while this is open. A character's sheet saving is
+   * heard at once (the database announces changes to the campaign's sheets,
+   * database/0007), and the page also looks again every few seconds in case
+   * an announcement was missed; nothing is asked for while the tab is hidden.
+   */
   onMount(() => {
     void load(true);
     const timer = setInterval(() => {
       if (document.visibilityState === 'visible') void load();
-    }, 8000);
+    }, 6000);
     const back = () => document.visibilityState === 'visible' && load();
     document.addEventListener('visibilitychange', back);
+    let soon: ReturnType<typeof setTimeout> | undefined;
+    const refreshSoon = () => {
+      clearTimeout(soon);
+      soon = setTimeout(() => void load(), 120);
+    };
+    const channel = isConfigured
+      ? supabase
+          .channel(`campaign-${id}`)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'sheets', filter: `campaign_id=eq.${id}` }, refreshSoon)
+          .subscribe()
+      : null;
     return () => {
       clearInterval(timer);
+      clearTimeout(soon);
       document.removeEventListener('visibilitychange', back);
+      if (channel) void supabase.removeChannel(channel);
     };
   });
 
@@ -295,15 +314,7 @@
                 <span class="sub">{classLine(def) || 'No class yet'}</span>
               </span>
             </a>
-            <div class="hp" title="{hp.cur} of {hp.max} hit points{hp.temp ? `, ${hp.temp} temporary` : ''}">
-              <div class="hpline">
-                <span class="cap">HP</span>
-                <b>{hp.cur}</b><span class="of">/ {hp.max}</span>
-                {#if hp.temp}<span class="temp">+{hp.temp}</span>{/if}
-                <span class="vital">{v.label}</span>
-              </div>
-              <div class="bar"><i style:transform="scaleX({hp.pct})"></i></div>
-            </div>
+            <CardHp cur={hp.cur} max={hp.max} temp={hp.temp} vital={v.vital} label={v.label} />
             <dl class="stats">
               <div><dt>AC</dt><dd>{def?.combat?.ac ?? '—'}</dd></div>
               <div><dt>Passive Perc.</dt><dd>{passiveScore(def, 'perception')}</dd></div>
@@ -311,7 +322,7 @@
             </dl>
             {#if s.state?.conditions?.length}
               <ul class="conds" aria-label="Conditions">
-                {#each s.state.conditions as c (c)}<li>{c}</li>{/each}
+                {#each s.state.conditions as c (c)}<li transition:scale={{ start: 0.6, duration: 220, easing: backOut }}>{c}</li>{/each}
               </ul>
             {/if}
             {#if isDm && !ended && editing}
@@ -506,16 +517,6 @@
   .who { display: grid; min-width: 0; }
   .who strong { font-size: 1.0625rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sub { font-size: 0.8125rem; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .hpline { display: flex; align-items: baseline; gap: 0.3125rem; }
-  .cap { font-size: 0.625rem; letter-spacing: 0.12em; color: var(--label); font-weight: 600; margin-right: 0.125rem; }
-  .hpline b { font-size: 1.25rem; font-variant-numeric: tabular-nums; }
-  .of { color: var(--dim); font-size: 0.8125rem; }
-  .temp { color: var(--a); font-size: 0.8125rem; font-weight: 600; }
-  .vital { margin-left: auto; font-size: 0.75rem; color: var(--dim); }
-  .bloodied .vital, .critical .vital, .down .vital, .dead .vital { color: var(--hurt-red); font-weight: 600; }
-  .bar { height: 6px; border-radius: 3px; background: var(--bg); overflow: hidden; margin-top: 0.3125rem; }
-  .bar i { display: block; height: 100%; background: var(--accent, var(--a)); transform-origin: left; transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.3, 1); }
-  .bloodied .bar i, .critical .bar i { background: var(--hurt-red); }
   .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.375rem; margin: 0; }
   .stats div { background: var(--raised); border: 1px solid var(--line-soft); border-radius: var(--r-sm); padding: 0.375rem; text-align: center; }
   .stats dt { font-size: 0.5625rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--label); }
