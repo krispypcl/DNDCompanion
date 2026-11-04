@@ -211,11 +211,18 @@ create unique index if not exists campaigns_invite_idx on campaigns (invite_code
 -- An ended campaign is archived: still readable, but its invite opens nothing.
 alter table campaigns add column if not exists archived boolean not null default false;
 
+-- What the campaign page shows beyond its name: the banner's link and the
+-- DM's songs. Small, and written only by the DM (database/0006).
+alter table campaigns add column if not exists details jsonb not null default '{}'::jsonb;
+alter table campaigns drop constraint if exists campaigns_details_size;
+alter table campaigns add constraint campaigns_details_size
+  check (jsonb_typeof(details) = 'object' and octet_length(details::text) <= 32000);
+
 -- Everything but the code is readable; only a name can be written directly.
 revoke select, insert, update on campaigns from anon, authenticated;
-grant select (id, name, created_by, created_at, archived) on campaigns to anon, authenticated;
+grant select (id, name, created_by, created_at, archived, details) on campaigns to anon, authenticated;
 grant insert (name, created_by) on campaigns to authenticated;
-grant update (name, archived) on campaigns to authenticated;
+grant update (name, archived, details) on campaigns to authenticated;
 grant delete on campaigns to authenticated;
 
 -- A sheet's campaign is set only by the functions below (they switch this
