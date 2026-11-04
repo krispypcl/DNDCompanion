@@ -17,13 +17,25 @@
   import { get } from 'svelte/store';
   import { setSound, soundOn } from '$lib/sound';
   import {
-    clock, loadYouTube, parsePlaylist, shuffled, storeShuffle, storeVolume, storedShuffle, storedVolume,
+    clock, loadYouTube, parsePlaylist, storeShuffle, storeVolume, storedShuffle, storedVolume,
     type Playlist, type YTPlayer
   } from '$lib/music';
   import { session } from '$lib/stores/session';
   import { saveShuffle, shuffleOf } from '$lib/data/session';
 
-  let { url }: { url: string } = $props();
+  let {
+    url,
+    loop = true,
+    onended,
+    ontitle
+  }: {
+    url: string;
+    /** A single video plays again when it ends; off, `onended` is told instead. */
+    loop?: boolean;
+    onended?: () => void;
+    /** Told each song's title as YouTube gives it. */
+    ontitle?: (title: string) => void;
+  } = $props();
 
   /**
    * Shuffle: the player's own choice, kept with their account (or on this
@@ -41,29 +53,39 @@
     if (fromAccount !== null) storeShuffle(fromAccount);
   });
   /**
-   * The new order is made once per visit, as soon as YouTube says which songs
-   * the playlist has (on loading, or at the latest when it starts). Playing
-   * the shuffled list itself is what makes the first song random: pressing
-   * play while one is pending loads the shuffled list instead of starting the
-   * list's own first song.
+   * The new order is made once per visit, as soon as YouTube says how many
+   * songs the playlist has (on loading, or at the latest when it starts):
+   * the list is asked for again starting at a random song, and YouTube's own
+   * shuffle picks the rest. Pressing play while one is pending starts that
+   * random song instead of the list's own first.
    */
   let pendingShuffle = false;
   /** Whether a song has started this visit. */
   let hasPlayed = false;
   let hushed = false;
   function applyShuffle(play: boolean): boolean {
-    if (!pendingShuffle || !yt) return false;
-    const ids = yt.getPlaylist?.();
-    if (!ids?.length) return false;
+    if (!pendingShuffle || !yt || !playlist?.list) return false;
+    const count = yt.getPlaylist?.()?.length ?? 0;
+    if (!count) return false;
     pendingShuffle = false;
-    if (ids.length >= 2) {
-      const order = shuffled(ids);
-      if (play) yt.loadPlaylist(order, 0);
-      else yt.cuePlaylist(order, 0);
-    }
     stopWatch();
+    if (count < 2) {
+      unhush();
+      return false;
+    }
+    const request = { list: playlist.list, listType: 'playlist' as const, index: Math.floor(Math.random() * count) };
+    if (play) yt.loadPlaylist(request);
+    else yt.cuePlaylist(request);
+    reshuffle = true;
     unhush();
-    return play && ids.length >= 2;
+    return play;
+  }
+  /** YouTube's shuffle, set once the new list has arrived (asking sooner is forgotten). */
+  let reshuffle = false;
+  function settleShuffle() {
+    if (!reshuffle || !yt) return;
+    reshuffle = false;
+    try { yt.setShuffle(true); } catch { /* not ready */ }
   }
   /** Sound back on for a song started silently while the shuffle waited. */
   function unhush() {
@@ -128,9 +150,68 @@
   let volTimer: ReturnType<typeof setTimeout> | undefined;
   function setVol(v: number) {
     volume = v;
-    yt?.setVolume(v);
+    applyVolume();
     storeVolume(v);
   }
+
+  /*
+   * Fading. Songs come in softly and go out softly: each new song rises from
+   * silence, the last seconds of one sink into the next, and pausing,
+   * skipping or the speaker going off dip the sound first. What the player
+   * hears is the volume times the fade times the song's tail.
+   */
+  const FADE_IN = 1.4;
+  const FADE_OUT = 0.45;
+  /** Seconds at a song's end that fade it out. */
+  const TAIL = 2.5;
+  let gain = 0;
+  let fadeTarget = 0;
+  let fadeRate = 1;
+  let afterFade: (() => void) | null = null;
+  let fader: ReturnType<typeof setInterval> | undefined;
+  let lastStep = 0;
+  let sent = -1;
+  function applyVolume() {
+    if (!yt) return;
+    let tail = 1;
+    if (playing && length > TAIL * 4) {
+      const left = length - (yt.getCurrentTime?.() ?? 0);
+      tail = Math.max(0, Math.min(1, left / TAIL));
+    }
+    const v = Math.round(volume * gain * tail);
+    if (v === sent) return;
+    sent = v;
+    yt.setVolume(v);
+  }
+  function fadeStep() {
+    const now = performance.now();
+    const dt = Math.min(0.2, (now - lastStep) / 1000);
+    lastStep = now;
+    if (gain !== fadeTarget) {
+      gain = gain < fadeTarget ? Math.min(fadeTarget, gain + dt * fadeRate) : Math.max(fadeTarget, gain - dt * fadeRate);
+    }
+    if (gain === fadeTarget && afterFade) {
+      const then = afterFade;
+      afterFade = null;
+      then();
+    }
+    applyVolume();
+  }
+  /** Fade to a level over some seconds, then (if given) do something. */
+  function fadeTo(target: number, seconds: number, then: (() => void) | null = null) {
+    fadeTarget = target;
+    fadeRate = 1 / seconds;
+    afterFade = then;
+    lastStep = performance.now();
+  }
+  /** Silent at once: a new song starts from nothing. */
+  function hushNow() {
+    gain = 0;
+    fadeTarget = 0;
+    applyVolume();
+  }
+  /** Out softly, then the action: a pause, a skip. */
+  const fadeThen = (then: () => void) => fadeTo(0, FADE_OUT, then);
   let playing = $state(false);
   let title = $state('');
   let failed = $state(false);
@@ -167,7 +248,9 @@
 
   function updateTitle() {
     const t = yt?.getVideoData?.().title;
-    if (t) title = t;
+    if (!t || t === title) return;
+    title = t;
+    ontitle?.(t);
   }
 
   /** Browsers start sound only after a press on the page; until then, wait for one. */
@@ -191,7 +274,10 @@
   function start() {
     if (!ready || !yt) return;
     yt.unMute();
-    yt.setVolume(volume);
+    // Anything a fade-out was about to do is called off; the sound rises
+    // once the song is actually playing.
+    if (playing) fadeTo(1, FADE_IN);
+    else fadeTo(0, FADE_OUT);
     // A shuffle still waiting is played from its first song; otherwise go on.
     // If YouTube has not said what the songs are yet, the list's own first
     // song starts silently and gives way to the shuffled one once it has.
@@ -210,15 +296,23 @@
     }, 1500);
   }
   function stop() {
-    yt?.pauseVideo();
-    yt?.mute();
+    fadeThen(() => {
+      yt?.pauseVideo();
+      yt?.mute();
+    });
   }
 
   function teardown() {
     clearTimeout(checkTimer);
+    clearInterval(fader);
     stopWatch();
     pendingShuffle = false;
+    reshuffle = false;
     hushed = false;
+    afterFade = null;
+    gain = 0;
+    fadeTarget = 0;
+    sent = -1;
     disarm?.();
     try { yt?.destroy(); } catch { /* already gone */ }
     yt = null;
@@ -248,7 +342,7 @@
           height: 200,
           ...(p.video ? { videoId: p.video } : {}),
           playerVars: {
-            ...(p.list ? { listType: 'playlist', list: p.list } : { playlist: p.video, loop: 1 }),
+            ...(p.list ? { listType: 'playlist', list: p.list } : loop ? { playlist: p.video, loop: 1 } : {}),
             controls: 0, disablekb: 1, playsinline: 1, rel: 0, fs: 0, iv_load_policy: 3
           },
           events: {
@@ -259,10 +353,12 @@
               if (pendingShuffle && !applyShuffle(false) && pendingShuffle) {
                 // Ask for the list itself (not the one song the link opened
                 // on), so its songs are fetched, then wait for them.
-                try { yt.cuePlaylist({ list: p.list!, listType: 'playlist' }); } catch { /* older player */ }
+                try { yt.cuePlaylist({ list: p.list!, listType: 'playlist' }); } catch { /* not ready */ }
                 startWatch();
               }
-              yt.setVolume(volume);
+              hushNow();
+              lastStep = performance.now();
+              fader = setInterval(fadeStep, 50);
               if (get(soundOn)) start();
               else yt.mute();
               updateTitle();
@@ -271,11 +367,16 @@
               // 1 playing, 3 buffering: the list's own first song has begun, so
               // the shuffled one replaces it straight away.
               if (applyShuffle(e.data === 1 || e.data === 3)) return;
+              if (e.data === 5 || e.data === 1) settleShuffle();
               playing = e.data === 1;
+              // -1 a new song loading, 0 one ended: the next starts from silence.
+              if (e.data === -1 || e.data === 0) hushNow();
               if (e.data === 1) {
                 hasPlayed = true;
                 disarm?.();
+                if (!afterFade) fadeTo(1, FADE_IN);
               }
+              if (e.data === 0 && !loop) onended?.();
               updateTitle();
               readTime();
             },
@@ -307,6 +408,7 @@
   onDestroy(() => {
     unsub();
     clearTimeout(checkTimer);
+    clearInterval(fader);
     clearInterval(ticker);
     clearTimeout(volTimer);
     disarm?.();
@@ -315,7 +417,7 @@
   function toggle() {
     if (playing) {
       userPaused = true;
-      yt?.pauseVideo();
+      fadeThen(() => yt?.pauseVideo());
       return;
     }
     userPaused = false;
@@ -359,7 +461,7 @@
     </div>
     <div class="row">
       <button class="ctl" aria-label="Previous song" title="Previous" disabled={!ready || failed || !playlist.list}
-              onclick={() => yt?.previousVideo()}>
+              onclick={() => fadeThen(() => yt?.previousVideo())}>
         <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M3.5 3v10M13 3.2v9.6L5.6 8z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" /></svg>
       </button>
       <button class="ctl play" aria-label={playing ? 'Pause' : 'Play'} title={playing ? 'Pause' : 'Play'}
@@ -371,7 +473,7 @@
         {/if}
       </button>
       <button class="ctl" aria-label="Next song" title="Next" disabled={!ready || failed || !playlist.list}
-              onclick={() => yt?.nextVideo()}>
+              onclick={() => fadeThen(() => yt?.nextVideo())}>
         <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M12.5 3v10M3 3.2v9.6L10.4 8z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" /></svg>
       </button>
     </div>

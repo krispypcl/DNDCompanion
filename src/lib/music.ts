@@ -38,6 +38,9 @@ export function parsePlaylist(raw: string | undefined | null): Playlist | null {
 
 // ── Loading the players' scripts, once each ─────────────────────────────────
 
+/** A playlist asked for by its id, from one of its songs. (A list of video
+    ids is not used: YouTube quietly ignores a long one.) */
+type PlaylistRequest = { list: string; listType: 'playlist'; index?: number };
 type YTNamespace = { Player: new (el: HTMLElement, opts: unknown) => YTPlayer };
 export type YTPlayer = {
   playVideo(): void;
@@ -52,8 +55,8 @@ export type YTPlayer = {
   getPlaylist(): string[] | null;
   getPlaylistIndex(): number;
   setShuffle(on: boolean): void;
-  cuePlaylist(list: string[] | { list: string; listType: 'playlist'; index?: number }, index?: number): void;
-  loadPlaylist(list: string[], index?: number): void;
+  cuePlaylist(list: PlaylistRequest): void;
+  loadPlaylist(list: PlaylistRequest): void;
   getCurrentTime(): number;
   getDuration(): number;
   seekTo(seconds: number, allowSeekAhead: boolean): void;
