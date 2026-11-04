@@ -60,3 +60,22 @@ function fx(node: HTMLElement, value: unknown, kind: 'bump' | 'glow' | 'sparkle'
 export const bump = (node: HTMLElement, value: unknown) => fx(node, value, 'bump');
 export const glow = (node: HTMLElement, value: unknown) => fx(node, value, 'glow');
 export const sparkle = (node: HTMLElement, value: unknown) => fx(node, value, 'sparkle');
+
+/**
+ * A row arriving or leaving a list: it opens or closes its own height, and
+ * fades, so the rows below it slide rather than jump.
+ */
+export function foldRow(node: Element, { duration = 240, x = -10 }: { duration?: number; x?: number } = {}) {
+  const el = node as HTMLElement;
+  const h = el.offsetHeight;
+  const cs = getComputedStyle(el);
+  const pt = parseFloat(cs.paddingTop) || 0;
+  const pb = parseFloat(cs.paddingBottom) || 0;
+  return {
+    duration: prefersReducedMotion() ? 0 : duration,
+    easing: (t: number) => 1 - Math.pow(1 - t, 3),
+    css: (t: number, u: number) =>
+      `overflow: hidden; opacity: ${t}; transform: translateX(${x * u}px); height: ${t * h}px;` +
+      ` padding-top: ${t * pt}px; padding-bottom: ${t * pb}px;`
+  };
+}

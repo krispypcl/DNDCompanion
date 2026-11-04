@@ -36,6 +36,32 @@ export function parsePlaylist(raw: string | undefined | null): Playlist | null {
   return null;
 }
 
+/**
+ * What YouTube calls a link: a song's title, or a playlist's own name
+ * (YouTube's oEmbed answers any page, without a key). Null when it will not
+ * say, so the caller falls back to something of its own.
+ */
+export async function youtubeTitle(link: Playlist, timeoutMs = 5000): Promise<string | null> {
+  const page = link.list
+    ? `https://www.youtube.com/playlist?list=${link.list}`
+    : link.video
+      ? `https://www.youtube.com/watch?v=${link.video}`
+      : null;
+  if (!page) return null;
+  const stop = new AbortController();
+  const timer = setTimeout(() => stop.abort(), timeoutMs);
+  try {
+    const res = await fetch(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(page)}`, { signal: stop.signal });
+    if (!res.ok) return null;
+    const title = ((await res.json()) as { title?: unknown }).title;
+    return typeof title === 'string' && title.trim() ? title.trim() : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // ── Loading the players' scripts, once each ─────────────────────────────────
 
 /** A playlist asked for by its id, from one of its songs. (A list of video
