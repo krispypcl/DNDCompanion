@@ -8,7 +8,7 @@
    * deleting it, a banner like a sheet's, and a jukebox of their own music.
    */
   import { onMount } from 'svelte';
-  import { fade } from 'svelte/transition';
+  import { fade, slide } from 'svelte/transition';
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
   import { base } from '$app/paths';
@@ -22,6 +22,7 @@
   import { themeStyle } from '$lib/theme';
   import { friendlyError } from '$lib/errors';
   import { prefersReducedMotion } from '$lib/motion';
+  import { glide } from '$lib/flip';
   import Banner from './Banner.svelte';
   import CampaignMusic from './CampaignMusic.svelte';
   import D20Loader from './D20Loader.svelte';
@@ -44,6 +45,22 @@
   let invite = $state<string | null>(null);
   let copied = $state<'invite' | 'page' | null>(null);
   let removing = $state<string | null>(null);
+  /**
+   * Edit mode, the DM's alone, as on a sheet: reading, the page is the table
+   * and the music; editing, the name, the songs, the invite, the banner and
+   * ending or deleting the campaign come out.
+   */
+  let editing = $state(false);
+  function toggleEditing() {
+    void glide(() => {
+      editing = !editing;
+      if (!editing) {
+        confirming = null;
+        removing = null;
+      }
+    });
+  }
+  const unfold = () => ({ duration: prefersReducedMotion() ? 0 : 280, easing: cubicOut });
   /** Which of the campaign's last two buttons is asking to be sure. */
   let confirming = $state<'end' | 'delete' | null>(null);
 
@@ -182,7 +199,7 @@
         <span class="eyebrow">Campaign{#if ended}<span class="sep">·</span>ended{/if}{#if isDm}<span class="sep">·</span>you’re the DM{/if}</span>
         <h1>
           {#if isDm}
-            <EditableField value={campaign.name} editable={true} label="Campaign name" placeholder="Campaign name"
+            <EditableField value={campaign.name} editable={editing} label="Campaign name" placeholder="Campaign name"
                            onchange={(v) => rename(String(v))} />
           {:else}
             {campaign.name}
@@ -190,6 +207,11 @@
         </h1>
       </div>
       <div class="tools">
+        {#if isDm}
+          <button class="edit" aria-pressed={editing} onclick={toggleEditing}>
+            {#key editing}<span class="edlabel">{editing ? 'Done' : 'Edit'}</span>{/key}
+          </button>
+        {/if}
         <a class="back" href="{base}/">Back</a>
         <button class="ghost" onclick={() => copy(location.href, 'page')}>{copied === 'page' ? 'Copied!' : 'Share page'}</button>
         {#if isDm && campaign.details.songs?.length}<SoundToggle />{/if}
@@ -199,21 +221,14 @@
 
     {#if ended}
       <p class="ended">This campaign has ended. Its characters stay here as the story left them{#if isDm}, and nobody new can join{/if}.</p>
-    {:else if isDm}
-      <section class="dm">
-        <div class="invite">
-          <span class="label">Invite link</span>
-          <input readonly value={inviteLink || 'Fetching…'} aria-label="Invite link" onfocus={(e) => e.currentTarget.select()} />
-          <button onclick={() => copy(inviteLink, 'invite')} disabled={!inviteLink}>{copied === 'invite' ? 'Copied!' : 'Copy'}</button>
-          <button class="ghost" onclick={newInvite} title="Make a new link; the old one stops working">New link</button>
-        </div>
-        <p class="hint">Players open it, sign in and pick which character joins. Anyone with this page’s own link can watch, but only the invite lets a character in.</p>
-      </section>
     {/if}
 
-    {#if isDm}
-      <CampaignMusic campaignId={campaign.id} songs={campaign.details.songs ?? []}
-                     onchange={(songs) => saveDetails({ songs })} />
+    <!-- The DM's music: always there to play; empty, only while editing. -->
+    {#if isDm && (editing || campaign.details.songs?.length)}
+      <div transition:slide={unfold()}>
+        <CampaignMusic campaignId={campaign.id} songs={campaign.details.songs ?? []} {editing}
+                       onchange={(songs) => saveDetails({ songs })} />
+      </div>
     {/if}
 
     {#if error}<p class="err" role="alert">{error}</p>{/if}
@@ -258,16 +273,17 @@
                 {#each s.state.conditions as c (c)}<li>{c}</li>{/each}
               </ul>
             {/if}
-            {#if isDm && !ended}
+            {#if isDm && !ended && editing}
               {#if removing === s.id}
-                <div class="confirm" role="group" aria-label="Remove {def?.identity?.name}">
+                <div class="confirm" role="group" aria-label="Remove {def?.identity?.name}" transition:slide={unfold()}>
                   <span>Take out of the campaign?</span>
                   <button class="danger" onclick={() => remove(s.id)}>Remove</button>
                   <button class="ghost" onclick={() => (removing = null)}>Keep</button>
                 </div>
               {:else}
                 <button class="x" aria-label="Remove {def?.identity?.name || s.name} from the campaign"
-                        title="Remove from the campaign" onclick={() => (removing = s.id)}>×</button>
+                        title="Remove from the campaign" onclick={() => (removing = s.id)}
+                        transition:fade={{ duration: 180 }}>×</button>
               {/if}
             {/if}
           </li>
@@ -287,7 +303,20 @@
       </details>
     {/if}
 
-    {#if isDm}
+    <!-- Editing: the invite, the banner, and ending or deleting the campaign. -->
+    {#if isDm && editing}
+      <div class="manage" transition:slide={unfold()}>
+      {#if !ended}
+        <section class="dm">
+          <div class="invite">
+            <span class="label">Invite link</span>
+            <input readonly value={inviteLink || 'Fetching…'} aria-label="Invite link" onfocus={(e) => e.currentTarget.select()} />
+            <button onclick={() => copy(inviteLink, 'invite')} disabled={!inviteLink}>{copied === 'invite' ? 'Copied!' : 'Copy'}</button>
+            <button class="ghost" onclick={newInvite} title="Make a new link; the old one stops working">New link</button>
+          </div>
+          <p class="hint">Players open it, sign in and pick which character joins. Anyone with this page’s own link can watch, but only the invite lets a character in.</p>
+        </section>
+      {/if}
       <section class="dm look">
         <label class="invite">
           <span class="label">Banner link</span>
@@ -313,6 +342,7 @@
           {/if}
           <button class="ghost dangerish" onclick={() => (confirming = 'delete')}>Delete campaign</button>
         {/if}
+      </div>
       </div>
     {/if}
   </main>
@@ -360,8 +390,22 @@
   }
   .hint { margin: 0.5rem 0 0; font-size: 0.8125rem; color: var(--dim); line-height: 1.45; }
   .hint.bad { color: var(--bad); }
-  .look { margin-top: 3rem; }
+  /* Room above for the cards' shadows; a little below so it ends in air. */
+  .manage { padding-top: 1.5rem; }
+  .manage > .dm:first-child { margin-top: 0; }
+  .look { margin-top: 1rem; }
   .look + .end { margin-top: 1.25rem; }
+  .edit {
+    background: var(--raised); border: 1px solid var(--line); color: var(--text);
+    min-width: 4.5rem; transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
+  }
+  .edit:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
+  .edit:active { transform: translateY(1px); }
+  /* Edit and Done cross over rather than swap. */
+  .edlabel { display: inline-block; animation: edIn 0.25s cubic-bezier(0.2, 0.8, 0.3, 1); }
+  @keyframes edIn { from { opacity: 0; transform: translateY(4px); } }
+  .edit[aria-pressed='true'] { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
+  .edit[aria-pressed='true']:hover { border-color: var(--a); background: var(--a-edge); color: var(--text); }
   .err { color: var(--bad); font-size: 0.875rem; }
   .ended {
     margin: 1.5rem 0 0; padding: 0.75rem 1rem; border: 1px solid var(--line-soft); border-radius: var(--r);
