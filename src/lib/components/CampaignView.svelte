@@ -27,9 +27,14 @@
   import CampaignMusic from './CampaignMusic.svelte';
   import D20Loader from './D20Loader.svelte';
   import EditableField from './EditableField.svelte';
-  import Logo from './Logo.svelte';
   import ModeToggle from './ModeToggle.svelte';
+  import Logo from './Logo.svelte';
   import NotFound from './NotFound.svelte';
+  import ShareButton from './ShareButton.svelte';
+  import ShortcutHelp from './ShortcutHelp.svelte';
+  import ThemePicker from './ThemePicker.svelte';
+  import { setSound, soundOn } from '$lib/sound';
+  import { get } from 'svelte/store';
   import SoundToggle from './SoundToggle.svelte';
   import type { Sheet } from '$lib/types';
 
@@ -67,6 +72,31 @@
   const isDm = $derived(Boolean(campaign && $session.user && campaign.created_by === $session.user.id));
   const ended = $derived(Boolean(campaign?.archived));
   const bannerLink = $derived(resolveImageUrl(campaign?.details.bannerUrl));
+  /** The campaign's colour, as a sheet's: picked while editing, previewed while picking. */
+  let themePreview = $state<string | null>(null);
+  const themeCss = $derived(themeStyle(themePreview ?? campaign?.details.theme));
+  const pageLink = $derived(typeof location !== 'undefined' ? `${location.origin}${base}/c?id=${encodeURIComponent(id)}` : '');
+
+  /** The keys, as on a sheet: E edits, M plays or pauses the music, ? lists them. */
+  let showKeys = $state(false);
+  function onKey(e: KeyboardEvent) {
+    if (!campaign || showKeys || e.metaKey || e.ctrlKey || e.altKey) return;
+    const t = e.target as HTMLElement | null;
+    if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    if (e.key === '?') {
+      e.preventDefault();
+      showKeys = true;
+    } else if (e.key.toLowerCase() === 'e' && isDm) {
+      e.preventDefault();
+      toggleEditing();
+    } else if (e.key.toLowerCase() === 'm' && isDm && campaign.details.songs?.length) {
+      e.preventDefault();
+      setSound(!get(soundOn));
+    } else if (e.key === 'Escape' && (confirming || removing)) {
+      confirming = null;
+      removing = null;
+    }
+  }
   const active = $derived(
     sheets.filter((s) => !s.retired).sort((a, b) => (a.definition?.identity?.name ?? '').localeCompare(b.definition?.identity?.name ?? ''))
   );
@@ -180,6 +210,7 @@
 </script>
 
 <svelte:head><title>{campaign?.name ?? 'Campaign'}</title></svelte:head>
+<svelte:window onkeydown={onKey} />
 
 {#if loading || !landed}
   <div class="loading">
@@ -191,9 +222,10 @@
 {:else if error && !campaign}
   <NotFound title="That’s a critical fail!" message={error} />
 {:else if campaign}
-  <main in:fade={{ duration: prefersReducedMotion() ? 0 : 200 }}>
+  <main class="themed" style={themeCss} in:fade={{ duration: prefersReducedMotion() ? 0 : 200 }}>
     {#if bannerLink.url}<Banner url={bannerLink.url} />{/if}
     <header>
+      <!-- The die, in the campaign's own colour: home to the list. -->
       <a class="home" href="{base}/" title="Your characters"><Logo size={26} /></a>
       <div class="title">
         <span class="eyebrow">Campaign{#if ended}<span class="sep">·</span>ended{/if}{#if isDm}<span class="sep">·</span>you’re the DM{/if}</span>
@@ -213,7 +245,16 @@
           </button>
         {/if}
         <a class="back" href="{base}/">Back</a>
-        <button class="ghost" onclick={() => copy(location.href, 'page')}>{copied === 'page' ? 'Copied!' : 'Share page'}</button>
+        <ShareButton link={pageLink} label="Copy link to this campaign"
+                     oncopied={(ok) => { if (!ok) error = 'The clipboard said no! Copy the address from the bar above instead.'; }} />
+        <button class="keys" onclick={() => (showKeys = true)} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+            <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2.5" y="6" width="19" height="12" rx="2" />
+              <path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M7.5 14h9" />
+            </g>
+          </svg>
+        </button>
         {#if isDm && campaign.details.songs?.length}<SoundToggle />{/if}
         <ModeToggle />
       </div>
@@ -324,6 +365,12 @@
                  onchange={(e) => saveDetails({ bannerUrl: e.currentTarget.value.trim() })} />
         </label>
         {#if bannerLink.note}<p class="hint" class:bad={bannerLink.source === 'invalid'}>{bannerLink.note}</p>{/if}
+        <div class="themerow">
+          <span class="label">Campaign theme</span>
+          <ThemePicker value={campaign.details.theme} label="Campaign theme"
+                       onpreview={(hex) => (themePreview = hex)}
+                       onchange={(name) => { themePreview = null; void saveDetails({ theme: name }); }} />
+        </div>
       </section>
       <div class="end">
         {#if confirming === 'end'}
@@ -345,6 +392,7 @@
       </div>
       </div>
     {/if}
+    {#if showKeys}<ShortcutHelp owner={isDm} place="campaign" onclose={() => (showKeys = false)} />{/if}
   </main>
 {/if}
 
@@ -354,7 +402,8 @@
   main > :global(*) { position: relative; z-index: 1; }
   .loading { display: grid; place-items: center; min-height: 60vh; }
   header { display: flex; align-items: center; gap: 0.875rem; }
-  .home { display: grid; place-items: center; flex: none; }
+  .home { display: grid; place-items: center; flex: none; color: var(--a); transition: color 0.3s ease; }
+  .home:hover { color: var(--a-hi, var(--a)); }
   .title { flex: 1; min-width: 0; }
   .sep { margin: 0 0.375rem; }
   .eyebrow { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--a); }
@@ -368,13 +417,24 @@
   button:hover:not(:disabled) { border-color: var(--a); }
   button:disabled { opacity: 0.5; cursor: default; }
   .ghost { border-color: var(--line); background: var(--surface); color: var(--text); }
+  /* The header's buttons, as on a sheet: Edit, Back, then square icons. */
   .back {
-    font-size: 0.875rem; padding: 0.4375rem 0.875rem; border-radius: var(--r-sm); text-decoration: none;
-    border: 1px solid var(--line); background: var(--surface); color: var(--text);
-    transition: border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+    background: var(--raised); border: 1px solid var(--line); color: var(--text);
+    border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font-size: 0.8125rem;
+    text-decoration: none; flex: none; line-height: 1.5;
+    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
   }
   .back:hover { border-color: var(--a-edge); color: var(--a); }
   .back:active { transform: translateY(1px); }
+  /* Shortcuts are for a keyboard: the button only shows where there is a mouse. */
+  .keys {
+    display: none; place-items: center; width: 2rem; height: 2rem; flex: none; padding: 0;
+    background: var(--raised); border: 1px solid var(--line); border-radius: var(--r-sm);
+    color: var(--text); cursor: pointer; transition: border-color 0.18s ease, color 0.18s ease, transform 0.08s ease;
+  }
+  .keys:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
+  .keys:active { transform: translateY(1px); }
+  @media (hover: hover) and (pointer: fine) { .keys { display: inline-grid; } }
   .danger { border-color: var(--bad); background: none; color: var(--bad); }
   .dangerish:hover { color: var(--bad); border-color: var(--bad); }
 
@@ -394,9 +454,11 @@
   .manage { padding-top: 1.5rem; }
   .manage > .dm:first-child { margin-top: 0; }
   .look { margin-top: 1rem; }
+  .themerow { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.875rem; }
   .look + .end { margin-top: 1.25rem; }
   .edit {
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
+    padding: 0.375rem 0.875rem; font-size: 0.8125rem; line-height: 1.5; flex: none;
     min-width: 4.5rem; transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
   }
   .edit:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
@@ -482,6 +544,8 @@
     main { padding-top: 1.25rem; }
     h1 { font-size: 1.375rem; }
     header { flex-wrap: wrap; }
-    .tools { order: -1; width: 100%; justify-content: flex-end; }
+    .tools { order: -1; width: 100%; justify-content: flex-end; gap: 0.375rem; }
+    .edit { min-width: 3.25rem; padding: 0.375rem 0.5rem; }
+    .back { padding: 0.375rem 0.5rem; }
   }
 </style>

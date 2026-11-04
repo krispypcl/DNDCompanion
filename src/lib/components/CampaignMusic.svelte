@@ -144,10 +144,16 @@
 </section>
 
 <style>
+  /* Frosted glass: the banner and the page behind it show through, softened. */
   .jukebox {
-    margin-top: 1rem; padding: 0.875rem 1rem; border: 1px solid var(--line-soft); border-radius: var(--r);
-    background: color-mix(in oklch, var(--surface) 82%, transparent);
-    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    margin-top: 1rem; padding: 0.875rem 1rem; border-radius: var(--r);
+    border: 1px solid color-mix(in oklch, var(--line) 70%, transparent);
+    background: color-mix(in oklch, var(--surface) 55%, transparent);
+    backdrop-filter: blur(18px) saturate(1.15); -webkit-backdrop-filter: blur(18px) saturate(1.15);
+    box-shadow: inset 0 1px 0 color-mix(in oklch, white 6%, transparent);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .jukebox { background: color-mix(in oklch, var(--surface) 92%, transparent); }
   }
   .cap { font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600; }
   .body { display: grid; grid-template-columns: minmax(0, 19rem) minmax(0, 1fr); gap: 1rem; margin-top: 0.625rem; align-items: start; }

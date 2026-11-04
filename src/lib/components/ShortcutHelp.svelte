@@ -1,26 +1,39 @@
 <script lang="ts">
-  /** The keyboard shortcuts, opened with ? or the keyboard button on a sheet. */
+  /** The keyboard shortcuts, opened with ? or the keyboard button on a sheet or a campaign. */
   import { onMount } from 'svelte';
   import { fade, scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import { prefersReducedMotion } from '$lib/motion';
 
-  let { owner, onclose }: { owner: boolean; onclose: () => void } = $props();
+  let {
+    owner,
+    place = 'sheet',
+    onclose
+  }: { owner: boolean; place?: 'sheet' | 'campaign'; onclose: () => void } = $props();
   const still = prefersReducedMotion();
   const mac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 
-  const rows = $derived([
-    ...(owner
+  const rows = $derived(
+    place === 'campaign'
       ? [
-          { keys: ['E'], what: 'Edit, or finish editing' },
-          { keys: [mac ? '⌘' : 'Ctrl', 'Z'], what: 'Undo the last change' }
+          ...(owner ? [{ keys: ['E'], what: 'Edit, or finish editing' }] : []),
+          ...(owner ? [{ keys: ['M'], what: 'Play or pause the table music' }] : []),
+          { keys: ['?'], what: 'Show these shortcuts' },
+          { keys: ['Esc'], what: 'Close this, or a question' }
         ]
-      : []),
-    { keys: ['1', '–', '8'], what: 'Switch tabs, Combat to Backstory' },
-    { keys: ['P'], what: 'Print the sheet' },
-    { keys: ['?'], what: 'Show these shortcuts' },
-    { keys: ['Esc'], what: 'Close a dialog or picture' }
-  ]);
+      : [
+          ...(owner
+            ? [
+                { keys: ['E'], what: 'Edit, or finish editing' },
+                { keys: [mac ? '⌘' : 'Ctrl', 'Z'], what: 'Undo the last change' }
+              ]
+            : []),
+          { keys: ['1', '–', '8'], what: 'Switch tabs, Combat to Backstory' },
+          { keys: ['P'], what: 'Print the sheet' },
+          { keys: ['?'], what: 'Show these shortcuts' },
+          { keys: ['Esc'], what: 'Close a dialog or picture' }
+        ]
+  );
 
   let closer = $state<HTMLButtonElement>();
   onMount(() => {
@@ -36,7 +49,7 @@
   <div class="box" role="dialog" data-keys aria-modal="true" aria-labelledby="keys-title"
        transition:scale={{ start: 0.96, duration: still ? 0 : 180, easing: cubicOut }}>
     <h2 id="keys-title">Keyboard shortcuts</h2>
-    <p class="hint">They work anywhere on the sheet except while typing in a field.</p>
+    <p class="hint">They work anywhere on the {place === 'campaign' ? 'page' : 'sheet'} except while typing in a field.</p>
     <dl>
       {#each rows as row (row.what)}
         <div>

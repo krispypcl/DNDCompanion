@@ -1,16 +1,28 @@
 <script lang="ts">
-  /** Copies the sheet's link, for pasting to the rest of the table. */
+  /** Copies a page's link (a sheet's, or a campaign's), for pasting to the rest of the table. */
   import { base } from '$app/paths';
   import { copyText } from '$lib/clipboard';
   import { sheetLink } from '$lib/rules/share';
 
-  let { id, oncopied }: { id: string; oncopied: (ok: boolean) => void } = $props();
+  let {
+    id,
+    link,
+    label = 'Copy link to this sheet',
+    oncopied
+  }: {
+    /** A sheet's id: its link is made from it. */
+    id?: string;
+    /** Or the link itself, for anything else. */
+    link?: string;
+    label?: string;
+    oncopied: (ok: boolean) => void;
+  } = $props();
 
   let done = $state(false);
   let timer: ReturnType<typeof setTimeout> | undefined;
 
   async function share() {
-    const ok = await copyText(sheetLink(location.origin, base, id));
+    const ok = await copyText(link ?? sheetLink(location.origin, base, id ?? ''));
     done = ok;
     clearTimeout(timer);
     timer = setTimeout(() => (done = false), 1600);
@@ -18,7 +30,7 @@
   }
 </script>
 
-<button class="share" class:done onclick={share} aria-label="Copy link to this sheet" title="Copy link to this sheet">
+<button class="share" class:done onclick={share} aria-label={label} title={label}>
   {#if done}
     <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
       <path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2"

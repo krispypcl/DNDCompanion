@@ -13,12 +13,15 @@
   let {
     value,
     onchange,
-    onpreview
+    onpreview,
+    label = 'Character theme'
   }: {
     value: unknown;
     onchange: (next: string) => void;
     /** The colour being dragged to, not yet kept; null when it settles. */
     onpreview?: (next: string | null) => void;
+    /** What the swatches are for, for a screen reader. */
+    label?: string;
   } = $props();
 
   const preset = $derived(isThemeName(value) ? value : null);
@@ -58,7 +61,7 @@
 </script>
 
 <div class="picker">
-  <div class="presets" role="radiogroup" aria-label="Character theme">
+  <div class="presets" role="radiogroup" aria-label={label}>
     {#each THEME_NAMES as name (name)}
       <button
         class="sw"
