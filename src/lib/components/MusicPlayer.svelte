@@ -2,7 +2,7 @@
   /**
    * The sheet's music, top centre: the song playing, then back, play/pause and
    * next, over a YouTube player kept out of sight. It plays
-   * a YouTube (or YouTube Music) playlist, or a single video's sound on loop.
+   * a YouTube (or YouTube Music) playlist, or a single video's sound, once or on loop.
    *
    * The speaker beside the light/dark switch is its mute: off (the default),
    * the music waits, paused; on, it plays at once, or at the first tap on
@@ -17,21 +17,22 @@
   import { get } from 'svelte/store';
   import { setSound, soundOn } from '$lib/sound';
   import {
-    clock, loadYouTube, parsePlaylist, storeShuffle, storeVolume, storedShuffle, storedVolume,
+    clock, loadYouTube, parsePlaylist, storeLoop, storeShuffle, storedLoop, storeVolume, storedShuffle, storedVolume,
     type Playlist, type YTPlayer
   } from '$lib/music';
   import { session } from '$lib/stores/session';
-  import { saveShuffle, shuffleOf } from '$lib/data/session';
+  import { loopOf, saveLoop, saveShuffle, shuffleOf, type MusicPlace } from '$lib/data/session';
 
   let {
     url,
-    loop = true,
+    place = 'sheet',
     onended,
     ontitle
   }: {
     url: string;
-    /** A single video plays again when it ends; off, `onended` is told instead. */
-    loop?: boolean;
+    /** A sheet's player or a campaign's jukebox: each remembers its own loop. */
+    place?: MusicPlace;
+    /** Told when the music runs out (loop off): the jukebox moves on. */
     onended?: () => void;
     /** Told each song's title as YouTube gives it. */
     ontitle?: (title: string) => void;
@@ -52,6 +53,29 @@
     // The device follows the account, so the next visit knows before sign-in finishes.
     if (fromAccount !== null) storeShuffle(fromAccount);
   });
+  /**
+   * Loop, beside it and kept the same way: on, a playlist starts over at its
+   * end and a single song plays again; off, the music stops (or, in a
+   * jukebox, the next song on the list follows).
+   */
+  let looping = $state(false);
+  $effect(() => {
+    const fromAccount = loopOf($session.user, place);
+    looping = fromAccount ?? (typeof localStorage === 'undefined' ? place === 'sheet' : storedLoop(place));
+    if (fromAccount !== null) storeLoop(place, fromAccount);
+  });
+  function toggleLoop() {
+    looping = !looping;
+    storeLoop(place, looping);
+    if ($session.user) void saveLoop(place, looping).catch(() => {});
+    applyLoop();
+  }
+  /** YouTube's own loop, for a playlist; a single song is started again by hand. */
+  function applyLoop() {
+    if (!yt || !playlist?.list) return;
+    try { yt.setLoop(untrack(() => looping)); } catch { /* not ready */ }
+  }
+
   /**
    * The new order is made once per visit, as soon as YouTube says how many
    * songs the playlist has (on loading, or at the latest when it starts):
@@ -342,7 +366,7 @@
           height: 200,
           ...(p.video ? { videoId: p.video } : {}),
           playerVars: {
-            ...(p.list ? { listType: 'playlist', list: p.list } : loop ? { playlist: p.video, loop: 1 } : {}),
+            ...(p.list ? { listType: 'playlist', list: p.list } : {}),
             controls: 0, disablekb: 1, playsinline: 1, rel: 0, fs: 0, iv_load_policy: 3
           },
           events: {
@@ -372,11 +396,20 @@
               // -1 a new song loading, 0 one ended: the next starts from silence.
               if (e.data === -1 || e.data === 0) hushNow();
               if (e.data === 1) {
+                applyLoop();
                 hasPlayed = true;
                 disarm?.();
                 if (!afterFade) fadeTo(1, FADE_IN);
               }
-              if (e.data === 0 && !loop) onended?.();
+              // The end of the music: again from the top, or over to the jukebox.
+              if (e.data === 0) {
+                if (!untrack(() => looping)) onended?.();
+                else if (p.list) yt?.playVideoAt(0);
+                else {
+                  yt?.seekTo(0, true);
+                  yt?.playVideo();
+                }
+              }
               updateTitle();
               readTime();
             },
@@ -477,13 +510,24 @@
         <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M12.5 3v10M3 3.2v9.6L10.4 8z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" /></svg>
       </button>
     </div>
-    <!-- Shuffle, in the other bottom corner. -->
+    <!-- Shuffle and loop, in the other bottom corner. -->
     <button class="shuf" class:on={shuffle} aria-pressed={shuffle} disabled={!playlist.list}
             aria-label={shuffle ? 'Shuffle on' : 'Shuffle off'}
             title={!playlist.list ? 'One song: nothing to shuffle' : shuffle ? 'Shuffle on: a new order every visit' : 'Shuffle off'}
             onclick={toggleShuffle}>
       <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
         <path d="M2 4.5h2.4c1.3 0 2.2.6 2.9 1.7l1.4 3.6c.7 1.1 1.6 1.7 2.9 1.7H14M2 11.5h2.4c1.3 0 2.2-.6 2.9-1.7M9.3 5.6c.6-.7 1.4-1.1 2.3-1.1H14M12 2.6l2 1.9-2 1.9M12 9.6l2 1.9-2 1.9"
+              fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
+    <button class="loop" class:on={looping} aria-pressed={looping}
+            aria-label={looping ? 'Loop on' : 'Loop off'}
+            title={looping
+              ? (playlist.list ? 'Loop on: the playlist starts over at its end' : 'Loop on: the song plays again')
+              : place === 'campaign' ? 'Loop off: the next song on the list follows' : 'Loop off: the music stops at the end'}
+            onclick={toggleLoop}>
+      <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
+        <path d="M3 7.2V6.4c0-1.1.9-2 2-2h7.2M10.6 2.6l1.9 1.8-1.9 1.8M13 8.8v.8c0 1.1-.9 2-2 2H3.8M5.4 13.4l-1.9-1.8 1.9-1.8"
               fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
     </button>
@@ -527,13 +571,14 @@
     .music { backdrop-filter: none; -webkit-backdrop-filter: none; background: color-mix(in oklch, var(--surface) 82%, transparent); }
   }
   .vol { position: absolute; right: 0.5rem; bottom: 0.5rem; z-index: 2; }
-  .shuf {
+  .shuf, .loop {
     position: absolute; left: 0.5rem; bottom: 0.5rem; z-index: 2;
     width: 1.75rem; height: 1.75rem; border-radius: 50%; display: grid; place-items: center; padding: 0;
     border: 0; background: none; color: var(--dim); cursor: pointer; transition: color 0.15s ease, background-color 0.15s ease;
   }
-  .shuf:hover:not(:disabled) { color: var(--a); }
-  .shuf.on { color: var(--a); background: var(--a-wash); }
+  .loop { left: 2.375rem; }
+  .shuf:hover:not(:disabled), .loop:hover { color: var(--a); }
+  .shuf.on, .loop.on { color: var(--a); background: var(--a-wash); }
   .shuf:disabled { opacity: 0.35; cursor: default; }
   .volbtn {
     width: 1.75rem; height: 1.75rem; border-radius: 50%; display: grid; place-items: center; padding: 0;

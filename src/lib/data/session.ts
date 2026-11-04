@@ -89,6 +89,20 @@ export async function saveShuffle(on: boolean) {
   await unwrap(supabase.auth.updateUser({ data: { music_shuffle: on } }));
 }
 
+/** Where a music player is: a sheet's, or a campaign's jukebox. Each keeps its own loop. */
+export type MusicPlace = 'sheet' | 'campaign';
+const LOOP_FIELD: Record<MusicPlace, string> = { sheet: 'music_loop', campaign: 'jukebox_loop' };
+
+/** Whether this player wants that music to loop; kept with their account. */
+export function loopOf(user: { user_metadata?: Record<string, unknown> } | null | undefined, place: MusicPlace): boolean | null {
+  const raw = user?.user_metadata?.[LOOP_FIELD[place]];
+  return typeof raw === 'boolean' ? raw : null;
+}
+
+export async function saveLoop(place: MusicPlace, on: boolean) {
+  await unwrap(supabase.auth.updateUser({ data: { [LOOP_FIELD[place]]: on } }));
+}
+
 /**
  * Deletes the signed-in player's account and, by the database's cascades,
  * every sheet and piece of writing they made (delete_own_account in
