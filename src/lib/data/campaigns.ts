@@ -8,18 +8,33 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '$lib/supabase';
 import { friendlyError } from '$lib/errors';
 
-export type Campaign = { id: string; name: string; created_by: string; created_at: string; archived: boolean };
+/** A song on the DM's list: a YouTube link, and what to call it. */
+export type Song = { url: string; name?: string };
+/** What a campaign's page shows beyond its name. */
+export type CampaignDetails = { bannerUrl?: string; songs?: Song[] };
 
-const COLUMNS = 'id, name, created_by, created_at';
+export type Campaign = {
+  id: string;
+  name: string;
+  created_by: string;
+  created_at: string;
+  archived: boolean;
+  details: CampaignDetails;
+};
+
+const COLUMNS = 'id, name, created_by, created_at, archived';
 
 /**
- * Whether the database has the archived column yet (migration 0005). Until
- * it does, every campaign reads as open and ending one says so.
- * TODO: drop this fallback once 0005 has been run.
+ * Whether the database has the details column yet (migration 0006). Until it
+ * does, campaigns have no banner or songs and saving them says so.
+ * TODO: drop this fallback once 0006 has been run.
  */
-let archiveMissing = false;
-const missingArchive = (error: { message?: string } | null) => Boolean(error && /archived/i.test(error.message ?? ''));
-const asCampaign = (row: Omit<Campaign, 'archived'> & { archived?: boolean }): Campaign => ({ ...row, archived: Boolean(row.archived) });
+let detailsMissing = false;
+const missingDetails = (error: { message?: string } | null) => Boolean(error && /details/i.test(error.message ?? ''));
+const asCampaign = (row: Omit<Campaign, 'details'> & { details?: CampaignDetails | null }): Campaign => ({
+  ...row,
+  details: row.details && typeof row.details === 'object' ? row.details : {}
+});
 
 /** A refusal already worded for the player, shown as it is. */
 export class CampaignError extends Error {
@@ -53,11 +68,11 @@ export function inviteCode(text: string): string {
 }
 
 export function makeCampaignRepo(client: SupabaseClient) {
-  /** Campaign rows, with archived when the database has it. */
+  /** Campaign rows, with details when the database has them. */
   async function rows<T>(run: (columns: string) => PromiseLike<{ data: T; error: { message?: string } | null }>): Promise<T> {
-    let result = await run(archiveMissing ? COLUMNS : `${COLUMNS}, archived`);
-    if (!archiveMissing && missingArchive(result.error)) {
-      archiveMissing = true;
+    let result = await run(detailsMissing ? COLUMNS : `${COLUMNS}, details`);
+    if (!detailsMissing && missingDetails(result.error)) {
+      detailsMissing = true;
       result = await run(COLUMNS);
     }
     if (result.error) throw new Error(result.error.message);
@@ -135,7 +150,14 @@ export function makeCampaignRepo(client: SupabaseClient) {
     /** Ended (archived) or reopened; only its DM can. */
     async archive(id: string, archived: boolean): Promise<void> {
       const { data, error } = await client.from('campaigns').update({ archived }).eq('id', id).select('id');
-      if (missingArchive(error)) throw new CampaignError('Ending campaigns isn’t set up yet! Run the 0005 migration and try again.');
+      if (error) throw new Error(error.message);
+      if (!data?.length) throw new CampaignError('Only the DM can do that!');
+    },
+
+    /** The banner and songs, all at once; only its DM can. */
+    async saveDetails(id: string, details: CampaignDetails): Promise<void> {
+      const { data, error } = await client.from('campaigns').update({ details }).eq('id', id).select('id');
+      if (missingDetails(error)) throw new CampaignError('Banners and music for campaigns aren’t set up yet! Run the 0006 migration and try again.');
       if (error) throw new Error(error.message);
       if (!data?.length) throw new CampaignError('Only the DM can do that!');
     },
