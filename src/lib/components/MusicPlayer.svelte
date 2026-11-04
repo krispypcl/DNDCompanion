@@ -61,7 +61,7 @@
   let looping = $state(false);
   $effect(() => {
     const fromAccount = loopOf($session.user, place);
-    looping = fromAccount ?? (typeof localStorage === 'undefined' ? place === 'sheet' : storedLoop(place));
+    looping = fromAccount ?? (typeof localStorage === 'undefined' ? place === 'campaign' : storedLoop(place));
     if (fromAccount !== null) storeLoop(place, fromAccount);
   });
   function toggleLoop() {
