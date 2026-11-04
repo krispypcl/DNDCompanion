@@ -11,7 +11,7 @@ import { friendlyError } from '$lib/errors';
 /** A song on the DM's list: a YouTube link, and what to call it. */
 export type Song = { url: string; name?: string };
 /** What a campaign's page shows beyond its name. */
-export type CampaignDetails = { bannerUrl?: string; songs?: Song[] };
+export type CampaignDetails = { bannerUrl?: string; songs?: Song[]; theme?: string };
 
 export type Campaign = {
   id: string;
