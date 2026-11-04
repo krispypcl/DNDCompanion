@@ -5,7 +5,7 @@
    * kept current while the page is open. Readable by anyone with the link,
    * like a sheet. Its DM also gets the invite link, a rename, removing a
    * character, ending the campaign (it is archived, and can be reopened) and
-   * deleting it.
+   * deleting it, a banner like a sheet's, and a jukebox of their own music.
    */
   import { onMount } from 'svelte';
   import { fade } from 'svelte/transition';
@@ -13,7 +13,7 @@
   import { cubicOut } from 'svelte/easing';
   import { base } from '$app/paths';
   import { goto } from '$app/navigation';
-  import { campaignMessage, campaignRepo, type Campaign } from '$lib/data/campaigns';
+  import { campaignMessage, campaignRepo, type Campaign, type CampaignDetails } from '$lib/data/campaigns';
   import { sheetRepo } from '$lib/data/sheets';
   import { session } from '$lib/stores/session';
   import { characterLevel, classLine, passiveScore } from '$lib/rules/derived';
@@ -22,11 +22,14 @@
   import { themeStyle } from '$lib/theme';
   import { friendlyError } from '$lib/errors';
   import { prefersReducedMotion } from '$lib/motion';
+  import Banner from './Banner.svelte';
+  import CampaignMusic from './CampaignMusic.svelte';
   import D20Loader from './D20Loader.svelte';
   import EditableField from './EditableField.svelte';
   import Logo from './Logo.svelte';
   import ModeToggle from './ModeToggle.svelte';
   import NotFound from './NotFound.svelte';
+  import SoundToggle from './SoundToggle.svelte';
   import type { Sheet } from '$lib/types';
 
   let { id }: { id: string } = $props();
@@ -46,6 +49,7 @@
 
   const isDm = $derived(Boolean(campaign && $session.user && campaign.created_by === $session.user.id));
   const ended = $derived(Boolean(campaign?.archived));
+  const bannerLink = $derived(resolveImageUrl(campaign?.details.bannerUrl));
   const active = $derived(
     sheets.filter((s) => !s.retired).sort((a, b) => (a.definition?.identity?.name ?? '').localeCompare(b.definition?.identity?.name ?? ''))
   );
@@ -136,6 +140,21 @@
     await goto(`${base}/`);
   }, 'The campaign refused to vanish! Try again.');
 
+  /** The banner and songs are saved together; the page shows the change at once. */
+  async function saveDetails(patch: Partial<CampaignDetails>) {
+    if (!campaign) return;
+    const before = campaign.details;
+    const details = { ...before, ...patch };
+    campaign = { ...campaign, details };
+    error = null;
+    try {
+      await campaignRepo.saveDetails(campaign.id, details);
+    } catch (e) {
+      if (campaign) campaign = { ...campaign, details: before };
+      error = campaignMessage(e, 'That change slipped off the page! Try again.');
+    }
+  }
+
   const hpOf = (s: Sheet) => {
     const max = Number(s.definition?.combat?.hpMax) || 0;
     const cur = Number(s.state?.hpCurrent) || 0;
@@ -156,6 +175,7 @@
   <NotFound title="That’s a critical fail!" message={error} />
 {:else if campaign}
   <main in:fade={{ duration: prefersReducedMotion() ? 0 : 200 }}>
+    {#if bannerLink.url}<Banner url={bannerLink.url} />{/if}
     <header>
       <a class="home" href="{base}/" title="Your characters"><Logo size={26} /></a>
       <div class="title">
@@ -172,6 +192,7 @@
       <div class="tools">
         <a class="back" href="{base}/">Back</a>
         <button class="ghost" onclick={() => copy(location.href, 'page')}>{copied === 'page' ? 'Copied!' : 'Share page'}</button>
+        {#if isDm && campaign.details.songs?.length}<SoundToggle />{/if}
         <ModeToggle />
       </div>
     </header>
@@ -188,6 +209,11 @@
         </div>
         <p class="hint">Players open it, sign in and pick which character joins. Anyone with this page’s own link can watch, but only the invite lets a character in.</p>
       </section>
+    {/if}
+
+    {#if isDm}
+      <CampaignMusic campaignId={campaign.id} songs={campaign.details.songs ?? []}
+                     onchange={(songs) => saveDetails({ songs })} />
     {/if}
 
     {#if error}<p class="err" role="alert">{error}</p>{/if}
@@ -262,6 +288,14 @@
     {/if}
 
     {#if isDm}
+      <section class="dm look">
+        <label class="invite">
+          <span class="label">Banner link</span>
+          <input value={campaign.details.bannerUrl ?? ''} placeholder="Optional: a wide picture shown behind the page"
+                 onchange={(e) => saveDetails({ bannerUrl: e.currentTarget.value.trim() })} />
+        </label>
+        {#if bannerLink.note}<p class="hint" class:bad={bannerLink.source === 'invalid'}>{bannerLink.note}</p>{/if}
+      </section>
       <div class="end">
         {#if confirming === 'end'}
           <span>End this campaign? It moves to your archived campaigns, its characters stay in it, and you can reopen it later.</span>
@@ -286,6 +320,8 @@
 
 <style>
   main { max-width: 72rem; margin: 0 auto; padding: 2rem 1rem 4rem; }
+  /* Above the banner, which lies behind the top of the page. */
+  main > :global(*) { position: relative; z-index: 1; }
   .loading { display: grid; place-items: center; min-height: 60vh; }
   header { display: flex; align-items: center; gap: 0.875rem; }
   .home { display: grid; place-items: center; flex: none; }
@@ -323,6 +359,9 @@
     border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg);
   }
   .hint { margin: 0.5rem 0 0; font-size: 0.8125rem; color: var(--dim); line-height: 1.45; }
+  .hint.bad { color: var(--bad); }
+  .look { margin-top: 3rem; }
+  .look + .end { margin-top: 1.25rem; }
   .err { color: var(--bad); font-size: 0.875rem; }
   .ended {
     margin: 1.5rem 0 0; padding: 0.75rem 1rem; border: 1px solid var(--line-soft); border-radius: var(--r);
