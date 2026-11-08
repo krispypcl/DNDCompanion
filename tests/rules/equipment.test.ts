@@ -9,9 +9,17 @@ const def = (equipment: unknown[] = [], over: Record<string, unknown> = {}) => (
 }) as never;
 
 describe('equipment effects', () => {
-  it('keeps the written AC until something that touches it is equipped', () => {
-    expect(armorClass(def()).total).toBe(14);
-    expect(armorClass(def([{ name: 'Leather armor', equipped: false, effects: [{ kind: 'armor', base: 11, dex: 'full' }] }])).computed).toBe(false);
+  it('works AC out with nothing worn: 10 + Dexterity, whatever was typed', () => {
+    expect(armorClass(def()).total).toBe(13);
+    expect(armorClass(def([{ name: 'Leather armor', equipped: false, effects: [{ kind: 'armor', base: 11, dex: 'full' }] }])).total).toBe(13);
+  });
+  it('gives a Barbarian or a Monk their Unarmoured Defence', () => {
+    const barb = def([], { identity: { name: 'X', level: 5, classes: [{ name: 'Barbarian', level: 5 }] }, abilities: { str: 16, dex: 14, con: 16, int: 8, wis: 10, cha: 10 } });
+    expect(armorClass(barb).total).toBe(15);
+    const monk = def([], { identity: { name: 'X', level: 5, classes: [{ name: 'Monk', level: 5 }] }, abilities: { str: 10, dex: 16, con: 12, int: 10, wis: 16, cha: 10 } });
+    expect(armorClass(monk).total).toBe(16);
+    const shield = { name: 'Shield', equipped: true, effects: [{ kind: 'shield', bonus: 2 }] };
+    expect(armorClass(def([shield], { identity: { name: 'X', level: 5, classes: [{ name: 'Monk', level: 5 }] }, abilities: { str: 10, dex: 16, con: 12, int: 10, wis: 16, cha: 10 } })).total).toBe(15);
   });
   it('works out armour, Dexterity as allowed, shields and bonuses', () => {
     const leather = { name: 'Leather armor', equipped: true, effects: [{ kind: 'armor', base: 11, dex: 'full' }] };

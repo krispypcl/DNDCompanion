@@ -57,23 +57,32 @@ export function saveParts(def: Definition, ability: Ability): Part[] {
  * unarmoured) plus Dexterity as the armour allows, shields, and bonuses.
  */
 export function armorClass(def: Definition): { total: number; parts: Part[]; computed: boolean } {
+  // Always worked out: from what is worn, or from the body (and the class)
+  // when nothing is. Natural armour is worn too: an item with an armour effect.
   const effects = equippedEffects(def).filter(({ effect }) => ['armor', 'shield', 'ac'].includes(effect.kind));
-  const written = Number(def.combat?.ac) || 10;
-  if (!effects.length) return { total: written, parts: [{ label: 'As written on the sheet', value: written }], computed: false };
   const dex = modifierOf(def, 'dex');
   const armor = effects.find(({ effect }) => effect.kind === 'armor');
+  const shielded = effects.some(({ effect }) => effect.kind === 'shield');
   const parts: Part[] = [];
   if (armor && armor.effect.kind === 'armor') {
     parts.push({ label: armor.item, value: armor.effect.base, note: 'armour' });
     const allowed = armor.effect.dex === 'none' ? 0 : armor.effect.dex === 'max2' ? Math.min(2, dex) : dex;
     if (armor.effect.dex !== 'none') parts.push({ label: armor.effect.dex === 'max2' ? 'Dexterity (up to +2)' : 'Dexterity', value: allowed });
   } else {
-    parts.push({ label: 'Unarmoured', value: 10 }, { label: 'Dexterity', value: dex });
+    // Unarmoured Defence: a Barbarian adds Constitution, a Monk (without a
+    // shield) Wisdom. The better one counts, as the rules have it.
+    const levels = classLevels(def);
+    const options: { label: string; extra: Part | null }[] = [{ label: 'Unarmoured', extra: null }];
+    if (levels.barbarian) options.push({ label: 'Unarmoured Defence (Barbarian)', extra: { label: 'Constitution', value: modifierOf(def, 'con') } });
+    if (levels.monk && !shielded) options.push({ label: 'Unarmoured Defence (Monk)', extra: { label: 'Wisdom', value: modifierOf(def, 'wis') } });
+    const best = options.reduce((a, b) => ((b.extra?.value ?? 0) > (a.extra?.value ?? 0) ? b : a));
+    parts.push({ label: best.label, value: 10 }, { label: 'Dexterity', value: dex });
+    if (best.extra) parts.push(best.extra);
   }
   for (const { item, effect } of effects) {
     if (effect.kind === 'shield' || effect.kind === 'ac') parts.push({ label: item, value: effect.bonus });
   }
-  return { total: parts.reduce((s, p) => s + p.value, 0), parts, computed: true };
+  return { total: parts.reduce((s, p) => s + p.value, 0), parts, computed: effects.length > 0 };
 }
 
 /** Speed: as written, plus anything worn that changes it. */

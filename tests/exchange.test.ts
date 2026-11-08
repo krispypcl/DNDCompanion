@@ -51,7 +51,7 @@ describe('export', () => {
     expect(text).toContain(`format: ${FORMAT}`);
     expect(text).toContain(`version: ${VERSION}`);
     expect(text).toContain('Loka Sibbs');
-    expect(text).toContain('HP 31 / 44 · AC 17');
+    expect(text).toContain('HP 31 / 44 · AC 14');
     expect(text.trimEnd().endsWith('===== END =====')).toBe(true);
   });
 

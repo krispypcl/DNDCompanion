@@ -7,7 +7,7 @@ import { parseRoll } from '$lib/rules/dice';
 import { spellDamage } from '$lib/rules/spellroll';
 import type { Feature } from '$lib/types';
 
-export const TABS = ['Combat', 'Spells', 'Equipment', 'Features', 'Trackers', 'Character', 'Notes', 'Backstory', 'Links'];
+export const TABS = ['Combat', 'Equipment', 'Spells', 'Features', 'Trackers', 'Character', 'Notes', 'Backstory', 'Appearance'];
 
 export const PASSIVES = ['perception', 'insight', 'investigation'] as const;
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { slide } from 'svelte/transition';
+  import { fade } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import { applyRest, healFromHitDice, hitDiceLeft, hitDicePool } from '$lib/rules/rest';
   import { formula as describePool, type Pool, type Roll } from '$lib/rules/dice';
@@ -48,9 +48,10 @@
   }
   function rollAndRest() {
     const p = pool;
-    if (!p || !onroll) return rest('short');
-    const spent = count;
     spending = false;
+    // None spent: a rest that heals nothing, the other short-rest things still happen.
+    if (!p || !onroll || count < 1) return rest('short');
+    const spent = count;
     onroll(p, `Short rest: ${spent} hit ${spent === 1 ? 'die' : 'dice'}`, (r) => {
       snapshot(sheetState, LABELS.short);
       SOUNDS.short();
@@ -60,6 +61,7 @@
       onrest(`Short Rest taken: healed ${Math.max(0, healed.hpCurrent - before)}`);
     });
   }
+  const swap = () => ({ duration: prefersReducedMotion() ? 0 : 160 });
 
   const LABELS: Record<RestKind, string> = {
     short: 'Short Rest',
@@ -79,44 +81,50 @@
 <!-- Resting is the owner's call. To anyone else the buttons are not dimmed,
      they are absent: there is nothing here a visitor can do. -->
 {#if editable}
-  <div class="rests">
-    {#each Object.keys(LABELS) as RestKind[] as kind (kind)}
-      <button class:on={kind === 'short' && spending} aria-expanded={kind === 'short' ? spending : undefined}
-              onclick={() => (kind === 'short' ? shortRest() : rest(kind))}>{LABELS[kind]}</button>
-    {/each}
-  </div>
-  {#if spending}
-    <div class="spend" transition:slide={{ duration: prefersReducedMotion() ? 0 : 220, easing: cubicOut }}
-         role="group" aria-label="Spend hit dice">
-      <span class="lbl">Hit dice to spend</span>
-      <div class="step">
-        <button class="sq" aria-label="One fewer" disabled={count <= 1} onclick={() => (count -= 1)}>−</button>
-        <b>{count}</b>
-        <button class="sq" aria-label="One more" disabled={count >= left} onclick={() => (count += 1)}>+</button>
-        <span class="of">of {left} left</span>
-      </div>
-      <button class="go" onclick={rollAndRest} disabled={!pool}>Roll {pool ? describePool(pool) : ''}</button>
-      <button class="plain" onclick={() => { spending = false; rest('short'); }}>Rest without rolling</button>
-      <span class="note">Each die adds your Constitution ({con >= 0 ? '+' : '−'}{Math.abs(con)}).</span>
+  <!-- Spending hit dice takes the buttons' place, the same size exactly. -->
+  <div class="restbox">
+    <div class="rests" class:away={spending} inert={spending}>
+      {#each Object.keys(LABELS) as RestKind[] as kind (kind)}
+        <button aria-expanded={kind === 'short' ? spending : undefined}
+                onclick={() => (kind === 'short' ? shortRest() : rest(kind))}>{LABELS[kind]}</button>
+      {/each}
     </div>
-  {/if}
+    {#if spending}
+      <div class="spend" role="group" aria-label="Spend hit dice on a short rest" transition:fade={swap()}>
+        <button class="sq cancel" aria-label="Cancel the short rest" title="Cancel" onclick={() => (spending = false)}>
+          <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+        </button>
+        <div class="step" title="Hit dice to spend, of {left} left">
+          <button class="sq" aria-label="One fewer hit die" disabled={count <= 0} onclick={() => (count -= 1)}>−</button>
+          <b aria-label="{count} of {left} hit dice">{count}<small>/{left}</small></b>
+          <button class="sq" aria-label="One more hit die" disabled={count >= left} onclick={() => (count += 1)}>+</button>
+        </div>
+        <button class="go" onclick={rollAndRest}
+                title={count ? `Each die adds your Constitution (${con >= 0 ? '+' : '−'}${Math.abs(con)})` : 'Rest without spending hit dice'}>
+          {count && pool ? `Roll ${describePool(pool)}` : 'Rest'}
+        </button>
+      </div>
+    {/if}
+  </div>
 {/if}
 
 <style>
-  .rests { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-  button.on { border-color: var(--accent); color: var(--accent); }
-  .spend {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; margin-top: 0.5rem;
-    padding: 0.625rem 0.75rem; border: 1px solid var(--line-soft); border-radius: var(--r-sm); background: var(--raised);
+  /* Both in one cell: the spend row lies over the buttons and is as big. */
+  .restbox { display: grid; }
+  .rests, .spend { grid-area: 1 / 1; min-width: 0; }
+  .rests { display: flex; gap: 0.4rem; flex-wrap: wrap; transition: opacity 0.16s ease; }
+  .rests.away { opacity: 0; }
+  .spend { display: flex; align-items: stretch; gap: 0.4rem; }
+  .step {
+    flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 0.25rem;
+    border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: 0 0.1875rem;
   }
-  .lbl { font-size: 0.75rem; color: var(--label); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
-  .step { display: flex; align-items: center; gap: 0.375rem; }
-  .step b { min-width: 1.5rem; text-align: center; font-variant-numeric: tabular-nums; }
-  .sq { padding: 0; width: 1.75rem; height: 1.75rem; display: grid; place-items: center; }
-  .of { font-size: 0.8125rem; color: var(--dim); }
-  .go { border-color: var(--accent); color: var(--accent); }
-  .plain { border-color: transparent; background: none; color: var(--dim); }
-  .note { flex-basis: 100%; font-size: 0.75rem; color: var(--dim); }
+  .step b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .step small { font-weight: 400; color: var(--dim); font-size: 0.8em; }
+  .step .sq { border: 0; background: none; padding: 0 0.375rem; }
+  .sq { padding: 0 0.5rem; display: grid; place-items: center; }
+  .go { flex: 1.4; min-width: 0; border-color: var(--accent); color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cancel { color: var(--dim); }
   button {
     background: var(--surface);
     border: 1px solid var(--line);

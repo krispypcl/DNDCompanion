@@ -577,6 +577,8 @@
           aria-label={on ? `${nameOf(item) || 'Item'} equipped` : `Equip ${nameOf(item) || 'item'}`}
           title={!equip!.can ? (on ? 'Equipped' : '') : editable ? 'What it does when equipped' : on ? 'Equipped · press to take off' : 'Equip it'}
           onclick={() => equip!.onpress(index)}>
+    <!-- Always as wide as "Equipped", so the name beside it never shifts. -->
+    <span class="eqroom" aria-hidden="true">Equipped</span>
     {#key on}<span class="eqlabel">{on ? 'Equipped' : 'Equip'}</span>{/key}
   </button>
 {/snippet}
@@ -864,6 +866,9 @@
   .equip:active:not(:disabled) { transform: translateY(1px); }
   .equip.on { border-style: solid; border-color: var(--a-edge); background: var(--a-wash); color: var(--a); }
   .equip:disabled { cursor: default; }
+  .equip { display: inline-grid; justify-items: center; }
+  .eqroom, .eqlabel { grid-area: 1 / 1; }
+  .eqroom { visibility: hidden; }
   .eqlabel { display: inline-block; animation: eqIn 0.25s cubic-bezier(0.2, 0.8, 0.3, 1); }
   @keyframes eqIn { from { opacity: 0; transform: translateY(3px); } }
   .muted { color: var(--dim); font-size: 0.85rem; }

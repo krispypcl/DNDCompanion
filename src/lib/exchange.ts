@@ -12,6 +12,7 @@
  * that is the wrong shape is left out and counted rather than let through.
  */
 import { blankDefinition } from '$lib/sample';
+import { armorClass } from '$lib/rules/derived';
 import { PAGE_BREAK, joinPages, splitPages } from '$lib/rules/pages';
 import {
   ABILITIES,
@@ -93,7 +94,7 @@ export function exportSheet(input: ExportInput, now: Date = new Date()): string 
   const summary = [
     id.name || 'Unnamed character',
     [id.ancestry, id.class].filter(Boolean).join(' ') + (id.level ? ` · level ${id.level}` : ''),
-    `HP ${state.hpCurrent} / ${definition.combat?.hpMax ?? '?'} · AC ${definition.combat?.ac ?? '?'}`
+    `HP ${state.hpCurrent} / ${definition.combat?.hpMax ?? '?'} · AC ${armorClass(definition).total}`
   ].filter((l) => l.trim());
 
   const out: string[] = [

@@ -113,7 +113,7 @@
   </header>
 
   {#if $session.loading}
-    <div class="wait"><D20Loader size={56} label="Loading your account" /></div>
+    <div class="screen-center"><D20Loader size={56} label="Loading your account" /></div>
   {:else if !$session.user}
     <section class="card"><h1>Who goes there?</h1><p class="dim">Sign in to see your account!</p>
       <a class="btn" href="{base}/login">Sign in</a></section>
@@ -240,7 +240,6 @@
   .back:hover { border-color: var(--a-edge); color: var(--a); }
   .back:active { transform: translateY(1px); }
   .title { font-size: 1.5rem; font-weight: 650; margin: 0 0 1rem; letter-spacing: -0.01em; }
-  .wait { display: grid; place-items: center; padding: 4rem 0; }
   .card {
     background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--r);
     padding: 1.125rem; margin-bottom: 1rem; display: grid; gap: 0.5rem;

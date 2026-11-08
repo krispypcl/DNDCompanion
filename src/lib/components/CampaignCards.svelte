@@ -9,7 +9,7 @@
   import { fade, scale, slide } from 'svelte/transition';
   import { backOut, cubicOut } from 'svelte/easing';
   import { base } from '$app/paths';
-  import { characterLevel, classLine, passiveScore } from '$lib/rules/derived';
+  import { armorClass, characterLevel, classLine, passiveScore } from '$lib/rules/derived';
   import { vitalStatus } from '$lib/rules/hp';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
   import { STANDARD_CONDITIONS, cleanName, lookOf } from '$lib/rules/conditions';
@@ -161,7 +161,7 @@
       </a>
       <CardHp cur={hp.cur} max={hp.max} temp={hp.temp} vital={v.vital} label={v.label} />
       <dl class="stats">
-        <div><dt>AC</dt><dd>{def?.combat?.ac ?? '—'}</dd></div>
+        <div><dt>AC</dt><dd>{def ? armorClass(def).total : '—'}</dd></div>
         <!-- In full where the box has room, shortened where it does not. -->
         <div class="perc"><dt><span class="long">Passive Perception</span><span class="short">Passive Perc.</span></dt><dd>{passiveScore(def, 'perception')}</dd></div>
         <div class="ins"><dt><span class="long">Passive Insight</span><span class="short">Passive Ins.</span></dt><dd>{passiveScore(def, 'insight')}</dd></div>

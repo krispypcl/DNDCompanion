@@ -277,7 +277,7 @@
 <svelte:window onkeydown={onKey} />
 
 {#if loading || !landed}
-  <div class="loading">
+  <div class="loading screen-center">
     <D20Loader size={56} label="Loading the campaign" result={loading ? null : missing || (error && !campaign) ? 1 : 20}
                onlanded={() => (landed = true)} />
   </div>
@@ -421,7 +421,7 @@
   main { max-width: 72rem; margin: 0 auto; padding: 2rem 1rem 4rem; }
   /* Above the banner, which lies behind the top of the page. */
   main > :global(*) { position: relative; z-index: 1; }
-  .loading { display: grid; place-items: center; min-height: 60vh; }
+  .loading { min-height: 60vh; }
   header { display: flex; align-items: center; gap: 0.875rem; }
   .home { display: grid; place-items: center; flex: none; color: var(--a); transition: color 0.3s ease; }
   .home:hover { color: var(--a-hi, var(--a)); }
