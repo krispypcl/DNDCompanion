@@ -177,21 +177,10 @@ body { overflow-x: clip; }
   input:not([type='checkbox']):not([type='radio']):not([type='color']):not([type='range']),
   select, textarea { font-size: max(16px, 1em); }
 }
-/*
- * The type. One place, so a different choice (or, later, the player's own
- * from Google Fonts) is a change here and in the link in app.html.
- */
-:root {
-  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
-  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-notes: 'Crimson Pro', Georgia, 'Times New Roman', serif;
-}
-h1 { font-family: var(--font-display); font-optical-sizing: auto; }
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-ui);
-  font-variant-numeric: tabular-nums;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
