@@ -221,7 +221,7 @@
 
 <style>
   .rich {
-    font-family: var(--font-notes); font-size: 1.0625em; line-height: 1.55; color: var(--text);
+    font-size: inherit; line-height: 1.55; color: var(--text);
     overflow-wrap: anywhere; padding: calc(0.15rem + 1px) calc(0.3rem + 1px);
   }
   .empty { color: var(--dim); margin: 0; }
