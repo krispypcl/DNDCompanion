@@ -26,12 +26,14 @@
   let timer: ReturnType<typeof setTimeout> | undefined;
   const sign = (n: number) => (n >= 0 ? `+${n}` : `−${Math.abs(n)}`);
 
+  /** Above the whole box it explains (never over it), or below when there is no room above. */
   function place() {
     const el = (anchor?.firstElementChild as HTMLElement | null) ?? anchor;
     if (!el) return;
     const r = el.getBoundingClientRect();
-    const below = r.top < 170;
-    pos = { x: Math.min(window.innerWidth - 130, Math.max(130, r.left + r.width / 2)), y: below ? r.bottom + 8 : r.top - 8, below };
+    const tall = 46 + parts.length * 20 + (hint ? 34 : 0);
+    const below = r.top - tall - 12 < 0;
+    pos = { x: Math.min(window.innerWidth - 134, Math.max(134, r.left + r.width / 2)), y: below ? r.bottom + 8 : r.top - 8, below };
   }
   function show(delay = 260) {
     clearTimeout(timer);
@@ -50,7 +52,11 @@
 <span class="why" bind:this={anchor}
       onpointerenter={(e) => e.pointerType === 'mouse' && show()}
       onpointerleave={(e) => e.pointerType === 'mouse' && hide()}
-      onpointerdown={(e) => { if (e.pointerType !== 'mouse') { if (open) hide(); else show(0); } }}
+      onpointerdown={(e) => {
+        // A tap on something that does a thing (a die to roll, a field) is that thing, not a question.
+        if (e.pointerType === 'mouse' || (e.target as Element).closest('button, input, select, textarea, a, [contenteditable]')) return;
+        if (open) hide(); else show(0);
+      }}
       onfocusin={() => show(120)} onfocusout={hide}>
   {@render children()}
 </span>

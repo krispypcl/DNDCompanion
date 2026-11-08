@@ -177,8 +177,11 @@
      slim scrollbar of its own. */
   @media (min-width: 861px) {
     .panels {
-      overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
+      overflow-y: auto; overflow-x: hidden;
       margin-right: -0.5rem; padding-right: 0.5rem; scrollbar-gutter: stable;
+      /* Room on the left too: the notes' writing box reaches past the edge by
+         its border, and clipping took that border away. */
+      margin-left: -0.5rem; padding-left: 0.5rem;
       scrollbar-width: thin; scrollbar-color: color-mix(in oklch, var(--text) 22%, transparent) transparent;
     }
     .panels:hover { scrollbar-color: color-mix(in oklch, var(--a) 55%, transparent) transparent; }
