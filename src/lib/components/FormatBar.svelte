@@ -19,9 +19,10 @@
   /** Which of the three swatch trays is open. */
   let tray = $state<MarkKind | null>(null);
   const SWATCH: Record<string, string> = {
-    red: 'oklch(66% 0.2 25)', orange: 'oklch(72% 0.16 55)', gold: 'oklch(78% 0.15 88)', green: 'oklch(68% 0.16 145)',
-    teal: 'oklch(70% 0.11 190)', blue: 'oklch(66% 0.15 250)', purple: 'oklch(66% 0.17 300)', pink: 'oklch(70% 0.17 350)',
-    grey: 'oklch(60% 0.01 286)', yellow: 'oklch(88% 0.17 98)'
+    // Text colours: the shared inks (src/app.css), right for light and dark.
+    red: 'var(--ink-red)', orange: 'var(--ink-orange)', gold: 'var(--ink-gold)', lime: 'var(--ink-lime)',
+    green: 'var(--ink-green)', teal: 'var(--ink-teal)', blue: 'var(--ink-blue)', purple: 'var(--ink-purple)',
+    pink: 'var(--ink-pink)', brown: 'var(--ink-brown)', grey: 'var(--ink-grey)', yellow: 'oklch(88% 0.17 98)'
   };
   const TRAYS: { kind: MarkKind; label: string }[] = [
     { kind: 'c', label: 'Text colour' }, { kind: 'h', label: 'Highlight' }, { kind: 's', label: 'Text size' }

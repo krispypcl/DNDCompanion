@@ -20,7 +20,7 @@ export type Format = 'bold' | 'italic' | 'underline' | 'strike' | 'heading' | 'b
 /** Colour, highlight and size: a kind and one of its named values. */
 export type MarkKind = 'c' | 'h' | 's';
 export const MARKS: Record<MarkKind, readonly string[]> = {
-  c: ['red', 'orange', 'gold', 'green', 'teal', 'blue', 'purple', 'pink', 'grey', 'none'],
+  c: ['red', 'orange', 'gold', 'lime', 'green', 'teal', 'blue', 'purple', 'pink', 'brown', 'grey', 'none'],
   h: ['yellow', 'green', 'blue', 'pink', 'purple', 'orange', 'none'],
   s: ['small', 'big', 'huge', 'none']
 };

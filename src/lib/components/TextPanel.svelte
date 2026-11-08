@@ -1,6 +1,7 @@
 <script lang="ts">
   import InkLayer from './InkLayer.svelte';
   import { fade } from 'svelte/transition';
+  import { INKS } from '$lib/palette';
   import { blankInk, joinInk, splitInk, type Ink, type Paper, type Stroke } from '$lib/rules/ink';
   /**
    * One long-form writing (notes, backstory), kept in pages like a book. In
@@ -57,8 +58,7 @@
   let drawing = $state(false);
   let erasing = $state(false);
   let inkHeight = $state(0);
-  const PENS = ['var(--text)', 'oklch(63% 0.21 25)', 'oklch(80% 0.15 88)', 'oklch(68% 0.17 145)', 'oklch(64% 0.15 250)', 'oklch(64% 0.18 300)'];
-  let pen = $state({ c: PENS[1], w: 4 });
+  let pen = $state({ c: INKS[1].c, w: 4 });
   const ink = $derived(parts.ink ?? blankInk());
   function addStroke(st: Stroke) {
     writePage(parts.text, { ...ink, s: [...ink.s, st] });
@@ -161,9 +161,9 @@
     {#if drawing}
       <!-- Drawing: the pen, the eraser, the paper. -->
       <div class="inkbar" role="toolbar" aria-label="Drawing" transition:fade={{ duration: 150 }}>
-        {#each PENS as c (c)}
-          <button class="sw" style:--sw={c} aria-label="Pen colour" aria-pressed={!erasing && pen.c === c}
-                  onclick={() => { pen = { ...pen, c }; erasing = false; }}></button>
+        {#each INKS as ink (ink.c)}
+          <button class="sw" style:--sw={ink.c} aria-label="{ink.name} pen" title={ink.name} aria-pressed={!erasing && pen.c === ink.c}
+                  onclick={() => { pen = { ...pen, c: ink.c }; erasing = false; }}></button>
         {/each}
         <span class="isep" aria-hidden="true"></span>
         {#each [2, 4, 8, 14] as w (w)}
@@ -239,12 +239,15 @@
   /* Every other tab starts its content at the panel's edge; the notes field
      insets its text by its own padding and border, so pull the box back by
      exactly that and widen it to match. */
+  /* Grows with the writing and never shrinks under it: a long page makes the
+     module scroll, rather than spilling over the page controls below. */
   .book {
     margin: calc(-0.15rem - 1px) calc(-0.3rem - 1px) 0;
-    flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0;
+    flex: 1 0 auto; display: flex; flex-direction: column;
   }
-  .page { flex: 1 1 auto; display: flex; flex-direction: column; position: relative; }
+  .page { flex: 1 0 auto; display: flex; flex-direction: column; position: relative; }
   .inkbar { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; }
+  .inkbar .sw { width: 1.125rem; height: 1.125rem; }
   .inkbar .sw {
     width: 1.25rem; height: 1.25rem; padding: 0; border-radius: 50%; cursor: pointer; background: var(--sw);
     border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line); transition: transform 0.12s ease, box-shadow 0.12s ease;

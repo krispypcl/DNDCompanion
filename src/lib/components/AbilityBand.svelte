@@ -64,12 +64,11 @@
 <div class="abilities">
   {#each ABILITIES as ability (ability)}
     {@const sc = abilityScoreParts(definition, ability)}
+    <Why title={NAMES[ability]} parts={sc.parts} total="{sc.score} ({sign(modifierOf(definition, ability))})"
+         hint="The modifier is half the score above 10, rounded down.">
     <div class="ability">
       <span class="name">{NAMES[ability]}</span>
-      <Why title={NAMES[ability]} parts={sc.parts} total="{sc.score} ({sign(modifierOf(definition, ability))})"
-           hint="The modifier is half the score above 10, rounded down.">
-        <span class="mod" use:bump={modifierOf(definition, ability)}>{sign(modifierOf(definition, ability))}</span>
-      </Why>
+      <span class="mod" use:bump={modifierOf(definition, ability)}>{sign(modifierOf(definition, ability))}</span>
       <span class="score">
         <EditableField
           value={definition.abilities[ability]}
@@ -80,13 +79,16 @@
         />
       </span>
     </div>
+    </Why>
   {/each}
 </div>
 
 <span class="cap saves-cap">Saving throws</span>
 <div class="saves">
   {#each ABILITIES as ability (ability)}
-    <div class="save" class:on={definition.saves?.[ability]}>
+    <Why title="{NAMES[ability]} save" parts={saveParts(definition, ability)} total={sign(saveBonus(definition, ability))}
+         hint={!editable && onroll ? 'Press it to roll the save.' : ''}>
+    <div class="save" class:on={definition.saves?.[ability]} class:rollable={!editable && onroll}>
       <button
         class="toggle"
         class:rolls={!editable && onroll}
@@ -99,9 +101,11 @@
         <!-- The same mark as a skill's, but only ever empty or full: there
              is no expertise in a saving throw. -->
         <i class="dot" class:on={definition.saves?.[ability]} aria-hidden="true"></i>
-        <Why title="{NAMES[ability]} save" parts={saveParts(definition, ability)} total={sign(saveBonus(definition, ability))}>
-          <b use:bump={saveBonus(definition, ability)}>{sign(saveBonus(definition, ability))}</b>
-        </Why>
+        {#if !editable && onroll}
+          <!-- This one rolls: a d20 in the corner, across from the proficiency dot. -->
+          <svg class="d20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 20.5 7.4v9.2L12 21.5 3.5 16.6V7.4zM12 7.5l4.3 7.4H7.7zM12 2.5v5M20.5 7.4l-4.2 7.5M3.5 7.4l4.2 7.5M7.7 14.9 3.5 16.6M16.3 14.9l4.2 1.7M7.7 14.9 12 21.5l4.3-6.6" /></svg>
+        {/if}
+        <b use:bump={saveBonus(definition, ability)}>{sign(saveBonus(definition, ability))}</b>
       </button>
       <!-- A flat bonus from an item or aura. Always rendered, so entering edit
            mode does not move the band. -->
@@ -116,14 +120,28 @@
         />
       </span>
     </div>
+    </Why>
   {/each}
 </div>
 
 <style>
-  /* Out of edit mode a save is a die to roll: it lifts like the skills' bonuses. */
+  /* Out of edit mode a save is a die to roll. Unlike a skill's dashed
+     outline, the whole chip is the button: a d20 waits in its corner, and on
+     hover the chip rises, takes the accent and the die gives a turn. */
   .toggle.rolls { cursor: pointer; }
-  .toggle.rolls:hover b { color: var(--a); }
-  .toggle.rolls:active { transform: translateY(1px); }
+  .save.rollable { transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s cubic-bezier(0.3, 1.4, 0.5, 1), box-shadow 0.2s ease; }
+  .save.rollable:hover {
+    border-color: var(--a-edge); transform: translateY(-2px);
+    box-shadow: 0 6px 14px -8px color-mix(in oklch, var(--a) 70%, transparent);
+  }
+  .save.rollable:hover b { color: var(--a); }
+  .save.rollable:active { transform: translateY(0); box-shadow: none; }
+  .d20 {
+    position: absolute; top: 0.3125rem; right: 0.3125rem; width: 0.75rem; height: 0.75rem;
+    fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; color: var(--faint);
+    transition: color 0.2s ease, transform 0.35s cubic-bezier(0.3, 1.5, 0.5, 1);
+  }
+  .save.rollable:hover .d20 { color: var(--a); transform: rotate(72deg) scale(1.2); }
   .cap {
     display: block;
     font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
