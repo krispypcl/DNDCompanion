@@ -7,7 +7,8 @@
   import { sheetName, sheetRepo } from '$lib/data/sheets';
   import { campaignMessage, campaignRepo, type Campaign } from '$lib/data/campaigns';
   import { MAX_BYTES, importSheet } from '$lib/exchange';
-  import { pinnedCampaignsOf, pinnedOf, profileOf, savePinned, savePinnedCampaigns, signIn } from '$lib/data/session';
+  import { pinnedCampaignsOf, pinnedOf, profileOf, savePinned, savePinnedCampaigns, signIn, updateProfile } from '$lib/data/session';
+  import { slide } from 'svelte/transition';
   import { tick } from 'svelte';
   import Avatar from '$lib/components/Avatar.svelte';
   import Logo from '$lib/components/Logo.svelte';
@@ -21,6 +22,31 @@
   import { session } from '$lib/stores/session';
   import { isConfigured } from '$lib/supabase';
   import type { Sheet } from '$lib/types';
+
+  // A player with no name yet is asked for one here; then, once, for a picture.
+  let nameDraft = $state('');
+  let savingName = $state(false);
+  async function saveName() {
+    const name = nameDraft.trim();
+    if (!name || !$session.user) return;
+    savingName = true;
+    try {
+      await updateProfile({ displayName: name, avatarUrl: profileOf($session.user).avatarUrl });
+    } catch (e) {
+      error = friendlyError(e, 'Your name didn’t stick! Try again.');
+    } finally {
+      savingName = false;
+    }
+  }
+  const NUDGE_KEY = 'dndcompanion:picture-nudge';
+  let pictureNudgeGone = $state(true);
+  $effect(() => {
+    try { pictureNudgeGone = localStorage.getItem(NUDGE_KEY) === 'gone'; } catch { pictureNudgeGone = false; }
+  });
+  function dismissPictureNudge() {
+    pictureNudgeGone = true;
+    try { localStorage.setItem(NUDGE_KEY, 'gone'); } catch { /* private window */ }
+  }
 
   /** A deleted sheet folds away: fades, slides aside and closes its gap. */
   function fold(node: Element) {
@@ -353,6 +379,7 @@
 <div class="swap" in:rise={{ y: 10, duration: 240, delay: 30 }}>
 {#if view === 'auth'}
   <AuthForm
+    google
     name="Sign in"
     submitLabel="Sign in"
     fields={[
@@ -412,6 +439,29 @@
         <button onclick={create} disabled={creating}>{creating ? 'Creating…' : 'New sheet'}</button>
       </div>
     </div>
+
+    {#if $session.user}
+      {@const me = profileOf($session.user)}
+      {#if !me.displayName}
+        <!-- No name yet: the table needs something to call them. -->
+        <form class="hello" transition:slide={{ duration: 260 }} onsubmit={(e) => { e.preventDefault(); void saveName(); }}>
+          <div class="hellotext">
+            <b>What should the table call you?</b>
+            <span>Your name shows on your campaigns and to your DM. A profile picture helps too; add one on your account page.</span>
+          </div>
+          <div class="hellorow">
+            <input bind:value={nameDraft} placeholder="Your name" aria-label="Your name" maxlength="60" />
+            <button disabled={!nameDraft.trim() || savingName}>{savingName ? 'Saving…' : 'Save'}</button>
+          </div>
+        </form>
+      {:else if !me.avatarUrl && !pictureNudgeGone}
+        <div class="hello slim" transition:slide={{ duration: 260 }}>
+          <span>Add a profile picture, {me.displayName.split(' ')[0]}? It is how the rest of the table spots you.</span>
+          <a class="hellolink" href="{base}/account">Add one</a>
+          <button class="ghost" onclick={dismissPictureNudge} aria-label="Not now">Not now</button>
+        </div>
+      {/if}
+    {/if}
 
     {#if error}<p class="warn" role="alert">{error}</p>{/if}
     {#if notice}<p class="note" role="status">{notice}</p>{/if}
@@ -514,6 +564,21 @@
 {/key}
 
 <style>
+  .hello {
+    display: flex; align-items: center; gap: 0.75rem 1rem; flex-wrap: wrap; margin: 0 0 1.25rem; padding: 0.875rem 1rem;
+    border: 1px solid var(--a-edge); border-radius: var(--r); background: var(--a-wash);
+  }
+  .hello.slim { border-color: var(--line-soft); background: var(--surface); font-size: 0.875rem; color: var(--dim); }
+  .hello.slim span { flex: 1; min-width: 12rem; }
+  .hellotext { flex: 1 1 16rem; display: grid; gap: 0.125rem; }
+  .hellotext span { font-size: 0.8125rem; color: var(--dim); line-height: 1.45; }
+  .hellorow { display: flex; gap: 0.5rem; flex: 1 1 16rem; }
+  .hellorow input {
+    flex: 1; min-width: 0; font: inherit; padding: 0.4375rem 0.625rem; color: var(--text);
+    border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg);
+  }
+  .hellorow input:focus { outline: none; border-color: var(--a-edge); }
+  .hellolink { color: var(--a); font-size: 0.875rem; }
   main { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
   header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
   .tools { display: flex; align-items: center; gap: 0.5rem; flex: none; }
