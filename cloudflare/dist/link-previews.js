@@ -148,6 +148,28 @@ async function campaignPreview(id, env) {
     image: resolveImageUrl(row.details?.bannerUrl).url || void 0
   };
 }
+function fromOrigin(url, request, origin) {
+  const target = new URL(url.pathname + url.search, origin.trim());
+  target.protocol = "https:";
+  const headers = new Headers();
+  for (const name of ["accept", "accept-language", "user-agent", "if-none-match", "if-modified-since", "range"]) {
+    const value = request.headers.get(name);
+    if (value) headers.set(name, value);
+  }
+  return new Request(target.toString(), { method: request.method, headers, redirect: "manual" });
+}
+function keepHere(res, url, origin) {
+  const location = res.headers.get("location");
+  if (!origin || !location || res.status < 300 || res.status > 399) return res;
+  const to = new URL(location, url);
+  const github = new URL(origin.trim());
+  if (to.hostname !== github.hostname) return res;
+  to.protocol = url.protocol;
+  to.host = url.host;
+  const headers = new Headers(res.headers);
+  headers.set("location", to.toString());
+  return new Response(res.body, { status: res.status, headers });
+}
 var set = (value) => ({ element: (el) => {
   el.setAttribute("content", value);
 } });
@@ -155,7 +177,7 @@ var link_previews_default = {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (env.ORIGIN && url.pathname === "/") return Response.redirect(new URL(env.HOME_PATH || "/DNDCompanion/", url).toString(), 302);
-    const upstream = await fetch(env.ORIGIN ? new Request(new URL(url.pathname + url.search, env.ORIGIN).toString(), request) : request);
+    const upstream = keepHere(await fetch(env.ORIGIN ? fromOrigin(url, request, env.ORIGIN) : request), url, env.ORIGIN);
     const html = (upstream.headers.get("content-type") ?? "").includes("text/html");
     const match = url.pathname.match(SHEET) ?? url.pathname.match(CAMPAIGN);
     if (!html || !match) {
