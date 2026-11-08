@@ -18,10 +18,13 @@
     stagger = 0,
     onchange,
     onroll,
-    classes = []
+    classes = [],
+    books = []
   }: {
     /** The character's classes, for the link to a class feature. */
     classes?: { name: string; source?: string }[];
+    /** The sheet's other books, for which edition a link opens. */
+    books?: (string | undefined)[];
     tracker: Tracker;
     spent: number;
     ctx: FormulaContext;
@@ -153,7 +156,7 @@
         name={tracker.label}
         source={tracker.source}
         category="any"
-        override={($brewLoaded >= 0 && trackerUrl(tracker, classes)) || undefined}
+        override={($brewLoaded >= 0 && trackerUrl(tracker, classes, books)) || undefined}
       />
     </span>
     <span class="count">{remaining}<span class="of">/{max}</span></span>
