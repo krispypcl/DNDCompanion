@@ -8,24 +8,24 @@
    * deleting it, a banner like a sheet's, and a jukebox of their own music.
    */
   import { onMount } from 'svelte';
-  import { fade, scale, slide } from 'svelte/transition';
-  import { backOut, cubicOut } from 'svelte/easing';
+  import { fade, slide } from 'svelte/transition';
+  import { cubicOut } from 'svelte/easing';
   import { base } from '$app/paths';
   import { goto } from '$app/navigation';
-  import { campaignMessage, campaignRepo, type Campaign, type CampaignDetails } from '$lib/data/campaigns';
+  import { campaignMessage, campaignRepo, type Campaign, type CampaignDetails, type CampaignLive, type Playback } from '$lib/data/campaigns';
   import { sheetRepo } from '$lib/data/sheets';
   import { isConfigured, supabase } from '$lib/supabase';
   import { session } from '$lib/stores/session';
-  import { characterLevel, classLine, passiveScore } from '$lib/rules/derived';
-  import { vitalStatus } from '$lib/rules/hp';
+  import { classLine } from '$lib/rules/derived';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
   import { themeStyle } from '$lib/theme';
   import { friendlyError } from '$lib/errors';
-  import { followHeight, glideTo, prefersReducedMotion } from '$lib/motion';
+  import { prefersReducedMotion } from '$lib/motion';
   import { glide } from '$lib/flip';
   import Banner from './Banner.svelte';
   import CampaignMusic from './CampaignMusic.svelte';
-  import CardHp from './CardHp.svelte';
+  import CampaignBoard from './CampaignBoard.svelte';
+  import CampaignCards from './CampaignCards.svelte';
   import D20Loader from './D20Loader.svelte';
   import EditableField from './EditableField.svelte';
   import ModeToggle from './ModeToggle.svelte';
@@ -50,7 +50,6 @@
   let error = $state<string | null>(null);
   let invite = $state<string | null>(null);
   let copied = $state<'invite' | 'page' | null>(null);
-  let removing = $state<string | null>(null);
   /**
    * Edit mode, the DM's alone, as on a sheet: reading, the page is the table
    * and the music; editing, the name, the songs, the invite, the banner and
@@ -60,10 +59,7 @@
   function toggleEditing() {
     void glide(() => {
       editing = !editing;
-      if (!editing) {
-        confirming = null;
-        removing = null;
-      }
+      if (!editing) confirming = null;
     });
   }
   const unfold = () => ({ duration: prefersReducedMotion() ? 0 : 280, easing: cubicOut });
@@ -71,6 +67,37 @@
   let confirming = $state<'end' | 'delete' | null>(null);
 
   const isDm = $derived(Boolean(campaign && $session.user && campaign.created_by === $session.user.id));
+  /** In the campaign: its DM, or a player with a character in it. They may see the invite. */
+  const isMember = $derived(isDm || Boolean($session.user && sheets.some((s) => s.owner_id === $session.user!.id)));
+  const hasMusic = $derived(Boolean(campaign?.details.songs?.length));
+
+  /**
+   * What is happening right now (database/0008): the DM's music, and a
+   * counter that ticks when the invite changes. `at` is moved onto this
+   * device's clock as it arrives, so following does not depend on whose
+   * clock is right.
+   */
+  let live = $state<CampaignLive | null>(null);
+  let playback = $state<Playback | null>(null);
+  function takeLive(next: CampaignLive | null, updatedAt?: string) {
+    live = next;
+    const pb = next?.playback ?? null;
+    if (!pb) {
+      playback = null;
+      return;
+    }
+    // Arriving live: it happened just now. Fetched: when the database says.
+    const at = updatedAt ? Math.min(Date.now(), Date.parse(updatedAt) || Date.now()) : Date.now();
+    if (!playback || pb.at !== playback.at || pb.index !== playback.index || pb.playing !== playback.playing || pb.t !== playback.t) {
+      playback = { ...pb, at };
+    }
+  }
+  /** The DM's music, told to the table (and shown here at once). */
+  function sendPlayback(p: Playback) {
+    if (!campaign) return;
+    playback = p;
+    void campaignRepo.savePlayback(campaign.id, p).catch(() => {});
+  }
   const ended = $derived(Boolean(campaign?.archived));
   const bannerLink = $derived(resolveImageUrl(campaign?.details.bannerUrl));
   /** The campaign's colour, as a sheet's: picked while editing, previewed while picking. */
@@ -90,17 +117,14 @@
     } else if (e.key.toLowerCase() === 'e' && isDm) {
       e.preventDefault();
       toggleEditing();
-    } else if (e.key.toLowerCase() === 'm' && isDm && campaign.details.songs?.length) {
+    } else if (e.key.toLowerCase() === 'm' && hasMusic) {
       e.preventDefault();
       setSound(!get(soundOn));
-    } else if (e.key === 'Escape' && (confirming || removing)) {
+    } else if (e.key === 'Escape' && confirming) {
       confirming = null;
-      removing = null;
     }
   }
-  const active = $derived(
-    sheets.filter((s) => !s.retired).sort((a, b) => (a.definition?.identity?.name ?? '').localeCompare(b.definition?.identity?.name ?? ''))
-  );
+  const active = $derived(sheets.filter((s) => !s.retired));
   const retired = $derived(sheets.filter((s) => s.retired));
   const inviteLink = $derived(
     invite && typeof location !== 'undefined' ? `${location.origin}${base}/join?code=${invite}` : ''
@@ -108,8 +132,11 @@
 
   async function load(first = false) {
     try {
-      const [c, rows] = await Promise.all([campaignRepo.get(id), sheetRepo.listCampaignSheets(id)]);
+      const [c, rows, now] = await Promise.all([
+        campaignRepo.get(id), sheetRepo.listCampaignSheets(id), first ? campaignRepo.live(id) : Promise.resolve(undefined)
+      ]);
       campaign = c;
+      if (now !== undefined) takeLive(now, now?.updated_at);
       missing = !c;
       sheets = rows;
       error = null;
@@ -142,6 +169,16 @@
       ? supabase
           .channel(`campaign-${id}`)
           .on('postgres_changes', { event: '*', schema: 'public', table: 'sheets', filter: `campaign_id=eq.${id}` }, refreshSoon)
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'campaign_live', filter: `campaign_id=eq.${id}` }, (payload) => {
+            const row = payload.new as { playback?: Playback | Record<string, never>; invite_rev?: number };
+            const pb = row.playback && 'index' in row.playback ? (row.playback as Playback) : null;
+            // The DM's own page already shows what it just did.
+            if (isDm && pb && playback && pb.at === playback.at) {
+              live = { playback: pb, invite_rev: row.invite_rev ?? 0 };
+              return;
+            }
+            takeLive({ playback: pb, invite_rev: row.invite_rev ?? 0 });
+          })
           .subscribe()
       : null;
     return () => {
@@ -152,8 +189,11 @@
     };
   });
 
+  // The invite, for everyone in the campaign; fetched again whenever the DM makes a new one.
+  const inviteRev = $derived(live?.invite_rev ?? 0);
   $effect(() => {
-    if (!isDm || !campaign || ended) return;
+    void inviteRev;
+    if (!isMember || !campaign || ended) return;
     campaignRepo.invite(campaign.id).then((c) => (invite = c)).catch(() => {});
   });
 
@@ -189,7 +229,6 @@
   const remove = (sheetId: string) => act(async () => {
     await campaignRepo.remove(sheetId);
     sheets = sheets.filter((s) => s.id !== sheetId);
-    removing = null;
   }, 'That character held on! Try again.');
 
   const setEnded = (archived: boolean) => act(async () => {
@@ -220,11 +259,18 @@
     }
   }
 
-  const hpOf = (s: Sheet) => {
-    const max = Number(s.definition?.combat?.hpMax) || 0;
-    const cur = Number(s.state?.hpCurrent) || 0;
-    return { max, cur, temp: Number(s.state?.hpTemp) || 0, pct: max > 0 ? Math.max(0, Math.min(1, cur / max)) : 0 };
-  };
+  /** The DM gives or takes away a player's conditions: shown at once, undone if refused. */
+  async function giveConditions(sheetId: string, conditions: string[]) {
+    const before = sheets;
+    sheets = sheets.map((s) => (s.id === sheetId ? { ...s, state: { ...s.state, conditions } } : s));
+    error = null;
+    try {
+      await campaignRepo.setConditions(sheetId, conditions);
+    } catch (e) {
+      sheets = before;
+      error = campaignMessage(e, 'The condition slid right off! Try again.');
+    }
+  }
 </script>
 
 <svelte:head><title>{campaign?.name ?? 'Campaign'}</title></svelte:head>
@@ -263,7 +309,12 @@
           </button>
         {/if}
         <a class="back" href="{base}/">Back</a>
-        <ShareButton link={pageLink} label="Copy link to this campaign"
+        {#if isMember && !ended}
+          <ShareButton link={inviteLink} icon="invite" disabled={!inviteLink}
+                       label="Copy the invite link (it lets a character join)"
+                       oncopied={(ok) => { if (!ok) error = 'The clipboard said no! Ask your DM to send you the invite.'; }} />
+        {/if}
+        <ShareButton link={pageLink} label="Copy link to this page (to watch, not join)"
                      oncopied={(ok) => { if (!ok) error = 'The clipboard said no! Copy the address from the bar above instead.'; }} />
         <button class="keys" onclick={() => (showKeys = true)} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
@@ -273,7 +324,7 @@
             </g>
           </svg>
         </button>
-        {#if isDm && campaign.details.songs?.length}<SoundToggle />{/if}
+        {#if hasMusic}<SoundToggle />{/if}
         <ModeToggle />
       </div>
     </header>
@@ -282,10 +333,11 @@
       <p class="ended">This campaign has ended. Its characters stay here as the story left them{#if isDm}, and nobody new can join{/if}.</p>
     {/if}
 
-    <!-- The DM's music: always there to play; empty, only while editing. -->
-    {#if isDm && (editing || campaign.details.songs?.length)}
+    <!-- The table's music: the DM plays it, everyone hears it. Empty, only while the DM edits. -->
+    {#if hasMusic || (isDm && editing)}
       <div transition:slide={unfold()}>
-        <CampaignMusic campaignId={campaign.id} songs={campaign.details.songs ?? []} {editing}
+        <CampaignMusic campaignId={campaign.id} songs={campaign.details.songs ?? []} editing={isDm && editing}
+                       lead={isDm} {playback} onplayback={sendPlayback}
                        onchange={(songs) => saveDetails({ songs })} />
       </div>
     {/if}
@@ -295,53 +347,8 @@
     {#if active.length === 0}
       <p class="empty">No characters yet.{#if isDm}{' '}Send your players the invite link.{/if}</p>
     {:else}
-      <ul class="cards">
-        {#each active as s (s.id)}
-          {@const def = s.definition}
-          {@const hp = hpOf(s)}
-          {@const v = vitalStatus(hp.cur, hp.max, s.state?.deathSaves)}
-          {@const portrait = resolveImageUrl(def?.identity?.portraitUrl).url}
-          <li class="card themed {v.vital}" style={themeStyle(def?.identity?.theme)}
-              animate:glideTo in:fade={{ duration: 200 }}>
-            <a class="open" href="{base}/s/{s.id}">
-              <span class="portrait">
-                {#if portrait}<img src={portrait} alt="" />{/if}
-                <span class="lvl">LV {characterLevel(def)}</span>
-              </span>
-              <span class="who">
-                <strong>{def?.identity?.name || s.name}</strong>
-                <span class="sub">{classLine(def) || 'No class yet'}</span>
-              </span>
-            </a>
-            <CardHp cur={hp.cur} max={hp.max} temp={hp.temp} vital={v.vital} label={v.label} />
-            <dl class="stats">
-              <div><dt>AC</dt><dd>{def?.combat?.ac ?? '—'}</dd></div>
-              <!-- In full where the box has room, shortened where it does not. -->
-              <div class="perc"><dt><span class="long">Passive Perception</span><span class="short">Passive Perc.</span></dt><dd>{passiveScore(def, 'perception')}</dd></div>
-              <div class="ins"><dt><span class="long">Passive Insight</span><span class="short">Passive Ins.</span></dt><dd>{passiveScore(def, 'insight')}</dd></div>
-            </dl>
-            <!-- Conditions: the card eases to its new height as they come and go. -->
-            <div class="condbox" use:followHeight>
-              <ul class="conds" aria-label="Conditions">
-                {#each s.state?.conditions ?? [] as c (c)}<li transition:scale={{ start: 0.6, duration: 220, easing: backOut }}>{c}</li>{/each}
-              </ul>
-            </div>
-            {#if isDm && !ended && editing}
-              {#if removing === s.id}
-                <div class="confirm" role="group" aria-label="Remove {def?.identity?.name}" transition:slide={unfold()}>
-                  <span>Take out of the campaign?</span>
-                  <button class="danger" onclick={() => remove(s.id)}>Remove</button>
-                  <button class="ghost" onclick={() => (removing = null)}>Keep</button>
-                </div>
-              {:else}
-                <button class="x" aria-label="Remove {def?.identity?.name || s.name} from the campaign"
-                        title="Remove from the campaign" onclick={() => (removing = s.id)}
-                        transition:fade={{ duration: 180 }}>×</button>
-              {/if}
-            {/if}
-          </li>
-        {/each}
-      </ul>
+      <CampaignCards sheets={active} order={campaign.details.order ?? []} {isDm} {editing} {ended}
+                     onorder={(order) => saveDetails({ order })} onremove={remove} onconditions={giveConditions} />
     {/if}
 
     {#if retired.length}
@@ -355,6 +362,8 @@
         </ul>
       </details>
     {/if}
+
+    <CampaignBoard campaignId={campaign.id} userId={$session.user?.id ?? null} canEdit={isMember && !ended} />
 
     <!-- Editing: the invite, the banner, and ending or deleting the campaign. -->
     {#if isDm && editing}
@@ -487,71 +496,6 @@
   }
   .empty { color: var(--dim); margin-top: 2rem; }
 
-  .cards {
-    list-style: none; padding: 0; margin: 1.5rem 0 0;
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: 0.875rem;
-  }
-  /* A fixed red for hurt, as on the sheet's hit points: the theme's own
-     danger colour follows its hue, and a blue "Critical" reads as nothing. */
-  .card { --hurt-red: oklch(66% 0.22 25); }
-  :global([data-mode='light']) .card { --hurt-red: oklch(56% 0.21 25); }
-  .card {
-    position: relative; border: 1px solid var(--line-soft); border-radius: var(--r); background: var(--surface);
-    padding: 0.875rem; display: flex; flex-direction: column;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  }
-  .card:hover { border-color: var(--a-edge); }
-  .card.dead { opacity: 0.7; }
-  .open { display: flex; gap: 0.75rem; align-items: center; color: inherit; text-decoration: none; min-width: 0; padding-right: 1.5rem; }
-  .portrait {
-    position: relative; flex: none; width: 3.25rem; height: 3.25rem; border-radius: var(--r-sm);
-    border: 1px solid var(--a-edge); background: linear-gradient(150deg, var(--portrait-from), var(--portrait-to));
-  }
-  .portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
-  .lvl {
-    position: absolute; left: 50%; bottom: -0.4375rem; transform: translateX(-50%); white-space: nowrap;
-    font-size: 0.5625rem; font-weight: 700; letter-spacing: 0.06em; padding: 0.0625rem 0.3125rem;
-    border-radius: 999px; background: var(--surface); border: 1px solid var(--a-edge); color: var(--a);
-  }
-  .who { display: grid; min-width: 0; }
-  .who strong { font-size: 1.0625rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .sub { font-size: 0.8125rem; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.375rem; margin: 0; }
-  .stats div { background: var(--raised); border: 1px solid var(--line-soft); border-radius: var(--r-sm); padding: 0.375rem 0.25rem; text-align: center; }
-  .stats dt { font-size: 0.5625rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--label); }
-  .stats dd { margin: 0.125rem 0 0; font-size: 1.0625rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-  /* Spaced by margins rather than a gap, so the conditions' space can be
-     their own: an empty list takes none, and it eases in with the first. */
-  .card > :global(*) + :global(*) { margin-top: 0.75rem; }
-  .card > .condbox, .card > .x { margin-top: 0; }
-  .conds { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.3125rem; }
-  .conds:has(li) { padding-top: 0.75rem; }
-  .stats div { container-type: inline-size; }
-  .stats dt { white-space: nowrap; }
-  .stats .long { display: none; }
-  /* Each in full once its box (less its padding) holds the whole label. */
-  @container (min-width: 5.5rem) {
-    .ins .long { display: inline; }
-    .ins .short { display: none; }
-  }
-  @container (min-width: 7rem) {
-    .perc .long { display: inline; }
-    .perc .short { display: none; }
-  }
-  .conds li {
-    font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 999px;
-    border: 1px solid var(--a-edge); background: var(--a-wash); color: var(--a);
-  }
-  .x {
-    position: absolute; top: 0.5rem; right: 0.5rem; width: 1.625rem; height: 1.625rem; padding: 0;
-    display: grid; place-items: center; border: 0; background: none; color: var(--dim); font-size: 1.1rem;
-    opacity: 0; transition: opacity 0.15s ease, color 0.15s ease;
-  }
-  .card:hover .x, .x:focus-visible { opacity: 1; }
-  .x:hover { color: var(--bad); }
-  @media (hover: none) { .x { opacity: 1; } }
-  .confirm { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 0.8125rem; color: var(--dim); }
-  .confirm button { padding: 0.25rem 0.625rem; font-size: 0.8125rem; }
   .retired { margin-top: 2rem; }
   .retired summary { cursor: pointer; color: var(--dim); font-size: 0.875rem; }
   .retired ul { list-style: none; padding: 0; margin: 0.625rem 0 0; display: grid; gap: 0.375rem; }

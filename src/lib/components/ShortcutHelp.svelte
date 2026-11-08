@@ -17,7 +17,7 @@
     place === 'campaign'
       ? [
           ...(owner ? [{ keys: ['E'], what: 'Edit, or finish editing' }] : []),
-          ...(owner ? [{ keys: ['M'], what: 'Play or pause the table music' }] : []),
+          { keys: ['M'], what: 'The table music on or off' },
           { keys: ['?'], what: 'Show these shortcuts' },
           { keys: ['Esc'], what: 'Close this, or a question' }
         ]
@@ -28,7 +28,8 @@
                 { keys: [mac ? '⌘' : 'Ctrl', 'Z'], what: 'Undo the last change' }
               ]
             : []),
-          { keys: ['1', '–', '8'], what: 'Switch tabs, Combat to Backstory' },
+          { keys: ['1', '–', '9'], what: 'Switch tabs, Combat to Links' },
+          { keys: ['M'], what: 'Sound and music on or off' },
           { keys: ['P'], what: 'Print the sheet' },
           { keys: ['?'], what: 'Show these shortcuts' },
           { keys: ['Esc'], what: 'Close a dialog or picture' }

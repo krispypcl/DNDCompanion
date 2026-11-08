@@ -5,6 +5,7 @@
  */
 
 import type { FormulaContext } from './formula';
+import { abilityScoreParts, equippedEffects, type Part } from './equipment';
 import {
   ABILITIES,
   SKILLS,
@@ -18,8 +19,9 @@ export function abilityModifier(score: number): number {
   return Math.floor((score - 10) / 2);
 }
 
+/** An ability modifier, from the score as equipment leaves it. */
 export function modifierOf(def: Definition, ability: Ability): number {
-  return abilityModifier(def.abilities[ability] ?? 10);
+  return abilityModifier(abilityScoreParts(def, ability).score);
 }
 
 /**
@@ -32,16 +34,71 @@ export function saveExtra(def: Definition, ability: Ability): number {
 }
 
 export function saveBonus(def: Definition, ability: Ability): number {
-  const base = modifierOf(def, ability);
-  const prof = def.saves?.[ability] ? def.proficiency : 0;
-  return base + prof + saveExtra(def, ability);
+  return saveParts(def, ability).reduce((sum, p) => sum + p.value, 0);
+}
+
+/** What a saving throw is made of: modifier, proficiency, written bonus, items. */
+export function saveParts(def: Definition, ability: Ability): Part[] {
+  const parts: Part[] = [{ label: 'Ability modifier', value: modifierOf(def, ability) }];
+  if (def.saves?.[ability]) parts.push({ label: 'Proficiency', value: proficiencyBonus(def) });
+  const extra = saveExtra(def, ability);
+  if (extra) parts.push({ label: 'Written bonus', value: extra });
+  for (const { item, effect } of equippedEffects(def)) {
+    if (effect.kind === 'save' && (effect.ability === 'all' || effect.ability === ability)) {
+      parts.push({ label: item, value: effect.bonus });
+    }
+  }
+  return parts;
+}
+
+/**
+ * Armour Class. With nothing equipped that touches it, it is the number
+ * written on the sheet. Otherwise it is worked out: the armour's base (or 10
+ * unarmoured) plus Dexterity as the armour allows, shields, and bonuses.
+ */
+export function armorClass(def: Definition): { total: number; parts: Part[]; computed: boolean } {
+  const effects = equippedEffects(def).filter(({ effect }) => ['armor', 'shield', 'ac'].includes(effect.kind));
+  const written = Number(def.combat?.ac) || 10;
+  if (!effects.length) return { total: written, parts: [{ label: 'As written on the sheet', value: written }], computed: false };
+  const dex = modifierOf(def, 'dex');
+  const armor = effects.find(({ effect }) => effect.kind === 'armor');
+  const parts: Part[] = [];
+  if (armor && armor.effect.kind === 'armor') {
+    parts.push({ label: armor.item, value: armor.effect.base, note: 'armour' });
+    const allowed = armor.effect.dex === 'none' ? 0 : armor.effect.dex === 'max2' ? Math.min(2, dex) : dex;
+    if (armor.effect.dex !== 'none') parts.push({ label: armor.effect.dex === 'max2' ? 'Dexterity (up to +2)' : 'Dexterity', value: allowed });
+  } else {
+    parts.push({ label: 'Unarmoured', value: 10 }, { label: 'Dexterity', value: dex });
+  }
+  for (const { item, effect } of effects) {
+    if (effect.kind === 'shield' || effect.kind === 'ac') parts.push({ label: item, value: effect.bonus });
+  }
+  return { total: parts.reduce((s, p) => s + p.value, 0), parts, computed: true };
+}
+
+/** Speed: as written, plus anything worn that changes it. */
+export function speedParts(def: Definition): { total: number; parts: Part[] } {
+  const written = Number(def.combat?.speed) || 0;
+  const parts: Part[] = [{ label: 'As written', value: written }];
+  for (const { item, effect } of equippedEffects(def)) if (effect.kind === 'speed') parts.push({ label: item, value: effect.bonus });
+  return { total: parts.reduce((s, p) => s + p.value, 0), parts };
+}
+
+/** Initiative: as written (or Dexterity), plus anything worn that changes it. */
+export function initiativeParts(def: Definition): { total: number; parts: Part[] } {
+  const written = def.combat?.initiative;
+  const parts: Part[] = written == null
+    ? [{ label: 'Dexterity modifier', value: modifierOf(def, 'dex') }]
+    : [{ label: 'As written', value: Number(written) || 0 }];
+  for (const { item, effect } of equippedEffects(def)) if (effect.kind === 'init') parts.push({ label: item, value: effect.bonus });
+  return { total: parts.reduce((s, p) => s + p.value, 0), parts };
 }
 
 export function skillTotal(def: Definition, skill: SkillName): number {
   const base = modifierOf(def, SKILLS[skill]);
   const prof = def.skills?.[skill];
-  if (prof?.expertise) return base + def.proficiency * 2;
-  if (prof?.proficient) return base + def.proficiency;
+  if (prof?.expertise) return base + proficiencyBonus(def) * 2;
+  if (prof?.proficient) return base + proficiencyBonus(def);
   return base;
 }
 
@@ -50,11 +107,11 @@ export function passiveScore(def: Definition, skill: SkillName): number {
 }
 
 export function spellSaveDC(def: Definition, ability: Ability): number {
-  return 8 + def.proficiency + modifierOf(def, ability);
+  return 8 + proficiencyBonus(def) + modifierOf(def, ability);
 }
 
 export function spellAttackBonus(def: Definition, ability: Ability): number {
-  return def.proficiency + modifierOf(def, ability);
+  return proficiencyBonus(def) + modifierOf(def, ability);
 }
 
 /**
@@ -86,6 +143,16 @@ export function classList(def: Definition): ClassEntry[] {
   return [
     { name: def.identity.class, subclass: def.identity.subclass, level: def.identity.level ?? 1 }
   ];
+}
+
+/**
+ * The proficiency bonus, from total character level (all classes together):
+ * +2 at levels 1–4, +3 at 5–8, +4 at 9–12, +5 at 13–16, +6 at 17–20. Not
+ * typed in: it follows the classes.
+ */
+export function proficiencyBonus(def: Definition): number {
+  const level = Math.max(1, Math.min(20, characterLevel(def) || 1));
+  return 2 + Math.floor((level - 1) / 4);
 }
 
 /** Total character level: what proficiency and hit dice are keyed to. */
@@ -132,7 +199,7 @@ export function formulaContext(def: Definition): FormulaContext {
     // Overridden per tracker by trackerMax; the total is the sensible default
     // for a tracker that names no class.
     classlevel: level,
-    prof: def.proficiency,
+    prof: proficiencyBonus(def),
     classLevels: classLevels(def),
     ...mods
   };

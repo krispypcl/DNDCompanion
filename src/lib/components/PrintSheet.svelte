@@ -17,6 +17,7 @@
     classList,
     modifierOf,
     passiveScore,
+    proficiencyBonus,
     saveBonus,
     skillTotal,
     weightCarried
@@ -122,7 +123,7 @@
           </div>
           <div class="stack">
             <div class="pill"><span class="v">{state.inspiration || ''}</span><small>Heroic Inspiration</small></div>
-            <div class="pill"><span class="v">{sign(def.proficiency)}</span><small>Proficiency Bonus</small></div>
+            <div class="pill"><span class="v">{sign(proficiencyBonus(def))}</span><small>Proficiency Bonus</small></div>
             <div class="box list">
               {#each ABILITIES as a (a)}
                 <div class="row">{@render bubble(Boolean(def.saves?.[a]))}<u>{sign(saveBonus(def, a))}</u><span>{NAMES[a]}</span></div>

@@ -6,6 +6,11 @@
   import { page } from '$app/state';
 
   /** Where to go after: back to the page that sent here (an invite), if it is ours. */
+  /** The same, as a path within the site, for Google to come back to. */
+  function nextPath(): string {
+    const to = page.url.searchParams.get('next') ?? '';
+    return to.startsWith('/') && !to.startsWith('//') ? to : '/';
+  }
   function next(): string {
     const to = page.url.searchParams.get('next') ?? '';
     return to.startsWith('/') && !to.startsWith('//') ? `${base}${to}` : `${base}/`;
@@ -13,6 +18,7 @@
 </script>
 
 <AuthForm
+  google googleNext={nextPath()}
   name="Sign in"
   submitLabel="Sign in"
   fields={[

@@ -33,6 +33,76 @@ export function setSound(on: boolean) {
   }
 }
 
+/**
+ * A sheet's own sounds: any effect can be swapped for a recording at a link
+ * (an mp3 or similar; a Google Drive or Dropbox share link works too). Set by
+ * the sheet on screen; empty everywhere else.
+ */
+export const SOUND_NAMES = {
+  dice: 'Dice rolling',
+  land: 'Dice landing',
+  nat20: 'Natural 20',
+  nat1: 'Natural 1',
+  hit: 'Taking damage',
+  heal: 'Healing',
+  shield: 'Temporary hit points',
+  shortRest: 'Short rest',
+  longRest: 'Long rest',
+  dawn: 'Dawn',
+  deathSave: 'Death save',
+  deathBell: 'Death'
+} as const;
+export type SoundName = keyof typeof SOUND_NAMES;
+let custom: Partial<Record<SoundName, string>> = {};
+const clips = new Map<string, HTMLAudioElement>();
+export function setCustomSounds(next: Partial<Record<SoundName, string>> | undefined) {
+  custom = {};
+  for (const [k, v] of Object.entries(next ?? {})) {
+    const url = audioUrl(v);
+    if (url) custom[k as SoundName] = url;
+  }
+}
+/** A share link turned into the file itself, where the service allows it. */
+export function audioUrl(raw: string | undefined | null): string | null {
+  const text = String(raw ?? '').trim();
+  if (!/^https?:\/\//i.test(text)) return null;
+  try {
+    const u = new URL(text);
+    if (/(^|\.)drive\.google\.com$/i.test(u.hostname)) {
+      const id = u.pathname.match(/\/d\/([\w-]+)/)?.[1] ?? u.searchParams.get('id');
+      if (id) return `https://drive.google.com/uc?export=download&id=${id}`;
+    }
+    if (/(^|\.)dropbox\.com$/i.test(u.hostname)) {
+      u.searchParams.delete('dl');
+      u.searchParams.set('raw', '1');
+      return u.toString();
+    }
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
+/** Plays the sheet's own recording for an effect, if it has one. */
+function own(name: SoundName): boolean {
+  const url = custom[name];
+  if (!url) return false;
+  if (!get(soundOn) || typeof Audio === 'undefined') return true;
+  playClip(url);
+  return true;
+}
+/** Plays a recording once (also the preview beside its link). */
+export function playClip(url: string) {
+  let clip = clips.get(url);
+  if (!clip) {
+    clip = new Audio(url);
+    clip.preload = 'auto';
+    clips.set(url, clip);
+  }
+  clip.currentTime = 0;
+  clip.volume = 0.8;
+  void clip.play().catch(() => {});
+}
+
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let noiseBuf: AudioBuffer | null = null;
@@ -101,6 +171,7 @@ function click() {
 
 /** Dice rattling across a table: one knock per die, a few bounces each. */
 export function clatter(dice = 1, ms = 420) {
+  if (own('dice')) return;
   const ac = ready();
   if (!ac) return;
   const t0 = ac.currentTime;
@@ -113,6 +184,7 @@ export function clatter(dice = 1, ms = 420) {
 
 /** The dice come to rest. */
 export function land() {
+  if (own('land')) return;
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime;
@@ -122,6 +194,7 @@ export function land() {
 
 /** A natural 20: a bright rising chime. */
 export function nat20() {
+  if (own('nat20')) return;
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime;
@@ -133,6 +206,7 @@ export function nat20() {
 
 /** A natural 1: a dull falling thud. */
 export function nat1() {
+  if (own('nat1')) return;
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime;
@@ -157,6 +231,7 @@ export function heartbeat(delay = 0, strength = 1) {
 /** A death save lands: a bright tick for a success, a hard knock for a failure,
     louder from the first pip to the third. */
 export function deathSave(kind: 'save' | 'fail', level: number) {
+  if (own('deathSave')) return;
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime;
@@ -172,6 +247,7 @@ export function deathSave(kind: 'save' | 'fail', level: number) {
 
 /** Death: a low, slow bell. */
 export function deathBell() {
+  if (own('deathBell')) return;
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime + 0.25;
@@ -183,6 +259,7 @@ export function deathBell() {
 
 /** Damage: a body blow, heavier and lower the harder the hit (0 to 1). */
 export function hit(severity = 0.3) {
+  if (own('hit')) return;
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime;
@@ -193,6 +270,7 @@ export function hit(severity = 0.3) {
 
 /** Healing: a soft rising shimmer. */
 export function heal() {
+  if (own('heal')) return;
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime;
@@ -202,6 +280,7 @@ export function heal() {
 
 /** Temporary hit points: a bright, metallic ring, like a shield raised. */
 export function shield() {
+  if (own('shield')) return;
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime;
@@ -211,6 +290,7 @@ export function shield() {
 
 /** A short rest: two soft, low notes, settling. */
 export function shortRest() {
+  if (own('shortRest')) return;
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime;
@@ -220,6 +300,7 @@ export function shortRest() {
 
 /** A long rest: a slow, warm chord, rolled upward. */
 export function longRest() {
+  if (own('longRest')) return;
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime;
@@ -228,6 +309,7 @@ export function longRest() {
 
 /** Dawn: a bright rising call, the day starting. */
 export function dawn() {
+  if (own('dawn')) return;
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime;

@@ -10,6 +10,8 @@
   import AbilityBand from '$lib/components/AbilityBand.svelte';
   import ModeToggle from '$lib/components/ModeToggle.svelte';
   import SoundToggle from '$lib/components/SoundToggle.svelte';
+  import { setCustomSounds, setSound, soundOn } from '$lib/sound';
+  import { get } from 'svelte/store';
   import MusicPlayer from '$lib/components/MusicPlayer.svelte';
   import Banner from '$lib/components/Banner.svelte';
   import CombatActions from '$lib/components/CombatActions.svelte';
@@ -43,9 +45,11 @@
   import TrackerPresets from '$lib/components/TrackerPresets.svelte';
   import { resetTray } from '$lib/stores/tray';
   import TextPanel from '$lib/components/TextPanel.svelte';
+  import LinksPanel from '$lib/components/LinksPanel.svelte';
   import ThemePicker from '$lib/components/ThemePicker.svelte';
   import UndoToast from '$lib/components/UndoToast.svelte';
   import { sheetRepo } from '$lib/data/sheets';
+  import { isConfigured, supabase } from '$lib/supabase';
   import {
     ATTACK_COLUMNS, ATTUNE_SLOTS, CLASS_COLUMNS, FEATURE_COLUMNS, FEATURE_KINDS, ITEM_COLUMNS,
     PASSIVES, SPELL_COLUMNS, TABS, TRACKER_COLUMNS, kindOf
@@ -62,11 +66,17 @@
     classList,
     formulaContext,
     modifierOf,
+    armorClass,
+    initiativeParts,
     passiveScore,
+    proficiencyBonus,
+    speedParts,
     weightCarried
   } from '$lib/rules/derived';
+  import Why from '$lib/components/Why.svelte';
+  import EquipDialog from '$lib/components/EquipDialog.svelte';
   import { downloadText } from '$lib/download';
-  import { parseRoll, type Pool } from '$lib/rules/dice';
+  import { parseRoll, type Pool, type Roll } from '$lib/rules/dice';
   import { requestRoll } from '$lib/stores/dice';
   import { friendlyDate, latest } from '$lib/rules/dates';
   import { exportFileName, exportSheet } from '$lib/exchange';
@@ -182,9 +192,9 @@
 
 
   const attunedCount = $derived((definition?.equipment ?? []).filter((i) => i.attuned).length);
-  const initiative = $derived(
-    definition ? (definition.combat?.initiative ?? modifierOf(definition, 'dex')) : 0
-  );
+  const initiative = $derived(definition ? initiativeParts(definition).total : 0);
+  const ac = $derived(definition ? armorClass(definition) : { total: 10, parts: [], computed: false });
+  const speed = $derived(definition ? speedParts(definition) : { total: 30, parts: [] });
 
   $effect(() => {
     if (!id) {
@@ -205,6 +215,31 @@
       })
       .catch((e) => (loadError = friendlyError(e, 'This sheet wouldn’t load! Give it another roll in a moment.')))
       .finally(() => (loading = false));
+  });
+
+  // The sheet's own sound effects, while it is on screen.
+  $effect(() => {
+    setCustomSounds(definition?.sounds);
+    return () => setCustomSounds(undefined);
+  });
+
+  /*
+   * Live: a change to this sheet made elsewhere (its DM giving a condition,
+   * its owner on another device) arrives as it happens, for the owner and
+   * for anyone reading along.
+   */
+  $effect(() => {
+    if (!id || !isConfigured) return;
+    const channel = supabase
+      .channel(`sheet-${id}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sheets', filter: `id=eq.${id}` }, (payload) => {
+        const row = payload.new as Partial<Sheet>;
+        if (row.definition && row.state && row.updated_at) {
+          sheetStore.adoptRemote({ definition: row.definition, state: row.state, updated_at: row.updated_at });
+        }
+      })
+      .subscribe();
+    return () => void supabase.removeChannel(channel);
   });
 
   $effect(() => {
@@ -260,12 +295,12 @@
   const spellAtk = $derived(spellAttack(definition));
 
   /** Shows a roll in the tray, which lives on the Combat tab. */
-  function toTray(pool: Pool, label: string) {
+  function toTray(pool: Pool, label: string, then?: (r: Roll) => void, mode: 'keep' | 'normal' = 'keep') {
     if (activeTab !== 'Combat') {
       activeTab = 'Combat';
       if (typeof location !== 'undefined') history.replaceState(null, '', '#combat');
     }
-    requestRoll(pool, label);
+    requestRoll(pool, label, then, mode);
   }
 
   /** Spell slots by level, for casting: how many each has and which trackers hold them. */
@@ -416,12 +451,33 @@
     } else if (e.key.toLowerCase() === 'e' && isOwner) {
       e.preventDefault();
       void glide(() => (editing = !editing));
+    } else if (e.key.toLowerCase() === 'm') {
+      // The speaker: sound and music, on or off.
+      e.preventDefault();
+      setSound(!get(soundOn));
     } else if (e.key.toLowerCase() === 'p') {
       e.preventDefault();
       window.print();
-    } else if (/^[1-8]$/.test(e.key)) {
+    } else if (/^[1-9]$/.test(e.key)) {
       activeTab = TABS[Number(e.key) - 1];
     }
+  }
+
+  /**
+   * The Equip tag. Reading, it puts on or takes off an item whose effects are
+   * known; the first time, or while editing, it asks what the item does.
+   */
+  let equipping = $state<number | null>(null);
+  function setItem(index: number, patch: Partial<Item>) {
+    if (!definition) return;
+    setDefinition({ ...definition, equipment: definition.equipment.map((it, i) => (i === index ? { ...it, ...patch } : it)) });
+  }
+  function equipItem(index: number) {
+    const item = definition?.equipment?.[index];
+    if (!item) return;
+    if (!editable && item.equipped) return setItem(index, { equipped: false });
+    if (!editable && item.effects) return setItem(index, { equipped: true });
+    equipping = index;
   }
 
   function doUndo() {
@@ -500,7 +556,8 @@
       {editable}
       owner={isOwner}
       isPublic={sheet?.texts ? sheet.texts[key].isPublic : null}
-      locked={!isOwner && Boolean(definition.privateText?.[key])}
+      locked={!isOwner && Boolean(definition.privateText?.[key]) && !(sheet?.texts && sheet.texts[key].isPublic === false)}
+      peek={!isOwner && Boolean(sheet?.texts && sheet.texts[key].isPublic === false)}
       onbody={(body) => sheetStore.setText(key, { body })}
       onpublic={(isPublic) => {
         sheetStore.setText(key, { isPublic });
@@ -676,13 +733,15 @@
                    onchange={setState} ondefinition={setDefinition}>
           {#snippet children()}
             <RestButtons {definition} state={sheetState} editable={isOwner}
-                         onchange={setState} onrest={afterRest} />
+                         onchange={setState} onrest={afterRest}
+                         onroll={(pool, label, then) => toTray(pool, label, then, 'normal')} />
           {/snippet}
         </HitPoints>
       </section>
 
       <section class="panel band-abilities" style:--i=1>
-        <AbilityBand {definition} {editable} onchange={setDefinition} />
+        <AbilityBand {definition} {editable} onchange={setDefinition}
+                     onroll={isOwner ? rollSkill : undefined} />
       </section>
     </div>
 
@@ -803,6 +862,7 @@
                 emptyText="Nothing carried."
                 addLabel="Add item"
                 blank={() => ({ name: '', qty: 1 }) as Item}
+                equip={{ key: 'equipped', can: isOwner, onpress: equipItem }}
                 onchange={(equipment) => setDefinition({ ...definition, equipment: equipment as Item[] })}
               >
                 {#snippet info()}
@@ -897,6 +957,8 @@
               {/if}
             {:else if tab === 'Notes'}
               {@render writing('notes', 'Notes')}
+            {:else if tab === 'Links'}
+              <LinksPanel {definition} {editable} onchange={setDefinition} />
             {:else}
               {@render writing('backstory', 'Backstory')}
             {/if}
@@ -928,39 +990,56 @@
         <h2 class="cap defs-h">Defenses</h2>
         <div class="defense">
           <div class="defbox">
-            <b use:bump={definition.combat?.ac}>
-              <EditableField value={definition.combat?.ac} {editable} type="number"
-                             label="AC" onchange={(v) => patchCombat('ac', Number(v))} />
-            </b>
+            <Why title="Armor Class" parts={ac.parts} total={String(ac.total)}
+                 hint={ac.computed ? 'Worked out from what is equipped.' : 'Equip armour or a shield on the Equipment tab to have it worked out.'}>
+              <b use:bump={ac.total}>
+                {#if ac.computed}
+                  <span class="computed" title="Worked out from equipped items">{ac.total}</span>
+                {:else}
+                  <EditableField value={definition.combat?.ac} {editable} type="number"
+                                 label="AC" onchange={(v) => patchCombat('ac', Number(v))} />
+                {/if}
+              </b>
+            </Why>
             <span class="cap">Armor Class</span>
           </div>
           <div class="defbox">
+            <Why title="Initiative" parts={initiativeParts(definition).parts} total={sign(initiative)}>
             <b use:bump={initiative}>
-              <EditableField value={definition.combat?.initiative ?? ''}
-                             display={definition.combat?.initiative == null ? sign(initiative) : undefined}
-                             {editable} type="number" label="Initiative"
-                             placeholder={sign(initiative)} hint={String(modifierOf(definition, 'dex'))}
-                             onchange={(v) => patchCombat('initiative', v === '' ? undefined : Number(v))} />
+              {#if !editable && isOwner}
+                <!-- Out of edit mode, initiative is a die to roll. -->
+                <button class="rollnum" title="Roll initiative: d20 {sign(initiative)}" aria-label="Roll initiative"
+                        onclick={() => rollSkill('Initiative', initiative)}>{sign(initiative)}</button>
+              {:else}
+                <EditableField value={definition.combat?.initiative ?? ''}
+                               display={definition.combat?.initiative == null ? sign(initiative) : undefined}
+                               {editable} type="number" label="Initiative"
+                               placeholder={sign(initiative)} hint={String(modifierOf(definition, 'dex'))}
+                               onchange={(v) => patchCombat('initiative', v === '' ? undefined : Number(v))} />
+              {/if}
             </b>
+            </Why>
             <span class="cap">Initiative</span>
           </div>
           <div class="defbox">
-            <b use:bump={definition.proficiency}>
-              <EditableField value={definition.proficiency} display={sign(definition.proficiency)}
-                             {editable} type="number" label="Proficiency bonus"
-                             onchange={(v) => setDefinition({ ...definition, proficiency: Number(v) })} />
-            </b>
+            <!-- From total level, all classes together; not typed in. -->
+            <Why title="Proficiency" parts={[{ label: `Total level ${characterLevel(definition)}`, value: proficiencyBonus(definition) }]}
+                 total={sign(proficiencyBonus(definition))} hint="+2 at levels 1–4, +1 more every 4 levels after; all classes together.">
+              <b use:bump={proficiencyBonus(definition)}>{sign(proficiencyBonus(definition))}</b>
+            </Why>
             <span class="cap">Proficiency</span>
           </div>
           <div class="defbox">
-            <b use:bump={definition.combat?.speed}>
+            <Why title="Speed" parts={speed.parts} total="{speed.total} ft.">
+            <b use:bump={speed.total}>
               <EditableField value={definition.combat?.speed}
                              display={definition.combat?.speed != null
-                               ? `${definition.combat.speed} ft.`
+                               ? `${speed.total} ft.`
                                : undefined}
                              {editable} type="number"
                              label="Speed" onchange={(v) => patchCombat('speed', Number(v))} />
             </b>
+            </Why>
             <span class="cap">Speed</span>
           </div>
           <div class="defbox">
@@ -1069,6 +1148,11 @@
                   attack={spellAtk} saveDc={saveDc} characterLevel={totalLevel}
                   onroll={(kind, at, spend) => castRoll(casting!, kind, at, spend)}
                   oncancel={() => (casting = null)} />
+    {/if}
+    {#if equipping !== null && definition?.equipment?.[equipping]}
+      <EquipDialog item={definition.equipment[equipping]}
+                   onclose={() => (equipping = null)}
+                   onsave={(effects, equipped) => { setItem(equipping!, { effects, equipped }); equipping = null; }} />
     {/if}
     <ConditionOverlay conditions={sheetState.conditions ?? []} looks={definition.conditionLooks}
                       current={sheetState.hpCurrent} max={definition.combat?.hpMax ?? 0} />
@@ -1288,6 +1372,13 @@
   .rail-skills { order: -1; }
   .rail-right { order: 1; display: flex; flex-direction: column; }
   .centre { display: flex; flex-direction: column; }
+  /* Wide screens: the middle module is as tall as the columns beside it (and
+     at least a screenful), whatever tab is open; what is longer scrolls
+     inside it rather than stretching the page. */
+  @media (min-width: 861px) {
+    .main { min-height: min(46rem, 85vh); }
+    .centre { height: 0; min-height: 100%; }
+  }
 
   .defense { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin: 0.625rem 0 0; }
   .defbox {
@@ -1302,6 +1393,14 @@
      The field sets its own colour, so the rule has to reach inside it. */
   .defbox.themed-num b,
   .defbox.themed-num :global(.field) { color: var(--a-hi); }
+  /* Initiative, out of edit mode: the number itself is the button that rolls it. */
+  .computed { display: inline-block; }
+  .rollnum {
+    font: inherit; color: inherit; background: none; border: 0; padding: 0.125rem 0.375rem; margin: -0.125rem 0;
+    border-radius: var(--r-sm); cursor: pointer; transition: color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
+  }
+  .rollnum:hover { color: var(--a); background: var(--a-wash); }
+  .rollnum:active { transform: translateY(1px); }
   .defbox b {
     display: block; font-size: 1.375rem; font-weight: 600; line-height: 1;
     color: var(--text); font-variant-numeric: tabular-nums;

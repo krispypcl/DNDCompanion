@@ -1,4 +1,5 @@
 <script lang="ts">
+  import GoogleButton from './GoogleButton.svelte';
   import Logo from './Logo.svelte';
   import { friendlyError } from '$lib/errors';
   import type { FullAutoFill } from 'svelte/elements';
@@ -25,7 +26,9 @@
     validate,
     busyLabel = 'Working…',
     standalone = true,
-    children
+    children,
+    google = false,
+    googleNext = '/'
   }: {
     /** Omitted where the submit button already says what the form does. The
         form keeps the name as an aria-label, so it is still announced. */
@@ -43,6 +46,9 @@
     /** A page of its own centres itself; embedded in the landing page it does not. */
     standalone?: boolean;
     children?: import('svelte').Snippet;
+    /** Offer "Continue with Google" under the form, returning to `googleNext`. */
+    google?: boolean;
+    googleNext?: string;
   } = $props();
 
   let values = $state<Record<string, string>>({});
@@ -118,12 +124,19 @@
         <button type="submit" disabled={busy}>{busy ? busyLabel : submitLabel}</button>
       </form>
 
+      {#if google}
+        <div class="or" aria-hidden="true"><span>or</span></div>
+        <GoogleButton next={googleNext} />
+      {/if}
+
       <nav>{@render children?.()}</nav>
     </section>
   </div>
 </div>
 
 <style>
+  .or { display: flex; align-items: center; gap: 0.75rem; margin: 1rem 0 0.75rem; color: var(--dim); font-size: 0.8125rem; }
+  .or::before, .or::after { content: ''; flex: 1; height: 1px; background: var(--line-soft); }
   .meter {
     margin-top: 0.4375rem; display: grid; grid-template-rows: 0fr; opacity: 0;
     transition: grid-template-rows 0.25s ease, opacity 0.2s ease;

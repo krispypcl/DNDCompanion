@@ -54,14 +54,16 @@
     if (!req || req.id === handled) return;
     handled = req.id;
     takeRoll(req.id);
-    pool = { ...req.pool, mode: pool.mode };
+    // The tray's advantage stays for a d20 roll; a roll that heals is just dice.
+    pool = { ...req.pool, mode: req.mode === 'normal' ? 'normal' : pool.mode };
     open = true;
-    go(req.label);
+    const result = go(req.label);
+    if (result) req.then?.(result);
     tick().then(() => tray?.scrollIntoView?.({ block: 'nearest', behavior: prefersReducedMotion() ? 'auto' : 'smooth' }));
   });
 
   function go(label?: string) {
-    if (diceCount(pool) === 0) return;
+    if (diceCount(pool) === 0) return null;
     const result = { ...roll($state.snapshot(pool) as Pool), ...(label ? { label } : {}) };
     if (last) history = [last, ...history].slice(0, 6);
     last = result;
@@ -84,6 +86,7 @@
     } else {
       setTimeout(landed, 300);
     }
+    return result;
   }
 
   /** Forgets every roll, the latest included. The dice chosen stay. */

@@ -113,6 +113,70 @@ export function loadYouTube(): Promise<YTNamespace> {
   return ytLoading;
 }
 
+/**
+ * The songs of a YouTube playlist, in order (YouTube hands a player up to
+ * about 200 of them). A player is made out of sight to ask, and taken down
+ * after. Rejects if YouTube says nothing within the time allowed.
+ */
+export async function playlistSongs(list: string, timeoutMs = 12000): Promise<string[]> {
+  const YT = await loadYouTube();
+  const host = document.createElement('div');
+  host.setAttribute('aria-hidden', 'true');
+  host.style.cssText = 'position:fixed;left:-9999px;top:0;width:200px;height:200px;opacity:0;pointer-events:none;';
+  const inner = document.createElement('div');
+  host.appendChild(inner);
+  document.body.appendChild(host);
+  let player: YTPlayer | null = null;
+  try {
+    return await new Promise<string[]>((resolve, reject) => {
+      const give = setTimeout(() => reject(new Error('YouTube did not say what is in that playlist')), timeoutMs);
+      let poll: ReturnType<typeof setInterval> | undefined;
+      player = new YT.Player(inner, {
+        width: 200,
+        height: 200,
+        playerVars: { listType: 'playlist', list, controls: 0, playsinline: 1 },
+        events: {
+          onReady: () => {
+            poll = setInterval(() => {
+              const ids = player?.getPlaylist?.();
+              if (ids && ids.length) {
+                clearInterval(poll);
+                clearTimeout(give);
+                resolve([...new Set(ids)]);
+              }
+            }, 200);
+          },
+          onError: () => {
+            clearInterval(poll);
+            clearTimeout(give);
+            reject(new Error('YouTube would not open that playlist'));
+          }
+        }
+      }) as unknown as YTPlayer;
+    });
+  } finally {
+    try { (player as YTPlayer | null)?.destroy(); } catch { /* gone already */ }
+    host.remove();
+  }
+}
+
+/** Runs tasks a few at a time, in order of their results. */
+export async function inBatches<T, R>(items: T[], size: number, work: (item: T, i: number) => Promise<R>, progress?: (done: number) => void): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let next = 0;
+  let done = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(size, items.length) }, async () => {
+      while (next < items.length) {
+        const i = next++;
+        out[i] = await work(items[i], i);
+        progress?.(++done);
+      }
+    })
+  );
+  return out;
+}
+
 const VOLUME_KEY = 'dndcompanion:volume';
 /** The music's volume, 0 to 100, remembered on this device. */
 export function storedVolume(): number {

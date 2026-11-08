@@ -1,28 +1,37 @@
 <script lang="ts">
   /**
-   * The DM's jukebox: a list of YouTube links (songs or whole playlists) and
-   * the sheet's own music player for whichever is chosen. Choosing one plays
-   * it; when one ends, the next on the list follows (unless the player's
-   * loop is on). Adding and removing songs is for edit mode. The list is
-   * kept with the campaign; which one is playing is kept on this device.
+   * The campaign's jukebox: the DM's list of songs and the sheet's own music
+   * player for whichever is chosen. The DM chooses, plays, pauses and skips;
+   * everyone else's page follows along (database/0008, campaign_live), with
+   * only their own volume and speaker. A playlist pasted in is added song by
+   * song. When one ends, the next follows unless the DM's loop is on. Adding
+   * and removing songs is for edit mode.
    */
   import { fade, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { parsePlaylist, youtubeTitle } from '$lib/music';
+  import { inBatches, parsePlaylist, playlistSongs, youtubeTitle } from '$lib/music';
   import { foldRow, prefersReducedMotion } from '$lib/motion';
   import { setSound } from '$lib/sound';
-  import type { Song } from '$lib/data/campaigns';
+  import type { Playback, Song } from '$lib/data/campaigns';
   import MusicPlayer from './MusicPlayer.svelte';
 
   let {
     campaignId,
     songs,
     editing,
+    lead,
+    playback = null,
+    onplayback,
     onchange
   }: {
     campaignId: string;
     songs: Song[];
     editing: boolean;
+    /** The DM: they choose and play; everyone else follows. */
+    lead: boolean;
+    /** What the DM's music is doing (its `at` already on this device's clock). */
+    playback?: Playback | null;
+    onplayback?: (p: Playback) => void;
     onchange: (songs: Song[]) => Promise<void> | void;
   } = $props();
 
@@ -35,13 +44,32 @@
       current = 0;
     }
   });
-  const playingSong = $derived(songs.length ? songs[Math.min(current, songs.length - 1)] : null);
+  // The DM picks up where the table's music is, on any device.
+  let tookPlayback = false;
+  $effect(() => {
+    if (lead && playback && !tookPlayback) {
+      tookPlayback = true;
+      current = playback.index;
+    }
+  });
+  /** Which song: the DM's choice, or for everyone else, the DM's. */
+  const index = $derived(lead ? current : (playback?.index ?? -1));
+  const playingSong = $derived(index >= 0 && songs.length ? songs[Math.min(index, songs.length - 1)] : null);
+  const followMoment = $derived(!lead && playback ? { playing: playback.playing, t: playback.t, item: playback.item, at: playback.at } : null);
+  const resumeMoment = $derived(lead && playback && playback.index === current ? { playing: playback.playing, t: playback.t, item: playback.item, at: playback.at } : null);
 
-  function choose(index: number) {
-    current = index;
-    try { localStorage.setItem(memoryKey, String(index)); } catch { /* private window */ }
+  function choose(i: number) {
+    if (!lead) return;
+    current = i;
+    try { localStorage.setItem(memoryKey, String(i)); } catch { /* private window */ }
+    onplayback?.({ index: i, url: songs[i]?.url, playing: true, t: 0, at: Date.now() });
     // Choosing a song is asking to hear it.
     setSound(true);
+  }
+  function told(m: { playing: boolean; t: number; item?: number }) {
+    const song = songs[current];
+    if (!song) return;
+    onplayback?.({ index: current, url: song.url, ...m, at: Date.now() });
   }
   const next = () => songs.length > 1 && choose((current + 1) % songs.length);
 
@@ -63,11 +91,48 @@
     }
     problem = null;
     busy = true;
-    const name = await youtubeTitle(found);
-    busy = false;
-    adding = '';
-    await onchange([...songs, name ? { url: link, name } : { url: link }]);
+    try {
+      // A playlist: every song in it, one by one, each named.
+      if (found.list) {
+        let ids: string[];
+        try {
+          ids = await playlistSongs(found.list);
+        } catch {
+          problem = 'That playlist wouldn’t open its doors! It may be private, or the link is off.';
+          return;
+        }
+        const have = new Set(songs.map((s) => parsePlaylist(s.url)?.video).filter(Boolean));
+        const fresh = ids.filter((id) => !have.has(id)).slice(0, Math.max(0, MAX_SONGS - songs.length));
+        if (!fresh.length) {
+          problem = ids.length ? 'Every song in that playlist is already on the list!' : 'That playlist is empty! Nothing to add.';
+          return;
+        }
+        progress = { done: 0, of: fresh.length };
+        const named = await inBatches(fresh, 6, async (id) => {
+          const name = await youtubeTitle({ kind: 'youtube', video: id });
+          return name ? { url: `https://youtu.be/${id}`, name } : { url: `https://youtu.be/${id}` };
+        }, (done) => (progress = { done, of: fresh.length }));
+        adding = '';
+        await onchange([...songs, ...named]);
+        if (ids.length > fresh.length && songs.length + fresh.length >= MAX_SONGS) {
+          problem = `The list holds ${MAX_SONGS} songs, so the rest of that playlist stayed off it.`;
+        }
+        return;
+      }
+      if (songs.length >= MAX_SONGS) {
+        problem = `The list is full at ${MAX_SONGS} songs! Take a few away first.`;
+        return;
+      }
+      const name = await youtubeTitle(found);
+      adding = '';
+      await onchange([...songs, name ? { url: link, name } : { url: link }]);
+    } finally {
+      busy = false;
+      progress = null;
+    }
   }
+  const MAX_SONGS = 300;
+  let progress = $state<{ done: number; of: number } | null>(null);
   async function remove(index: number) {
     const left = songs.filter((_, i) => i !== index);
     if (index < current || current >= left.length) current = Math.max(0, current - 1);
@@ -107,17 +172,20 @@
   <div class="body">
     <div class="player">
       {#if playingSong}
-        <MusicPlayer url={playingSong.url} place="campaign" onended={next} ontitle={learnTitle} />
+        <MusicPlayer url={playingSong.url} place="campaign" onended={next} ontitle={learnTitle}
+                     lead={lead ? told : undefined} follow={followMoment} resume={resumeMoment} />
       {:else}
-        <p class="none" in:fade={{ duration: 160 }}>Add a song or a playlist and it plays here, for you alone.</p>
+        <p class="none" in:fade={{ duration: 160 }}>
+          {lead ? 'Add a song or a playlist and it plays here, for the whole table.' : 'The DM hasn’t started any music yet.'}
+        </p>
       {/if}
     </div>
     <div class="list">
       <ol>
         {#each songs as song, i (song.url)}
           <li class:on={playingSong === song} transition:foldRow>
-            <button class="pick" onclick={() => choose(i)} aria-current={playingSong === song ? 'true' : undefined}
-                    title={song.url}>
+            <button class="pick" class:still={!lead} onclick={() => choose(i)} aria-current={playingSong === song ? 'true' : undefined}
+                    title={lead ? song.url : undefined} tabindex={lead ? 0 : -1}>
               <span class="n" aria-hidden="true">{playingSong === song ? '♪' : i + 1}</span>
               {#key song.name}<span class="nm" in:fade={{ duration: 200 }}>{label(song, i)}</span>{/key}
             </button>
@@ -134,8 +202,15 @@
             <input bind:value={adding} placeholder="Paste a YouTube link" aria-label="YouTube link to add"
                    oninput={() => (problem = null)}
                    onkeydown={(e) => { if (e.key === 'Enter') add(); }} />
-            <button onclick={add} disabled={!adding.trim() || busy}>{busy ? 'Adding…' : 'Add'}</button>
+            <button onclick={add} disabled={!adding.trim() || busy}>
+              {busy ? (progress ? `Adding ${progress.done} of ${progress.of}…` : 'Adding…') : 'Add'}
+            </button>
           </div>
+          {#if progress}
+            <div class="progress" transition:slide={motion()} aria-hidden="true">
+              <i style:width="{(progress.done / Math.max(1, progress.of)) * 100}%"></i>
+            </div>
+          {/if}
           {#if problem}<p class="err" role="alert" transition:slide={motion()}>{problem}</p>{/if}
         </div>
       {/if}
@@ -186,6 +261,10 @@
   @media (hover: none) { .x { opacity: 1; } }
   .adder { padding-top: 0.375rem; }
   .add { display: flex; gap: 0.5rem; }
+  .add button { white-space: nowrap; }
+  .progress { height: 3px; border-radius: 2px; background: var(--line-soft); margin-top: 0.5rem; overflow: hidden; }
+  .progress i { display: block; height: 100%; background: var(--a); transition: width 0.25s ease; }
+  .pick.still { cursor: default; }
   .add input {
     flex: 1; min-width: 0; font: inherit; font-size: 0.8125rem; padding: 0.4375rem 0.625rem; color: var(--text);
     border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg);

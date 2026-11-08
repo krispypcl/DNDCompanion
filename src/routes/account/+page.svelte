@@ -9,7 +9,8 @@
   import Lightbox from '$lib/components/Lightbox.svelte';
   import ModeToggle from '$lib/components/ModeToggle.svelte';
   import D20Loader from '$lib/components/D20Loader.svelte';
-  import { deleteAccount, profileOf, signOut, signOutEverywhere, updatePassword, updateProfile } from '$lib/data/session';
+  import { deleteAccount, profileOf, providersOf, signOut, signOutEverywhere, updatePassword, updateProfile } from '$lib/data/session';
+  import GoogleButton from '$lib/components/GoogleButton.svelte';
   import { slide } from 'svelte/transition';
   import { passwordStrength } from '$lib/rules/password';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
@@ -166,6 +167,20 @@
       </div>
     </form>
 
+    <!-- Ways in: email and password, and Google once connected. -->
+    <section class="card" aria-labelledby="ways-h">
+      <h2 id="ways-h">Ways to sign in</h2>
+      {#if providersOf($session.user).includes('google')}
+        <p class="linked" transition:slide={{ duration: 200 }}>
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          Google is connected. You can sign in with it as well as with your email.
+        </p>
+      {:else}
+        <p class="dim">Connect your Google account to sign in with one press next time.</p>
+        <div class="google-wrap"><GoogleButton link next="/account" /></div>
+      {/if}
+    </section>
+
     <section class="card" aria-labelledby="out-h">
       <h2 id="out-h">Signing out</h2>
       <p class="dim">Signing out everywhere ends every session on every device, this one included —
@@ -211,6 +226,8 @@
 {/if}
 
 <style>
+  .linked { display: flex; align-items: center; gap: 0.5rem; color: var(--a); margin: 0.5rem 0 0; }
+  .google-wrap { max-width: 18rem; margin-top: 0.75rem; }
   main { max-width: 36rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
   header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
   /* The same Back as on a sheet. */
@@ -227,10 +244,9 @@
   .card {
     background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--r);
     padding: 1.125rem; margin-bottom: 1rem; display: grid; gap: 0.5rem;
-    animation: rise 0.3s cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
   }
-  .card:nth-of-type(2) { animation-delay: 0.05s; }
-  .card:nth-of-type(3) { animation-delay: 0.1s; }
+  /* The page rises in as a whole (the layout's own entrance); the cards no
+     longer rise a second time on top of it. */
   @keyframes rise { from { opacity: 0; transform: translateY(6px); } }
   h2 { font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600; margin: 0 0 0.25rem; }
   label { font-size: 0.8125rem; color: var(--dim); margin-top: 0.25rem; }

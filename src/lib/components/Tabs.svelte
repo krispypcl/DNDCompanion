@@ -90,6 +90,7 @@
   }
 </script>
 
+<div class="tabwrap">
 <div class="tablist" role="tablist" bind:this={list}>
   {#each tabs as tab, i (tab)}
     <button
@@ -106,8 +107,9 @@
   <i class="indicator" class:ready class:placed={bar.width > 0} style:transform="translateX({bar.left}px)"
      style:width="{bar.width}px" aria-hidden="true"></i>
 </div>
+</div>
 
-<div class="panels" bind:this={panels}>
+<div class="panels" bind:this={panels} data-scrollbox>
   {#key active}
     <section role="tabpanel" in:slide>
       {@render children(active)}
@@ -152,11 +154,13 @@
     transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), width 0.32s cubic-bezier(0.22, 1, 0.36, 1);
   }
   @media (prefers-reduced-motion: reduce) { .indicator.ready { transition: none; } }
-  /* On a phone the tabs are a grid of buttons, every one in view and big
-     enough to tap, rather than a strip that hides half of them off the edge. */
-  @media (max-width: 700px) {
+  /* Wherever the strip is too narrow for every tab (a phone, or the middle
+     column of a mid-sized window), the tabs become a grid of buttons, every
+     one in view, rather than a strip that hides some off its edge. */
+  .tabwrap { container-type: inline-size; }
+  @container (max-width: 50rem) {
     .tablist {
-      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.375rem;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(4.75rem, 1fr)); gap: 0.375rem;
       border-bottom: 0; overflow: visible;
     }
     button {
@@ -169,6 +173,20 @@
     .indicator { display: none; }
   }
   section { padding: 1rem 0 0; }
+  /* A wide screen: the module keeps its height and scrolls within it, on a
+     slim scrollbar of its own. */
+  @media (min-width: 861px) {
+    .panels {
+      overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
+      margin-right: -0.5rem; padding-right: 0.5rem; scrollbar-gutter: stable;
+      scrollbar-width: thin; scrollbar-color: color-mix(in oklch, var(--text) 22%, transparent) transparent;
+    }
+    .panels:hover { scrollbar-color: color-mix(in oklch, var(--a) 55%, transparent) transparent; }
+    .panels::-webkit-scrollbar { width: 6px; }
+    .panels::-webkit-scrollbar-track { background: transparent; }
+    .panels::-webkit-scrollbar-thumb { background: color-mix(in oklch, var(--text) 22%, transparent); border-radius: 6px; }
+    .panels:hover::-webkit-scrollbar-thumb { background: color-mix(in oklch, var(--a) 55%, transparent); }
+  }
   /* The writing tabs fill the rest of the card, so a page has the whole
      height to be written on and its page controls sit at the foot. */
   .panels { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }

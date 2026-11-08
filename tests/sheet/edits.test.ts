@@ -3,7 +3,7 @@ import { trackerRows, withClasses, withTrackerRows, withoutTrackers } from '$lib
 import { slotsByLevel, spellAttack, spellDc } from '$lib/rules/casting';
 
 const def = (over: Record<string, unknown> = {}) => ({
-  identity: { name: 'X', level: 1 }, abilities: { str: 10, dex: 10, con: 10, int: 18, wis: 10, cha: 10 },
+  identity: { name: 'X', level: 5 }, abilities: { str: 10, dex: 10, con: 10, int: 18, wis: 10, cha: 10 },
   proficiency: 3, combat: { ac: 10, speed: 30, hpMax: 10, hitDice: '1d6' }, saves: {}, skills: {},
   attacks: [], features: [], spells: [], trackers: [], equipment: [], currency: {}, notes: '', ...over
 }) as never;

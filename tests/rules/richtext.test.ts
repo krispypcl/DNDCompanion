@@ -91,3 +91,41 @@ describe('what the browser leaves behind', () => {
     expect(from('<div>a</div><div><br></div><div>b</div>')).toBe('a\n\nb');
   });
 });
+
+describe('colour, highlight and size', () => {
+  it('reads the marks, nested too, and drops unknown ones', () => {
+    expect(toHtml('[[c:red|danger]]')).toBe('<div><span data-c="red">danger</span></div>');
+    expect(toHtml('[[h:yellow|[[s:big|loud]] text]]')).toBe('<div><span data-h="yellow"><span data-s="big">loud</span> text</span></div>');
+    expect(toHtml('[[c:plaid|odd]]')).toBe('<div>odd</div>');
+  });
+  it('round-trips through the editor, and keeps typed brackets as brackets', () => {
+    const el = document.createElement('div');
+    el.innerHTML = toHtml('a [[c:blue|b]] c and [[h:pink|**d**]]');
+    expect(fromHtml(el)).toBe('a [[c:blue|b]] c and [[h:pink|**d**]]');
+    el.innerHTML = '<div>see [[not a mark]]</div>';
+    const text = fromHtml(el);
+    expect(text).toBe('see \\[\\[not a mark\\]\\]');
+    expect(toHtml(text)).toBe('<div>see [[not a mark]]</div>');
+  });
+  it('turns the editor’s own wrapping into marks', () => {
+    const el = document.createElement('div');
+    el.innerHTML = '<div>x <font face="dnd-c-green">y</font></div>';
+    expect(fromHtml(el)).toBe('x [[c:green|y]]');
+  });
+  it('skips a page’s drawing line', () => {
+    expect(toHtml('words\n⁣ink:{"s":[]}')).toBe('<div>words</div>');
+  });
+});
+
+import { joinInk, splitInk } from '$lib/rules/ink';
+describe('a page’s drawing', () => {
+  it('rides on its own last line and comes back off it', () => {
+    const ink = { paper: 'grid' as const, s: [{ c: 'red', w: 4, p: [1, 2, 30.4, 40.6] }] };
+    const page = joinInk('Hello\n**world**', ink);
+    expect(page.split('\n').length).toBe(3);
+    expect(splitInk(page)).toEqual({ text: 'Hello\n**world**', ink: { paper: 'grid', s: [{ c: 'red', w: 4, p: [1, 2, 30, 41] }] } });
+    expect(joinInk('Hi', { paper: 'plain', s: [] })).toBe('Hi');
+    expect(splitInk('Just words')).toEqual({ text: 'Just words', ink: null });
+    expect(splitInk(joinInk('', ink)).text).toBe('');
+  });
+});

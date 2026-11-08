@@ -387,3 +387,220 @@ begin
   end if;
 end;
 $$;
+
+-- ===========================================================================
+-- The campaign as a shared table (database/0008_campaign_table.sql). Kept as
+-- one block: it redefines the sheet_text read policy, campaign_invite and
+-- reset_campaign_invite above, which it supersedes.
+-- ---------------------------------------------------------------------------
+-- Membership.
+create or replace function public.is_campaign_member(p_campaign uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (select 1 from campaigns c where c.id = p_campaign and c.created_by = auth.uid())
+      or exists (select 1 from sheets s where s.campaign_id = p_campaign and s.owner_id = auth.uid());
+$$;
+revoke all on function public.is_campaign_member(uuid) from public;
+grant execute on function public.is_campaign_member(uuid) to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- The DM reads private notes and backstory of characters in their campaign.
+drop policy if exists "sheet_text read" on sheet_text;
+create policy "sheet_text read" on sheet_text for select
+  using (
+    is_public
+    or owner_id = auth.uid()
+    or exists (
+      select 1 from sheets s join campaigns c on c.id = s.campaign_id
+      where s.id = sheet_text.sheet_id and c.created_by = auth.uid()
+    )
+  );
+
+-- ---------------------------------------------------------------------------
+-- The DM sets a player's conditions: only that list, only in their campaign.
+create or replace function public.set_sheet_conditions(p_sheet uuid, p_conditions text[])
+returns timestamptz
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  stamp timestamptz;
+  list text[] := coalesce(p_conditions, '{}'::text[]);
+begin
+  if auth.uid() is null then raise exception 'Not signed in'; end if;
+  if coalesce(array_length(list, 1), 0) > 40
+     or exists (select 1 from unnest(list) n where length(n) > 60 or length(trim(n)) = 0) then
+    raise exception 'Too many conditions';
+  end if;
+  update sheets s
+    set state = jsonb_set(coalesce(s.state, '{}'::jsonb), '{conditions}', to_jsonb(list))
+    where s.id = p_sheet
+      and exists (select 1 from campaigns c where c.id = s.campaign_id and c.created_by = auth.uid())
+    returning s.updated_at into stamp;
+  if stamp is null then raise exception 'Only the DM can do that'; end if;
+  return stamp;
+end;
+$$;
+revoke all on function public.set_sheet_conditions(uuid, text[]) from public, anon;
+grant execute on function public.set_sheet_conditions(uuid, text[]) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- The invite, for everyone in the campaign (not only its DM).
+create or replace function public.campaign_invite(p_campaign uuid)
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select c.invite_code from campaigns c
+  where c.id = p_campaign and public.is_campaign_member(p_campaign);
+$$;
+
+-- ---------------------------------------------------------------------------
+-- What is happening right now.
+create table if not exists campaign_live (
+  campaign_id uuid primary key references campaigns(id) on delete cascade,
+  playback    jsonb not null default '{}'::jsonb,
+  invite_rev  integer not null default 0,
+  updated_at  timestamptz not null default now()
+);
+alter table campaign_live drop constraint if exists campaign_live_playback_size;
+alter table campaign_live add constraint campaign_live_playback_size
+  check (jsonb_typeof(playback) = 'object' and octet_length(playback::text) <= 4000);
+
+drop trigger if exists campaign_live_touch on campaign_live;
+create trigger campaign_live_touch before update on campaign_live
+  for each row execute function touch_updated_at();
+
+alter table campaign_live enable row level security;
+revoke all on campaign_live from anon, authenticated;
+grant select on campaign_live to anon, authenticated;
+grant update (playback) on campaign_live to authenticated;
+
+drop policy if exists "campaign_live read" on campaign_live;
+drop policy if exists "campaign_live update" on campaign_live;
+create policy "campaign_live read" on campaign_live for select using (true);
+create policy "campaign_live update" on campaign_live for update
+  using (exists (select 1 from campaigns c where c.id = campaign_id and c.created_by = auth.uid()));
+
+-- Every campaign has one, made with it.
+insert into campaign_live (campaign_id) select id from campaigns on conflict do nothing;
+
+create or replace function public.make_campaign_live()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into campaign_live (campaign_id) values (new.id) on conflict do nothing;
+  return new;
+end;
+$$;
+drop trigger if exists campaigns_make_live on campaigns;
+create trigger campaigns_make_live after insert on campaigns
+  for each row execute function public.make_campaign_live();
+
+-- A new invite ticks the counter, so open pages fetch it.
+create or replace function public.reset_campaign_invite(p_campaign uuid)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  code text;
+begin
+  update campaigns
+    set invite_code = substr(replace(gen_random_uuid()::text, '-', ''), 1, 10)
+    where id = p_campaign and created_by = auth.uid()
+    returning invite_code into code;
+  if code is null then raise exception 'Only the DM can change the invite'; end if;
+  insert into campaign_live (campaign_id, invite_rev) values (p_campaign, 1)
+    on conflict (campaign_id) do update set invite_rev = campaign_live.invite_rev + 1;
+  return code;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- The shared board.
+create table if not exists campaign_board (
+  id          uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  kind        text not null check (kind in ('note', 'text', 'stroke')),
+  data        jsonb not null default '{}'::jsonb,
+  created_by  uuid references auth.users(id) on delete set null,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+create index if not exists campaign_board_campaign_idx on campaign_board (campaign_id);
+alter table campaign_board drop constraint if exists campaign_board_data_size;
+alter table campaign_board add constraint campaign_board_data_size
+  check (jsonb_typeof(data) = 'object' and octet_length(data::text) <= 24000);
+-- Deletes announce the whole row, so open boards know which item went.
+alter table campaign_board replica identity full;
+
+drop trigger if exists campaign_board_touch on campaign_board;
+create trigger campaign_board_touch before update on campaign_board
+  for each row execute function touch_updated_at();
+
+-- A board, not a warehouse.
+create or replace function public.campaign_board_cap()
+returns trigger
+language plpgsql
+as $$
+begin
+  if (select count(*) from campaign_board b where b.campaign_id = new.campaign_id) >= 1500 then
+    raise exception 'The board is full';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists campaign_board_cap on campaign_board;
+create trigger campaign_board_cap before insert on campaign_board
+  for each row execute function public.campaign_board_cap();
+
+alter table campaign_board enable row level security;
+revoke all on campaign_board from anon, authenticated;
+grant select on campaign_board to anon, authenticated;
+grant insert (campaign_id, kind, data, created_by), update (data), delete on campaign_board to authenticated;
+
+drop policy if exists "campaign_board read" on campaign_board;
+drop policy if exists "campaign_board insert" on campaign_board;
+drop policy if exists "campaign_board update" on campaign_board;
+drop policy if exists "campaign_board delete" on campaign_board;
+create policy "campaign_board read" on campaign_board for select using (true);
+create policy "campaign_board insert" on campaign_board for insert
+  with check (created_by = auth.uid() and public.is_campaign_member(campaign_id));
+create policy "campaign_board update" on campaign_board for update
+  using (public.is_campaign_member(campaign_id));
+create policy "campaign_board delete" on campaign_board for delete
+  using (public.is_campaign_member(campaign_id));
+
+-- ---------------------------------------------------------------------------
+-- Room for a playlist's worth of songs in a campaign's details.
+alter table campaigns drop constraint if exists campaigns_details_size;
+alter table campaigns add constraint campaigns_details_size
+  check (jsonb_typeof(details) = 'object' and octet_length(details::text) <= 64000);
+
+-- ---------------------------------------------------------------------------
+-- Live: both new tables are announced as they change.
+do $$
+begin
+  if not exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    create publication supabase_realtime;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'campaign_live') then
+    alter publication supabase_realtime add table public.campaign_live;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'campaign_board') then
+    alter publication supabase_realtime add table public.campaign_board;
+  end if;
+end;
+$$;

@@ -11,7 +11,7 @@ import Banner from '$lib/components/Banner.svelte';
 
 const source = readFileSync('src/lib/components/Banner.svelte', 'utf8');
 const sheet = readFileSync('src/lib/components/SheetView.svelte', 'utf8');
-const details = readFileSync('src/lib/components/DetailsBlock.svelte', 'utf8');
+const details = readFileSync('src/lib/components/LinksPanel.svelte', 'utf8');
 
 describe('Banner', () => {
   it('shows the image it was given', () => {
@@ -104,7 +104,7 @@ describe('Banner', () => {
     expect(sheet).toMatch(/@supports not \(\(backdrop-filter/);
   });
 
-  it('is written right below the portrait URL', () => {
+  it('is written right below the portrait URL (on the Links tab)', () => {
     const portrait = details.indexOf('Portrait URL');
     const banner = details.indexOf('Banner URL');
     expect(portrait).toBeGreaterThan(-1);

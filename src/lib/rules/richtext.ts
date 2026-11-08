@@ -6,6 +6,7 @@
  *
  *   **bold**   *italic*   __underline__   ~~strikethrough~~
  *   ## Heading           - bulleted item       1. numbered item
+ *   [[c:red|coloured]]   [[h:yellow|highlighted]]   [[s:big|bigger]]
  *
  * On the page it is shown formatted, and edited formatted too: `toHtml` turns
  * the text into the editor's HTML, and `fromHtml` turns what the editor holds
@@ -16,11 +17,20 @@
 
 export type Format = 'bold' | 'italic' | 'underline' | 'strike' | 'heading' | 'bullets' | 'numbers';
 
+/** Colour, highlight and size: a kind and one of its named values. */
+export type MarkKind = 'c' | 'h' | 's';
+export const MARKS: Record<MarkKind, readonly string[]> = {
+  c: ['red', 'orange', 'gold', 'green', 'teal', 'blue', 'purple', 'pink', 'grey', 'none'],
+  h: ['yellow', 'green', 'blue', 'pink', 'purple', 'orange', 'none'],
+  s: ['small', 'big', 'huge', 'none']
+};
+const MARK = /\[\[([chs]):([a-z]+)\|((?:(?!\[\[)[^])*?)\]\]/g;
+
 const escapeHtml = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /** Characters a writer may type that would otherwise start or end a mark. */
-const ESCAPABLE = /\\([\\*_~#\-.0-9])/g;
+const ESCAPABLE = /\\([\\*_~#\-.0-9[\]])/g;
 
 /** Marks inside one line, on text that is already HTML-escaped. */
 function inline(text: string): string {
@@ -35,6 +45,14 @@ function inline(text: string): string {
   s = s.replace(/__(\S(?:[^]*?\S)?)__/g, '<u>$1</u>');
   s = s.replace(/~~(\S(?:[^]*?\S)?)~~/g, '<s>$1</s>');
   s = s.replace(/\*(\S(?:[^]*?\S)?)\*/g, '<em>$1</em>');
+  // Colour, highlight and size, innermost first, so they can sit inside each other.
+  for (let guard = 0; guard < 8; guard++) {
+    const next = s.replace(MARK, (_, k: MarkKind, v: string, inner: string) =>
+      MARKS[k].includes(v) ? `<span data-${k}="${v}">${inner}</span>` : inner
+    );
+    if (next === s) break;
+    s = next;
+  }
   return s.replace(/\u0000(\d+)\u0000/g, (_, i: string) => escapeHtml(kept[Number(i)]));
 }
 
@@ -51,6 +69,8 @@ export function toHtml(text: string): string {
     list = null;
   };
   for (const line of lines) {
+    // A page's drawing rides along on a line of its own; it is not writing.
+    if (line.startsWith(INK_MARK)) continue;
     const b = line.match(BULLET);
     const n = line.match(NUMBERED);
     const want = b ? 'ul' : n ? 'ol' : null;
@@ -73,6 +93,9 @@ export function toHtml(text: string): string {
   return out.join('');
 }
 
+/** The start of the line that carries a page's drawing (see rules/ink.ts). */
+export const INK_MARK = '\u2063ink:';
+
 /** True when there is nothing in the text but whitespace. */
 export const isEmptyText = (text: string) => (text ?? '').trim() === '';
 
@@ -82,7 +105,7 @@ const BLOCK = new Set(['DIV', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI', 'UL
 
 /** A typed character that would read as a mark is escaped. */
 function escapeText(s: string): string {
-  return s.replace(/[\u200b\ufeff]/g, '').replace(/\u00a0/g, ' ').replace(/[\\*~]/g, (c) => `\\${c}`).replace(/__/g, '\\_\\_');
+  return s.replace(/[\u200b\ufeff]/g, '').replace(/\u00a0/g, ' ').replace(/[\\*~[\]]/g, (c) => `\\${c}`).replace(/__/g, '\\_\\_');
 }
 
 /** The marks for a run of inline content. */
@@ -116,7 +139,13 @@ function inlineNode(node: Node): string {
   if (tag === 'S' || tag === 'STRIKE' || tag === 'DEL' || /text-decoration[^;]*line-through/.test(style)) {
     return wrap('~~', inner);
   }
-  return inner;
+  // Colour, highlight, size: kept by name, so a theme can draw them its own way.
+  let out = inner;
+  for (const k of ['s', 'h', 'c'] as MarkKind[]) {
+    const v = el.getAttribute(`data-${k}`) ?? (tag === 'FONT' ? el.getAttribute('face')?.match(new RegExp(`^dnd-${k}-([a-z]+)$`))?.[1] : null);
+    if (v && MARKS[k].includes(v) && out.trim()) out = `[[${k}:${v}|${out}]]`;
+  }
+  return out;
 }
 
 /** A line that would read as a heading or list item, but is not one, is escaped. */
