@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "brew-sources": "node scripts/brew-sources.mjs",
     "subclass-names": "node scripts/subclass-names.mjs",
-    "class-features": "node scripts/class-features.mjs"
+    "class-features": "node scripts/class-features.mjs",
+    "build:worker": "esbuild cloudflare/link-previews.ts --bundle --format=esm --target=es2022 --outfile=cloudflare/dist/link-previews.js"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.8",

@@ -50,15 +50,6 @@ export type BoardData = {
   z?: number;
 };
 
-/**
- * Until database/0008 has been run these do not exist yet; the page says so
- * rather than failing quietly.
- * TODO: drop once the user confirms 0008.
- */
-const notYet = (error: { message?: string; code?: string } | null) =>
-  Boolean(error && (/campaign_live|campaign_board|set_sheet_conditions|does not exist|schema cache/i.test(error.message ?? '') || error.code === 'PGRST202' || error.code === '42P01'));
-const NOT_YET = 'That isn’t set up yet! Run the 0008 migration and try again.';
-
 export type Campaign = {
   id: string;
   name: string;
@@ -193,12 +184,11 @@ export function makeCampaignRepo(client: SupabaseClient) {
     /** The DM sets a player's conditions (only those). */
     async setConditions(sheetId: string, conditions: string[]): Promise<string> {
       const { data, error } = await client.rpc('set_sheet_conditions', { p_sheet: sheetId, p_conditions: conditions });
-      if (notYet(error)) throw new CampaignError(NOT_YET);
       if (error) throw refusal(error);
       return data as string;
     },
 
-    /** What is happening right now; null until 0008 has been run. */
+    /** What is happening right now; null if it can't be read. */
     async live(campaignId: string): Promise<CampaignLive | null> {
       const { data, error } = await client.from('campaign_live').select('playback, invite_rev, updated_at').eq('campaign_id', campaignId).maybeSingle();
       if (error) return null;
@@ -210,7 +200,7 @@ export function makeCampaignRepo(client: SupabaseClient) {
     /** The DM's music, for everyone to follow. */
     async savePlayback(campaignId: string, playback: Playback | null): Promise<void> {
       const { error } = await client.from('campaign_live').update({ playback: playback ?? {} }).eq('campaign_id', campaignId);
-      if (error && !notYet(error)) throw new Error(error.message);
+      if (error) throw new Error(error.message);
     },
 
     async board(campaignId: string): Promise<BoardItem[] | null> {
@@ -225,7 +215,6 @@ export function makeCampaignRepo(client: SupabaseClient) {
       const { data: row, error } = await client.from('campaign_board')
         .insert({ campaign_id: campaignId, created_by: userId, kind, data })
         .select('id, campaign_id, kind, data, created_by, updated_at').single();
-      if (notYet(error)) throw new CampaignError(NOT_YET);
       if (error && /board is full/i.test(error.message)) throw new CampaignError('The board is full! Clear a few things away first.');
       if (error) throw new Error(error.message);
       return row as BoardItem;
