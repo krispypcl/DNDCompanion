@@ -45,6 +45,7 @@
   import TrackerPresets from '$lib/components/TrackerPresets.svelte';
   import { resetTray } from '$lib/stores/tray';
   import TextPanel from '$lib/components/TextPanel.svelte';
+  import ClassCards from '$lib/components/ClassCards.svelte';
   import LinksPanel from '$lib/components/LinksPanel.svelte';
   import UndoToast from '$lib/components/UndoToast.svelte';
   import { sheetRepo } from '$lib/data/sheets';
@@ -931,6 +932,7 @@
                 <TrackerPresets {definition} makeId={newId} open={presetsOpen} onadd={addPreset} onremove={removePreset} />
               {/if}
             {:else if tab === 'Character'}
+              {#if editable}
               <EntryTable
                 items={classes}
                 columns={CLASS_COLUMNS}
@@ -947,6 +949,9 @@
                   rather than the total. Source is the book code for the 5e.tools link.
                 {/snippet}
               </EntryTable>
+              {:else}
+                <ClassCards {classes} />
+              {/if}
               <h3 class="sub-h details-h">Details</h3>
               <DetailsBlock {definition} {editable} onchange={setDefinition} />
             {:else if tab === 'Notes'}
