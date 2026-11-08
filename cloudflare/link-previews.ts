@@ -75,13 +75,43 @@ async function campaignPreview(id: string, env: Env): Promise<Preview | null> {
   };
 }
 
+/**
+ * The page at GitHub, asked for plainly: always over https (an http ORIGIN
+ * would only be sent back to https), and with only the headers that matter,
+ * so nothing about this address confuses GitHub.
+ */
+function fromOrigin(url: URL, request: Request, origin: string): Request {
+  const target = new URL(url.pathname + url.search, origin.trim());
+  target.protocol = 'https:';
+  const headers = new Headers();
+  for (const name of ['accept', 'accept-language', 'user-agent', 'if-none-match', 'if-modified-since', 'range']) {
+    const value = request.headers.get(name);
+    if (value) headers.set(name, value);
+  }
+  return new Request(target.toString(), { method: request.method, headers, redirect: 'manual' });
+}
+
+/** A redirect from GitHub to itself points back here instead, so people stay on this address. */
+function keepHere(res: Response, url: URL, origin?: string): Response {
+  const location = res.headers.get('location');
+  if (!origin || !location || res.status < 300 || res.status > 399) return res;
+  const to = new URL(location, url);
+  const github = new URL(origin.trim());
+  if (to.hostname !== github.hostname) return res;
+  to.protocol = url.protocol;
+  to.host = url.host;
+  const headers = new Headers(res.headers);
+  headers.set('location', to.toString());
+  return new Response(res.body, { status: res.status, headers });
+}
+
 const set = (value: string) => ({ element: (el: Element) => { el.setAttribute('content', value); } });
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     if (env.ORIGIN && url.pathname === '/') return Response.redirect(new URL(env.HOME_PATH || '/DNDCompanion/', url).toString(), 302);
-    const upstream = await fetch(env.ORIGIN ? new Request(new URL(url.pathname + url.search, env.ORIGIN).toString(), request) : request);
+    const upstream = keepHere(await fetch(env.ORIGIN ? fromOrigin(url, request, env.ORIGIN) : request), url, env.ORIGIN);
 
     const html = (upstream.headers.get('content-type') ?? '').includes('text/html');
     const match = url.pathname.match(SHEET) ?? url.pathname.match(CAMPAIGN);
