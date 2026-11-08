@@ -196,6 +196,8 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
+/* The loading die, in the middle of the window wherever it is drawn. */
+.screen-center { position: fixed; inset: 0; z-index: 5; display: grid; place-items: center; pointer-events: none; }
 /* Shared by the `bump` action in src/lib/motion.ts. */
 .fx-bump { animation: fx-bump 0.45s cubic-bezier(0.3, 1.5, 0.5, 1); }
 @keyframes fx-bump {

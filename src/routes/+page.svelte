@@ -416,7 +416,7 @@
       <code>PUBLIC_SUPABASE_ANON_KEY</code> and rebuild.
     </p>
   {:else if $session.loading}
-    <div class="dieload"><D20Loader size={56} label="Signing in" /></div>
+    <div class="dieload screen-center"><D20Loader size={56} label="Signing in" /></div>
   {:else}
     <div class="bar">
       <h2>Your characters</h2>
@@ -467,7 +467,7 @@
     {#if notice}<p class="note" role="status">{notice}</p>{/if}
 
     {#if loading || !listShown}
-      <div class="dieload">
+      <div class="dieload screen-center">
         <D20Loader size={56} label="Loading your characters" result={loading ? null : error ? 1 : 20}
                    onlanded={() => (listShown = true)} />
       </div>
@@ -656,7 +656,7 @@
     transition: border-color 0.15s ease, color 0.15s ease;
   }
   .me:hover { border-color: var(--a-edge); color: var(--a); }
-  .dieload { display: grid; place-items: center; padding: 3rem 0; }
+  .dieload { min-height: 40vh; }
   .dim { color: var(--dim); }
   .warn { color: var(--accent); font-size: 0.9rem; }
   code { font-size: 0.85em; }

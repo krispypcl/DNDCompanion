@@ -244,7 +244,9 @@
 
   $effect(() => {
     if (typeof location === 'undefined') return;
-    const wanted = TABS.find((t) => t.toLowerCase() === location.hash.slice(1).toLowerCase());
+    const hash = location.hash.slice(1).toLowerCase();
+    // The Appearance tab was called Links.
+    const wanted = TABS.find((t) => t.toLowerCase() === (hash === 'links' ? 'appearance' : hash));
     if (wanted) activeTab = wanted;
   });
 
@@ -577,7 +579,7 @@
   <!-- The sheet's outline, dimmed, with the die rolling over it. -->
   <div class="loading">
     <SheetSkeleton />
-    <div class="die">
+    <div class="screen-center">
       <D20Loader result={loading ? null : loadError ? 1 : 20} label="Loading the sheet"
                  onlanded={() => (revealed = true)} />
     </div>
@@ -957,7 +959,7 @@
               {/if}
             {:else if tab === 'Notes'}
               {@render writing('notes', 'Notes')}
-            {:else if tab === 'Links'}
+            {:else if tab === 'Appearance'}
               <LinksPanel {definition} {editable} onchange={setDefinition} />
             {:else}
               {@render writing('backstory', 'Backstory')}
@@ -990,16 +992,10 @@
         <h2 class="cap defs-h">Defenses</h2>
         <div class="defense">
           <div class="defbox">
+            <!-- Worked out, never typed: armour and shields are equipped on the Equipment tab. -->
             <Why title="Armor Class" parts={ac.parts} total={String(ac.total)}
-                 hint={ac.computed ? 'Worked out from what is equipped.' : 'Equip armour or a shield on the Equipment tab to have it worked out.'}>
-              <b use:bump={ac.total}>
-                {#if ac.computed}
-                  <span class="computed" title="Worked out from equipped items">{ac.total}</span>
-                {:else}
-                  <EditableField value={definition.combat?.ac} {editable} type="number"
-                                 label="AC" onchange={(v) => patchCombat('ac', Number(v))} />
-                {/if}
-              </b>
+                 hint={ac.computed ? 'Worked out from what is equipped.' : 'Nothing worn yet. Equip armour or a shield on the Equipment tab to change it.'}>
+              <b use:bump={ac.total}><span class="computed">{ac.total}</span></b>
             </Why>
             <span class="cap">Armor Class</span>
           </div>
@@ -1179,8 +1175,7 @@
 
   .loading { position: relative; }
   .loading > :global(.skel) { opacity: 0.45; }
-  .loading .die { position: fixed; inset: 0; display: grid; place-items: center; pointer-events: none; }
-  /* Not positioned: the banner inside it is meant to escape this column and
+    /* Not positioned: the banner inside it is meant to escape this column and
      run the width of the page. */
   .sheet { padding: 1.5rem; max-width: 110rem; margin: 0 auto; }
   .panel {

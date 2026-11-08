@@ -62,7 +62,7 @@
 <svelte:head><title>{target ? `Join ${target.name}` : 'Join a campaign'}</title></svelte:head>
 
 {#if !looked || $session.loading || !landed}
-  <div class="loading">
+  <div class="loading screen-center">
     <D20Loader size={56} label="Opening the invite" result={!looked || $session.loading ? null : target ? 20 : 1}
                onlanded={() => (landed = true)} />
   </div>
@@ -103,7 +103,7 @@
 {/if}
 
 <style>
-  .loading { display: grid; place-items: center; min-height: 60vh; }
+  .loading { min-height: 60vh; }
   main { max-width: 32rem; margin: 0 auto; padding: 3rem 1rem 4rem; }
   .home { display: inline-grid; margin-bottom: 1.5rem; }
   .eyebrow { margin: 0; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--a); }

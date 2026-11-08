@@ -15,6 +15,7 @@
   import {
     characterLevel,
     classList,
+    armorClass,
     modifierOf,
     passiveScore,
     proficiencyBonus,
@@ -153,7 +154,7 @@
       <div class="col">
         <div class="tray">
           <div class="trio">
-            <div class="shield"><b>{def.combat?.ac ?? ''}</b><small>Armor Class</small></div>
+            <div class="shield"><b>{armorClass(def).total}</b><small>Armor Class</small></div>
             <div class="sq"><b>{sign(initiative)}</b><small>Initiative</small></div>
             <div class="sq"><b>{def.combat?.speed ?? ''}{def.combat?.speed ? ' ft.' : ''}</b><small>Speed</small></div>
           </div>
