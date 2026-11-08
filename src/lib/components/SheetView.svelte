@@ -991,21 +991,23 @@
 
         <h2 class="cap defs-h">Defenses</h2>
         <div class="defense">
+          <Why title="Armor Class" parts={ac.parts} total={String(ac.total)}
+               hint={ac.computed ? 'Worked out from what is equipped.' : 'Nothing worn yet. Equip armour or a shield on the Equipment tab to change it.'}>
           <div class="defbox">
             <!-- Worked out, never typed: armour and shields are equipped on the Equipment tab. -->
-            <Why title="Armor Class" parts={ac.parts} total={String(ac.total)}
-                 hint={ac.computed ? 'Worked out from what is equipped.' : 'Nothing worn yet. Equip armour or a shield on the Equipment tab to change it.'}>
-              <b use:bump={ac.total}><span class="computed">{ac.total}</span></b>
-            </Why>
+            <b use:bump={ac.total}><span class="computed">{ac.total}</span></b>
             <span class="cap">Armor Class</span>
           </div>
-          <div class="defbox">
-            <Why title="Initiative" parts={initiativeParts(definition).parts} total={sign(initiative)}>
+          </Why>
+          <Why title="Initiative" parts={initiativeParts(definition).parts} total={sign(initiative)}
+               hint={!editable && isOwner ? 'Press it to roll initiative.' : ''}>
+          <div class="defbox" class:rollable={!editable && isOwner}>
             <b use:bump={initiative}>
               {#if !editable && isOwner}
-                <!-- Out of edit mode, initiative is a die to roll. -->
+                <!-- Out of edit mode, initiative is a die to roll: the whole box is the button. -->
                 <button class="rollnum" title="Roll initiative: d20 {sign(initiative)}" aria-label="Roll initiative"
                         onclick={() => rollSkill('Initiative', initiative)}>{sign(initiative)}</button>
+                <svg class="d20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 20.5 7.4v9.2L12 21.5 3.5 16.6V7.4zM12 7.5l4.3 7.4H7.7zM12 2.5v5M20.5 7.4l-4.2 7.5M3.5 7.4l4.2 7.5M7.7 14.9 3.5 16.6M16.3 14.9l4.2 1.7M7.7 14.9 12 21.5l4.3-6.6" /></svg>
               {:else}
                 <EditableField value={definition.combat?.initiative ?? ''}
                                display={definition.combat?.initiative == null ? sign(initiative) : undefined}
@@ -1014,19 +1016,19 @@
                                onchange={(v) => patchCombat('initiative', v === '' ? undefined : Number(v))} />
               {/if}
             </b>
-            </Why>
             <span class="cap">Initiative</span>
           </div>
+          </Why>
+          <!-- From total level, all classes together; not typed in. -->
+          <Why title="Proficiency" parts={[{ label: `Total level ${characterLevel(definition)}`, value: proficiencyBonus(definition) }]}
+               total={sign(proficiencyBonus(definition))} hint="+2 at levels 1–4, +1 more every 4 levels after; all classes together.">
           <div class="defbox">
-            <!-- From total level, all classes together; not typed in. -->
-            <Why title="Proficiency" parts={[{ label: `Total level ${characterLevel(definition)}`, value: proficiencyBonus(definition) }]}
-                 total={sign(proficiencyBonus(definition))} hint="+2 at levels 1–4, +1 more every 4 levels after; all classes together.">
-              <b use:bump={proficiencyBonus(definition)}>{sign(proficiencyBonus(definition))}</b>
-            </Why>
+            <b use:bump={proficiencyBonus(definition)}>{sign(proficiencyBonus(definition))}</b>
             <span class="cap">Proficiency</span>
           </div>
+          </Why>
+          <Why title="Speed" parts={speed.parts} total="{speed.total} ft.">
           <div class="defbox">
-            <Why title="Speed" parts={speed.parts} total="{speed.total} ft.">
             <b use:bump={speed.total}>
               <EditableField value={definition.combat?.speed}
                              display={definition.combat?.speed != null
@@ -1035,9 +1037,9 @@
                              {editable} type="number"
                              label="Speed" onchange={(v) => patchCombat('speed', Number(v))} />
             </b>
-            </Why>
             <span class="cap">Speed</span>
           </div>
+          </Why>
           <div class="defbox">
             <b use:bump={definition.abilitySaveDc}>
               <EditableField value={definition.abilitySaveDc ?? ''} {editable} type="number"
@@ -1367,11 +1369,10 @@
   .rail-skills { order: -1; }
   .rail-right { order: 1; display: flex; flex-direction: column; }
   .centre { display: flex; flex-direction: column; }
-  /* Wide screens: the middle module is as tall as the columns beside it (and
-     at least a screenful), whatever tab is open; what is longer scrolls
-     inside it rather than stretching the page. */
+  /* Wide screens: the middle module is exactly as tall as the taller column
+     beside it, whatever tab is open; what is longer scrolls inside it, and a
+     wheel that has nothing left to scroll there moves the page. */
   @media (min-width: 861px) {
-    .main { min-height: min(46rem, 85vh); }
     .centre { height: 0; min-height: 100%; }
   }
 
@@ -1394,8 +1395,25 @@
     font: inherit; color: inherit; background: none; border: 0; padding: 0.125rem 0.375rem; margin: -0.125rem 0;
     border-radius: var(--r-sm); cursor: pointer; transition: color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
   }
-  .rollnum:hover { color: var(--a); background: var(--a-wash); }
-  .rollnum:active { transform: translateY(1px); }
+  /* The whole box is the button (the number's ::after covers it). Not the
+     skills' dashed outline: a d20 sits in the corner, and on hover the box
+     rises into the accent while the die gives a turn. */
+  .defbox.rollable { position: relative; cursor: pointer; transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s cubic-bezier(0.3, 1.4, 0.5, 1), box-shadow 0.2s ease; }
+  .rollnum::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+  .rollnum:focus-visible { outline: none; }
+  .defbox.rollable:has(.rollnum:focus-visible) { outline: 2px solid var(--a); outline-offset: 2px; }
+  .defbox.rollable:hover {
+    border-color: var(--a-edge); background: var(--a-wash); transform: translateY(-2px);
+    box-shadow: 0 8px 18px -10px color-mix(in oklch, var(--a) 75%, transparent);
+  }
+  .defbox.rollable:hover b { color: var(--a); }
+  .defbox.rollable:active { transform: translateY(0); box-shadow: none; }
+  .defbox .d20 {
+    position: absolute; top: 0.375rem; right: 0.375rem; width: 0.8125rem; height: 0.8125rem;
+    fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; color: var(--faint);
+    transition: color 0.2s ease, transform 0.35s cubic-bezier(0.3, 1.5, 0.5, 1); pointer-events: none;
+  }
+  .defbox.rollable:hover .d20 { color: var(--a); transform: rotate(72deg) scale(1.2); }
   .defbox b {
     display: block; font-size: 1.375rem; font-weight: 600; line-height: 1;
     color: var(--text); font-variant-numeric: tabular-nums;

@@ -30,9 +30,15 @@
 
   let box = $state<HTMLDivElement>();
   let width = $state(1);
+  let height = $state(1);
   $effect(() => {
     if (!box) return;
-    const ro = new ResizeObserver(() => (width = Math.max(1, box!.clientWidth)));
+    // Both sides, so the drawing's frame is always the page's: a frame drawn
+    // for a shorter page shrank every line towards the top left.
+    const ro = new ResizeObserver(() => {
+      width = Math.max(1, box!.clientWidth);
+      height = Math.max(1, box!.clientHeight);
+    });
     ro.observe(box);
     return () => ro.disconnect();
   });
@@ -82,7 +88,7 @@
 <div class="ink paper-{ink?.paper ?? 'plain'}" class:drawing class:erasing bind:this={box}
      onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={() => (live = null)}
      onpointerleave={() => (pressed = false)}>
-  <svg viewBox="0 0 1000 {Math.max(1, (box?.clientHeight ?? 1) / scale)}" preserveAspectRatio="xMinYMin meet" aria-hidden="true">
+  <svg viewBox="0 0 1000 {Math.max(1, height / scale)}" preserveAspectRatio="xMinYMin meet" aria-hidden="true">
     {#each ink?.s ?? [] as s, i (i + ':' + s.p.length + ':' + s.p[0])}
       <path d={d(s.p)} style:stroke={s.c} stroke-width={s.w} class:hit={drawing && erasing}
             onpointerdown={() => drawing && erasing && onerase(i)} onpointerenter={() => drawing && erasing && pressed && onerase(i)}
@@ -93,7 +99,9 @@
 </div>
 
 <style>
-  .ink { position: absolute; inset: 0; z-index: 2; pointer-events: none; border-radius: 4px; }
+  /* The writing's size, so lines on lined paper sit under its lines. */
+  .ink { position: absolute; inset: 0; z-index: 2; pointer-events: none; border-radius: 4px; font-size: 1.0625em; }
+  @media (max-width: 700px) { .ink { font-size: max(1em, 16px); } }
   .ink.drawing { pointer-events: auto; touch-action: none; cursor: crosshair; }
   .ink.drawing.erasing { cursor: cell; }
   svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }

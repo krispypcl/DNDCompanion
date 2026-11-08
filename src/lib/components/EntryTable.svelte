@@ -874,10 +874,13 @@
   .muted { color: var(--dim); font-size: 0.85rem; }
   .numeric { font-variant-numeric: tabular-nums; }
   /* Centred on the row rather than aligned with the first line of text. */
-  .rm { padding-right: 0; vertical-align: middle; }
+  /* The handle and the remove button: at the top, centred on the first field
+     of the row (a field is --field-h tall), however tall the row grows. */
+  .rm { padding-right: 0; vertical-align: top; }
+  table { --field-h: calc(0.875rem * 1.4 + 0.4rem + 2px); }
   input, select, textarea {
     background: var(--bg); border: 1px solid var(--line); color: var(--text);
-    border-radius: var(--r-sm); padding: 0.2rem 0.35rem; font: inherit;
+    border-radius: var(--r-sm); padding: 0.2rem 0.35rem; font: inherit; line-height: 1.4;
     font-size: 0.875rem; width: 100%; min-width: 0; box-sizing: border-box;
     transition: border-color 0.15s ease;
   }
@@ -901,8 +904,12 @@
   .x:hover { color: var(--danger); }
   /* The handle: grabbed, not clicked, so the page must not scroll under a
      finger dragging it. */
-  .gripcell { padding-right: 0.25rem; vertical-align: middle; }
-  .grip { cursor: grab; touch-action: none; display: inline-grid; place-items: center; vertical-align: middle; }
+  td.gripcell { padding: 0.4rem 0 0.4rem 0.125rem; vertical-align: top; }
+  .grip {
+    cursor: grab; touch-action: none; display: grid; place-items: center;
+    width: 1.375rem; height: var(--field-h); padding: 0;
+  }
+  .rm .x { display: grid; place-items: center; height: var(--field-h); }
   .grip:hover:not(:disabled) { color: var(--a); background: var(--a-wash); }
   .grip:disabled { opacity: 0.3; cursor: default; }
   .dragging, .dragging * { cursor: grabbing !important; user-select: none; }
@@ -922,7 +929,7 @@
   .tick span.yes { color: var(--a); font-weight: 600; }
   .tick input {
     width: 1rem; height: 1rem; accent-color: var(--a); cursor: pointer;
-    display: block; margin: 0.4375rem auto 0;
+    display: block; margin: calc((var(--field-h) - 1rem) / 2) auto 0;
   }
   .addrow { display: flex; align-items: center; gap: 0.375rem; margin-top: 0.75rem; }
   /* The handles and remove buttons come in with edit mode rather than popping. */
@@ -1059,6 +1066,7 @@
     }
     table.editing td.rm::before { content: none; }
     table.editing .x, table.editing .grip { font-size: 1.125rem; padding: 0.375rem 0.75rem; }
+    table.editing .grip, table.editing .rm .x { width: auto; height: auto; }
     /* On a card the handle sits in the footer's left corner, across from
        remove in the right. */
     table.editing tr:not(.group) { position: relative; }

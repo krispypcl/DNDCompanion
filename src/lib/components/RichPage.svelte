@@ -247,15 +247,18 @@
   .rich :global(s), .rich :global(strike) { color: var(--dim); }
   /* Colours read on both light and dark pages; highlights are washes, so the
      writing on them stays the page's own colour. */
-  .rich :global([data-c='red']) { color: oklch(66% 0.2 25); }
-  .rich :global([data-c='orange']) { color: oklch(72% 0.16 55); }
-  .rich :global([data-c='gold']) { color: oklch(78% 0.15 88); }
-  .rich :global([data-c='green']) { color: oklch(68% 0.16 145); }
-  .rich :global([data-c='teal']) { color: oklch(70% 0.11 190); }
-  .rich :global([data-c='blue']) { color: oklch(66% 0.15 250); }
-  .rich :global([data-c='purple']) { color: oklch(66% 0.17 300); }
-  .rich :global([data-c='pink']) { color: oklch(70% 0.17 350); }
-  .rich :global([data-c='grey']) { color: var(--dim); }
+  .rich :global([data-c]) { color: var(--ink-c); }
+  .rich :global([data-c='red']) { --ink-c: var(--ink-red); }
+  .rich :global([data-c='orange']) { --ink-c: var(--ink-orange); }
+  .rich :global([data-c='gold']) { --ink-c: var(--ink-gold); }
+  .rich :global([data-c='lime']) { --ink-c: var(--ink-lime); }
+  .rich :global([data-c='green']) { --ink-c: var(--ink-green); }
+  .rich :global([data-c='teal']) { --ink-c: var(--ink-teal); }
+  .rich :global([data-c='blue']) { --ink-c: var(--ink-blue); }
+  .rich :global([data-c='purple']) { --ink-c: var(--ink-purple); }
+  .rich :global([data-c='pink']) { --ink-c: var(--ink-pink); }
+  .rich :global([data-c='brown']) { --ink-c: var(--ink-brown); }
+  .rich :global([data-c='grey']) { --ink-c: var(--ink-grey); }
   .rich :global([data-h]) { border-radius: 0.2em; padding: 0 0.1em; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
   .rich :global([data-h='yellow']) { background: oklch(88% 0.17 98 / 0.38); }
   .rich :global([data-h='green']) { background: oklch(80% 0.17 145 / 0.32); }
