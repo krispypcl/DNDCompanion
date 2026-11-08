@@ -30,9 +30,12 @@
     ontitle,
     lead,
     follow = null,
-    resume = null
+    resume = null,
+    idle = ''
   }: {
     url: string;
+    /** With no music to play yet: the player drawn still, saying this. */
+    idle?: string;
     /** A sheet's player or a campaign's jukebox: each remembers its own loop. */
     place?: MusicPlace;
     /** Told when the music runs out (loop off): the jukebox moves on. */
@@ -650,6 +653,21 @@
       </button>
     </div>
   </div>
+{:else if idle}
+  <!-- Nothing to play yet: the same player, at rest, waiting. -->
+  <div class="music idle" role="group" aria-label="Music" in:fade={{ duration: 200 }}>
+    <div class="title" aria-live="polite"><span class="text">{idle}</span></div>
+    <div class="time">
+      <span class="t">0:00</span>
+      <input type="range" min="0" max="1" value="0" aria-label="Song position" disabled style:--p="0%" />
+      <span class="t">−0:00</span>
+    </div>
+    <div class="row follow">
+      <button class="ctl play listen" aria-label="Listen along" title="Nothing to listen to yet" disabled>
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2.5 6.2h2.3l3-2.6v8.8l-3-2.6H2.5z" fill="currentColor" /><path d="M10.4 6a2.8 2.8 0 0 1 0 4M12.3 4.2a5.4 5.4 0 0 1 0 7.6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /></svg>
+      </button>
+    </div>
+  </div>
 {/if}
 
 <style>
@@ -662,6 +680,7 @@
     backdrop-filter: blur(16px) saturate(1.1); -webkit-backdrop-filter: blur(16px) saturate(1.1);
     padding: 0.4375rem 0.75rem 0.5rem;
   }
+  .idle .title .text { color: var(--dim); }
   /* As with the modules, no frost on a phone: it is costly to keep redrawing. */
   @media (max-width: 720px), (pointer: coarse) {
     .music { backdrop-filter: none; -webkit-backdrop-filter: none; background: color-mix(in oklch, var(--surface) 82%, transparent); }

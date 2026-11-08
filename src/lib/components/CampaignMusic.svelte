@@ -174,10 +174,10 @@
       {#if playingSong}
         <MusicPlayer url={playingSong.url} place="campaign" onended={next} ontitle={learnTitle}
                      lead={lead ? told : undefined} follow={followMoment} resume={resumeMoment} />
+      {:else if lead}
+        <p class="none" in:fade={{ duration: 160 }}>Add a song or a playlist and it plays here, for the whole table.</p>
       {:else}
-        <p class="none" in:fade={{ duration: 160 }}>
-          {lead ? 'Add a song or a playlist and it plays here, for the whole table.' : 'The DM hasn’t started any music yet.'}
-        </p>
+        <MusicPlayer url="" idle="Waiting for the DM to play music..." />
       {/if}
     </div>
     <div class="list">
