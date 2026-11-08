@@ -19,6 +19,33 @@ export async function signIn(email: string, password: string) {
   await unwrap(supabase.auth.signInWithPassword({ email, password }));
 }
 
+/**
+ * Google: sign in (or sign up) with a Google account, or connect one to the
+ * account already signed in. Both leave for Google and come back to `next`
+ * on this site. They work once Google is switched on in the Supabase
+ * project (Authentication → Providers), and connecting also needs manual
+ * linking allowed there.
+ */
+export async function signInWithGoogle(redirectTo: string) {
+  const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
+  if (error) throw new Error(googleMessage(error.message));
+}
+export async function linkGoogle(redirectTo: string) {
+  const { error } = await supabase.auth.linkIdentity({ provider: 'google', options: { redirectTo } });
+  if (error) throw new Error(googleMessage(error.message));
+}
+/** The sign-in services this account can use ("email", "google"). */
+export function providersOf(user: { identities?: { provider: string }[]; app_metadata?: { providers?: string[] } } | null | undefined): string[] {
+  const from = user?.identities?.map((i) => i.provider) ?? user?.app_metadata?.providers ?? [];
+  return [...new Set(from)];
+}
+function googleMessage(m: string): string {
+  if (/not enabled|unsupported provider/i.test(m)) return 'Google sign-in isn’t switched on yet! It needs turning on in Supabase first.';
+  if (/manual linking/i.test(m)) return 'Connecting Google isn’t switched on yet! Allow manual linking in Supabase first.';
+  if (/already.*linked|identity.*exists/i.test(m)) return 'That Google account already belongs to another player!';
+  return m;
+}
+
 export async function signOut() {
   await unwrap(supabase.auth.signOut());
 }
@@ -37,8 +64,13 @@ export type Profile = { displayName: string; avatarUrl: string };
 export function profileOf(user: { user_metadata?: Record<string, unknown> } | null | undefined): Profile {
   const meta = user?.user_metadata ?? {};
   return {
-    displayName: typeof meta.display_name === 'string' ? meta.display_name : '',
-    avatarUrl: typeof meta.avatar_url === 'string' ? meta.avatar_url : ''
+    // A Google account brings its own name and picture; one typed here wins.
+    displayName:
+      typeof meta.display_name === 'string' && meta.display_name
+        ? meta.display_name
+        : typeof meta.full_name === 'string' ? meta.full_name : typeof meta.name === 'string' ? meta.name : '',
+    avatarUrl:
+      typeof meta.avatar_url === 'string' && meta.avatar_url ? meta.avatar_url : typeof meta.picture === 'string' ? meta.picture : ''
   };
 }
 

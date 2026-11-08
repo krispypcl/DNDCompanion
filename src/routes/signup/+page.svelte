@@ -9,6 +9,7 @@
 </script>
 
 <AuthForm
+  google
   title="Create an account"
   name="Create an account"
   submitLabel="Sign up"
