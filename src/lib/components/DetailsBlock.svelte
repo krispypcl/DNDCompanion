@@ -4,7 +4,6 @@
    * and the long-form writing. Spellcasting lives on the Spells tab, since it
    * is about casting rather than about the person.
    */
-  import { parsePlaylist } from '$lib/music';
   import EditableField from './EditableField.svelte';
   import Lightbox from './Lightbox.svelte';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
@@ -50,16 +49,10 @@
     { key: 'allies', label: 'Allies & organizations', placeholder: 'Who they can call on.' }
   ];
 
-  const portraitLink = $derived(resolveImageUrl(definition.identity.portraitUrl));
-  const bannerLink = $derived(resolveImageUrl(definition.identity.bannerUrl));
-  const portrait = $derived(portraitLink.url);
-  const bannerSrc = $derived(bannerLink.url);
+  const portrait = $derived(resolveImageUrl(definition.identity.portraitUrl).url);
+  const bannerSrc = $derived(resolveImageUrl(definition.identity.bannerUrl).url);
   /** A picture that failed to load falls back to the empty frame. */
   let broken = $state<Record<string, boolean>>({});
-  /** Whether each resolved address actually loaded, so a link that cannot be
-      shown says so while it is being pasted rather than leaving a blank. */
-  let loads = $state<Record<string, 'loading' | 'ok' | 'failed'>>({});
-  const loadState = (url: string) => (url ? (loads[url] ?? 'loading') : null);
   /** The picture shown full screen, if any. */
   let viewing = $state<{ src: string; alt: string; from?: Element | null } | null>(null);
   const traits = $derived(definition.traits ?? {});
@@ -153,75 +146,6 @@
     {/if}
   {/if}
 
-  {#if editable}
-    <!-- Both accept the link as it was copied: a Drive, Dropbox, OneDrive or
-         Imgur page is turned into the picture's own address when drawn. A
-         preview beside the field says whether it actually loads. -->
-    {#each [
-      { role: 'portrait', label: 'Portrait URL', key: 'portraitUrl', link: portraitLink, placeholder: 'Paste an image link: Google Drive, Imgur, Pinterest, Dropbox…' },
-      { role: 'banner', label: 'Banner URL', key: 'bannerUrl', link: bannerLink, placeholder: 'Optional: a wide picture shown behind the sheet' }
-    ] as const as field (field.role)}
-      {@const status = loadState(field.link.url)}
-      <div class="wide" data-flip-ghost="details:url:{field.role}" data-ghost-scale="0.94">
-        <dt>{field.label}</dt>
-        <div class="urlrow">
-          <div class="urlfield">
-            <EditableField
-              value={definition.identity[field.key] ?? ''}
-              editable={true}
-              label={field.label}
-              placeholder={field.placeholder}
-              onchange={(v) => patchIdentity(field.key, String(v))}
-            />
-          </div>
-          {#if field.link.url}
-            <button type="button" class="thumb {field.role}" class:failed={status === 'failed'} class:ready={status === 'ok'}
-                    disabled={status !== 'ok'}
-                    aria-label="View {field.role} full screen"
-                    title={status === 'failed' ? 'This link didn’t turn into a picture!' : 'View full screen'}
-                    onclick={(e) => (viewing = { src: field.link.url, alt: field.label.replace(' URL', ''), from: e.currentTarget })}>
-              {#key field.link.url}
-                <img src={field.link.url} alt=""
-                     onload={() => (loads[field.link.url] = 'ok')}
-                     onerror={() => (loads[field.link.url] = 'failed')} />
-              {/key}
-            </button>
-          {/if}
-        </div>
-        {#if status === 'failed'}
-          <p class="urlnote bad" role="status">
-            That link didn’t turn into a picture! {field.link.source === 'drive' || field.link.source === 'onedrive'
-              ? 'Check it is shared with anyone who has the link.'
-              : 'Open the picture itself, copy its image address and paste that instead.'}
-          </p>
-        {:else if field.link.note}
-          <p class="urlnote" class:bad={field.link.source === 'invalid'} role="status">{field.link.note}</p>
-        {/if}
-      </div>
-    {/each}
-    <!-- The sheet's music: a YouTube or YouTube Music link. -->
-    <div class="wide" data-flip-ghost="details:url:playlist" data-ghost-scale="0.94">
-      <dt>Playlist URL</dt>
-      <div class="urlrow">
-        <div class="urlfield">
-          <EditableField
-            value={definition.identity.playlistUrl ?? ''}
-            editable={true}
-            label="Playlist URL"
-            placeholder="Optional: a YouTube or YouTube Music playlist, or one video"
-            onchange={(v) => patchIdentity('playlistUrl', String(v).trim())}
-          />
-        </div>
-      </div>
-      {#if definition.identity.playlistUrl?.trim()}
-        {@const found = parsePlaylist(definition.identity.playlistUrl)}
-        <p class="urlnote" class:bad={!found} role="status">
-          {#if !found}That’s not a tune we know! Paste a YouTube or YouTube Music link.
-          {:else}Plays up top. The speaker button is its mute.{/if}
-        </p>
-      {/if}
-    </div>
-  {/if}
 </section>
 
 {#if viewing}
@@ -300,10 +224,6 @@
   dd :global(.field) { width: 100%; field-sizing: fixed; }
   /* The URL is long and reads left to right; the writing below is prose. */
   .empty-portrait { display: grid; place-items: center; color: var(--faint); background: var(--raised); }
-  .wide { flex: 1 1 100%; min-width: 0; text-align: left; }
-  .wide :global(.field) { width: 100%; field-sizing: fixed; }
-  .urlrow { display: flex; align-items: center; gap: 0.625rem; }
-  .urlfield { flex: 1 1 auto; min-width: 0; }
   .banner {
     align-self: center; width: 9.5rem; height: 5.5rem; flex: none;
     object-fit: cover; border-radius: var(--r); border: 1px solid var(--line); display: block;
@@ -329,22 +249,6 @@
   }
   .portrait-btn:hover { opacity: 0.9; transform: scale(1.02); }
   .portrait-btn .portrait { display: block; }
-  .thumb {
-    padding: 0; cursor: zoom-in;
-    flex: none; height: 2.125rem; border-radius: var(--r-sm); overflow: hidden;
-    border: 1px solid var(--line); background: var(--raised); position: relative;
-    opacity: 0.4; transition: opacity 0.25s ease, border-color 0.25s ease, transform 0.15s ease;
-  }
-  .thumb.portrait { width: 2.125rem; }
-  .thumb.banner { width: 4.5rem; }
-  .thumb.ready { opacity: 1; }
-  .thumb.ready:hover { border-color: var(--a-edge); transform: scale(1.04); }
-  .thumb:disabled { cursor: default; }
-  .thumb.failed { opacity: 1; border-color: var(--danger); background: var(--danger-wash); }
-  .thumb.failed img { visibility: hidden; }
-  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .urlnote { margin: 0.1875rem 0 0 calc(0.3rem + 1px); font-size: 0.78rem; line-height: 1.45; color: var(--dim); }
-  .urlnote.bad { color: var(--danger); }
 
   .writing {
     display: grid;
