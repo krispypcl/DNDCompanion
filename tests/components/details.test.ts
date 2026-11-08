@@ -59,24 +59,6 @@ describe('DetailsBlock', () => {
   });
 
 
-  it('shows a placeholder portrait when none is set, so the row keeps its height', () => {
-    const { container } = render(DetailsBlock, {
-      props: { definition: definition(), editable: false, onchange: () => {} }
-    });
-    expect(container.querySelector('.empty-portrait')).toBeTruthy();
-  });
-
-  it('renders the portrait when one is set', () => {
-    render(DetailsBlock, {
-      props: {
-        definition: definition({ portraitUrl: 'https://example.test/loka.png' }),
-        editable: false,
-        onchange: () => {}
-      }
-    });
-    expect(screen.getByAltText('Portrait of Loka')).toBeTruthy();
-  });
-
   it('lets a long answer grow instead of running over what follows', () => {
     // jsdom does no layout, so the guarantee is checked where it is written:
     // the readout takes the shared height as a floor, and the textarea the

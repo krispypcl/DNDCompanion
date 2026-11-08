@@ -6,6 +6,7 @@
  * for as long as a character is dying.
  */
 import { get, writable } from 'svelte/store';
+import { loadYouTube, youtubeClip, type YTPlayer } from './music';
 
 const SOUND_KEY = 'dndcompanion:sound';
 
@@ -62,9 +63,11 @@ export function setCustomSounds(next: Partial<Record<SoundName, string>> | undef
     if (url) custom[k as SoundName] = url;
   }
 }
-/** A share link turned into the file itself, where the service allows it. */
+/** A share link turned into the file itself, where the service allows it. A
+    YouTube link stays as it is: it plays through a hidden YouTube player. */
 export function audioUrl(raw: string | undefined | null): string | null {
   const text = String(raw ?? '').trim();
+  if (youtubeClip(text)) return /^https?:\/\//i.test(text) ? text : `https://${text}`;
   if (!/^https?:\/\//i.test(text)) return null;
   try {
     const u = new URL(text);
@@ -92,6 +95,8 @@ function own(name: SoundName): boolean {
 }
 /** Plays a recording once (also the preview beside its link). */
 export function playClip(url: string) {
+  const yt = youtubeClip(url);
+  if (yt) return void playYouTube(yt);
   let clip = clips.get(url);
   if (!clip) {
     clip = new Audio(url);
@@ -101,6 +106,46 @@ export function playClip(url: string) {
   clip.currentTime = 0;
   clip.volume = 0.8;
   void clip.play().catch(() => {});
+}
+
+// ── Sound effects from YouTube ──
+// One hidden player, kept for the next effect: the first one has to load
+// YouTube's player, every later one starts at once.
+let ytPlayer: YTPlayer | null = null;
+let ytReady: Promise<YTPlayer> | null = null;
+function youtubePlayer(): Promise<YTPlayer> {
+  ytReady ??= loadYouTube().then(
+    (YT) =>
+      new Promise<YTPlayer>((resolve, reject) => {
+        const host = document.createElement('div');
+        host.setAttribute('aria-hidden', 'true');
+        host.style.cssText = 'position:fixed;left:-9999px;top:0;width:200px;height:200px;opacity:0;pointer-events:none;';
+        const inner = document.createElement('div');
+        host.appendChild(inner);
+        document.body.appendChild(host);
+        const player = new YT.Player(inner, {
+          width: 200,
+          height: 200,
+          playerVars: { controls: 0, playsinline: 1, disablekb: 1 },
+          events: { onReady: () => resolve((ytPlayer = player)), onError: () => {} }
+        }) as unknown as YTPlayer;
+        setTimeout(() => reject(new Error('YouTube did not load')), 15000);
+      })
+  ).catch((e) => {
+    ytReady = null;
+    throw e;
+  });
+  return ytReady;
+}
+async function playYouTube(clip: { video: string; start: number; end: number }) {
+  try {
+    const player = ytPlayer ?? (await youtubePlayer());
+    player.setVolume(80);
+    player.unMute();
+    player.loadVideoById({ videoId: clip.video, startSeconds: clip.start, endSeconds: clip.end });
+  } catch {
+    /* No YouTube: the effect is simply silent. */
+  }
 }
 
 let ctx: AudioContext | null = null;

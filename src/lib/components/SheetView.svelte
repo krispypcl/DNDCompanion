@@ -46,7 +46,6 @@
   import { resetTray } from '$lib/stores/tray';
   import TextPanel from '$lib/components/TextPanel.svelte';
   import LinksPanel from '$lib/components/LinksPanel.svelte';
-  import ThemePicker from '$lib/components/ThemePicker.svelte';
   import UndoToast from '$lib/components/UndoToast.svelte';
   import { sheetRepo } from '$lib/data/sheets';
   import { isConfigured, supabase } from '$lib/supabase';
@@ -949,18 +948,10 @@
               </EntryTable>
               <h3 class="sub-h details-h">Details</h3>
               <DetailsBlock {definition} {editable} onchange={setDefinition} />
-              {#if editable}
-                <div class="themerow">
-                  <span class="cap">Character theme</span>
-                  <ThemePicker value={definition.identity.theme}
-                               onpreview={(hex) => (themePreview = hex)}
-                               onchange={(name) => patchIdentity('theme', name)} />
-                </div>
-              {/if}
             {:else if tab === 'Notes'}
               {@render writing('notes', 'Notes')}
             {:else if tab === 'Appearance'}
-              <LinksPanel {definition} {editable} onchange={setDefinition} />
+              <LinksPanel {definition} {editable} onchange={setDefinition} onthemepreview={(hex) => (themePreview = hex)} />
             {:else}
               {@render writing('backstory', 'Backstory')}
             {/if}
@@ -1462,7 +1453,6 @@
   }
   .carried b { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 600; }
 
-  .themerow { display: flex; align-items: center; gap: 1rem; margin: 1.25rem 0; flex-wrap: wrap; }
   .casting {
     /* Always three across, centred, so the third never sits alone on a row. */
     display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));

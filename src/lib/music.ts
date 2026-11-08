@@ -36,6 +36,34 @@ export function parsePlaylist(raw: string | undefined | null): Playlist | null {
   return null;
 }
 
+/** "90", "1m30s", "1h2m3s": a YouTube time, in seconds. */
+function seconds(raw: string | null): number | undefined {
+  if (!raw) return undefined;
+  if (/^\d+(\.\d+)?s?$/.test(raw)) return parseFloat(raw);
+  const m = raw.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/);
+  if (!m || !raw) return undefined;
+  return (Number(m[1] ?? 0) * 3600) + (Number(m[2] ?? 0) * 60) + Number(m[3] ?? 0);
+}
+
+/**
+ * A sound effect from YouTube: one video, from where the link says to start
+ * (t= or start=) to where it says to end (end=), or for `longest` seconds.
+ */
+export function youtubeClip(raw: string | undefined | null, longest = 12): { video: string; start: number; end: number } | null {
+  const found = parsePlaylist(raw);
+  if (!found?.video) return null;
+  let url: URL;
+  try {
+    const text = String(raw).trim();
+    url = new URL(/^https?:\/\//i.test(text) ? text : `https://${text}`);
+  } catch {
+    return null;
+  }
+  const start = seconds(url.searchParams.get('t') ?? url.searchParams.get('start')) ?? 0;
+  const end = seconds(url.searchParams.get('end'));
+  return { video: found.video, start, end: end && end > start ? end : start + longest };
+}
+
 /**
  * What YouTube calls a link: a song's title, or a playlist's own name
  * (YouTube's oEmbed answers any page, without a key). Null when it will not
@@ -88,6 +116,8 @@ export type YTPlayer = {
   getCurrentTime(): number;
   getDuration(): number;
   seekTo(seconds: number, allowSeekAhead: boolean): void;
+  loadVideoById(v: { videoId: string; startSeconds?: number; endSeconds?: number }): void;
+  stopVideo(): void;
   destroy(): void;
 };
 
