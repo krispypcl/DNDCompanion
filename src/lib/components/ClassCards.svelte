@@ -73,7 +73,7 @@
   .lvl b { font-size: 1.625rem; line-height: 1.05; color: var(--a-hi); font-variant-numeric: tabular-nums; }
   .who { grid-area: who; min-width: 0; }
   h4 {
-    margin: 0; font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; line-height: 1.15;
+    margin: 0; font-size: 1.5rem; font-weight: 600; line-height: 1.15;
     display: flex; align-items: center; gap: 0.375rem; overflow-wrap: anywhere;
   }
   .sub { margin: 0.125rem 0 0; font-size: 0.9375rem; color: var(--text); display: flex; align-items: center; gap: 0.3125rem; }

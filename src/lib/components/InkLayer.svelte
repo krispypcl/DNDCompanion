@@ -100,7 +100,7 @@
 
 <style>
   /* The writing's size, so lines on lined paper sit under its lines. */
-  .ink { position: absolute; inset: 0; z-index: 2; pointer-events: none; border-radius: 4px; font-size: 1.0625em; }
+  .ink { position: absolute; inset: 0; z-index: 2; pointer-events: none; border-radius: 4px; }
   @media (max-width: 700px) { .ink { font-size: max(1em, 16px); } }
   .ink.drawing { pointer-events: auto; touch-action: none; cursor: crosshair; }
   .ink.drawing.erasing { cursor: cell; }
