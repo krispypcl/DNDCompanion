@@ -58,7 +58,7 @@
   } from '$lib/sheet/edits';
   import { slotsByLevel, spellAttack, spellDc } from '$lib/rules/casting';
   import { featureUrl } from '$lib/rules/lookup';
-  import { brewLoaded, ensureBrewClasses } from '$lib/rules/brewClasses';
+  import { brewLoaded, ensureBrewClasses, ensureEntryIndex } from '$lib/rules/brewClasses';
   import {
     characterLevel,
     classLine,
@@ -143,6 +143,7 @@
   const classes = $derived(definition ? classList(definition) : []);
   // A homebrew class's features are fetched for its links (rules/brewClasses.ts).
   $effect(() => void ensureBrewClasses(classes));
+  $effect(() => void ensureEntryIndex());
   /** What tracker formulas read: level, class levels, proficiency, modifiers. */
   const ctx = $derived(definition ? formulaContext(definition) : null);
   /** Optional: with no banner the sheet renders exactly as it did before. */
@@ -976,6 +977,7 @@
               onchange={setTracker}
               onroll={isOwner ? rollTracker : undefined}
               {classes}
+              books={[definition.identity.ancestrySource, definition.identity.backgroundSource]}
             />
           </div>
         {/if}

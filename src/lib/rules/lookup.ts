@@ -230,6 +230,52 @@ function featureName(label: string): string {
   return FEATURE_ALIASES[clean] ?? clean;
 }
 
+// ── Everything else on 5e.tools, by name (data/entry-index.json) ──
+type EntryKind = 's' | 'o' | 'f' | 'i' | 'r' | 'b';
+type EntryIndex = Record<EntryKind, Record<string, string>>;
+let ENTRIES: EntryIndex | null = null;
+/** Loaded once a sheet needs it (rules/brewClasses.ts, ensureEntryIndex). */
+export function registerEntryIndex(index: EntryIndex) {
+  ENTRIES = index;
+}
+const ENTRY_PAGE: Record<EntryKind, string> = {
+  s: 'spells.html', o: 'optionalfeatures.html', f: 'feats.html', i: 'items.html', r: 'races.html', b: 'backgrounds.html'
+};
+/** Spells first: "Invisibility" is a spell before it is anything else. */
+const ENTRY_ORDER: EntryKind[] = ['s', 'o', 'f', 'i', 'r', 'b'];
+/** Books of the 2014 rules: a sheet built on them links to the 2014 spell. */
+const OLD_RULES = new Set(['phb', 'mtf', 'xge', 'tce', 'vgm', 'scag', 'egw', 'ftd', 'mpmm', 'dmg', 'mm', 'ggr', 'ai', 'scc']);
+
+/**
+ * A spell, item, feat, optional feature, species or background by name,
+ * straight to its page: the book written beside it if it is in that one,
+ * else the edition the sheet's other books are from, else the newest.
+ */
+export function entryUrl(name: string, source?: string, books: (string | undefined)[] = []): string | null {
+  if (!ENTRIES) return null;
+  const tries = [lookupName(name), lookupName(name).replace(/\s*\([^)]*\)/g, '').trim()];
+  for (const clean of tries) {
+    const key = clean.toLowerCase();
+    if (!key) continue;
+    for (const kind of ENTRY_ORDER) {
+      const found = ENTRIES[kind][key];
+      if (!found) continue;
+      const list = found.split(',');
+      const written = source?.trim() ? sourceId(source) : '';
+      const sheet = books.map((b) => (b?.trim() ? sourceId(b) : '')).filter(Boolean);
+      const old = sheet.some((b) => OLD_RULES.has(b)) && !sheet.includes('xphb');
+      const book =
+        (written && list.includes(written) && written) ||
+        sheet.find((b) => list.includes(b)) ||
+        (old ? ['phb', 'dmg', 'mm'] : ['xphb', 'xdmg', 'xmm']).find((b) => list.includes(b)) ||
+        ['xphb', 'xdmg', 'phb', 'dmg'].find((b) => list.includes(b)) ||
+        list[0];
+      return `${LOOKUP_BASE}/${ENTRY_PAGE[kind]}#${hashPart(clean)}_${hashPart(book)}`;
+    }
+  }
+  return null;
+}
+
 /**
  * The link for a tracker, from what it is called and where it comes from.
  *
@@ -243,16 +289,22 @@ function featureName(label: string): string {
  */
 export function trackerUrl(
   tracker: { label: string; class?: string; source?: string },
-  classes: { name: string; source?: string }[] = []
+  classes: { name: string; source?: string }[] = [],
+  /** The sheet's other books (species, background), for which edition to open. */
+  books: (string | undefined)[] = []
 ): string | null {
   const written = tracker.source?.trim().toLowerCase();
   if (written && UNLINKABLE.has(written)) return null;
   const from = tracker.class?.trim() ?? '';
-  if (!from) return lookupUrl(tracker.label, tracker.source, 'any');
+  const sheetBooks = [...classes.map((c) => c.source), ...books];
+  // Named for something with its own page (a spell cast once a day, a
+  // wand's charges, a feat's uses): that page.
+  const own = () => entryUrl(tracker.label, tracker.source, sheetBooks);
+  if (!from) return own() ?? lookupUrl(tracker.label, tracker.source, 'any');
 
   const cls = from.toLowerCase();
-  const own = classes.find((c) => c.name.trim().toLowerCase() === cls);
-  const src = sourceId(written || own?.source?.trim() || '');
+  const ownClass = classes.find((c) => c.name.trim().toLowerCase() === cls);
+  const src = sourceId(written || ownClass?.source?.trim() || '');
   const key = [src && `${cls}|${src}`, `${cls}|xphb`, `${cls}|phb`].find(
     (k) => k && FEATURES.classes[k as string]
   ) as string | undefined;
@@ -270,12 +322,14 @@ export function trackerUrl(
       const chosen = `sub_${hashPart(sub[2])}_${hashPart(sub[3])}=b1`;
       return `${LOOKUP_BASE}/classes.html#${hashPart(cls)}_${hashPart(sub[1])},state:${gain ? `feature=s${gain}~` : ''}${chosen}`;
     }
-    return page;
+    return own() ?? page;
   }
   // A homebrew class (one of theirs, but not on 5e.tools' class list): the
   // tracker's own name, searched in its book.
-  if (own) return lookupUrl(tracker.label, tracker.source, 'any');
-  return lookupUrl(from, tracker.source, 'any');
+  if (ownClass) return own() ?? lookupUrl(tracker.label, tracker.source, 'any');
+  // From a species, feat, item or background: the tracker's own page if it
+  // has one (Invisibility from a Tiefling), else what it comes from.
+  return own() ?? entryUrl(from, tracker.source, sheetBooks) ?? lookupUrl(from, tracker.source, 'any');
 }
 
 /**
@@ -324,5 +378,6 @@ export function featureUrl(
     }
     return trackerUrl({ label: feature.title, class: classes[0].name, source: feature.source || classes[0].source }, classes);
   }
-  return lookupUrl(feature.title, feature.source, 'feats');
+  return entryUrl(feature.title, feature.source, [...classes.map((c) => c.source), identity.ancestrySource, identity.backgroundSource])
+    ?? lookupUrl(feature.title, feature.source, 'feats');
 }

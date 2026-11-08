@@ -7,7 +7,7 @@
  */
 import { writable } from 'svelte/store';
 import BREW_CLASS_FILES from '$lib/data/brew-class-files.json';
-import { knowsClass, registerClassData, sourceId } from './lookup';
+import { knowsClass, registerClassData, registerEntryIndex, sourceId } from './lookup';
 
 const REPO = 'https://raw.githubusercontent.com/TheGiddyLimit/homebrew/master/';
 const FILES = BREW_CLASS_FILES as Record<string, string>;
@@ -81,5 +81,19 @@ export async function ensureBrewClasses(classes: { name: string; source?: string
       // Offline, or the file moved: the class page itself is still linked.
       asked.delete(src);
     }
+  }
+}
+
+let entriesAsked = false;
+/** The name index of everything on 5e.tools, fetched once, when a sheet opens. */
+export async function ensureEntryIndex() {
+  if (entriesAsked) return;
+  entriesAsked = true;
+  try {
+    const { default: index } = await import('$lib/data/entry-index.json');
+    registerEntryIndex(index as Parameters<typeof registerEntryIndex>[0]);
+    brewLoaded.update((n) => n + 1);
+  } catch {
+    entriesAsked = false;
   }
 }

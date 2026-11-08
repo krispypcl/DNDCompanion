@@ -13,9 +13,12 @@
     refilling = false,
     onchange,
     onroll,
-    classes = []
+    classes = [],
+    books = []
   }: {
     classes?: { name: string; source?: string }[];
+    /** The sheet's other books (species, background), for which edition a link opens. */
+    books?: (string | undefined)[];
     trackers: TrackerT[];
     spent: Record<string, number>;
     ctx: FormulaContext;
@@ -72,6 +75,7 @@
             onchange={(v) => onchange(t.id, v)}
             onroll={onroll ? () => onroll(t) : undefined}
             {classes}
+            {books}
           />
         {/each}
       </div>
@@ -88,6 +92,7 @@
         onchange={(v) => onchange(t.id, v)}
         onroll={onroll ? () => onroll(t) : undefined}
             {classes}
+            {books}
       />
     {/each}
   {/if}
