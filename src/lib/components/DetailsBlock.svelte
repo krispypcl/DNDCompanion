@@ -5,8 +5,6 @@
    * is about casting rather than about the person.
    */
   import EditableField from './EditableField.svelte';
-  import Lightbox from './Lightbox.svelte';
-  import { resolveImageUrl } from '$lib/rules/imageUrl';
   import type { Definition, Traits } from '$lib/types';
 
   let {
@@ -49,12 +47,6 @@
     { key: 'allies', label: 'Allies & organizations', placeholder: 'Who they can call on.' }
   ];
 
-  const portrait = $derived(resolveImageUrl(definition.identity.portraitUrl).url);
-  const bannerSrc = $derived(resolveImageUrl(definition.identity.bannerUrl).url);
-  /** A picture that failed to load falls back to the empty frame. */
-  let broken = $state<Record<string, boolean>>({});
-  /** The picture shown full screen, if any. */
-  let viewing = $state<{ src: string; alt: string; from?: Element | null } | null>(null);
   const traits = $derived(definition.traits ?? {});
   const shownDetails = $derived(DETAILS.filter((f) => editable || definition.identity[f.key]));
   const shownWriting = $derived(WRITING.filter((f) => editable || traits[f.key]));
@@ -90,25 +82,6 @@
 </dl>
 
 <section class="details">
-  <!-- Editing, the preview beside the link field does this job. -->
-  {#if !editable}
-    {#if portrait}
-      <button class="portrait-btn" data-flip-ghost="details:portrait" data-ghost-scale="0.8" data-ghost-quick aria-label="View portrait full screen"
-              onclick={(e) => (viewing = { src: portrait, alt: `Portrait of ${definition.identity.name}`, from: e.currentTarget })}>
-        <img class="portrait" src={portrait} alt="Portrait of {definition.identity.name}" />
-      </button>
-    {:else}
-      <!-- A placeholder keeps the row the same height whether or not there is art. -->
-      <div class="portrait empty-portrait" data-flip-ghost="details:portrait" data-ghost-scale="0.8" data-ghost-quick aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="26" height="26">
-          <circle cx="12" cy="9" r="4" fill="none" stroke="currentColor" stroke-width="1.5" />
-          <path d="M4.5 20a7.5 7.5 0 0 1 15 0" fill="none" stroke="currentColor" stroke-width="1.5"
-                stroke-linecap="round" />
-        </svg>
-      </div>
-    {/if}
-  {/if}
-
   <dl>
     {#each shownDetails as field (field.key)}
       <div data-flip-ghost="details:{field.key}">
@@ -127,30 +100,9 @@
 
   </dl>
 
-  <!-- The banner, opposite the portrait, the same way: press for full screen. -->
-  {#if !editable}
-    {#if bannerSrc && !broken[bannerSrc]}
-      <button class="banner-btn" data-flip-ghost="details:banner" data-ghost-scale="0.8" data-ghost-quick aria-label="View banner full screen"
-              onclick={(e) => (viewing = { src: bannerSrc, alt: `Banner of ${definition.identity.name}`, from: e.currentTarget })}>
-        <img class="banner" src={bannerSrc} alt="Banner of {definition.identity.name}"
-             onerror={() => (broken[bannerSrc] = true)} />
-      </button>
-    {:else}
-      <div class="banner empty-portrait" data-flip-ghost="details:banner" data-ghost-scale="0.8" data-ghost-quick aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="26" height="26">
-          <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5" />
-          <path d="m3 16 5-5 4 4 3-3 6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
-          <circle cx="16" cy="9" r="1.5" fill="none" stroke="currentColor" stroke-width="1.5" />
-        </svg>
-      </div>
-    {/if}
-  {/if}
-
 </section>
 
-{#if viewing}
-  <Lightbox src={viewing.src} alt={viewing.alt} from={viewing.from} onclose={() => (viewing = null)} />
-{/if}
+
 
 {#if shownWriting.length > 0}
   <div class="writing">
@@ -188,18 +140,6 @@
     padding-bottom: 1.25rem;
     border-bottom: 1px solid var(--line-soft);
   }
-  /* A fixed square. Stretching it to the row made the empty placeholder, which
-     has no intrinsic size, come out rectangular. */
-  .portrait {
-    align-self: center;
-    width: 5.5rem;
-    height: 5.5rem;
-    flex: none;
-    object-fit: cover;
-    border-radius: var(--r);
-    border: 1px solid var(--line);
-    flex: none;
-  }
   /* Ten details, two rows of five. */
   dl {
     margin: 0;
@@ -223,33 +163,6 @@
   dd { margin: 0; font-size: 0.9375rem; }
   dd :global(.field) { width: 100%; field-sizing: fixed; }
   /* The URL is long and reads left to right; the writing below is prose. */
-  .empty-portrait { display: grid; place-items: center; color: var(--faint); background: var(--raised); }
-  .banner {
-    align-self: center; width: 9.5rem; height: 5.5rem; flex: none;
-    object-fit: cover; border-radius: var(--r); border: 1px solid var(--line); display: block;
-  }
-  .banner-btn {
-    align-self: center; flex: none; padding: 0; border: 0; background: none;
-    border-radius: var(--r); cursor: zoom-in; transition: transform 0.15s ease, opacity 0.15s ease;
-  }
-  .banner-btn:hover { opacity: 0.9; transform: scale(1.02); }
-  @media (max-width: 560px) {
-    /* On a phone the portrait and banner sit centred on their own rows. */
-    .details { justify-content: center; }
-    .portrait-btn, div.portrait { margin-inline: auto; }
-    /* Under the details on a phone, the full width of the card. */
-    .banner, .banner-btn { width: 100%; }
-    .banner-btn .banner { height: 7rem; }
-    div.banner { height: 5.5rem; }
-  }
-  .portrait-btn {
-    align-self: center; flex: none; padding: 0; border: 0; background: none;
-    border-radius: var(--r); cursor: zoom-in;
-    transition: transform 0.15s ease, opacity 0.15s ease;
-  }
-  .portrait-btn:hover { opacity: 0.9; transform: scale(1.02); }
-  .portrait-btn .portrait { display: block; }
-
   .writing {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
