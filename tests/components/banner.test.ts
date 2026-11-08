@@ -104,7 +104,7 @@ describe('Banner', () => {
     expect(sheet).toMatch(/@supports not \(\(backdrop-filter/);
   });
 
-  it('is written right below the portrait URL (on the Links tab)', () => {
+  it('is written right below the portrait URL (on the Appearance tab)', () => {
     const portrait = details.indexOf('Portrait URL');
     const banner = details.indexOf('Banner URL');
     expect(portrait).toBeGreaterThan(-1);
