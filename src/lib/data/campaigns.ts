@@ -28,11 +28,15 @@ export type Playback = { index: number; item?: number; url?: string; playing: bo
 /** A campaign's live row (database/0008). */
 export type CampaignLive = { playback: Playback | null; invite_rev: number; updated_at?: string };
 
-/** Something on the shared board. Positions are in board units (0..1600 wide). */
+/**
+ * Something on the shared board. Positions are in board units, on an endless
+ * page (units are pixels at 100% zoom). A 'page' is a page of the board
+ * itself (database/0009): its name and paper.
+ */
 export type BoardItem = {
   id: string;
   campaign_id: string;
-  kind: 'note' | 'text' | 'stroke';
+  kind: 'note' | 'text' | 'stroke' | 'page';
   data: BoardData;
   created_by: string | null;
   updated_at: string;
@@ -48,6 +52,14 @@ export type BoardData = {
   /** A stroke: flat [x0, y0, x1, y1, ...] in board units. */
   points?: number[];
   z?: number;
+  /** Which page it is on: a page item's id; none is the first page. */
+  page?: string;
+  /** A page's own: its name, its paper, its place among the pages, and
+      whether it stands for the first page (which has no row until renamed). */
+  name?: string;
+  paper?: 'plain' | 'dots' | 'grid' | 'lines';
+  order?: number;
+  main?: boolean;
 };
 
 export type Campaign = {
@@ -216,6 +228,10 @@ export function makeCampaignRepo(client: SupabaseClient) {
         .insert({ campaign_id: campaignId, created_by: userId, kind, data })
         .select('id, campaign_id, kind, data, created_by, updated_at').single();
       if (error && /board is full/i.test(error.message)) throw new CampaignError('The board is full! Clear a few things away first.');
+      // TODO: drop once the user confirms database/0009.
+      if (error && kind === 'page' && /kind_check|check constraint/i.test(error.message)) {
+        throw new CampaignError('More pages need the 0009 migration! Run it and try again.');
+      }
       if (error) throw new Error(error.message);
       return row as BoardItem;
     },
