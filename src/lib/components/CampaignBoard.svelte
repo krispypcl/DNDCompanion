@@ -2,10 +2,13 @@
   /**
    * The table's board, like a Jamboard: sticky notes, writing and drawing
    * that everyone in the campaign can add to, move and clear, and that
-   * everyone with the page sees change as it happens (database/0008,
-   * campaign_board). The board is 1600 × 1000 units, drawn to whatever width
-   * the page gives it; on a phone it scrolls sideways rather than shrink to
-   * nothing.
+   * everyone with the page sees change as it happens (campaign_board).
+   *
+   * A board has pages (database/0009), each an endless sheet: dragged
+   * around, zoomed in and out (buttons, Ctrl + scroll, or two fingers), and
+   * on its own paper (plain, dots, grid or lines). Opening a page fits the
+   * part that has anything on it, with a little room around it. Units are
+   * pixels at 100%.
    */
   import { onMount, untrack } from 'svelte';
   import { fade, scale, slide } from 'svelte/transition';
@@ -13,6 +16,7 @@
   import { campaignMessage, campaignRepo, type BoardData, type BoardItem } from '$lib/data/campaigns';
   import { isConfigured, supabase } from '$lib/supabase';
   import { prefersReducedMotion } from '$lib/motion';
+  import { INKS, PAPERS } from '$lib/palette';
 
   let {
     campaignId,
@@ -20,35 +24,51 @@
     canEdit
   }: { campaignId: string; userId: string | null; canEdit: boolean } = $props();
 
-  const W = 1600;
-  const H = 1000;
   type Tool = 'move' | 'pen' | 'note' | 'text' | 'erase';
+  type Paper = NonNullable<BoardData['paper']>;
   let tool = $state<Tool>('move');
-  const NOTE_COLOURS = [
-    { name: 'Yellow', c: 'oklch(88% 0.13 95)' },
-    { name: 'Pink', c: 'oklch(82% 0.11 350)' },
-    { name: 'Blue', c: 'oklch(83% 0.08 235)' },
-    { name: 'Green', c: 'oklch(85% 0.11 150)' },
-    { name: 'Orange', c: 'oklch(83% 0.12 60)' },
-    { name: 'Purple', c: 'oklch(80% 0.1 300)' }
-  ];
-  const PEN_COLOURS = [
-    { name: 'Chalk', c: 'var(--text)' },
-    { name: 'Red', c: 'oklch(63% 0.21 25)' },
-    { name: 'Gold', c: 'oklch(83% 0.15 90)' },
-    { name: 'Green', c: 'oklch(70% 0.17 145)' },
-    { name: 'Blue', c: 'oklch(66% 0.15 245)' },
-    { name: 'Purple', c: 'oklch(64% 0.18 300)' }
-  ];
-  let noteColour = $state(NOTE_COLOURS[0].c);
-  let penColour = $state(PEN_COLOURS[0].c);
+  let noteColour = $state(PAPERS[0].c);
+  let penColour = $state(INKS[0].c);
   let penSize = $state(6);
 
   let items = $state<BoardItem[]>([]);
   let missing = $state(false);
   let error = $state<string | null>(null);
-  const strokes = $derived(items.filter((i) => i.kind === 'stroke'));
-  const cards = $derived(items.filter((i) => i.kind !== 'stroke').sort((a, b) => (a.data.z ?? 0) - (b.data.z ?? 0)));
+
+  // ── Pages ──
+  const MAIN = 'main';
+  const pageRows = $derived(items.filter((i) => i.kind === 'page'));
+  const mainRow = $derived(pageRows.find((p) => p.data.main));
+  const pages = $derived([
+    { id: MAIN, name: mainRow?.data.name || 'Page 1', paper: (mainRow?.data.paper ?? 'dots') as Paper, row: mainRow },
+    ...pageRows
+      .filter((p) => !p.data.main)
+      .sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0) || a.updated_at.localeCompare(b.updated_at))
+      .map((p, i) => ({ id: p.id, name: p.data.name || `Page ${i + 2}`, paper: (p.data.paper ?? 'dots') as Paper, row: p as BoardItem | undefined }))
+  ]);
+  const PAGE_KEY = `dndcompanion:board-page:${untrack(() => campaignId)}`;
+  let pageId = $state(MAIN);
+  try {
+    pageId = localStorage.getItem(PAGE_KEY) || MAIN;
+  } catch {
+    /* no storage: the first page */
+  }
+  const page = $derived(pages.find((p) => p.id === pageId) ?? pages[0]);
+  $effect(() => {
+    // A page someone else removed: back to the first.
+    if (!pages.some((p) => p.id === pageId)) pageId = MAIN;
+  });
+  $effect(() => {
+    try {
+      localStorage.setItem(PAGE_KEY, pageId);
+    } catch {
+      /* fine */
+    }
+  });
+  const onPage = (i: BoardItem) => i.kind !== 'page' && (i.data.page ?? MAIN) === page.id;
+  const strokes = $derived(items.filter((i) => i.kind === 'stroke' && onPage(i)));
+  const cards = $derived(items.filter((i) => (i.kind === 'note' || i.kind === 'text') && onPage(i)).sort((a, b) => (a.data.z ?? 0) - (b.data.z ?? 0)));
+  const here = $derived(items.filter(onPage));
 
   async function load() {
     const rows = await campaignRepo.board(campaignId);
@@ -58,7 +78,9 @@
     }
     missing = false;
     items = rows;
+    loaded = true;
   }
+  let loaded = $state(false);
 
   /** Someone else's change, as it happens; our own echoes are already here. */
   function takeRemote(row: BoardItem) {
@@ -119,6 +141,7 @@
     }
   }
   async function remove(ids: string[]) {
+    if (!ids.length) return;
     const before = items;
     items = items.filter((x) => !ids.includes(x.id));
     try {
@@ -128,78 +151,243 @@
       error = campaignMessage(e, 'That one is stuck to the board! Try again.');
     }
   }
-  const topZ = () => Math.max(0, ...items.map((i) => i.data.z ?? 0)) + 1;
+  const topZ = () => Math.max(0, ...here.map((i) => i.data.z ?? 0)) + 1;
+  const stamp = (data: BoardData): BoardData => (page.id === MAIN ? data : { ...data, page: page.id });
 
-  // ── Where on the board a pointer is, in board units ──
-  let boardEl = $state<HTMLDivElement>();
-  function at(e: PointerEvent): [number, number] {
-    const r = boardEl!.getBoundingClientRect();
-    return [Math.round(((e.clientX - r.left) / r.width) * W), Math.round(((e.clientY - r.top) / r.height) * H)];
+  /** A page's name or paper: the first page gets a row of its own the first time. */
+  async function setPage(id: string, change: Partial<BoardData>) {
+    const p = pages.find((x) => x.id === id);
+    if (!p) return;
+    if (p.row) {
+      patch(p.row.id, { ...p.row.data, ...change });
+      await save(p.row.id);
+    } else {
+      await add('page', { main: true, name: p.name, paper: p.paper, ...change });
+    }
+  }
+  async function newPage() {
+    const order = Math.max(0, ...pageRows.map((p) => p.data.order ?? 0)) + 1;
+    const row = await add('page', { name: `Page ${pages.length + 1}`, paper: page.paper, order });
+    if (row) pageId = row.id;
+  }
+  let renaming = $state<string | null>(null);
+  let deleting = $state<string | null>(null);
+  async function deletePage(id: string) {
+    deleting = null;
+    const row = pages.find((p) => p.id === id)?.row;
+    const on = items.filter((i) => i.kind !== 'page' && i.data.page === id).map((i) => i.id);
+    pageId = MAIN;
+    await remove([...on, ...(row ? [row.id] : [])]);
   }
 
-  // ── Drawing ──
+  // ── The view: where on the endless page, and how near ──
+  type View = { x: number; y: number; z: number };
+  let view = $state<View>({ x: 0, y: 0, z: 1 });
+  const views = new Map<string, View>();
+  let vp = $state<HTMLDivElement>();
+  let vw = $state(800);
+  let vh = $state(500);
+  $effect(() => {
+    if (!vp) return;
+    const ro = new ResizeObserver(() => {
+      vw = vp!.clientWidth;
+      vh = vp!.clientHeight;
+    });
+    ro.observe(vp);
+    return () => ro.disconnect();
+  });
+  const MIN_Z = 0.15;
+  const MAX_Z = 3;
+  const clampZ = (z: number) => Math.min(MAX_Z, Math.max(MIN_Z, z));
+
+  /** The part of the page with anything on it, with room around it. */
+  function fit() {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const i of here) {
+      if (i.kind === 'stroke') {
+        const p = i.data.points ?? [];
+        const pad = (i.data.size ?? 6) / 2;
+        for (let k = 0; k + 1 < p.length; k += 2) {
+          minX = Math.min(minX, p[k] - pad); maxX = Math.max(maxX, p[k] + pad);
+          minY = Math.min(minY, p[k + 1] - pad); maxY = Math.max(maxY, p[k + 1] + pad);
+        }
+      } else {
+        const x = i.data.x ?? 0, y = i.data.y ?? 0;
+        minX = Math.min(minX, x); minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x + (i.data.w ?? 200)); maxY = Math.max(maxY, y + (i.data.h ?? 100));
+      }
+    }
+    if (!Number.isFinite(minX)) {
+      view = { x: 0, y: 0, z: 1 };
+      return;
+    }
+    const pad = 60;
+    const bw = maxX - minX + pad * 2;
+    const bh = maxY - minY + pad * 2;
+    const z = clampZ(Math.min(vw / bw, vh / bh, 1.25));
+    view = { x: minX - pad - (vw / z - bw) / 2, y: minY - pad - (vh / z - bh) / 2, z };
+  }
+  // Each page fits itself the first time it is opened here; after that it
+  // stays where it was left.
+  let shownPage = '';
+  $effect(() => {
+    const id = page.id;
+    if (!loaded || !vp || id === shownPage) return;
+    untrack(() => {
+      if (shownPage) views.set(shownPage, view);
+      shownPage = id;
+      const kept = views.get(id);
+      if (kept) view = kept;
+      else fit();
+    });
+  });
+  function zoomAt(sx: number, sy: number, factor: number) {
+    const z = clampZ(view.z * factor);
+    const wx = view.x + sx / view.z;
+    const wy = view.y + sy / view.z;
+    view = { x: wx - sx / z, y: wy - sy / z, z };
+  }
+  const zoomBy = (factor: number) => zoomAt(vw / 2, vh / 2, factor);
+
+  /** A point on the page, from a point on the screen. */
+  function at(e: { clientX: number; clientY: number }): [number, number] {
+    const r = vp!.getBoundingClientRect();
+    return [Math.round(view.x + (e.clientX - r.left) / view.z), Math.round(view.y + (e.clientY - r.top) / view.z)];
+  }
+
+  // ── Wheel: Ctrl + scroll zooms; plain scroll moves the page once the board
+  // has been pressed (until then it scrolls the site, as everywhere else) ──
+  let active = $state(false);
+  function wheel(node: HTMLElement) {
+    const on = (e: WheelEvent) => {
+      const r = node.getBoundingClientRect();
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * 0.0025 * (e.deltaMode === 1 ? 16 : 1)));
+      } else if (active) {
+        e.preventDefault();
+        const k = e.deltaMode === 1 ? 16 : 1;
+        view = { ...view, x: view.x + (e.shiftKey ? e.deltaY : e.deltaX) * k / view.z, y: view.y + (e.shiftKey ? 0 : e.deltaY) * k / view.z };
+      }
+    };
+    const outside = (e: PointerEvent) => {
+      if (!node.contains(e.target as Node)) active = false;
+    };
+    node.addEventListener('wheel', on, { passive: false });
+    window.addEventListener('pointerdown', outside);
+    return { destroy: () => { node.removeEventListener('wheel', on); window.removeEventListener('pointerdown', outside); } };
+  }
+
+  // ── Pointers: one draws, drags or pans; two pinch ──
+  const pointers = new Map<number, { x: number; y: number }>();
+  let pinch: { d: number; mx: number; my: number; view: View } | null = null;
+  let panning = $state<{ sx: number; sy: number; view: View } | null>(null);
   let drawing = $state<number[] | null>(null);
-  function boardDown(e: PointerEvent) {
-    if (!canEdit || e.button > 0) return;
-    if (tool === 'pen') {
+  let erasing = false;
+  const spread = () => {
+    const [a, b] = [...pointers.values()];
+    return { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
+  };
+  function down(e: PointerEvent) {
+    active = true;
+    if (e.button > 0) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    vp?.setPointerCapture(e.pointerId);
+    if (pointers.size === 2) {
+      // Two fingers: whatever one finger began, they zoom and move instead.
+      drawing = null;
+      panning = null;
+      dragging = null;
+      pinch = { ...spread(), view };
+      return;
+    }
+    if (pointers.size > 2) return;
+    if (canEdit && tool === 'pen') {
       e.preventDefault();
-      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
       drawing = at(e);
-    } else if (tool === 'note' || tool === 'text') {
+    } else if (canEdit && (tool === 'note' || tool === 'text')) {
       const [x, y] = at(e);
       const w = tool === 'note' ? 220 : 320;
       const h = tool === 'note' ? 170 : 60;
-      void add(tool, {
-        x: Math.min(W - w, Math.max(0, x - w / 2)), y: Math.min(H - h, Math.max(0, y - 20)), w, h, text: '',
+      void add(tool, stamp({
+        x: x - w / 2, y: y - 20, w, h, text: '',
         color: tool === 'note' ? noteColour : penColour, size: tool === 'note' ? 22 : 34, z: topZ()
-      }).then((row) => {
+      })).then((row) => {
         if (row) {
           editingId = row.id;
           tool = 'move';
         }
       });
+    } else if (canEdit && tool === 'erase') {
+      erasing = true;
+    } else {
+      panning = { sx: e.clientX, sy: e.clientY, view };
     }
   }
-  function boardMove(e: PointerEvent) {
+  function move(e: PointerEvent) {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch && pointers.size >= 2) {
+      const now = spread();
+      const r = vp!.getBoundingClientRect();
+      const z = clampZ(pinch.view.z * (now.d / pinch.d));
+      // The point under the fingers' middle stays under it.
+      const wx = pinch.view.x + (pinch.mx - r.left) / pinch.view.z;
+      const wy = pinch.view.y + (pinch.my - r.top) / pinch.view.z;
+      view = { x: wx - (now.mx - r.left) / z, y: wy - (now.my - r.top) / z, z };
+      return;
+    }
     if (drawing) {
       const [x, y] = at(e);
       const n = drawing.length;
-      if (Math.hypot(x - drawing[n - 2], y - drawing[n - 1]) >= 3) drawing = [...drawing, x, y];
-    } else if (dragging) moveDrag(e);
+      if (Math.hypot(x - drawing[n - 2], y - drawing[n - 1]) >= 3 / view.z) drawing = [...drawing, x, y];
+    } else if (dragging) {
+      moveDrag(e);
+    } else if (panning) {
+      view = { ...panning.view, x: panning.view.x - (e.clientX - panning.sx) / view.z, y: panning.view.y - (e.clientY - panning.sy) / view.z };
+    }
   }
-  function boardUp() {
+  function up(e: PointerEvent) {
+    pointers.delete(e.pointerId);
+    if (pointers.size < 2) pinch = null;
+    if (pointers.size > 0) return;
+    erasing = false;
+    panning = null;
     if (drawing) {
       const pts = drawing.length >= 4 ? drawing : [...drawing, drawing[0] + 1, drawing[1] + 1];
       drawing = null;
-      void add('stroke', { points: pts.slice(0, 4000), color: penColour, size: penSize });
+      void add('stroke', stamp({ points: pts.slice(0, 4000), color: penColour, size: penSize }));
     }
     if (dragging) endDrag();
   }
+  function cancel(e: PointerEvent) {
+    pointers.delete(e.pointerId);
+    pinch = null;
+    panning = null;
+    drawing = null;
+    erasing = false;
+    endDrag();
+  }
+
   const pathOf = (p: number[] = []) => {
     if (p.length < 2) return '';
     let d = `M${p[0]} ${p[1]}`;
     // Smoothed through the midpoints, so a quick line is not a zigzag.
     for (let i = 2; i < p.length - 2; i += 2) {
-      const mx = (p[i] + p[i + 2]) / 2;
-      const my = (p[i + 1] + p[i + 3]) / 2;
-      d += ` Q${p[i]} ${p[i + 1]} ${mx} ${my}`;
+      d += ` Q${p[i]} ${p[i + 1]} ${(p[i] + p[i + 2]) / 2} ${(p[i + 1] + p[i + 3]) / 2}`;
     }
-    d += ` L${p[p.length - 2]} ${p[p.length - 1]}`;
-    return d;
+    return d + ` L${p[p.length - 2]} ${p[p.length - 1]}`;
   };
-  /** The eraser takes a stroke it passes over (while pressed) or is tapped on. */
-  let erasing = false;
-  function eraseOver(id: string) {
-    if (tool === 'erase' && erasing) void remove([id]);
-  }
 
   // ── Moving notes and writing ──
   let dragging = $state<{ id: string; dx: number; dy: number; last: number } | null>(null);
   function startDrag(e: PointerEvent, item: BoardItem) {
-    if (!canEdit || tool !== 'move' || editingId === item.id) return;
-    e.preventDefault();
+    if (!canEdit || tool !== 'move' || editingId === item.id || e.button > 0) return;
     e.stopPropagation();
-    boardEl?.setPointerCapture(e.pointerId);
+    e.preventDefault();
+    active = true;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    vp?.setPointerCapture(e.pointerId);
     const [x, y] = at(e);
     patch(item.id, { ...item.data, z: topZ() });
     dragging = { id: item.id, dx: x - (item.data.x ?? 0), dy: y - (item.data.y ?? 0), last: 0 };
@@ -209,13 +397,7 @@
     const item = items.find((x) => x.id === dragging!.id);
     if (!item) return;
     const [x, y] = at(e);
-    const w = item.data.w ?? 200;
-    const h = item.data.h ?? 100;
-    patch(item.id, {
-      ...item.data,
-      x: Math.min(W - w, Math.max(0, x - dragging.dx)),
-      y: Math.min(H - h, Math.max(0, y - dragging.dy))
-    });
+    patch(item.id, { ...item.data, x: x - dragging.dx, y: y - dragging.dy });
     // Others see it move, a few times a second.
     const now = performance.now();
     if (now - dragging.last > 220) {
@@ -244,7 +426,7 @@
     if (now && !now.data.text?.trim()) void remove([item.id]);
     else void save(item.id);
   }
-  function focusOnMount(node: HTMLTextAreaElement) {
+  function focusOnMount(node: HTMLTextAreaElement | HTMLInputElement) {
     node.focus();
     node.select();
   }
@@ -256,80 +438,113 @@
     // Leaving the move tool ends any writing.
     if (tool !== 'move' && untrack(() => editingId)) editingId = null;
   });
+  /** The paper moves and grows with the page. */
+  const paperStyle = $derived.by(() => {
+    const step = 40 * view.z;
+    return `--step:${step}px; --px:${-view.x * view.z}px; --py:${-view.y * view.z}px; --dot:${Math.max(0.8, 1.3 * Math.min(1.5, view.z))}px;`;
+  });
+  const PAPER_NAMES: Record<Paper, string> = { plain: 'Plain', dots: 'Dots', grid: 'Grid', lines: 'Lines' };
 </script>
 
 <section class="boardwrap" aria-label="Table board">
   <div class="head">
     <span class="cap">Table board</span>
-    {#if canEdit && !missing}
-      <div class="tools" role="toolbar" aria-label="Board tools">
-        {#each [
-          { t: 'move', label: 'Move and write', d: 'M8 3v18l5-6 3.5 7 2.5-1.2-3.5-7H21z' },
-          { t: 'pen', label: 'Draw', d: 'M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10zM14 7l3 3' },
-          { t: 'note', label: 'Sticky note', d: 'M5 4h14v10l-6 6H5zM13 20v-6h6' },
-          { t: 'text', label: 'Writing', d: 'M5 6V4h14v2M12 4v16M9 20h6' },
-          { t: 'erase', label: 'Eraser (tap or drag over)', d: 'M8 20h12M5.5 14.5l8-8a2 2 0 0 1 2.8 0l2.2 2.2a2 2 0 0 1 0 2.8L12 18H8z' }
-        ] as b (b.t)}
-          <button class="tool" class:on={tool === b.t} aria-pressed={tool === b.t} aria-label={b.label} title={b.label}
-                  onclick={() => (tool = b.t as Tool)}>
-            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d={b.d} fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
-          </button>
-        {/each}
-        {#if tool === 'pen' || tool === 'text'}
-          <span class="sep" aria-hidden="true"></span>
-          <div class="swatches" transition:fade={{ duration: 140 }}>
-            {#each PEN_COLOURS as p (p.name)}
-              <button class="sw" style:--sw={p.c} aria-label={p.name} title={p.name} aria-pressed={penColour === p.c}
-                      onclick={() => (penColour = p.c)}></button>
-            {/each}
-          </div>
-          {#if tool === 'pen'}
-            <div class="sizes" transition:fade={{ duration: 140 }}>
-              {#each [3, 6, 12, 22] as size (size)}
-                <button class="size" aria-label="Thickness {size}" title="Thickness" aria-pressed={penSize === size}
-                        onclick={() => (penSize = size)}><i style:--d="{Math.max(3, size / 2)}px"></i></button>
-              {/each}
-            </div>
-          {/if}
-        {:else if tool === 'note'}
-          <span class="sep" aria-hidden="true"></span>
-          <div class="swatches" transition:fade={{ duration: 140 }}>
-            {#each NOTE_COLOURS as n (n.name)}
-              <button class="sw" style:--sw={n.c} aria-label={n.name} title={n.name} aria-pressed={noteColour === n.c}
-                      onclick={() => (noteColour = n.c)}></button>
-            {/each}
-          </div>
-        {/if}
-        <span class="grow"></span>
-        {#if items.length}
-          {#if clearing}
-            <span class="ask" transition:fade={{ duration: 140 }}>Clear the whole board?
-              <button class="danger" onclick={() => { clearing = false; void remove(items.map((i) => i.id)); }}>Clear</button>
-              <button onclick={() => (clearing = false)}>Keep</button>
-            </span>
+    {#if !missing}
+      <!-- The board's pages. -->
+      <div class="pages" role="tablist" aria-label="Board pages">
+        {#each pages as p (p.id)}
+          {#if renaming === p.id}
+            <input class="pagename" value={p.name} aria-label="Page name" maxlength="40" use:focusOnMount
+                   onkeydown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') renaming = null; }}
+                   onblur={(e) => { const v = e.currentTarget.value.trim(); renaming = null; if (v && v !== p.name) void setPage(p.id, { name: v }); }} />
           {:else}
-            <button class="clear" onclick={() => (clearing = true)}>Clear board</button>
+            <button class="pagetab" class:on={p.id === page.id} role="tab" aria-selected={p.id === page.id}
+                    title={canEdit ? 'Double-click to rename' : p.name}
+                    onclick={() => (pageId = p.id)} ondblclick={() => canEdit && (renaming = p.id)}
+                    in:scale={pop()}>{p.name}</button>
           {/if}
+        {/each}
+        {#if canEdit}
+          <button class="pagetab add" aria-label="Add a page" title="Add a page" onclick={newPage}>+</button>
         {/if}
       </div>
     {/if}
   </div>
+  {#if canEdit && !missing}
+    <div class="tools" role="toolbar" aria-label="Board tools">
+      {#each [
+        { t: 'move', label: 'Move and write (drag the page to look around)', d: 'M8 3v18l5-6 3.5 7 2.5-1.2-3.5-7H21z' },
+        { t: 'pen', label: 'Draw', d: 'M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10zM14 7l3 3' },
+        { t: 'note', label: 'Sticky note', d: 'M5 4h14v10l-6 6H5zM13 20v-6h6' },
+        { t: 'text', label: 'Writing', d: 'M5 6V4h14v2M12 4v16M9 20h6' },
+        { t: 'erase', label: 'Eraser (tap or drag over)', d: 'M8 20h12M5.5 14.5l8-8a2 2 0 0 1 2.8 0l2.2 2.2a2 2 0 0 1 0 2.8L12 18H8z' }
+      ] as b (b.t)}
+        <button class="tool" class:on={tool === b.t} aria-pressed={tool === b.t} aria-label={b.label} title={b.label}
+                onclick={() => (tool = b.t as Tool)}>
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d={b.d} fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </button>
+      {/each}
+      {#if tool === 'pen' || tool === 'text'}
+        <span class="sep" aria-hidden="true"></span>
+        <div class="swatches" transition:fade={{ duration: 140 }}>
+          {#each INKS as p (p.name)}
+            <button class="sw" style:--sw={p.c} aria-label={p.name} title={p.name} aria-pressed={penColour === p.c}
+                    onclick={() => (penColour = p.c)}></button>
+          {/each}
+        </div>
+        {#if tool === 'pen'}
+          <div class="sizes" transition:fade={{ duration: 140 }}>
+            {#each [3, 6, 12, 22] as size (size)}
+              <button class="size" aria-label="Thickness {size}" title="Thickness" aria-pressed={penSize === size}
+                      onclick={() => (penSize = size)}><i style:--d="{Math.max(3, size / 2)}px"></i></button>
+            {/each}
+          </div>
+        {/if}
+      {:else if tool === 'note'}
+        <span class="sep" aria-hidden="true"></span>
+        <div class="swatches" transition:fade={{ duration: 140 }}>
+          {#each PAPERS as n (n.name)}
+            <button class="sw" style:--sw={n.c} aria-label={n.name} title={n.name} aria-pressed={noteColour === n.c}
+                    onclick={() => (noteColour = n.c)}></button>
+          {/each}
+        </div>
+      {/if}
+      <span class="grow"></span>
+      <select class="paper" aria-label="Paper" value={page.paper} onchange={(e) => setPage(page.id, { paper: e.currentTarget.value as Paper })}>
+        {#each Object.entries(PAPER_NAMES) as [v, label] (v)}<option value={v}>{label}</option>{/each}
+      </select>
+      {#if deleting === page.id}
+        <span class="ask" transition:fade={{ duration: 140 }}>Delete “{page.name}” and all on it?
+          <button class="danger" onclick={() => deletePage(page.id)}>Delete</button>
+          <button onclick={() => (deleting = null)}>Keep</button>
+        </span>
+      {:else if clearing}
+        <span class="ask" transition:fade={{ duration: 140 }}>Clear this page?
+          <button class="danger" onclick={() => { clearing = false; void remove(here.map((i) => i.id)); }}>Clear</button>
+          <button onclick={() => (clearing = false)}>Keep</button>
+        </span>
+      {:else}
+        {#if here.length}<button class="clear" onclick={() => (clearing = true)}>Clear page</button>{/if}
+        {#if page.id !== MAIN}<button class="clear" onclick={() => (deleting = page.id)}>Delete page</button>{/if}
+      {/if}
+    </div>
+  {/if}
   {#if error}<p class="err" role="alert" transition:slide={unfold()}>{error}</p>{/if}
 
   {#if missing}
-    <p class="none">The board isn’t set up yet. It arrives with the 0008 migration.</p>
+    <p class="none">The board couldn’t be read just now. It will try again shortly.</p>
   {:else}
-    <div class="viewport">
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
-      <div class="board tool-{tool}" class:live={canEdit} bind:this={boardEl}
-           onpointerdown={(e) => { erasing = true; boardDown(e); }} onpointermove={boardMove}
-           onpointerup={() => { erasing = false; boardUp(); }} onpointercancel={() => { erasing = false; drawing = null; endDrag(); }}
-           onpointerleave={() => (erasing = false)}>
-        <svg class="ink" viewBox="0 0 {W} {H}" preserveAspectRatio="none" aria-hidden="true">
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="board tool-{tool} paper-{page.paper}" class:live={canEdit} class:panning={Boolean(panning)} class:active
+         bind:this={vp} use:wheel style={paperStyle}
+         onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={cancel}>
+      <div class="world" style:transform="scale({view.z}) translate({-view.x}px, {-view.y}px)">
+        <svg class="ink" width="1" height="1" aria-hidden="true">
           {#each strokes as s (s.id)}
             <path d={pathOf(s.data.points)} style:stroke={s.data.color} stroke-width={s.data.size ?? 6}
-                  class:erasable={tool === 'erase'}
-                  onpointerdown={() => tool === 'erase' && remove([s.id])} onpointerenter={() => eraseOver(s.id)}
+                  class:erasable={canEdit && tool === 'erase'}
+                  onpointerdown={(e) => { if (canEdit && tool === 'erase') { e.stopPropagation(); erasing = true; void remove([s.id]); } }}
+                  onpointerenter={() => canEdit && tool === 'erase' && erasing && remove([s.id])}
                   in:fade={{ duration: 160 }} out:fade={{ duration: 160 }} />
           {/each}
           {#if drawing}<path d={pathOf(drawing)} style:stroke={penColour} stroke-width={penSize} />{/if}
@@ -337,9 +552,9 @@
         {#each cards as item (item.id)}
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div class="item {item.kind}" class:lifted={dragging?.id === item.id}
-               style:left="{((item.data.x ?? 0) / W) * 100}%" style:top="{((item.data.y ?? 0) / H) * 100}%"
-               style:width="{((item.data.w ?? 200) / W) * 100}%" style:min-height="{((item.data.h ?? 100) / H) * 100}%"
-               style:--ic={item.data.color} style:--fs="{((item.data.size ?? 22) / W) * 100}cqw" style:z-index={item.data.z ?? 0}
+               style:left="{item.data.x ?? 0}px" style:top="{item.data.y ?? 0}px"
+               style:width="{item.data.w ?? 200}px" style:min-height="{item.data.h ?? 100}px"
+               style:--ic={item.data.color} style:font-size="{item.data.size ?? 22}px" style:z-index={item.data.z ?? 0}
                onpointerdown={(e) => {
                  if (tool === 'erase' && canEdit) { e.stopPropagation(); void remove([item.id]); }
                  else startDrag(e, item);
@@ -363,21 +578,41 @@
             {/if}
           </div>
         {/each}
-        {#if !items.length}
-          <p class="hint" in:fade={{ duration: 200 }}>
-            {canEdit ? 'Pick a tool above: drop sticky notes, write, or draw. Everyone at the table sees it live.' : 'Nothing on the board yet.'}
-          </p>
-        {/if}
+      </div>
+      {#if loaded && !here.length}
+        <p class="hint" in:fade={{ duration: 200 }}>
+          {canEdit ? 'Pick a tool above: drop sticky notes, write, or draw. Everyone at the table sees it live.' : 'Nothing on this page yet.'}
+        </p>
+      {/if}
+      <!-- Zoom, in the corner. -->
+      <div class="zoom" role="group" aria-label="Zoom" onpointerdown={(e) => e.stopPropagation()}>
+        <button aria-label="Zoom out" title="Zoom out (Ctrl + scroll)" onclick={() => zoomBy(1 / 1.25)} disabled={view.z <= MIN_Z}>−</button>
+        <button class="pct" title="Back to 100%" onclick={() => zoomBy(1 / view.z)}>{Math.round(view.z * 100)}%</button>
+        <button aria-label="Zoom in" title="Zoom in (Ctrl + scroll)" onclick={() => zoomBy(1.25)} disabled={view.z >= MAX_Z}>+</button>
+        <button aria-label="Fit everything on this page" title="Fit everything" onclick={fit}>
+          <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </button>
       </div>
     </div>
+    <p class="how">{active ? 'Scroll or drag to look around · Ctrl + scroll or two fingers to zoom' : 'Click the board to scroll around it · Ctrl + scroll to zoom'}</p>
   {/if}
 </section>
 
 <style>
   .boardwrap { margin-top: 2rem; }
-  .head { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.625rem; }
+  .head { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
   .cap { font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600; }
-  .tools { flex: 1; display: flex; align-items: center; gap: 0.25rem; flex-wrap: wrap; min-width: 0; }
+  .pages { display: flex; flex-wrap: wrap; gap: 0.25rem; align-items: center; min-width: 0; }
+  .pagetab, .pagename {
+    font: inherit; font-size: 0.8125rem; border-radius: 999px; padding: 0.25rem 0.75rem;
+    border: 1px solid var(--line); background: var(--raised); color: var(--dim); cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+  }
+  .pagetab:hover { border-color: var(--a-edge); color: var(--text); }
+  .pagetab.on { border-color: var(--a-edge); background: var(--a-wash); color: var(--a); }
+  .pagetab.add { width: 1.875rem; padding: 0.25rem 0; text-align: center; }
+  .pagename { width: 9rem; color: var(--text); cursor: text; outline: none; border-color: var(--a-edge); }
+  .tools { display: flex; align-items: center; gap: 0.25rem; flex-wrap: wrap; margin-bottom: 0.625rem; }
   .tool {
     width: 2rem; height: 2rem; display: grid; place-items: center; padding: 0; border-radius: var(--r-sm);
     border: 1px solid var(--line); background: var(--raised); color: var(--text); cursor: pointer;
@@ -387,7 +622,7 @@
   .tool:active { transform: translateY(1px); }
   .tool.on { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
   .sep { width: 1px; height: 1.25rem; background: var(--line); margin: 0 0.25rem; }
-  .swatches, .sizes { display: flex; gap: 0.25rem; align-items: center; }
+  .swatches, .sizes { display: flex; flex-wrap: wrap; gap: 0.25rem; align-items: center; }
   .sw {
     width: 1.25rem; height: 1.25rem; border-radius: 50%; padding: 0; cursor: pointer; background: var(--sw);
     border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line); transition: box-shadow 0.15s ease, transform 0.15s ease;
@@ -400,45 +635,55 @@
   .size i { display: block; width: var(--d); height: var(--d); border-radius: 50%; background: currentColor; }
   .size[aria-pressed='true'] { border-color: var(--a-edge); background: var(--a-wash); color: var(--a); }
   .grow { flex: 1; }
-  .clear, .ask button {
+  .clear, .ask button, .paper {
     font: inherit; font-size: 0.8125rem; cursor: pointer; border-radius: var(--r-sm); padding: 0.3125rem 0.75rem;
     border: 1px solid var(--line); background: var(--raised); color: var(--text);
   }
+  .paper { padding: 0.3125rem 0.5rem; }
   .clear:hover { color: var(--bad); border-color: var(--bad); }
-  .ask { display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.8125rem; color: var(--dim); }
+  .ask { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; font-size: 0.8125rem; color: var(--dim); }
   .ask .danger { border-color: var(--bad); color: var(--bad); background: none; }
   .err { color: var(--bad); font-size: 0.8125rem; margin: 0 0 0.5rem; }
   .none { color: var(--dim); font-size: 0.875rem; }
 
-  .viewport { overflow-x: auto; border-radius: var(--r); border: 1px solid var(--line-soft); }
-  /* Dots, like a board's surface; frosted over the banner. */
+  /* The window onto the page. Frosted over the banner; the paper is drawn on
+     it and moves with the page. */
   .board {
-    position: relative; width: max(100%, 52rem); aspect-ratio: 16 / 10; container-type: inline-size; overflow: hidden;
+    position: relative; height: min(36rem, 70vh); overflow: hidden; border-radius: var(--r);
+    border: 1px solid var(--line-soft); touch-action: none; cursor: grab; user-select: none;
     background-color: color-mix(in oklch, var(--surface) 70%, transparent);
-    background-image: radial-gradient(circle, color-mix(in oklch, var(--text) 14%, transparent) 1px, transparent 1.3px);
-    background-size: 2.5cqw 2.5cqw;
     backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-    touch-action: pan-x pan-y;
+    background-position: var(--px) var(--py); background-size: var(--step) var(--step);
+    transition: border-color 0.2s ease;
   }
-  .board.live.tool-pen, .board.live.tool-erase { touch-action: none; }
+  .board.active { border-color: var(--a-edge); }
+  .board.panning { cursor: grabbing; }
+  .paper-dots { background-image: radial-gradient(circle, color-mix(in oklch, var(--text) 18%, transparent) var(--dot), transparent calc(var(--dot) + 0.4px)); }
+  .paper-grid {
+    background-image:
+      linear-gradient(to right, color-mix(in oklch, var(--text) 10%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklch, var(--text) 10%, transparent) 1px, transparent 1px);
+  }
+  .paper-lines { background-image: linear-gradient(to bottom, color-mix(in oklch, var(--text) 12%, transparent) 1px, transparent 1px); }
   .board.live.tool-pen { cursor: crosshair; }
   .board.live.tool-note, .board.live.tool-text { cursor: copy; }
   .board.live.tool-erase { cursor: cell; }
-  .ink { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+  .world { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; }
+  .ink { position: absolute; left: 0; top: 0; overflow: visible; }
   .ink path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
   .ink path.erasable { cursor: pointer; }
   .ink path.erasable:hover { opacity: 0.45; }
 
   .item { position: absolute; box-sizing: border-box; user-select: none; transition: box-shadow 0.2s ease, transform 0.2s ease; }
   .live.tool-move .item { cursor: grab; }
-  .item.lifted { cursor: grabbing; transform: rotate(-1.2deg) scale(1.02); box-shadow: 0 1.2cqw 2.6cqw -1cqw rgb(0 0 0 / 0.55); }
+  .item.lifted { cursor: grabbing; transform: rotate(-1.2deg) scale(1.02); box-shadow: 0 18px 40px -16px rgb(0 0 0 / 0.55); }
   .note {
-    padding: 0.9cqw 1cqw; border-radius: 0.3cqw; background: var(--ic);
-    color: oklch(22% 0.02 286); box-shadow: 0 0.5cqw 1.2cqw -0.6cqw rgb(0 0 0 / 0.5);
+    padding: 14px 16px; border-radius: 5px; background: var(--ic);
+    color: oklch(22% 0.02 286); box-shadow: 0 8px 20px -10px rgb(0 0 0 / 0.5);
   }
-  .text { color: var(--ic, var(--text)); padding: 0.3cqw 0.4cqw; }
+  .text { color: var(--ic, var(--text)); padding: 5px 6px; }
   .item p, .item textarea {
-    margin: 0; font: inherit; font-size: var(--fs); line-height: 1.3; white-space: pre-wrap; overflow-wrap: anywhere;
+    margin: 0; font: inherit; line-height: 1.3; white-space: pre-wrap; overflow-wrap: anywhere;
   }
   .text p { font-weight: 600; }
   .item textarea {
@@ -447,14 +692,30 @@
   }
   .text textarea { font-weight: 600; outline: 1px dashed color-mix(in oklch, var(--ic, var(--text)) 50%, transparent); }
   .pen {
-    position: absolute; top: 0.25rem; right: 0.25rem; width: 1.375rem; height: 1.375rem; display: grid; place-items: center;
+    position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; display: grid; place-items: center;
     padding: 0; border: 0; border-radius: 50%; cursor: pointer; opacity: 0; transition: opacity 0.15s ease;
     background: color-mix(in oklch, white 55%, transparent); color: oklch(25% 0.02 286);
   }
   .item:hover .pen, .pen:focus-visible { opacity: 1; }
   @media (hover: none) { .pen { opacity: 0.8; } }
   .hint { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; padding: 2rem; text-align: center; color: var(--dim); font-size: 0.875rem; pointer-events: none; }
+  .zoom {
+    position: absolute; right: 0.5rem; bottom: 0.5rem; display: flex; align-items: center; gap: 1px; padding: 2px;
+    border-radius: var(--r-sm); border: 1px solid var(--line); background: color-mix(in oklch, var(--surface) 88%, transparent);
+    cursor: default; z-index: 1;
+  }
+  .zoom button {
+    min-width: 1.75rem; height: 1.75rem; display: grid; place-items: center; padding: 0 0.25rem; border: 0; border-radius: 4px;
+    background: none; color: var(--text); font: inherit; font-size: 0.9375rem; cursor: pointer;
+  }
+  .zoom button:hover:not(:disabled) { background: var(--a-wash); color: var(--a); }
+  .zoom button:disabled { opacity: 0.35; cursor: default; }
+  .zoom .pct { font-size: 0.75rem; min-width: 2.75rem; font-variant-numeric: tabular-nums; color: var(--dim); }
+  .how { margin: 0.375rem 0 0; font-size: 0.75rem; color: var(--dim); }
   @media (max-width: 720px), (pointer: coarse) {
-    .board { backdrop-filter: none; -webkit-backdrop-filter: none; background-color: color-mix(in oklch, var(--surface) 92%, transparent); }
+    .board {
+      height: min(28rem, 65vh);
+      backdrop-filter: none; -webkit-backdrop-filter: none; background-color: color-mix(in oklch, var(--surface) 92%, transparent);
+    }
   }
 </style>

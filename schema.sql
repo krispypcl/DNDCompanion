@@ -604,3 +604,30 @@ begin
   end if;
 end;
 $$;
+
+-- ===========================================================================
+-- 0009: pages on the table's board.
+--
+-- A campaign's board can now have several pages (a map, a plan, a list of
+-- names), each its own endless sheet. A page is a row of kind 'page' on the
+-- board, holding its name and its paper (plain, dots, grid, lines); what is
+-- drawn or stuck on a page says which page in its data. With more room to
+-- fill, a board holds up to 4000 things in all.
+--
+-- Safe to run more than once.
+
+alter table campaign_board drop constraint if exists campaign_board_kind_check;
+alter table campaign_board add constraint campaign_board_kind_check
+  check (kind in ('note', 'text', 'stroke', 'page'));
+
+create or replace function public.campaign_board_cap()
+returns trigger
+language plpgsql
+as $$
+begin
+  if (select count(*) from campaign_board b where b.campaign_id = new.campaign_id) >= 4000 then
+    raise exception 'The board is full';
+  end if;
+  return new;
+end;
+$$;
