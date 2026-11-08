@@ -27,7 +27,10 @@
     url,
     place = 'sheet',
     onended,
-    ontitle
+    ontitle,
+    lead,
+    follow = null,
+    resume = null
   }: {
     url: string;
     /** A sheet's player or a campaign's jukebox: each remembers its own loop. */
@@ -36,7 +39,58 @@
     onended?: () => void;
     /** Told each song's title as YouTube gives it. */
     ontitle?: (title: string) => void;
+    /** The DM's jukebox: told what it is doing (playing or not, where), for the table to follow. */
+    lead?: (now: Moment) => void;
+    /**
+     * A player's view of the DM's jukebox: it plays what the DM plays, where
+     * they are in it, with only the volume and the speaker of its own.
+     */
+    follow?: (Moment & { at: number }) | null;
+    /** The DM coming back to music already playing: carry on from there, once. */
+    resume?: (Moment & { at: number }) | null;
   } = $props();
+
+  type Moment = { playing: boolean; t: number; item?: number };
+  const following = $derived(Boolean(follow));
+  /** Where the DM's music should be now, by the clock. */
+  const expected = (m: Moment & { at: number }) => m.t + (m.playing ? Math.max(0, (Date.now() - m.at) / 1000) : 0);
+  function tell() {
+    if (!lead || !yt || hushed) return;
+    const state = yt.getPlayerState();
+    lead({
+      playing: state === 1 || state === 3,
+      t: yt.getCurrentTime?.() ?? 0,
+      ...(playlist?.list ? { item: Math.max(0, yt.getPlaylistIndex?.() ?? 0) } : {})
+    });
+  }
+  /** A player's page catching up with the DM's music. */
+  function syncFollow() {
+    const f = untrack(() => follow);
+    if (!f || !yt || !ready || !get(soundOn)) return;
+    const want = expected(f);
+    if (playlist?.list && f.item != null && (yt.getPlaylistIndex?.() ?? -1) !== f.item) {
+      yt.playVideoAt(f.item);
+      pendingSeek = want;
+      if (!f.playing) setTimeout(() => yt?.pauseVideo(), 600);
+      return;
+    }
+    const cur = yt.getCurrentTime?.() ?? 0;
+    const state = yt.getPlayerState();
+    if (f.playing) {
+      if (Math.abs(cur - want) > 2) yt.seekTo(want, true);
+      if (state !== 1 && state !== 3) yt.playVideo();
+    } else {
+      if (state === 1 || state === 3) fadeThen(() => yt?.pauseVideo());
+      if (Math.abs(cur - f.t) > 1) yt.seekTo(f.t, true);
+    }
+  }
+  /** Where to go once the new song has started (a playlist item asked for by number). */
+  let pendingSeek: number | null = null;
+  $effect(() => {
+    // The DM did something: follow it.
+    void follow;
+    if (ready) untrack(syncFollow);
+  });
 
   /**
    * Shuffle: the player's own choice, kept with their account (or on this
@@ -267,6 +321,7 @@
     scrubbing = false;
     at = v;
     yt?.seekTo(v, true);
+    setTimeout(tell, 150);
   }
   let disarm: (() => void) | null = null;
 
@@ -298,6 +353,17 @@
   function start() {
     if (!ready || !yt) return;
     yt.unMute();
+    if (follow) {
+      if (playing) fadeTo(1, FADE_IN);
+      syncFollow();
+      return;
+    }
+    // The DM's music was already going: pick it up where it is.
+    const r = untrack(() => resume);
+    if (r && resumeOnce) {
+      resumeOnce = false;
+      if (r.playing) yt.seekTo(expected(r), true);
+    }
     // Anything a fade-out was about to do is called off; the sound rises
     // once the song is actually playing.
     if (playing) fadeTo(1, FADE_IN);
@@ -321,10 +387,12 @@
   }
   function stop() {
     fadeThen(() => {
-      yt?.pauseVideo();
+      // The DM's own speaker only silences their page: the table plays on.
+      if (!lead || userPaused) yt?.pauseVideo();
       yt?.mute();
     });
   }
+  let resumeOnce = true;
 
   function teardown() {
     clearTimeout(checkTimer);
@@ -373,7 +441,7 @@
             onReady: () => {
               if (gone || !yt) return;
               ready = true;
-              pendingShuffle = wantShuffle() && Boolean(p.list);
+              pendingShuffle = !untrack(() => follow) && wantShuffle() && Boolean(p.list);
               if (pendingShuffle && !applyShuffle(false) && pendingShuffle) {
                 // Ask for the list itself (not the one song the link opened
                 // on), so its songs are fetched, then wait for them.
@@ -400,6 +468,16 @@
                 hasPlayed = true;
                 disarm?.();
                 if (!afterFade) fadeTo(1, FADE_IN);
+                if (pendingSeek != null) {
+                  yt?.seekTo(pendingSeek, true);
+                  pendingSeek = null;
+                }
+              }
+              if (e.data === 1 || e.data === 2) tell();
+              // Following: the DM's page says what comes next, not this one.
+              if (e.data === 0 && untrack(() => follow)) {
+                updateTitle();
+                return;
               }
               // The end of the music: again from the top, or over to the jukebox.
               if (e.data === 0) {
@@ -483,7 +561,7 @@
       <span class="t">{clock(at)}</span>
       <input type="range" min="0" max={Math.max(1, length)} step="0.5" value={Math.min(at, length || 1)}
              aria-label="Song position" aria-valuetext="{clock(at)} of {clock(length)}"
-             disabled={!ready || failed || !length}
+             disabled={!ready || failed || !length || following}
              style:--p="{length ? (Math.min(at, length) / length) * 100 : 0}%"
              onpointerdown={() => (scrubbing = true)}
              onpointerup={() => (scrubbing = false)}
@@ -492,6 +570,21 @@
              onchange={(e) => seek(Number(e.currentTarget.value))} />
       <span class="t">−{clock(Math.max(0, length - at))}</span>
     </div>
+    {#if following}
+      <!-- A player's page: the DM plays; this one listens (the speaker up top is theirs). -->
+      <div class="row follow">
+        <button class="ctl play listen" class:on={$soundOn} aria-pressed={$soundOn}
+                aria-label={$soundOn ? 'Stop listening' : 'Listen along'} title={$soundOn ? 'Stop listening' : 'Listen along'}
+                disabled={!ready || failed} onclick={() => setSound(!$soundOn)}>
+          {#if $soundOn}
+            <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2.5 6.2h2.3l3-2.6v8.8l-3-2.6H2.5z" fill="currentColor" /><path d="M10.4 6a2.8 2.8 0 0 1 0 4M12.3 4.2a5.4 5.4 0 0 1 0 7.6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /></svg>
+          {:else}
+            <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2.5 6.2h2.3l3-2.6v8.8l-3-2.6H2.5z" fill="currentColor" /><path d="M10.5 6.2l3.4 3.6M13.9 6.2l-3.4 3.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /></svg>
+          {/if}
+        </button>
+        <span class="by">{follow?.playing ? 'The DM is playing' : 'The DM has paused'}</span>
+      </div>
+    {:else}
     <div class="row">
       <button class="ctl" aria-label="Previous song" title="Previous" disabled={!ready || failed || !playlist.list}
               onclick={() => fadeThen(() => yt?.previousVideo())}>
@@ -510,6 +603,8 @@
         <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M12.5 3v10M3 3.2v9.6L10.4 8z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" /></svg>
       </button>
     </div>
+    {/if}
+    {#if !following}
     <!-- Shuffle and loop, in the other bottom corner. -->
     <button class="shuf" class:on={shuffle} aria-pressed={shuffle} disabled={!playlist.list}
             aria-label={shuffle ? 'Shuffle on' : 'Shuffle off'}
@@ -531,6 +626,7 @@
               fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
     </button>
+    {/if}
     <!-- Volume: a speaker in the bottom corner. Hovered, focused or tapped, a
          slider slides out beside it over the module's edge, so the module's
          layout and size never change. -->
@@ -650,5 +746,8 @@
   .ctl:active:not(:disabled) { transform: scale(0.92); }
   .ctl:disabled { opacity: 0.4; cursor: default; }
   .ctl.play { width: 2.125rem; height: 2.125rem; background: var(--a-wash); color: var(--a); border-color: var(--a-edge); }
+  .row.follow { gap: 0.625rem; }
+  .listen:not(.on) { background: none; color: var(--dim); border-color: var(--line); }
+  .by { font-size: 0.75rem; color: var(--dim); }
   @media (prefers-reduced-motion: reduce) { .playing .eq i { animation: none; } }
 </style>

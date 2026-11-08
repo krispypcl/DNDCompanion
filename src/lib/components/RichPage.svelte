@@ -7,7 +7,7 @@
    * The toolbar lives elsewhere (beside the page arrows) and calls `apply`.
    */
   import { onMount } from 'svelte';
-  import { fromHtml, isEmptyText, toHtml, type Format } from '$lib/rules/richtext';
+  import { fromHtml, isEmptyText, toHtml, type Format, type MarkKind } from '$lib/rules/richtext';
 
   let {
     value,
@@ -141,6 +141,31 @@
     oninput();
   }
 
+  /**
+   * Colour, highlight or size for the selection. The browser's own font-name
+   * command does the hard part (wrapping a selection that crosses lines and
+   * other marks); the wrapping it leaves is then made into the sheet's own.
+   */
+  export function mark(kind: MarkKind, value: string) {
+    if (!box || typeof document === 'undefined') return;
+    const sel = document.getSelection();
+    if (!sel || sel.isCollapsed || !box.contains(sel.anchorNode)) return;
+    try { document.execCommand('styleWithCSS', false, 'false'); } catch { /* older engines */ }
+    document.execCommand('fontName', false, `dnd-${kind}-${value}`);
+    box.querySelectorAll(`font[face^="dnd-"]`).forEach((font) => {
+      const m = font.getAttribute('face')!.match(/^dnd-([chs])-([a-z]+)$/);
+      const span = document.createElement('span');
+      if (m) {
+        // The same kind inside it gives way to the new one.
+        font.querySelectorAll(`[data-${m[1]}]`).forEach((inner) => inner.removeAttribute(`data-${m[1]}`));
+        if (m[2] !== 'none') span.setAttribute(`data-${m[1]}`, m[2]);
+      }
+      while (font.firstChild) span.appendChild(font.firstChild);
+      font.replaceWith(span);
+    });
+    oninput();
+  }
+
   function onkeydown(e: KeyboardEvent) {
     const mod = e.ctrlKey || e.metaKey;
     if (!mod) return;
@@ -220,6 +245,27 @@
   .rich :global(strong), .rich :global(b) { font-weight: 650; }
   .rich :global(u) { text-underline-offset: 2px; }
   .rich :global(s), .rich :global(strike) { color: var(--dim); }
+  /* Colours read on both light and dark pages; highlights are washes, so the
+     writing on them stays the page's own colour. */
+  .rich :global([data-c='red']) { color: oklch(66% 0.2 25); }
+  .rich :global([data-c='orange']) { color: oklch(72% 0.16 55); }
+  .rich :global([data-c='gold']) { color: oklch(78% 0.15 88); }
+  .rich :global([data-c='green']) { color: oklch(68% 0.16 145); }
+  .rich :global([data-c='teal']) { color: oklch(70% 0.11 190); }
+  .rich :global([data-c='blue']) { color: oklch(66% 0.15 250); }
+  .rich :global([data-c='purple']) { color: oklch(66% 0.17 300); }
+  .rich :global([data-c='pink']) { color: oklch(70% 0.17 350); }
+  .rich :global([data-c='grey']) { color: var(--dim); }
+  .rich :global([data-h]) { border-radius: 0.2em; padding: 0 0.1em; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+  .rich :global([data-h='yellow']) { background: oklch(88% 0.17 98 / 0.38); }
+  .rich :global([data-h='green']) { background: oklch(80% 0.17 145 / 0.32); }
+  .rich :global([data-h='blue']) { background: oklch(75% 0.12 240 / 0.34); }
+  .rich :global([data-h='pink']) { background: oklch(76% 0.15 350 / 0.32); }
+  .rich :global([data-h='purple']) { background: oklch(70% 0.15 300 / 0.32); }
+  .rich :global([data-h='orange']) { background: oklch(80% 0.15 60 / 0.34); }
+  .rich :global([data-s='small']) { font-size: 0.85em; }
+  .rich :global([data-s='big']) { font-size: 1.3em; line-height: 1.35; }
+  .rich :global([data-s='huge']) { font-size: 1.7em; line-height: 1.25; }
   @media (max-width: 700px) {
     .rich { font-size: max(1em, 16px); }
   }

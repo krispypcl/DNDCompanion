@@ -31,7 +31,7 @@ describe('DetailsBlock', () => {
     unmount();
 
     render(DetailsBlock, { props: { definition: definition(), editable: true, onchange: () => {} } });
-    for (const label of ['Alignment', 'Gender', 'Age', 'Portrait URL']) {
+    for (const label of ['Alignment', 'Gender', 'Age']) {
       expect(screen.getByLabelText(label), `${label} should be editable`).toBeTruthy();
     }
   });

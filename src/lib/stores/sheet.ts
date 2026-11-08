@@ -1,3 +1,4 @@
+import { proficiencyBonus } from '$lib/rules/derived';
 import { friendlyError } from '$lib/errors';
 import { get, writable, type Readable } from 'svelte/store';
 import { StaleWriteError, sheetRepo } from '$lib/data/sheets';
@@ -161,7 +162,11 @@ function createSheetStore() {
     setDefinition(next: Definition) {
       const hasTexts = Boolean(get(store).sheet?.texts);
       if (hasTexts) adoptLegacyText();
-      const kept = hasTexts ? scrubText(next) : next;
+      const scrubbed = hasTexts ? scrubText(next) : next;
+      // The stored bonus follows the level (it is shown and used from the level
+      // anyway); kept in step for exports and older readers.
+      const prof = proficiencyBonus(scrubbed);
+      const kept = scrubbed.proficiency === prof ? scrubbed : { ...scrubbed, proficiency: prof };
       store.update((s) => (s.sheet ? { ...s, sheet: { ...s.sheet, definition: kept } } : s));
       pending.definition = kept;
       schedule();
@@ -209,6 +214,30 @@ function createSheetStore() {
      */
     adoptRow(patch: Partial<Pick<Sheet, 'campaign_id' | 'retired' | 'updated_at'>>) {
       store.update((s) => (s.sheet ? { ...s, sheet: { ...s.sheet, ...patch } } : s));
+    },
+
+    /**
+     * The sheet's row changed elsewhere (the DM gave a condition, or the
+     * owner on another device). With nothing waiting to save, it is taken as
+     * it is. With changes waiting, they stay, but the other side's conditions
+     * and stamp are taken in, so the next save neither loses the DM's change
+     * nor is refused as stale.
+     */
+    adoptRemote(row: Pick<Sheet, 'definition' | 'state' | 'updated_at'>) {
+      const current = get(store).sheet;
+      if (!current || !row.updated_at || row.updated_at <= current.updated_at) return;
+      const quiet = Object.keys(pending).length === 0 && get(store).status !== 'saving' && get(store).status !== 'unsaved';
+      if (quiet) {
+        store.update((s) =>
+          s.sheet ? { ...s, sheet: { ...s.sheet, definition: row.definition, state: row.state, updated_at: row.updated_at } } : s
+        );
+        return;
+      }
+      const conditions = row.state?.conditions ?? [];
+      store.update((s) =>
+        s.sheet ? { ...s, sheet: { ...s.sheet, state: { ...s.sheet.state, conditions }, updated_at: row.updated_at } } : s
+      );
+      if (pending.state) pending.state = { ...pending.state, conditions };
     },
 
     /** Whether anything typed has not reached the database yet. */

@@ -60,6 +60,7 @@
     items,
     columns,
     check,
+    equip,
     editable,
     blank,
     onchange,
@@ -80,6 +81,11 @@
     /** A tick in the first column, ahead of the name: prepared spells,
         attuned items. With a limit, no more than that many can be ticked. */
     check?: { key: string; label: string; short?: string; limit?: number; full?: string; inline?: boolean };
+    /**
+     * An Equip tag beside the name (equipment): pressed, it asks what the item
+     * does or takes it off. Shown to everyone when on; pressable by the owner.
+     */
+    equip?: { key: string; can: boolean; onpress: (index: number) => void };
     editable: boolean;
     blank: () => T;
     onchange: (next: T[]) => void;
@@ -498,6 +504,17 @@
       const toRow = () => {
         const el = rowEls[row.key];
         if (!el) return;
+        // Inside the sheet's middle module, which scrolls on its own on a
+        // wide screen: that is scrolled to put the row in its middle first.
+        const box = el.closest('[data-scrollbox]') as HTMLElement | null;
+        if (box && box.scrollHeight > box.clientHeight + 1) {
+          const br = box.getBoundingClientRect();
+          const rr = el.getBoundingClientRect();
+          if (rr.top < br.top + 40 || rr.bottom > br.bottom - 24) {
+            const to = box.scrollTop + rr.top - br.top - Math.max(0, (box.clientHeight - rr.height) / 2);
+            box.scrollTo({ top: Math.max(0, to), behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+          }
+        }
         const r = el.getBoundingClientRect();
         // Already comfortably on screen: leave the page where it is.
         if (r.top >= 80 && r.bottom <= window.innerHeight - 40) return;
@@ -553,6 +570,16 @@
   };
 
 </script>
+
+{#snippet equipTag(item: T, index: number)}
+  {@const on = Boolean(item[equip!.key])}
+  <button class="equip" class:on aria-pressed={on} disabled={!equip!.can}
+          aria-label={on ? `${nameOf(item) || 'Item'} equipped` : `Equip ${nameOf(item) || 'item'}`}
+          title={!equip!.can ? (on ? 'Equipped' : '') : editable ? 'What it does when equipped' : on ? 'Equipped · press to take off' : 'Equip it'}
+          onclick={() => equip!.onpress(index)}>
+    {#key on}<span class="eqlabel">{on ? 'Equipped' : 'Equip'}</span>{/key}
+  </button>
+{/snippet}
 
 {#if items.length === 0 && !editable}
   <p class="empty">{emptyText}</p>
@@ -650,9 +677,11 @@
                       </svg>
                     </button>
                   {/if}
+                  {#if equip}{@render equipTag(item, index)}{/if}
                 </div>
               {:else}
                 <span class="nm" data-flip={fk(row, nameCol.key)}>{text(item[nameCol.key])}</span>
+                {#if equip && (item[equip.key] || equip.can)}{@render equipTag(item, index)}{/if}
                 {#if links}<EntryLink
                   name={nameOf(item)}
                   source={item.source as string | undefined}
@@ -824,6 +853,19 @@
   .toggle.on { color: var(--a); border-color: var(--a-edge); background: var(--a-wash); }
   .toggle.on svg { fill: currentColor; transform: rotate(45deg); }
   .toggle:disabled { opacity: 0.35; cursor: not-allowed; }
+  /* Equip: a small tag after an item's name; filled while it is worn. */
+  .equip {
+    flex: none; margin-left: 0.375rem; vertical-align: 0.0625rem; padding: 0.0625rem 0.4375rem; border-radius: 999px;
+    font: inherit; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.04em; line-height: 1.4; cursor: pointer;
+    border: 1px dashed var(--line); background: none; color: var(--dim);
+    transition: color 0.18s ease, border-color 0.18s ease, background-color 0.18s ease, transform 0.08s ease;
+  }
+  .equip:hover:not(:disabled) { color: var(--a); border-color: var(--a-edge); }
+  .equip:active:not(:disabled) { transform: translateY(1px); }
+  .equip.on { border-style: solid; border-color: var(--a-edge); background: var(--a-wash); color: var(--a); }
+  .equip:disabled { cursor: default; }
+  .eqlabel { display: inline-block; animation: eqIn 0.25s cubic-bezier(0.2, 0.8, 0.3, 1); }
+  @keyframes eqIn { from { opacity: 0; transform: translateY(3px); } }
   .muted { color: var(--dim); font-size: 0.85rem; }
   .numeric { font-variant-numeric: tabular-nums; }
   /* Centred on the row rather than aligned with the first line of text. */
@@ -869,12 +911,13 @@
   }
 
   /* The tick column is the width of the mark and nothing more. */
-  .tick { text-align: left; vertical-align: middle; }
+  /* At the top of the row with the first line of its name, however tall the row. */
+  .tick { text-align: left; vertical-align: top; }
   th.tick { color: var(--label); }
   .tick span.yes { color: var(--a); font-weight: 600; }
   .tick input {
     width: 1rem; height: 1rem; accent-color: var(--a); cursor: pointer;
-    display: block; margin: 0 auto;
+    display: block; margin: 0.4375rem auto 0;
   }
   .addrow { display: flex; align-items: center; gap: 0.375rem; margin-top: 0.75rem; }
   /* The handles and remove buttons come in with edit mode rather than popping. */

@@ -1,4 +1,7 @@
 <script lang="ts">
+  import InkLayer from './InkLayer.svelte';
+  import { fade } from 'svelte/transition';
+  import { blankInk, joinInk, splitInk, type Ink, type Paper, type Stroke } from '$lib/rules/ink';
   /**
    * One long-form writing (notes, backstory), kept in pages like a book. In
    * edit mode the owner has one switch for it, private or not, beside the
@@ -7,7 +10,7 @@
    */
   import FormatBar from './FormatBar.svelte';
   import RichPage from './RichPage.svelte';
-  import type { Format } from '$lib/rules/richtext';
+  import type { Format, MarkKind } from '$lib/rules/richtext';
   import Switch from './Switch.svelte';
   import { cubicOut } from 'svelte/easing';
   import { prefersReducedMotion } from '$lib/motion';
@@ -20,6 +23,7 @@
     owner,
     isPublic,
     locked = false,
+    peek = false,
     onbody,
     onpublic
   }: {
@@ -33,15 +37,41 @@
     isPublic: boolean | null;
     /** Private, and this reader is not the owner: say so instead of showing it. */
     locked?: boolean;
+    /** Private, and this reader is the campaign's DM: shown, with a word that it is private. */
+    peek?: boolean;
     onbody: (next: string) => void;
     onpublic: (next: boolean) => void;
   } = $props();
 
   const pages = $derived(splitPages(value));
+
   /** The page being written, for the toolbar to act on. */
-  let editor: { apply: (f: Format) => void } | undefined = $state();
+  let editor: { apply: (f: Format) => void; mark: (k: MarkKind, v: string) => void } | undefined = $state();
   let active = $state<Partial<Record<Format, boolean>>>({});
   let current = $state(0);
+  /** This page's writing and its drawing (kept on a last line of the page). */
+  const parts = $derived(splitInk(pages[current] ?? ''));
+  const writePage = (text: string, ink: Ink | null) => onbody(joinPages(setPage(pages, current, joinInk(text, ink))));
+
+  // ── Drawing over the page ──
+  let drawing = $state(false);
+  let erasing = $state(false);
+  let inkHeight = $state(0);
+  const PENS = ['var(--text)', 'oklch(63% 0.21 25)', 'oklch(80% 0.15 88)', 'oklch(68% 0.17 145)', 'oklch(64% 0.15 250)', 'oklch(64% 0.18 300)'];
+  let pen = $state({ c: PENS[1], w: 4 });
+  const ink = $derived(parts.ink ?? blankInk());
+  function addStroke(st: Stroke) {
+    writePage(parts.text, { ...ink, s: [...ink.s, st] });
+  }
+  function eraseStroke(i: number) {
+    writePage(parts.text, { ...ink, s: ink.s.filter((_, j) => j !== i) });
+  }
+  function setPaper(paper: Paper) {
+    writePage(parts.text, { ...ink, paper });
+  }
+  $effect(() => {
+    if (!editable) drawing = false;
+  });
   /** Removing a page that has writing on it takes a second press. */
   let confirming = $state(false);
   let confirmTimer: ReturnType<typeof setTimeout> | undefined;
@@ -99,18 +129,25 @@
     <p><b>Private</b><span>The player keeps their {label.toLowerCase()} to themselves.</span></p>
   </div>
 {:else}
+{#if peek}
+  <p class="peek" role="note">
+    <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></g></svg>
+    Private. You can read it as their campaign’s DM; nobody else can.
+  </p>
+{/if}
 <div class="book">
   {#key current}
-    <div class="page" in:turn>
+    <div class="page" in:turn style:min-height={inkHeight ? `${inkHeight}px` : undefined}>
       <RichPage
         bind:this={editor}
-        value={pages[current] ?? ''}
+        value={parts.text}
         {editable}
         label={many ? `${label}, page ${current + 1}` : label}
         placeholder={isBlank(pages) ? 'Nothing written yet.' : 'This page is blank.'}
-        onchange={(v) => onbody(joinPages(setPage(pages, current, v)))}
+        onchange={(v) => writePage(v, parts.ink)}
         onstate={(a) => (active = a)}
       />
+      <InkLayer ink={parts.ink} {drawing} {pen} {erasing} onstroke={addStroke} onerase={eraseStroke} bind:minHeight={inkHeight} />
     </div>
   {/key}
 </div>
@@ -118,9 +155,36 @@
 <!-- Always there, even for a single page: Notes and Backstory look the same
      whatever has been written in them. -->
 <div class="pagerwrap">
-<div class="pager" class:reading={!editable}>
+<div class="pager" class:reading={!editable} class:inking={drawing}>
   <!-- Formatting sits to the left of the page arrows, while writing. -->
-  {#if editable}<FormatBar {active} onformat={(f) => editor?.apply(f)} />{/if}
+  {#if editable}
+    {#if drawing}
+      <!-- Drawing: the pen, the eraser, the paper. -->
+      <div class="inkbar" role="toolbar" aria-label="Drawing" transition:fade={{ duration: 150 }}>
+        {#each PENS as c (c)}
+          <button class="sw" style:--sw={c} aria-label="Pen colour" aria-pressed={!erasing && pen.c === c}
+                  onclick={() => { pen = { ...pen, c }; erasing = false; }}></button>
+        {/each}
+        <span class="isep" aria-hidden="true"></span>
+        {#each [2, 4, 8, 14] as w (w)}
+          <button class="thick" aria-label="Thickness {w}" aria-pressed={!erasing && pen.w === w}
+                  onclick={() => { pen = { ...pen, w }; erasing = false; }}><i style:--d="{Math.max(3, w / 1.4)}px"></i></button>
+        {/each}
+        <button class="itool" aria-pressed={erasing} title="Eraser: tap or drag over a line" onclick={() => (erasing = !erasing)}>Eraser</button>
+        <span class="isep" aria-hidden="true"></span>
+        <select aria-label="Paper" value={ink.paper} onchange={(e) => setPaper(e.currentTarget.value as Paper)}>
+          <option value="plain">Plain paper</option><option value="lines">Lines</option><option value="grid">Grid</option><option value="dots">Dots</option>
+        </select>
+        {#if ink.s.length}
+          <button class="itool" title="Take back the last line" onclick={() => eraseStroke(ink.s.length - 1)}>Undo</button>
+          <button class="itool" title="Clear this page's drawing" onclick={() => writePage(parts.text, { ...ink, s: [] })}>Clear</button>
+        {/if}
+        <button class="itool done" onclick={() => (drawing = false)}>Done</button>
+      </div>
+    {:else}
+      <FormatBar {active} onformat={(f) => editor?.apply(f)} onmark={(k, v) => editor?.mark(k, v)} />
+    {/if}
+  {/if}
     <div class="turns">
       <button class="nav" aria-label="Previous page" disabled={current === 0} onclick={() => go(current - 1)}>
         <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="m14.5 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -132,6 +196,11 @@
     </div>
     {#if editable}
       <div class="edits">
+        <button class="pg drawbtn" class:on={drawing} aria-pressed={drawing} onclick={() => { drawing = !drawing; erasing = false; }}
+                title="Draw over the page">
+          <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10zM14 7l3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          Draw
+        </button>
         {#if owner && isPublic !== null}
           <Switch
             checked={!isPublic}
@@ -155,6 +224,9 @@
 {/if}
 
 <style>
+  .peek {
+    display: flex; align-items: center; gap: 0.375rem; margin: 0 0 0.625rem; font-size: 0.75rem; color: var(--dim);
+  }
   .locked {
     flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 0.5rem; min-height: 10rem; text-align: center; color: var(--dim);
@@ -171,7 +243,24 @@
     margin: calc(-0.15rem - 1px) calc(-0.3rem - 1px) 0;
     flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0;
   }
-  .page { flex: 1 1 auto; display: flex; flex-direction: column; }
+  .page { flex: 1 1 auto; display: flex; flex-direction: column; position: relative; }
+  .inkbar { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; }
+  .inkbar .sw {
+    width: 1.25rem; height: 1.25rem; padding: 0; border-radius: 50%; cursor: pointer; background: var(--sw);
+    border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line); transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .inkbar .sw[aria-pressed='true'] { box-shadow: 0 0 0 2px var(--a); transform: scale(1.1); }
+  .thick { width: 1.75rem; height: 1.75rem; display: grid; place-items: center; padding: 0; border: 1px solid transparent; border-radius: var(--r-sm); background: none; color: var(--text); cursor: pointer; }
+  .thick i { display: block; width: var(--d); height: var(--d); border-radius: 50%; background: currentColor; }
+  .thick[aria-pressed='true'], .itool[aria-pressed='true'] { border-color: var(--a-edge); background: var(--a-wash); color: var(--a); }
+  .isep { width: 1px; height: 1.25rem; background: var(--line); margin: 0 0.25rem; }
+  .itool, .inkbar select {
+    font: inherit; font-size: 0.8125rem; cursor: pointer; border-radius: var(--r-sm); padding: 0.25rem 0.5rem;
+    border: 1px solid var(--line); background: var(--raised); color: var(--text);
+  }
+  .itool.done { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
+  .drawbtn { display: inline-flex; align-items: center; gap: 0.3125rem; }
+  .drawbtn.on { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
   .pager {
     display: flex; align-items: center; gap: 0.75rem;
     flex-wrap: wrap; margin-top: 0.875rem; padding-top: 0.75rem;
@@ -190,7 +279,9 @@
     grid-template-columns: auto 1fr;
     grid-template-areas: 'bar edits' 'turns turns';
   }
-  .pager:not(.reading) :global(.bar) { grid-area: bar; justify-self: start; }
+  .pager:not(.reading) :global(.bar), .pager:not(.reading) .inkbar { grid-area: bar; justify-self: start; }
+  /* Drawing: the pen's tools get the whole first line; the page controls sit below. */
+  .pager.inking:not(.reading) { grid-template-columns: auto 1fr; grid-template-areas: 'bar bar' 'turns edits'; }
   .pager:not(.reading) .turns { grid-area: turns; justify-self: center; }
   .pager:not(.reading) .edits { grid-area: edits; justify-self: end; justify-content: flex-end; margin-left: 0; }
   @container (min-width: 700px) {
@@ -198,6 +289,7 @@
       grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
       grid-template-areas: 'bar turns edits';
     }
+    .pager.inking:not(.reading) { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); grid-template-areas: 'bar bar bar' '. turns edits'; }
     .pager:not(.reading) .edits { flex-wrap: nowrap; }
   }
   @container (max-width: 460px) {

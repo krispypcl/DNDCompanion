@@ -1,0 +1,292 @@
+<script lang="ts">
+  /**
+   * The Links tab: every web address the sheet uses, in one place. The
+   * portrait, the banner and the music; the player's own links (a map, a
+   * wiki, a character builder); and any sound effect swapped for a recording
+   * of their own. Reading, the links open; editing, they are typed in.
+   */
+  import { flip } from 'svelte/animate';
+  import { cubicOut } from 'svelte/easing';
+  import { fade, slide } from 'svelte/transition';
+  import { parsePlaylist } from '$lib/music';
+  import { resolveImageUrl } from '$lib/rules/imageUrl';
+  import { SOUND_NAMES, audioUrl, playClip, type SoundName } from '$lib/sound';
+  import { foldRow, prefersReducedMotion } from '$lib/motion';
+  import EditableField from './EditableField.svelte';
+  import Lightbox from './Lightbox.svelte';
+  import type { Definition } from '$lib/types';
+
+  let {
+    definition,
+    editable,
+    onchange
+  }: { definition: Definition; editable: boolean; onchange: (next: Definition) => void } = $props();
+
+  const portraitLink = $derived(resolveImageUrl(definition.identity.portraitUrl));
+  const bannerLink = $derived(resolveImageUrl(definition.identity.bannerUrl));
+  /** Whether each resolved address actually loaded, so a link that cannot be
+      shown says so while it is being pasted rather than leaving a blank. */
+  let loads = $state<Record<string, 'loading' | 'ok' | 'failed'>>({});
+  const loadState = (url: string) => (url ? (loads[url] ?? 'loading') : null);
+  let viewing = $state<{ src: string; alt: string; from?: Element | null } | null>(null);
+  function patchIdentity(key: string, value: string) {
+    onchange({ ...definition, identity: { ...definition.identity, [key]: value } });
+  }
+
+  // ── The player's own links ──
+  const links = $derived(definition.links ?? []);
+  let draftLabel = $state('');
+  let draftUrl = $state('');
+  const cleanUrl = (raw: string) => {
+    const t = raw.trim();
+    if (!t) return '';
+    return /^https?:\/\//i.test(t) ? t : `https://${t}`;
+  };
+  const hostOf = (url: string) => {
+    try {
+      return new URL(url).hostname.replace(/^www\./, '');
+    } catch {
+      return url;
+    }
+  };
+  function addLink() {
+    const url = cleanUrl(draftUrl);
+    if (!url) return;
+    onchange({ ...definition, links: [...links, { label: draftLabel.trim() || hostOf(url), url }] });
+    draftLabel = '';
+    draftUrl = '';
+  }
+  function patchLink(i: number, patch: Partial<{ label: string; url: string }>) {
+    onchange({ ...definition, links: links.map((l, j) => (j === i ? { ...l, ...patch } : l)) });
+  }
+  function removeLink(i: number) {
+    onchange({ ...definition, links: links.filter((_, j) => j !== i) });
+  }
+
+  // ── Sound effects ──
+  const sounds = $derived(definition.sounds ?? {});
+  const SOUND_KEYS = Object.keys(SOUND_NAMES) as SoundName[];
+  const customSounds = $derived(SOUND_KEYS.filter((k) => sounds[k]));
+  function setSoundUrl(key: SoundName, value: string) {
+    const next = { ...sounds };
+    if (value.trim()) next[key] = value.trim();
+    else delete next[key];
+    onchange({ ...definition, sounds: next });
+  }
+  const unfold = () => ({ duration: prefersReducedMotion() ? 0 : 220, easing: cubicOut });
+</script>
+
+<div class="links">
+  <!-- The sheet's pictures and music. -->
+  <section>
+    <h3 class="cap">Pictures and music</h3>
+    {#if editable}
+      <!-- Each accepts the link as it was copied: a Drive, Dropbox, OneDrive or
+           Imgur page is turned into the picture's own address when drawn. -->
+      {#each [
+        { role: 'portrait', label: 'Portrait URL', key: 'portraitUrl', link: portraitLink, placeholder: 'Paste an image link: Google Drive, Imgur, Pinterest, Dropbox…' },
+        { role: 'banner', label: 'Banner URL', key: 'bannerUrl', link: bannerLink, placeholder: 'Optional: a wide picture shown behind the sheet' }
+      ] as const as field (field.role)}
+        {@const status = loadState(field.link.url)}
+        <div class="wide" data-flip-ghost="links:url:{field.role}" data-ghost-scale="0.94">
+          <span class="lbl">{field.label}</span>
+          <div class="urlrow">
+            <div class="urlfield">
+              <EditableField value={definition.identity[field.key] ?? ''} editable={true} label={field.label}
+                             placeholder={field.placeholder} onchange={(v) => patchIdentity(field.key, String(v))} />
+            </div>
+            {#if field.link.url}
+              <button type="button" class="thumb {field.role}" class:failed={status === 'failed'} class:ready={status === 'ok'}
+                      disabled={status !== 'ok'} aria-label="View {field.role} full screen"
+                      title={status === 'failed' ? 'This link didn’t turn into a picture!' : 'View full screen'}
+                      onclick={(e) => (viewing = { src: field.link.url, alt: field.label.replace(' URL', ''), from: e.currentTarget })}>
+                {#key field.link.url}
+                  <img src={field.link.url} alt="" onload={() => (loads[field.link.url] = 'ok')}
+                       onerror={() => (loads[field.link.url] = 'failed')} />
+                {/key}
+              </button>
+            {/if}
+          </div>
+          {#if status === 'failed'}
+            <p class="urlnote bad" role="status">
+              That link didn’t turn into a picture! {field.link.source === 'drive' || field.link.source === 'onedrive'
+                ? 'Check it is shared with anyone who has the link.'
+                : 'Open the picture itself, copy its image address and paste that instead.'}
+            </p>
+          {:else if field.link.note}
+            <p class="urlnote" class:bad={field.link.source === 'invalid'} role="status">{field.link.note}</p>
+          {/if}
+        </div>
+      {/each}
+      <div class="wide" data-flip-ghost="links:url:playlist" data-ghost-scale="0.94">
+        <span class="lbl">Playlist URL</span>
+        <EditableField value={definition.identity.playlistUrl ?? ''} editable={true} label="Playlist URL"
+                       placeholder="Optional: a YouTube or YouTube Music playlist, or one video"
+                       onchange={(v) => patchIdentity('playlistUrl', String(v).trim())} />
+        {#if definition.identity.playlistUrl?.trim()}
+          {@const found = parsePlaylist(definition.identity.playlistUrl)}
+          <p class="urlnote" class:bad={!found} role="status">
+            {#if !found}That’s not a tune we know! Paste a YouTube or YouTube Music link.
+            {:else}Plays up top. The speaker button is its mute.{/if}
+          </p>
+        {/if}
+      </div>
+    {:else}
+      <ul class="chips" data-flip-ghost="links:read:pictures">
+        {#each [
+          { label: 'Portrait', url: definition.identity.portraitUrl },
+          { label: 'Banner', url: definition.identity.bannerUrl },
+          { label: 'Music', url: definition.identity.playlistUrl }
+        ].filter((l) => l.url?.trim()) as l (l.label)}
+          <li><a href={cleanUrl(l.url ?? '')} target="_blank" rel="noopener noreferrer"><b>{l.label}</b><span>{hostOf(cleanUrl(l.url ?? ''))}</span></a></li>
+        {:else}
+          <li class="none">No pictures or music linked yet.</li>
+        {/each}
+      </ul>
+    {/if}
+  </section>
+
+  <!-- The player's own links. -->
+  <section>
+    <h3 class="cap">Your links</h3>
+    <ul class="own">
+      {#each links as link, i (i + link.url)}
+        <li animate:flip={{ duration: 200, easing: cubicOut }} transition:foldRow>
+          {#if editable}
+            <div class="linkedit">
+              <EditableField value={link.label} editable={true} label="Link name" placeholder="Name"
+                             onchange={(v) => patchLink(i, { label: String(v) })} />
+              <EditableField value={link.url} editable={true} label="Link address" placeholder="https://…"
+                             onchange={(v) => patchLink(i, { url: cleanUrl(String(v)) })} />
+              <button class="x" aria-label="Remove {link.label}" title="Remove" onclick={() => removeLink(i)}>×</button>
+            </div>
+          {:else}
+            <a class="go" href={link.url} target="_blank" rel="noopener noreferrer">
+              <b>{link.label}</b><span>{hostOf(link.url)}</span>
+              <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </a>
+          {/if}
+        </li>
+      {/each}
+    </ul>
+    {#if editable}
+      <div class="add" transition:slide={unfold()}>
+        <input bind:value={draftLabel} placeholder="Name (e.g. Campaign wiki)" aria-label="New link name" />
+        <input bind:value={draftUrl} placeholder="Address" aria-label="New link address"
+               onkeydown={(e) => { if (e.key === 'Enter') addLink(); }} />
+        <button onclick={addLink} disabled={!draftUrl.trim()}>Add link</button>
+      </div>
+    {:else if !links.length}
+      <p class="none">Nothing here yet. Add maps, wikis or anything else you keep reaching for, in edit mode.</p>
+    {/if}
+  </section>
+
+  <!-- Sound effects: any of them can be a recording of the player's own. -->
+  <section>
+    <h3 class="cap">Sound effects</h3>
+    {#if editable}
+      <p class="hint">Paste a link to a sound file (mp3, ogg or wav; a Google Drive or Dropbox share link works) to play it instead of the built-in sound. Leave blank for the built-in one.</p>
+      <div class="sounds">
+        {#each SOUND_KEYS as key (key)}
+          <div class="snd" data-flip-ghost="links:sound:{key}" data-ghost-scale="0.96">
+            <span class="lbl">{SOUND_NAMES[key]}</span>
+            <div class="urlrow">
+              <div class="urlfield">
+                <EditableField value={sounds[key] ?? ''} editable={true} label="{SOUND_NAMES[key]} sound link"
+                               placeholder="Built-in" onchange={(v) => setSoundUrl(key, String(v))} />
+              </div>
+              {#if sounds[key]}
+                {@const url = audioUrl(sounds[key])}
+                <button class="play" aria-label="Play {SOUND_NAMES[key]}" title={url ? 'Play it' : 'That isn’t a link we can play'}
+                        disabled={!url} onclick={() => url && playClip(url)} in:fade={{ duration: 150 }}>
+                  <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z" fill="currentColor" /></svg>
+                </button>
+              {/if}
+            </div>
+          </div>
+        {/each}
+      </div>
+    {:else if customSounds.length}
+      <ul class="chips" data-flip-ghost="links:read:sounds">
+        {#each customSounds as key (key)}
+          {@const url = audioUrl(sounds[key])}
+          <li><button class="chipbtn" disabled={!url} onclick={() => url && playClip(url)} title="Play it">
+            <svg viewBox="0 0 16 16" width="10" height="10" aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z" fill="currentColor" /></svg>
+            {SOUND_NAMES[key]}</button></li>
+        {/each}
+      </ul>
+    {:else}
+      <p class="none">All built-in. Swap any of them for your own recordings in edit mode.</p>
+    {/if}
+  </section>
+</div>
+
+{#if viewing}
+  <Lightbox src={viewing.src} alt={viewing.alt} from={viewing.from} onclose={() => (viewing = null)} />
+{/if}
+
+<style>
+  .links { display: grid; gap: 1.5rem; }
+  section { display: grid; gap: 0.625rem; }
+  .cap { margin: 0; font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600; }
+  .lbl { display: block; font-size: 0.6875rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--label); font-weight: 600; margin-bottom: 0.125rem; }
+  .wide { min-width: 0; }
+  .wide :global(.field), .snd :global(.field), .linkedit :global(.field) { width: 100%; field-sizing: fixed; }
+  .urlrow { display: flex; align-items: center; gap: 0.625rem; }
+  .urlfield { flex: 1 1 auto; min-width: 0; }
+  .thumb {
+    padding: 0; cursor: zoom-in; flex: none; height: 2.125rem; border-radius: var(--r-sm); overflow: hidden;
+    border: 1px solid var(--line); background: var(--raised); position: relative;
+    opacity: 0.4; transition: opacity 0.25s ease, border-color 0.25s ease, transform 0.15s ease;
+  }
+  .thumb.portrait { width: 2.125rem; }
+  .thumb.banner { width: 4.5rem; }
+  .thumb.ready { opacity: 1; }
+  .thumb.ready:hover { border-color: var(--a-edge); transform: scale(1.04); }
+  .thumb:disabled { cursor: default; }
+  .thumb.failed { opacity: 1; border-color: var(--danger); background: var(--danger-wash); }
+  .thumb.failed img { visibility: hidden; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .urlnote { margin: 0.1875rem 0 0 calc(0.3rem + 1px); font-size: 0.78rem; line-height: 1.45; color: var(--dim); }
+  .urlnote.bad { color: var(--danger); }
+  .hint, .none { margin: 0; font-size: 0.8125rem; color: var(--dim); line-height: 1.45; }
+  .chips, .own { list-style: none; margin: 0; padding: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+  .chips a, .chipbtn {
+    display: inline-flex; align-items: baseline; gap: 0.375rem; padding: 0.3125rem 0.625rem; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--raised); color: var(--text); text-decoration: none; font: inherit; font-size: 0.8125rem;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .chipbtn { align-items: center; cursor: pointer; }
+  .chips a span { color: var(--dim); font-size: 0.75rem; }
+  .chips a:hover, .chipbtn:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
+  .own { display: grid; gap: 0.375rem; }
+  .go {
+    display: flex; align-items: center; gap: 0.625rem; padding: 0.5rem 0.75rem; border-radius: var(--r-sm);
+    border: 1px solid var(--line-soft); background: var(--raised); color: var(--text); text-decoration: none;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+  }
+  .go span { color: var(--dim); font-size: 0.8125rem; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .go svg { color: var(--dim); flex: none; }
+  .go:hover { border-color: var(--a-edge); background: var(--hover-bg); }
+  .go:hover svg { color: var(--a); }
+  .linkedit { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto; gap: 0.5rem; align-items: center; }
+  .x { width: 1.75rem; height: 1.75rem; padding: 0; border: 0; background: none; color: var(--dim); font-size: 1.1rem; cursor: pointer; }
+  .x:hover { color: var(--bad); }
+  .add { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto; gap: 0.5rem; }
+  .add input {
+    min-width: 0; font: inherit; font-size: 0.875rem; padding: 0.4375rem 0.625rem; color: var(--text);
+    border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg);
+  }
+  .add input:focus { outline: none; border-color: var(--a-edge); }
+  .add button, .play {
+    font: inherit; font-size: 0.8125rem; cursor: pointer; border-radius: var(--r-sm); padding: 0.4375rem 0.75rem;
+    border: 1px solid var(--a-edge); background: var(--a-wash); color: var(--a); white-space: nowrap;
+  }
+  .add button:disabled, .play:disabled, .chipbtn:disabled { opacity: 0.5; cursor: default; }
+  .play { width: 2rem; height: 2rem; padding: 0; display: grid; place-items: center; flex: none; }
+  .sounds { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.75rem 1rem; }
+  @media (max-width: 560px) {
+    .add, .linkedit { grid-template-columns: 1fr; }
+  }
+</style>

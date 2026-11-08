@@ -8,8 +8,13 @@
     id,
     link,
     label = 'Copy link to this sheet',
+    icon = 'link',
+    disabled = false,
     oncopied
   }: {
+    /** A chain for a page's link; a figure with a plus for an invite to join. */
+    icon?: 'link' | 'invite';
+    disabled?: boolean;
     /** A sheet's id: its link is made from it. */
     id?: string;
     /** Or the link itself, for anything else. */
@@ -30,11 +35,19 @@
   }
 </script>
 
-<button class="share" class:done onclick={share} aria-label={label} title={label}>
+<button class="share" class:done class:invite={icon === 'invite'} onclick={share} aria-label={label} title={label} {disabled}>
   {#if done}
     <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
       <path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  {:else if icon === 'invite'}
+    <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+      <g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9.5" cy="8.5" r="3.5" />
+        <path d="M3 19.5c.8-3.3 3.4-5 6.5-5s5.7 1.7 6.5 5" />
+        <path class="plus" d="M19 8v6M16 11h6" />
+      </g>
     </svg>
   {:else}
     <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
@@ -66,11 +79,16 @@
   .share.done { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
   .share svg { display: block; }
   /* The links of the chain rock against each other once. */
-  .share:hover:not(.done) svg { animation: rock 0.5s cubic-bezier(0.3, 0.7, 0.4, 1); }
+  .share:hover:not(.done):not(.invite) svg { animation: rock 0.5s cubic-bezier(0.3, 0.7, 0.4, 1); }
+  .share:disabled { opacity: 0.45; cursor: default; }
+  /* The invite's plus turns once, a little welcome. */
+  .share.invite .plus { transform-box: fill-box; transform-origin: center; }
+  .share.invite:hover:not(.done) .plus { animation: welcome 0.5s cubic-bezier(0.3, 0.7, 0.4, 1); }
+  @keyframes welcome { from { transform: rotate(-90deg) scale(0.6); } }
   @keyframes rock {
     0%, 100% { transform: rotate(0); }
     35% { transform: rotate(-14deg); }
     70% { transform: rotate(6deg); }
   }
-  @media (prefers-reduced-motion: reduce) { .share:hover svg { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .share:hover svg, .share:hover .plus { animation: none; } }
 </style>

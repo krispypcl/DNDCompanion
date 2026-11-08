@@ -100,7 +100,21 @@ export type Item = LinkableEntry & {
       is never summed. */
   value?: string;
   notes?: string;
+  /** Worn or held: its effects count (armour on, shield up, ring worn). */
+  equipped?: boolean;
+  /** What it does to the character while equipped. */
+  effects?: ItemEffect[];
 };
+
+/** Something an equipped item does to the numbers. */
+export type ItemEffect =
+  | { kind: 'armor'; base: number; dex: 'full' | 'max2' | 'none' }
+  | { kind: 'shield'; bonus: number }
+  | { kind: 'ac'; bonus: number }
+  | { kind: 'speed'; bonus: number }
+  | { kind: 'init'; bonus: number }
+  | { kind: 'save'; ability: Ability | 'all'; bonus: number }
+  | { kind: 'ability'; ability: Ability; mode: 'set' | 'bonus'; value: number };
 
 /** The long-form character writing, kept apart from the one-line details. */
 /** One class a character has levels in. A single-class character has one. */
@@ -200,6 +214,10 @@ export type Definition = {
       the database; this copy, on the public row, is only so a visitor can be
       told it is private rather than shown an empty page. */
   privateText?: Partial<Record<TextKey, boolean>>;
+  /** The player's own links (a map, a wiki, a character builder), on the Links tab. */
+  links?: { label: string; url: string }[];
+  /** Sound effects swapped for recordings, by effect (see SOUND_NAMES in sound.ts). */
+  sounds?: Partial<Record<string, string>>;
 };
 
 export type State = {

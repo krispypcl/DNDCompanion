@@ -3,15 +3,24 @@
       score sits under it, because the modifier is what you use every round. */
   import { signed as sign } from '$lib/actions';
   import EditableField from './EditableField.svelte';
-  import { modifierOf, saveBonus, saveExtra } from '$lib/rules/derived';
+  import { modifierOf, saveBonus, saveExtra, saveParts } from '$lib/rules/derived';
+  import { abilityScoreParts } from '$lib/rules/equipment';
+  import Why from './Why.svelte';
   import { ABILITIES, type Ability, type Definition } from '$lib/types';
   import { bump } from '$lib/motion';
 
   let {
     definition,
     editable,
-    onchange
-  }: { definition: Definition; editable: boolean; onchange: (next: Definition) => void } = $props();
+    onchange,
+    onroll
+  }: {
+    definition: Definition;
+    editable: boolean;
+    onchange: (next: Definition) => void;
+    /** Out of edit mode, a saving throw rolls in the dice tray (the owner's). */
+    onroll?: (label: string, bonus: number) => void;
+  } = $props();
 
   const NAMES: Record<Ability, string> = {
     str: 'Strength', dex: 'Dexterity', con: 'Constitution',
@@ -54,9 +63,13 @@
 <span class="cap">Abilities</span>
 <div class="abilities">
   {#each ABILITIES as ability (ability)}
+    {@const sc = abilityScoreParts(definition, ability)}
     <div class="ability">
       <span class="name">{NAMES[ability]}</span>
-      <span class="mod" use:bump={modifierOf(definition, ability)}>{sign(modifierOf(definition, ability))}</span>
+      <Why title={NAMES[ability]} parts={sc.parts} total="{sc.score} ({sign(modifierOf(definition, ability))})"
+           hint="The modifier is half the score above 10, rounded down.">
+        <span class="mod" use:bump={modifierOf(definition, ability)}>{sign(modifierOf(definition, ability))}</span>
+      </Why>
       <span class="score">
         <EditableField
           value={definition.abilities[ability]}
@@ -76,16 +89,19 @@
     <div class="save" class:on={definition.saves?.[ability]}>
       <button
         class="toggle"
-        disabled={!editable}
-        aria-pressed={Boolean(definition.saves?.[ability])}
-        aria-label="{NAMES[ability]} saving throw proficiency"
-        title={breakdown(ability)}
-        onclick={() => toggleSave(ability)}
+        class:rolls={!editable && onroll}
+        disabled={!editable && !onroll}
+        aria-pressed={editable ? Boolean(definition.saves?.[ability]) : undefined}
+        aria-label={editable || !onroll ? `${NAMES[ability]} saving throw proficiency` : `Roll a ${NAMES[ability]} saving throw`}
+        title={editable || !onroll ? breakdown(ability) : `Roll a ${NAMES[ability]} save: d20 ${sign(saveBonus(definition, ability))} (${breakdown(ability)})`}
+        onclick={() => (editable ? toggleSave(ability) : onroll?.(`${NAMES[ability]} save`, saveBonus(definition, ability)))}
       >
         <!-- The same mark as a skill's, but only ever empty or full: there
              is no expertise in a saving throw. -->
         <i class="dot" class:on={definition.saves?.[ability]} aria-hidden="true"></i>
-        <b use:bump={saveBonus(definition, ability)}>{sign(saveBonus(definition, ability))}</b>
+        <Why title="{NAMES[ability]} save" parts={saveParts(definition, ability)} total={sign(saveBonus(definition, ability))}>
+          <b use:bump={saveBonus(definition, ability)}>{sign(saveBonus(definition, ability))}</b>
+        </Why>
       </button>
       <!-- A flat bonus from an item or aura. Always rendered, so entering edit
            mode does not move the band. -->
@@ -104,6 +120,10 @@
 </div>
 
 <style>
+  /* Out of edit mode a save is a die to roll: it lifts like the skills' bonuses. */
+  .toggle.rolls { cursor: pointer; }
+  .toggle.rolls:hover b { color: var(--a); }
+  .toggle.rolls:active { transform: translateY(1px); }
   .cap {
     display: block;
     font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
