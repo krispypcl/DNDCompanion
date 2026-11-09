@@ -22,3 +22,15 @@ describe('trackers named for something on 5e.tools', () => {
     expect(trackerUrl({ label: 'Second Wind', class: 'Fighter' })).toContain('classes.html#fighter_xphb,state:feature=s0-1');
   });
 });
+
+describe('walking speed from the species', () => {
+  it('knows a Wood Elf walks 35 ft. and a 2014 dwarf 25', async () => {
+    const { speciesWalk } = await import('$lib/rules/lookup');
+    expect(speciesWalk('Wood Elf')).toBe(35);
+    expect(speciesWalk('Elf (Wood)')).toBe(35);
+    expect(speciesWalk('Dwarf', 'phb')).toBe(25);
+    expect(speciesWalk('Dwarf')).toBe(30);
+    expect(speciesWalk('Tiefling (Glasya)')).toBe(30);
+    expect(speciesWalk('Moonfolk')).toBeNull();
+  });
+});

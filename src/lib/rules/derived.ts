@@ -6,6 +6,7 @@
 
 import type { FormulaContext } from './formula';
 import { abilityScoreParts, equippedEffects, type Part } from './equipment';
+import { speciesWalk } from './lookup';
 import {
   ABILITIES,
   SKILLS,
@@ -43,9 +44,16 @@ export function saveParts(def: Definition, ability: Ability): Part[] {
   if (def.saves?.[ability]) parts.push({ label: 'Proficiency', value: proficiencyBonus(def) });
   const extra = saveExtra(def, ability);
   if (extra) parts.push({ label: 'Written bonus', value: extra });
+  let profFromEffect = Boolean(def.saves?.[ability]);
   for (const { item, effect } of equippedEffects(def)) {
     if (effect.kind === 'save' && (effect.ability === 'all' || effect.ability === ability)) {
-      parts.push({ label: item, value: effect.bonus });
+      if (effect.bonus) parts.push({ label: item, value: effect.bonus });
+      // Proficiency from a feature counts once: not on top of being proficient already.
+      if (effect.prof && !profFromEffect) {
+        parts.push({ label: item, value: effect.prof === 'full' ? proficiencyBonus(def) : Math.floor(proficiencyBonus(def) / 2),
+                     note: effect.prof === 'full' ? 'proficiency' : 'half proficiency' });
+        if (effect.prof === 'full') profFromEffect = true;
+      }
     }
   }
   return parts;
@@ -86,10 +94,27 @@ export function armorClass(def: Definition): { total: number; parts: Part[]; com
 }
 
 /** Speed: as written, plus anything worn that changes it. */
-/** Speed: the species' walking speed (set on the Character tab), plus anything that changes it. */
+/**
+ * The walking speed before anything changes it: the species' own, from
+ * 5e.tools (a Wood Elf walks 35 ft.), or, for a species it does not know,
+ * what is written on the Character tab (30 ft. if nothing is).
+ */
+export function walkingSpeed(def: Definition): { feet: number; from: 'species' | 'written' | 'default' } {
+  const id = def.identity ?? ({} as Definition['identity']);
+  const known = speciesWalk(id.ancestry, id.ancestrySource, [id.backgroundSource, ...classList(def).map((c) => c.source)]);
+  if (known != null) return { feet: known, from: 'species' };
+  const typed = def.combat?.speed;
+  if (typed != null && (typed as unknown) !== '') return { feet: Number(typed) || 0, from: 'written' };
+  return { feet: 30, from: 'default' };
+}
+
+/** Speed: the walking speed (see above), plus anything that changes it. */
 export function speedParts(def: Definition): { total: number; parts: Part[] } {
-  const written = def.combat?.speed == null || def.combat.speed === ('' as unknown) ? 30 : Number(def.combat.speed) || 0;
-  const parts: Part[] = [{ label: 'Walking speed', value: written, note: 'species' }];
+  const walk = walkingSpeed(def);
+  const parts: Part[] = [{
+    label: 'Walking speed', value: walk.feet,
+    note: walk.from === 'species' ? (def.identity.ancestry || 'species') : walk.from === 'written' ? 'as written' : 'the usual'
+  }];
   for (const { item, effect } of equippedEffects(def)) if (effect.kind === 'speed') parts.push({ label: item, value: effect.bonus });
   return { total: parts.reduce((s, p) => s + p.value, 0), parts };
 }
@@ -97,7 +122,14 @@ export function speedParts(def: Definition): { total: number; parts: Part[] } {
 /** Initiative: the Dexterity modifier, plus what items and features add. Never typed. */
 export function initiativeParts(def: Definition): { total: number; parts: Part[] } {
   const parts: Part[] = [{ label: 'Dexterity modifier', value: modifierOf(def, 'dex') }];
-  for (const { item, effect } of equippedEffects(def)) if (effect.kind === 'init') parts.push({ label: item, value: effect.bonus });
+  for (const { item, effect } of equippedEffects(def)) {
+    if (effect.kind !== 'init') continue;
+    if (effect.bonus || !effect.prof) parts.push({ label: item, value: effect.bonus });
+    if (effect.prof) {
+      parts.push({ label: item, value: effect.prof === 'full' ? proficiencyBonus(def) : Math.floor(proficiencyBonus(def) / 2),
+                   note: effect.prof === 'full' ? 'proficiency' : 'half proficiency' });
+    }
+  }
   return { total: parts.reduce((s, p) => s + p.value, 0), parts };
 }
 

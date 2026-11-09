@@ -232,7 +232,8 @@ function featureName(label: string): string {
 
 // ── Everything else on 5e.tools, by name (data/entry-index.json) ──
 type EntryKind = 's' | 'o' | 'f' | 'i' | 'r' | 'b';
-type EntryIndex = Record<EntryKind, Record<string, string>>;
+/** Plus `w`: species' walking speeds, "book:feet,book:feet" by name. */
+type EntryIndex = Record<EntryKind, Record<string, string>> & { w?: Record<string, string> };
 let ENTRIES: EntryIndex | null = null;
 /** Loaded once a sheet needs it (rules/brewClasses.ts, ensureEntryIndex). */
 export function registerEntryIndex(index: EntryIndex) {
@@ -274,6 +275,34 @@ export function entryUrl(name: string, source?: string, books: (string | undefin
     }
   }
   return null;
+}
+
+/**
+ * A species' walking speed in feet, from 5e.tools: by its name as written
+ * ("Tiefling (Glasya)", "Wood Elf", or just "Elf"), in the book written
+ * beside it, else the edition of the sheet's other books. Null for a
+ * species 5e.tools does not know (homebrew), or before the index loads.
+ */
+export function speciesWalk(name: string | undefined, source?: string, books: (string | undefined)[] = []): number | null {
+  const table = ENTRIES?.w;
+  if (!table || !name?.trim()) return null;
+  const key = name.trim().toLowerCase();
+  const found = table[key] ?? table[key.replace(/\s*\([^)]*\)/g, '').trim()];
+  if (!found) return null;
+  const by = new Map(found.split(',').map((p) => {
+    const [b, ft] = p.split(':');
+    return [b, Number(ft)] as const;
+  }));
+  const written = source?.trim() ? sourceId(source) : '';
+  const sheet = books.map((b) => (b?.trim() ? sourceId(b) : '')).filter(Boolean);
+  const old = sheet.some((b) => OLD_RULES.has(b)) && !sheet.includes('xphb');
+  const book =
+    (written && by.has(written) && written) ||
+    sheet.find((b) => by.has(b)) ||
+    (old ? ['phb'] : ['xphb']).find((b) => by.has(b)) ||
+    ['xphb', 'phb'].find((b) => by.has(b)) ||
+    [...by.keys()][0];
+  return by.get(book) ?? null;
 }
 
 /**

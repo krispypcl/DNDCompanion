@@ -50,10 +50,12 @@
   let shieldBonus = $state((has('shield') as { bonus: number } | undefined)?.bonus ?? 2);
   let acBonus = $state((has('ac') as { bonus: number } | undefined)?.bonus ?? 1);
   let speedBonus = $state((has('speed') as { bonus: number } | undefined)?.bonus ?? 10);
-  let initBonus = $state((has('init') as { bonus: number } | undefined)?.bonus ?? 1);
+  let initBonus = $state((has('init') as { bonus: number } | undefined)?.bonus ?? 0);
+  let initProf = $state<'none' | 'half' | 'full'>((has('init') as { prof?: 'half' | 'full' } | undefined)?.prof ?? 'none');
   const sv = has('save') as Extract<ItemEffect, { kind: 'save' }> | undefined;
   let saveAbility = $state<Ability | 'all'>(sv?.ability ?? 'all');
   let saveBonus = $state(sv?.bonus ?? 1);
+  let saveProf = $state<'none' | 'half' | 'full'>(sv?.prof ?? 'none');
   const ab = has('ability') as Extract<ItemEffect, { kind: 'ability' }> | undefined;
   let abAbility = $state<Ability>(ab?.ability ?? 'str');
   let abMode = $state<'set' | 'bonus'>(ab?.mode ?? 'set');
@@ -65,8 +67,8 @@
     if (on.shield) out.push({ kind: 'shield', bonus: Number(shieldBonus) || 0 });
     if (on.ac) out.push({ kind: 'ac', bonus: Number(acBonus) || 0 });
     if (on.speed) out.push({ kind: 'speed', bonus: Number(speedBonus) || 0 });
-    if (on.init) out.push({ kind: 'init', bonus: Number(initBonus) || 0 });
-    if (on.save) out.push({ kind: 'save', ability: saveAbility, bonus: Number(saveBonus) || 0 });
+    if (on.init) out.push({ kind: 'init', bonus: Number(initBonus) || 0, ...(initProf !== 'none' ? { prof: initProf } : {}) });
+    if (on.save) out.push({ kind: 'save', ability: saveAbility, bonus: Number(saveBonus) || 0, ...(saveProf !== 'none' ? { prof: saveProf } : {}) });
     if (on.ability) out.push({ kind: 'ability', ability: abAbility, mode: abMode, value: Number(abValue) || 0 });
     if (on.advantage) out.push(advOn === 'init' ? { kind: 'advantage', on: 'init' } : { kind: 'advantage', on: 'save', ability: advOn });
     return out;
@@ -115,6 +117,11 @@
               <label>Speed + <input type="number" step="5" min="-30" max="60" bind:value={speedBonus} /> ft.</label>
             {:else if row.k === 'init'}
               <label>Initiative + <input type="number" min="-5" max="10" bind:value={initBonus} /></label>
+              <label>Plus
+                <select bind:value={initProf}>
+                  <option value="none">Nothing Else</option><option value="full">Proficiency Bonus</option><option value="half">Half Proficiency</option>
+                </select>
+              </label>
             {:else if row.k === 'save'}
               <label>
                 <select bind:value={saveAbility}>
@@ -122,6 +129,11 @@
                   {#each ABILITIES as ab (ab)}<option value={ab}>{NAMES[ab]} Saves</option>{/each}
                 </select>
                 + <input type="number" min="-5" max="10" bind:value={saveBonus} />
+              </label>
+              <label>Plus
+                <select bind:value={saveProf}>
+                  <option value="none">Nothing Else</option><option value="full">Proficiency</option><option value="half">Half Proficiency</option>
+                </select>
               </label>
             {:else if row.k === 'ability'}
               <label>

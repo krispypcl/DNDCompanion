@@ -115,8 +115,9 @@ export type ItemEffect =
   | { kind: 'shield'; bonus: number }
   | { kind: 'ac'; bonus: number }
   | { kind: 'speed'; bonus: number }
-  | { kind: 'init'; bonus: number }
-  | { kind: 'save'; ability: Ability | 'all'; bonus: number }
+  /** prof: also the proficiency bonus (Alert), or half of it (Jack of All Trades). */
+  | { kind: 'init'; bonus: number; prof?: 'half' | 'full' }
+  | { kind: 'save'; ability: Ability | 'all'; bonus: number; prof?: 'half' | 'full' }
   | { kind: 'ability'; ability: Ability; mode: 'set' | 'bonus'; value: number };
 
 /** The long-form character writing, kept apart from the one-line details. */
