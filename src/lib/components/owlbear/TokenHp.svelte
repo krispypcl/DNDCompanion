@@ -12,7 +12,7 @@
   import { changeHp, type HpChange } from '$lib/owlbear/hp';
   import type { Sheet } from '$lib/types';
 
-  let sheet = $state<Sheet | null>(null);
+  let sheet = $state.raw<Sheet | null>(null);
   let gone = $state(false);
   let amount = $state<number | null>(null);
   let message = $state<{ ok: boolean; text: string } | null>(null);

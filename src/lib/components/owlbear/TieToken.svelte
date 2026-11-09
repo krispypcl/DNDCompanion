@@ -11,9 +11,9 @@
   import type { Sheet } from '$lib/types';
 
   type O = typeof import('$lib/owlbear/obr');
-  let obr = $state<O | null>(null);
+  let obr = $state.raw<O | null>(null);
   let itemId = $state<string | null>(null);
-  let sheets = $state<Sheet[] | null>(null);
+  let sheets = $state.raw<Sheet[] | null>(null);
   let message = $state<{ ok: boolean; text: string } | null>(null);
   let busy = $state<string | null>(null);
 

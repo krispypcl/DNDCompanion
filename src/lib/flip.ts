@@ -84,9 +84,43 @@ function measure(): Map<string, DOMRect> {
   return out;
 }
 
+/** A gliding thing in view in a scrolled box (or on the page, leaving out
+    boxes that scroll by themselves): the one nearest a quarter of the way
+    down, below anything stuck to the top (the tabs), and where it sits. */
+type Anchor = { key: string; offset: number };
+function anchorIn(box: HTMLElement | null, skip: HTMLElement[] = []): Anchor | null {
+  const top = box ? box.getBoundingClientRect().top : 0;
+  const bottom = box ? box.getBoundingClientRect().bottom : window.innerHeight;
+  const aim = top + (bottom - top) * 0.25;
+  let best: Anchor | null = null;
+  let bestD = Infinity;
+  for (const el of (box ?? document).querySelectorAll<HTMLElement>('[data-flip]')) {
+    if (skip.some((s) => s.contains(el))) continue;
+    const r = el.getBoundingClientRect();
+    if (!r.height || r.top < top || r.top >= bottom) continue;
+    const d = Math.abs(r.top - aim);
+    if (d < bestD) (bestD = d), (best = { key: el.dataset.flip!, offset: r.top - top });
+  }
+  return best;
+}
+/** How far that thing has moved within its box since. */
+function shiftOf(anchor: Anchor, box: HTMLElement | null): number {
+  const el = (box ?? document).querySelector<HTMLElement>(`[data-flip="${CSS.escape(anchor.key)}"]`);
+  if (!el) return 0;
+  const top = box ? box.getBoundingClientRect().top : 0;
+  const d = el.getBoundingClientRect().top - top - anchor.offset;
+  return Math.abs(d) > 1 ? d : 0;
+}
+
 export async function glide(change: () => void): Promise<void> {
-  if (typeof document === 'undefined' || prefersReducedMotion()) {
+  if (typeof document === 'undefined') return change();
+  if (prefersReducedMotion()) {
+    const y = window.scrollY;
+    const kept = Array.from(document.querySelectorAll<HTMLElement>('.panels, .scroller')).map((el) => [el, el.scrollTop] as const);
     change();
+    await tick();
+    if (Math.abs(window.scrollY - y) > 1) window.scrollTo({ top: y, behavior: 'instant' as ScrollBehavior });
+    for (const [el, top] of kept) if (Math.abs(el.scrollTop - top) > 1) el.scrollTop = top;
     return;
   }
   const before = measure();
@@ -96,6 +130,14 @@ export async function glide(change: () => void): Promise<void> {
     Array.from(document.querySelectorAll<HTMLElement>('[data-flip-ghost]'), (el) => el.dataset.flipGhost!)
   );
   const scrollY = window.scrollY;
+  // Swapping every readout for an input can, for a moment, leave the page
+  // (or a module that scrolls inside itself) shorter than where it was
+  // scrolled to, and the browser jumps it back to the top. Where everything
+  // was scrolled is kept and put back once the change is made.
+  const scrolled = Array.from(document.querySelectorAll<HTMLElement>('.panels, .scroller'))
+    .filter((el) => el.scrollTop > 0)
+    .map((el) => ({ el, top: el.scrollTop, anchor: anchorIn(el) }));
+  const pageAnchor = scrollY > 0 ? anchorIn(null, scrolled.map((s) => s.el)) : null;
   // While things glide, a table's scroll box would flash a scrollbar for the
   // words passing over its edge; it is clipped instead until they settle.
   const root = document.documentElement;
@@ -104,10 +146,31 @@ export async function glide(change: () => void): Promise<void> {
   settle = setTimeout(() => root.classList.remove('gliding'), DURATION + 80);
   change();
   await tick();
+  if (Math.abs(window.scrollY - scrollY) > 1) window.scrollTo({ top: scrollY, behavior: 'instant' as ScrollBehavior });
+  // Then each scrolled box (and the page) is nudged so the row that was at
+  // its top is still there: what the reader was looking at stays put, and
+  // the rest glides round it.
+  for (const { el, top, anchor } of scrolled) {
+    if (Math.abs(el.scrollTop - top) > 1) el.scrollTop = top;
+    const moved = anchor ? shiftOf(anchor, el) : 0;
+    if (moved) el.scrollTop += moved;
+  }
+  // The page moved on purpose: on screen, the words stay where they were.
+  let kept = scrollY;
+  if (pageAnchor) {
+    const moved = shiftOf(pageAnchor, null);
+    if (moved) {
+      window.scrollTo({ top: window.scrollY + moved, behavior: 'instant' as ScrollBehavior });
+      kept = window.scrollY;
+    }
+  }
   // Rects are measured against the viewport; if the page scrolled because it
   // grew or shrank, that is not movement of the words.
-  const dyScroll = window.scrollY - scrollY;
+  const dyScroll = window.scrollY - kept;
   document.querySelectorAll<HTMLElement>('[data-flip-size]').forEach((el) => {
+    // Inside a box scrolled down, easing the height from the old one would
+    // shrink what the box can scroll and pull it back up mid-glide.
+    if (scrolled.some((s) => s.el.contains(el))) return;
     const was = heights.get(el.dataset.flipSize!);
     const now = el.getBoundingClientRect().height;
     if (was === undefined || Math.abs(was - now) < 1) return;

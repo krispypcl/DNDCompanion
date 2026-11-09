@@ -30,14 +30,14 @@
   import InfoTip from '../InfoTip.svelte';
 
   type O = typeof import('$lib/owlbear/obr');
-  let obr = $state<O | null>(null);
+  let obr = $state.raw<O | null>(null);
   let inOwlbear = $state(true);
-  let links = $state<RoomLinks>([]);
-  let sheets = $state<Sheet[]>([]);
+  let links = $state.raw<RoomLinks>([]);
+  let sheets = $state.raw<Sheet[]>([]);
   let loaded = $state(false);
-  let rolls = $state<RollNote[]>([]);
+  let rolls = $state.raw<RollNote[]>([]);
   /** Which sheets have a token on the map: sheet id → token ids. */
-  let onMap = $state<Record<string, string[]>>({});
+  let onMap = $state.raw<Record<string, string[]>>({});
   let campaignNames = $state(new Map<string, string>());
   let draft = $state('');
   let error = $state<string | null>(null);
@@ -63,7 +63,6 @@
         error = 'The characters wouldn’t load! Check your connection and try again.';
         loaded = true;
       });
-      if (f.campaigns.length) campaignRepo.names(f.campaigns).then((m) => (campaignNames = m)).catch(() => {});
     };
     void (async () => {
       const m = await import('$lib/owlbear/obr');
@@ -107,10 +106,19 @@
     }
     error = null;
     draft = '';
+    await addToRoom(link);
+  }
+  async function addToRoom(link: RoomLink) {
     if (!obr) return;
+    const before = links;
     const next = addLink(links, link);
     links = next;
-    await obr.setLinks(next).catch(() => (error = 'The room wouldn’t take that! Try again in a moment.'));
+    try {
+      await obr.setLinks(next);
+    } catch (e) {
+      links = before;
+      error = `The room wouldn’t take that! ${e instanceof Error ? e.message : 'Try again in a moment.'}`;
+    }
   }
   async function unlink(link: RoomLink) {
     if (!obr) return;
@@ -150,6 +158,16 @@
     }
     return out;
   });
+  const askedNames = new Set<string>();
+  /** The names of every campaign in view: linked, or one a character is in. */
+  $effect(() => {
+    const ids = [...new Set([...links.filter((l) => l.kind === 'campaign').map((l) => l.id), ...sheets.map((s) => s.campaign_id ?? '')].filter(Boolean))];
+    const missing = ids.filter((id) => !askedNames.has(id));
+    if (!missing.length) return;
+    missing.forEach((id) => askedNames.add(id));
+    campaignRepo.names(missing).then((m) => (campaignNames = new Map([...campaignNames, ...m]))).catch(() => {});
+  });
+  const campaignLinked = (id: string) => links.some((l) => l.kind === 'campaign' && l.id === id);
   const directLink = (s: Sheet) => links.find((l) => l.kind === 'sheet' && l.id === s.id) ?? null;
   const faces = $derived([...new Set(sheets.map((s) => fontFace(s.definition?.identity?.nameFont)?.href).filter(Boolean) as string[])]);
 
@@ -223,6 +241,7 @@
         {#if g.link}
           <h2>
             <span class="gname">{g.title}</span><span class="tag">Campaign</span>
+            <a class="open" href={obr?.campaignUrl(g.link.id)} target="_blank" rel="noopener noreferrer" title="Open the campaign page">Open ↗</a>
             <button class="x" title="Take this campaign out of the room" aria-label="Take {g.title} out of the room" onclick={() => unlink(g.link!)}>×</button>
           </h2>
           {#if !g.sheets.length}<p class="note">No characters in this campaign yet.</p>{/if}
@@ -267,6 +286,15 @@
                     <li style:--cc={look?.color} class:plain={!look} transition:fade={{ duration: 160 }}><span class="dot"></span>{c}</li>
                   {/each}
                 </ul>
+              {/if}
+              {#if s.campaign_id && !g.link}
+                <!-- Linked on its own, it may be in a campaign: there, or the whole table here. -->
+                <p class="camp">In <b>{campaignNames.get(s.campaign_id) ?? 'a campaign'}</b>
+                  <a class="link" href={obr?.campaignUrl(s.campaign_id)} target="_blank" rel="noopener noreferrer">Open ↗</a>
+                  {#if !campaignLinked(s.campaign_id)}
+                    <button class="link" onclick={() => addToRoom({ kind: 'campaign', id: s.campaign_id! })}>Add the campaign</button>
+                  {/if}
+                </p>
               {/if}
               <div class="acts">
                 <a class="btn" href={obr?.sheetUrl(s.id)} target="_blank" rel="noopener noreferrer">Open sheet ↗</a>
@@ -363,6 +391,14 @@
     text-transform: uppercase; color: var(--label); font-weight: 600;
   }
   .gname { color: var(--text); letter-spacing: 0.06em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .open {
+    margin-left: 0.25rem; font-size: 0.6875rem; letter-spacing: 0.02em; text-transform: none; color: var(--a);
+    text-decoration: none; border-radius: 2px; transition: color 0.15s ease;
+  }
+  .open:hover { color: var(--text); text-decoration: underline; text-underline-offset: 2px; }
+  .open:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
+  .camp { margin: 0; font-size: 0.75rem; color: var(--dim); display: flex; flex-wrap: wrap; gap: 0.25rem 0.5rem; align-items: baseline; }
+  .camp b { color: var(--text); font-weight: 600; }
   .tag { font-size: 0.5625rem; border: 1px solid var(--line); border-radius: 999px; padding: 0.0625rem 0.375rem; color: var(--dim); }
   .chars { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
   .char {

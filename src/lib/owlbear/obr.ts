@@ -32,6 +32,8 @@ export function ready(): Promise<typeof OBR> {
 export const asset = (path: string) => `${location.origin}${base}/owlbear/${path}`;
 /** A sheet's public address, for opening it. */
 export const sheetUrl = (id: string) => `${siteRoot(location.origin, base)}/s?id=${encodeURIComponent(id)}`;
+/** A campaign's page. */
+export const campaignUrl = (id: string) => `${siteRoot(location.origin, base)}/c?id=${encodeURIComponent(id)}`;
 /** The picture a sheet's token wears: its portrait, else the site's die. */
 export function portraitOf(sheet: Sheet): string {
   const url = resolveImageUrl(sheet.definition?.identity?.portraitUrl).url;
@@ -43,8 +45,12 @@ export const nameOf = (s: Sheet) => s.definition?.identity?.name || s.name || 'U
 export async function getLinks(): Promise<RoomLinks> {
   return readLinks((await OBR.room.getMetadata())[ROOM_KEY]);
 }
+/** Plain data only crosses to Owlbear: a page's reactive copies (Svelte's
+    proxies) cannot be posted, which once made every link after the first
+    fail to save. */
+const plain = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 export async function setLinks(links: RoomLinks): Promise<void> {
-  await OBR.room.setMetadata({ [ROOM_KEY]: links });
+  await OBR.room.setMetadata({ [ROOM_KEY]: plain(links) });
 }
 export function onLinks(cb: (links: RoomLinks) => void): () => void {
   return OBR.room.onMetadataChange((m) => cb(readLinks(m[ROOM_KEY])));
