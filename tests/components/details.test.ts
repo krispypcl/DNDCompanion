@@ -84,7 +84,7 @@ describe('origin row', () => {
       spells: [], trackers: [], equipment: [], currency: {}, notes: ''
     };
     const { container } = renderDetails(DetailsBlockForOrigin, { props: { definition: def as never, editable: true, onchange: () => {} } });
-    expect([...container.querySelectorAll('.origin dt')].map((d) => d.textContent)).toEqual([
+    expect([...container.querySelectorAll('.origin dt')].map((d) => d.firstChild?.textContent?.trim())).toEqual([
       'Species', 'Species source', 'Background', 'Background source', 'Walking speed'
     ]);
     expect((detailsScreen.getByLabelText('Species source') as HTMLInputElement).value).toBe('mtf');

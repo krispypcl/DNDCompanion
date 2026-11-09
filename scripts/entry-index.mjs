@@ -15,6 +15,14 @@ const get = async (path) => {
 
 /** kind → name (lower case) → books (lower case), first the newest edition. */
 const out = { s: {}, i: {}, f: {}, o: {}, r: {}, b: {} };
+/** Walking speed by species name (lower case) → book → feet, for the Speed box. */
+const walk = {};
+const walkOf = (speed) => (typeof speed === 'number' ? speed : typeof speed?.walk === 'number' ? speed.walk : null);
+const addWalk = (name, source, speed) => {
+  const ft = walkOf(speed);
+  if (!name || !source || ft == null) return;
+  (walk[name.toLowerCase()] ??= {})[source.toLowerCase()] = ft;
+};
 const add = (kind, name, source) => {
   if (!name || !source) return;
   const key = name.toLowerCase();
@@ -32,11 +40,23 @@ for (const it of (await get('items-base.json')).baseitem ?? []) add('i', it.name
 for (const ft of (await get('feats.json')).feat ?? []) add('f', ft.name, ft.source);
 for (const of of (await get('optionalfeatures.json')).optionalfeature ?? []) add('o', of.name, of.source);
 const races = await get('races.json');
-for (const r of races.race ?? []) add('r', r.name, r.source);
+const baseSpeed = {};
+for (const r of races.race ?? []) {
+  add('r', r.name, r.source);
+  addWalk(r.name, r.source, r.speed);
+  baseSpeed[`${r.name}|${r.source}`] = r.speed;
+}
 for (const sr of races.subrace ?? []) {
   if (!sr.name || !sr.raceName) continue;
-  // 5e.tools names a subrace "Tiefling (Glasya)", in the subrace's book.
+  // 5e.tools names a subrace "Tiefling (Glasya)", in the subrace's book; it
+  // is also written "Glasya Tiefling" or "Wood Elf". Its speed is its race's
+  // unless it says otherwise.
   add('r', `${sr.raceName} (${sr.name})`, sr.source);
+  const speed = sr.speed ?? baseSpeed[`${sr.raceName}|${sr.raceSource}`];
+  for (const name of sr.name.split(';').map((n) => n.trim()).filter(Boolean)) {
+    addWalk(`${sr.raceName} (${name})`, sr.source, speed);
+    addWalk(`${name} ${sr.raceName}`, sr.source, speed);
+  }
 }
 for (const bg of (await get('backgrounds.json')).background ?? []) add('b', bg.name, bg.source);
 
@@ -44,5 +64,6 @@ for (const bg of (await get('backgrounds.json')).background ?? []) add('b', bg.n
 const compact = Object.fromEntries(
   Object.entries(out).map(([k, names]) => [k, Object.fromEntries(Object.entries(names).map(([n, s]) => [n, s.join(',')]))])
 );
+compact.w = Object.fromEntries(Object.entries(walk).map(([n, by]) => [n, Object.entries(by).map(([b, ft]) => `${b}:${ft}`).join(',')]));
 await writeFile(new URL('../src/lib/data/entry-index.json', import.meta.url), JSON.stringify(compact));
 console.log(Object.fromEntries(Object.entries(out).map(([k, v]) => [k, Object.keys(v).length])));

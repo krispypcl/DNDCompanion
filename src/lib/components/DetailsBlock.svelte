@@ -1,4 +1,6 @@
 <script lang="ts">
+  import InfoTip from './InfoTip.svelte';
+  import { walkingSpeed } from '$lib/rules/derived';
   /**
    * Who the character is, as opposed to what they can do: the one-line details
    * and the long-form writing. Spellcasting lives on the Spells tab, since it
@@ -80,12 +82,29 @@
     </div>
   {/each}
   {#if editable}
-    <!-- The species' walking speed: the Speed box on the right adds what items and features give. -->
+    <!-- The walking speed: the species' own when 5e.tools knows it, typed in
+         only for a species it does not (homebrew). The Speed box adds what
+         items and features give. -->
+    {@const walk = walkingSpeed(definition)}
     <div data-flip-ghost="origin:speed">
-      <dt>Walking speed</dt>
+      <dt>Walking speed
+        <InfoTip label="About walking speed">
+          {#if walk.from === 'species'}
+            {definition.identity.ancestry} walks {walk.feet} ft., from 5e.tools. Change the species and this follows.
+            Items and features that add speed do so in the Speed box.
+          {:else}
+            5e.tools doesn’t know this species, so type its walking speed here (30 ft. if left blank). A species it
+            knows fills this in by itself.
+          {/if}
+        </InfoTip>
+      </dt>
       <dd>
-        <EditableField value={definition.combat?.speed ?? 30} editable={true} type="number" label="Walking speed" hint="30"
-                       onchange={(v) => onchange({ ...definition, combat: { ...definition.combat, speed: v === '' ? 30 : Number(v) } })} />
+        {#if walk.from === 'species'}
+          <span class="fromspecies">{walk.feet} ft.</span>
+        {:else}
+          <EditableField value={definition.combat?.speed ?? ''} editable={true} type="number" label="Walking speed" hint="30"
+                         onchange={(v) => onchange({ ...definition, combat: { ...definition.combat, speed: v === '' ? 30 : Number(v) } })} />
+        {/if}
       </dd>
     </div>
   {/if}
@@ -164,6 +183,8 @@
      below makes it one), a growing row took all the spare height and pushed
      the details to the bottom. */
   .origin { flex: none; }
+  .fromspecies { display: inline-block; padding: 0.15rem 0.3rem; border: 1px solid transparent; font-size: 0.9375rem; }
+  dt { display: flex; align-items: center; justify-content: center; gap: 0.125rem; }
   @media (max-width: 900px) { .details dl { grid-template-columns: repeat(3, 1fr); } }
   @media (max-width: 560px) { .details dl { grid-template-columns: repeat(2, 1fr); } }
   /* Every detail hangs from the top of its row, whatever its neighbours hold. */
