@@ -7,7 +7,9 @@
    * drawing grows and shrinks with the page.
    */
   import { fade } from 'svelte/transition';
+  import { get } from 'svelte/store';
   import type { Ink, Stroke } from '$lib/rules/ink';
+  import { isPalm, keepStylus, penOnly, sawPen } from '$lib/pen';
 
   let {
     ink,
@@ -57,12 +59,11 @@
   }
   /** Once a pen (an Apple Pencil) has drawn here, a palm resting on the
       glass no longer draws: only the pen does. */
-  let penHere = false;
   let liveId: number | null = null;
   function down(e: PointerEvent) {
     if (!drawing || e.button > 0) return;
-    if (e.pointerType === 'pen') penHere = true;
-    else if (penHere && e.pointerType === 'touch') return;
+    if (e.pointerType === 'pen') sawPen();
+    else if (e.pointerType === 'touch' && (get(penOnly) || isPalm(e))) return;
     if (live && e.pointerType === 'pen' && liveId !== e.pointerId) live = null;
     else if (live) return;
     liveId = e.pointerId;
@@ -100,7 +101,7 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="ink paper-{ink?.paper ?? 'plain'}" class:drawing class:erasing bind:this={box}
-     onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={() => (live = null)}
+     onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={(e) => (live && live.length >= 4 ? up(e) : (live = null))} use:keepStylus
      onpointerleave={() => (pressed = false)}>
   <svg viewBox="0 0 1000 {Math.max(1, height / scale)}" preserveAspectRatio="xMinYMin meet" aria-hidden="true">
     {#each ink?.s ?? [] as s, i (i + ':' + s.p.length + ':' + s.p[0])}
@@ -116,7 +117,7 @@
   /* The writing's size, so lines on lined paper sit under its lines. */
   .ink { position: absolute; inset: 0; z-index: 2; pointer-events: none; border-radius: 4px; }
   @media (max-width: 700px) { .ink { font-size: max(1em, 16px); } }
-  .ink.drawing { pointer-events: auto; touch-action: none; cursor: crosshair; }
+  .ink.drawing { pointer-events: auto; touch-action: none; cursor: crosshair; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   .ink.drawing.erasing { cursor: cell; }
   svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
   path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
