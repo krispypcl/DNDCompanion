@@ -6,8 +6,9 @@
 -- Authorization lives here, not in the client: the anon key is public, so
 -- these policies are the only thing standing between a request and the data.
 --
--- `entries` is not used by the app; it is here in case a shared library is
--- ever wanted. Campaigns are set up in the section at the end.
+-- `entries` was for a shared library that was dropped; it is created here
+-- as it once was and removed again at the very end (0012). Campaigns are set
+-- up in the section at the end.
 
 create table if not exists campaigns (
   id          uuid primary key default gen_random_uuid(),
@@ -854,3 +855,139 @@ create index if not exists campaigns_created_by_idx on public.campaigns (created
 create index if not exists entries_campaign_id_idx on public.entries (campaign_id);
 create index if not exists entries_forked_from_idx on public.entries (forked_from);
 create index if not exists entries_owner_id_idx on public.entries (owner_id);
+
+-- ===========================================================================
+-- Advisor fixes, second round (0012).
+--
+-- 1. "Security definer function executable" (lints 0028/0029): the app's
+--    RPCs ran as their owner straight from the API schema. Each one now
+--    lives in the `private` schema (not exposed by the API), and the public
+--    function of the same name and arguments is a plain wrapper that runs
+--    as the caller and hands over to it. The app calls exactly what it
+--    called before. Who may call what is unchanged: signed-in users, plus
+--    the not-signed-in join page for campaign_by_invite.
+--
+-- 2. "Unused index" on entries: the table was for a shared library that
+--    was dropped (4 Nov) and nothing uses it. It goes, with its indexes,
+--    if it is empty (if it somehow has rows, it is kept and a notice says
+--    so).
+--
+-- campaigns_created_by_idx and campaign_board_created_by_idx stay: they
+-- index foreign keys (removing them brings back "unindexed foreign key"),
+-- and they show as unused only because the tables are still small enough
+-- for Postgres to read them whole.
+-- ===========================================================================
+
+create schema if not exists private;
+grant usage on schema private to anon, authenticated;
+
+-- Moves a public security-definer function into `private`, once. Run again,
+-- it finds the public one already a wrapper and leaves things alone.
+create or replace function private.move_to_private(p_name text, p_args text)
+returns void
+language plpgsql
+set search_path = public
+as $$
+declare
+  definer boolean;
+begin
+  select p.prosecdef into definer
+  from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+  where n.nspname = 'public' and p.oid = to_regprocedure(format('public.%I(%s)', p_name, p_args));
+  if definer then
+    execute format('drop function if exists private.%I(%s)', p_name, p_args);
+    execute format('alter function public.%I(%s) set schema private', p_name, p_args);
+  end if;
+end;
+$$;
+
+select private.move_to_private('delete_own_account', '');
+select private.move_to_private('create_campaign', 'text, uuid');
+select private.move_to_private('campaign_by_invite', 'text');
+select private.move_to_private('join_campaign', 'text, uuid');
+select private.move_to_private('campaign_invite', 'uuid');
+select private.move_to_private('reset_campaign_invite', 'uuid');
+select private.move_to_private('remove_from_campaign', 'uuid');
+select private.move_to_private('set_sheet_conditions', 'uuid, text[]');
+select private.move_to_private('set_sheet_hp', 'uuid, integer, integer, text[], jsonb');
+select private.move_to_private('set_sheet_condition_look', 'uuid, text, jsonb');
+drop function private.move_to_private(text, text);
+
+-- The public faces: same names, same arguments, running as the caller.
+create or replace function public.delete_own_account()
+returns void language sql security invoker set search_path = ''
+as $$ select private.delete_own_account() $$;
+
+create or replace function public.create_campaign(p_name text, p_sheet uuid default null)
+returns table (id uuid, invite_code text, sheet_updated_at timestamptz) language sql security invoker set search_path = ''
+as $$ select * from private.create_campaign(p_name, p_sheet) $$;
+
+create or replace function public.campaign_by_invite(p_code text)
+returns table (id uuid, name text) language sql stable security invoker set search_path = ''
+as $$ select * from private.campaign_by_invite(p_code) $$;
+
+create or replace function public.join_campaign(p_code text, p_sheet uuid)
+returns table (campaign_id uuid, sheet_updated_at timestamptz) language sql security invoker set search_path = ''
+as $$ select * from private.join_campaign(p_code, p_sheet) $$;
+
+create or replace function public.campaign_invite(p_campaign uuid)
+returns text language sql stable security invoker set search_path = ''
+as $$ select private.campaign_invite(p_campaign) $$;
+
+create or replace function public.reset_campaign_invite(p_campaign uuid)
+returns text language sql security invoker set search_path = ''
+as $$ select private.reset_campaign_invite(p_campaign) $$;
+
+create or replace function public.remove_from_campaign(p_sheet uuid)
+returns void language sql security invoker set search_path = ''
+as $$ select private.remove_from_campaign(p_sheet) $$;
+
+create or replace function public.set_sheet_conditions(p_sheet uuid, p_conditions text[])
+returns timestamptz language sql security invoker set search_path = ''
+as $$ select private.set_sheet_conditions(p_sheet, p_conditions) $$;
+
+create or replace function public.set_sheet_hp(p_sheet uuid, p_current integer, p_temp integer,
+                                               p_conditions text[] default null, p_death_saves jsonb default null)
+returns timestamptz language sql security invoker set search_path = ''
+as $$ select private.set_sheet_hp(p_sheet, p_current, p_temp, p_conditions, p_death_saves) $$;
+
+create or replace function public.set_sheet_condition_look(p_sheet uuid, p_key text, p_look jsonb)
+returns timestamptz language sql security invoker set search_path = ''
+as $$ select private.set_sheet_condition_look(p_sheet, p_key, p_look) $$;
+
+-- Who may call them: the wrappers and what they hand over to alike.
+do $$
+declare
+  f text;
+begin
+  foreach f in array array[
+    'delete_own_account()', 'create_campaign(text, uuid)', 'join_campaign(text, uuid)',
+    'campaign_invite(uuid)', 'reset_campaign_invite(uuid)', 'remove_from_campaign(uuid)',
+    'set_sheet_conditions(uuid, text[])', 'set_sheet_hp(uuid, integer, integer, text[], jsonb)',
+    'set_sheet_condition_look(uuid, text, jsonb)', 'campaign_by_invite(text)'
+  ] loop
+    execute format('revoke all on function public.%s from public, anon, authenticated', f);
+    execute format('revoke all on function private.%s from public, anon, authenticated', f);
+    if f = 'campaign_by_invite(text)' then
+      execute format('grant execute on function public.%s to anon, authenticated', f);
+      execute format('grant execute on function private.%s to anon, authenticated', f);
+    else
+      execute format('grant execute on function public.%s to authenticated', f);
+      execute format('grant execute on function private.%s to authenticated', f);
+    end if;
+  end loop;
+end;
+$$;
+
+-- The unused library table.
+do $$
+begin
+  if to_regclass('public.entries') is not null then
+    if exists (select 1 from public.entries) then
+      raise notice 'entries has rows, so it was kept';
+    else
+      drop table public.entries;
+    end if;
+  end if;
+end;
+$$;
