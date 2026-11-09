@@ -16,6 +16,9 @@
   import { trayMemory } from '$lib/stores/tray';
   import { get } from 'svelte/store';
 
+  /** Told of each roll once it lands (the sheet passes it on to Owlbear rooms). */
+  let { onrolled }: { onrolled?: (roll: Roll) => void } = $props();
+
   // Picks up where it was before the tab was switched away.
   const kept = get(trayMemory);
   let pool = $state<Pool>(kept.pool);
@@ -70,6 +73,7 @@
     seq += 1;
     clatter(diceCount(result.pool), 420);
     const landed = () => {
+      onrolled?.(result);
       if (isCrit(result)) nat20();
       else if (isFumble(result)) nat1();
       else land();
