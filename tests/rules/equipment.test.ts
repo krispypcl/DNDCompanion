@@ -66,3 +66,22 @@ describe('equipment effects', () => {
     expect(advantageFrom(d, 'save', 'wis')).toEqual([]);
   });
 });
+
+describe('proficiency from effects, and walking speed', () => {
+  it('adds proficiency (or half) to initiative, and to a save only once', () => {
+    const d = def([], {
+      features: [
+        { title: 'Alert', body: '', effects: [{ kind: 'init', bonus: 0, prof: 'full' }] },
+        { title: 'Diamond Soul', body: '', effects: [{ kind: 'save', ability: 'all', bonus: 0, prof: 'full' }] }
+      ]
+    });
+    expect(initiativeParts(d).total).toBe(modifierOf(d, 'dex') + 3);
+    // Proficient in Dex saves already: not twice.
+    expect(saveBonus(d, 'dex')).toBe(modifierOf(d, 'dex') + 3);
+    expect(saveBonus(d, 'wis')).toBe(modifierOf(d, 'wis') + 3);
+  });
+  it('takes the walking speed as written when the species is unknown, or 30', () => {
+    expect(speedParts(def([], { identity: { name: 'X', level: 5, ancestry: 'Moonfolk' } })).total).toBe(30);
+    expect(speedParts(def([], { identity: { name: 'X', level: 5 }, combat: { ac: 10, hpMax: 1, hitDice: '1d8' } })).total).toBe(30);
+  });
+});
