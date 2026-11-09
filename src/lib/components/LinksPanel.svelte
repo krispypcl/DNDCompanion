@@ -265,8 +265,13 @@
     <h3 class="cap" data-flip="links:h:sounds">Sound effects
       <InfoTip label="About sound effects">
         Swap any built-in sound for your own: a link to a sound file (mp3, ogg or wav; a Google Drive or Dropbox share
-        link works), or a YouTube video. A YouTube clip plays from its t= time (or the start) for up to 12 seconds, or
-        until its end= time. Leave a field blank for the built-in sound.
+        link works), or a YouTube video. Leave a field blank for the built-in sound; the speaker beside each name plays it.
+        <br /><br />
+        <b>Part of a YouTube video:</b> pause it where the sound begins, right-click the video and choose “Copy video URL
+        at current time” (or Share → tick “Start at”). That link ends in <code>t=</code> and the start. Add
+        <code>&amp;end=</code> and the second it should stop, e.g. <code>https://youtu.be/abc123?t=42&amp;end=47</code>
+        plays from 0:42 to 0:47. Times can be seconds (<code>95</code>) or minutes and seconds (<code>1m35s</code>).
+        With no end, it plays 12 seconds.
       </InfoTip>
     </h3>
     {#if editable}
