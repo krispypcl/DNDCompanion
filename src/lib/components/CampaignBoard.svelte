@@ -17,6 +17,7 @@
   import { isConfigured, supabase } from '$lib/supabase';
   import { prefersReducedMotion } from '$lib/motion';
   import { INKS, PAPERS } from '$lib/palette';
+  import InfoTip from './InfoTip.svelte';
 
   let {
     campaignId,
@@ -448,7 +449,11 @@
 
 <section class="boardwrap" aria-label="Table board">
   <div class="head">
-    <span class="cap">Table board</span>
+    <span class="cap">Table board
+      <InfoTip label="How the board works">Everyone in the campaign can add to it, and sees changes as they happen. Drag the page to look
+        around (or scroll, once you have clicked the board); Ctrl + scroll or two fingers zoom. Double-click a page's name to rename it.
+        Each page opens fitted to what is on it.</InfoTip>
+    </span>
     {#if !missing}
       <!-- The board's pages. -->
       <div class="pages" role="tablist" aria-label="Board pages">
@@ -594,7 +599,6 @@
         </button>
       </div>
     </div>
-    <p class="how">{active ? 'Scroll or drag to look around · Ctrl + scroll or two fingers to zoom' : 'Click the board to scroll around it · Ctrl + scroll to zoom'}</p>
   {/if}
 </section>
 
@@ -628,19 +632,32 @@
     border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line); transition: box-shadow 0.15s ease, transform 0.15s ease;
   }
   .sw[aria-pressed='true'] { box-shadow: 0 0 0 2px var(--a); transform: scale(1.1); }
+  .sw:hover { box-shadow: 0 0 0 2px var(--a-edge); transform: scale(1.08); }
+  .sw:active { transform: scale(0.96); }
   .size {
     width: 1.75rem; height: 1.75rem; display: grid; place-items: center; padding: 0; cursor: pointer; border-radius: var(--r-sm);
     border: 1px solid transparent; background: none; color: var(--text);
   }
   .size i { display: block; width: var(--d); height: var(--d); border-radius: 50%; background: currentColor; }
   .size[aria-pressed='true'] { border-color: var(--a-edge); background: var(--a-wash); color: var(--a); }
+  .size { transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease; }
+  .size:hover { border-color: var(--a-edge); color: var(--a); }
+  .size:active { transform: translateY(1px); }
   .grow { flex: 1; }
   .clear, .ask button, .paper {
     font: inherit; font-size: 0.8125rem; cursor: pointer; border-radius: var(--r-sm); padding: 0.3125rem 0.75rem;
     border: 1px solid var(--line); background: var(--raised); color: var(--text);
   }
   .paper { padding: 0.3125rem 0.5rem; }
+  .clear, .ask button, .paper, .pagetab {
+    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
+  }
   .clear:hover { color: var(--bad); border-color: var(--bad); }
+  .paper:hover, .ask button:hover { border-color: var(--a-edge); color: var(--a); }
+  .ask .danger:hover { border-color: var(--bad); color: var(--bad); background: color-mix(in oklch, var(--bad) 10%, transparent); }
+  .clear:active, .ask button:active, .pagetab:active, .zoom button:active:not(:disabled) { transform: translateY(1px); }
+  .tool:focus-visible, .sw:focus-visible, .size:focus-visible, .clear:focus-visible, .ask button:focus-visible,
+  .paper:focus-visible, .pagetab:focus-visible, .zoom button:focus-visible, .pen:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
   .ask { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; font-size: 0.8125rem; color: var(--dim); }
   .ask .danger { border-color: var(--bad); color: var(--bad); background: none; }
   .err { color: var(--bad); font-size: 0.8125rem; margin: 0 0 0.5rem; }
@@ -711,7 +728,6 @@
   .zoom button:hover:not(:disabled) { background: var(--a-wash); color: var(--a); }
   .zoom button:disabled { opacity: 0.35; cursor: default; }
   .zoom .pct { font-size: 0.75rem; min-width: 2.75rem; font-variant-numeric: tabular-nums; color: var(--dim); }
-  .how { margin: 0.375rem 0 0; font-size: 0.75rem; color: var(--dim); }
   @media (max-width: 720px), (pointer: coarse) {
     .board {
       height: min(28rem, 65vh);

@@ -273,6 +273,14 @@
     border: 1px solid var(--line); background: var(--raised); color: var(--text);
   }
   .itool.done { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
+  /* The drawing tools answer the pointer like every other button on the sheet. */
+  .itool, .thick { transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease; }
+  .itool:hover:not(:disabled), .inkbar select:hover, .thick:hover { border-color: var(--a-edge); color: var(--a); }
+  .itool.danger:hover { border-color: var(--bad); color: var(--bad); background: color-mix(in oklch, var(--bad) 10%, transparent); }
+  .itool:active:not(:disabled), .thick:active, .inkbar .sw:active { transform: translateY(1px); }
+  .inkbar .sw:hover { box-shadow: 0 0 0 2px var(--a-edge); transform: scale(1.08); }
+  .itool:focus-visible, .thick:focus-visible, .inkbar .sw:focus-visible, .inkbar select:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
+  .itool:disabled { opacity: 0.5; cursor: default; }
   .drawbtn { display: inline-flex; align-items: center; gap: 0.3125rem; }
   .drawbtn.on { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
   .pager {

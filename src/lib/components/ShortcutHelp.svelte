@@ -1,4 +1,5 @@
 <script lang="ts">
+  import InfoTip from './InfoTip.svelte';
   /** The keyboard shortcuts, opened with ? or the keyboard button on a sheet or a campaign. */
   import { onMount } from 'svelte';
   import { fade, scale } from 'svelte/transition';
@@ -49,8 +50,9 @@
      onclick={(e) => { if (e.target === e.currentTarget) onclose(); }}>
   <div class="box" role="dialog" data-keys aria-modal="true" aria-labelledby="keys-title"
        transition:scale={{ start: 0.96, duration: still ? 0 : 180, easing: cubicOut }}>
-    <h2 id="keys-title">Keyboard shortcuts</h2>
-    <p class="hint">They work anywhere on the {place === 'campaign' ? 'page' : 'sheet'} except while typing in a field.</p>
+    <h2 id="keys-title">Keyboard shortcuts
+      <InfoTip label="About shortcuts">They work anywhere on the {place === 'campaign' ? 'page' : 'sheet'} except while typing in a field.</InfoTip>
+    </h2>
     <dl>
       {#each rows as row (row.what)}
         <div>
@@ -73,7 +75,6 @@
     border-radius: var(--r); padding: 1.25rem; box-shadow: 0 20px 60px rgb(0 0 0 / 0.45);
   }
   h2 { margin: 0; font-size: 1.0625rem; font-weight: 650; }
-  .hint { margin: 0.25rem 0 1rem; color: var(--dim); font-size: 0.8125rem; }
   dl { margin: 0; display: grid; gap: 0.5rem; }
   dl > div { display: grid; grid-template-columns: 7rem 1fr; align-items: center; gap: 0.75rem; }
   dt { display: flex; gap: 0.25rem; align-items: center; }

@@ -141,7 +141,7 @@ async function sheetPreview(id, env) {
   const image = resolveImageUrl(who.portraitUrl).url || resolveImageUrl(who.bannerUrl).url || void 0;
   return {
     title: who.name || row.name || "A character",
-    description: [line, who.player ? `played by ${who.player}` : ""].filter(Boolean).join(", ") || "A D&D 5e character sheet.",
+    description: line || "A D&D 5e character sheet.",
     image
   };
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import InfoTip from '$lib/components/InfoTip.svelte';
   /**
    * The player's own account: how they appear (a name and a picture, the
    * picture by link like a portrait), their password, and signing out.
@@ -169,22 +170,24 @@
 
     <!-- Ways in: email and password, and Google once connected. -->
     <section class="card" aria-labelledby="ways-h">
-      <h2 id="ways-h">Ways to sign in</h2>
+      <h2 id="ways-h">Ways to sign in
+        <InfoTip label="About ways to sign in">Connect your Google account to sign in with one press next time, as well as with your email.</InfoTip>
+      </h2>
       {#if providersOf($session.user).includes('google')}
         <p class="linked" transition:slide={{ duration: 200 }}>
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
           Google is connected. You can sign in with it as well as with your email.
         </p>
       {:else}
-        <p class="dim">Connect your Google account to sign in with one press next time.</p>
         <div class="google-wrap"><GoogleButton link next="/account" /></div>
       {/if}
     </section>
 
     <section class="card" aria-labelledby="out-h">
-      <h2 id="out-h">Signing out</h2>
-      <p class="dim">Signing out everywhere ends every session on every device, this one included —
-        useful after signing in on someone else's phone.</p>
+      <h2 id="out-h">Signing out
+        <InfoTip label="About signing out everywhere">Signing out everywhere ends every session on every device, this one included —
+          useful after signing in on someone else's phone.</InfoTip>
+      </h2>
       <div class="row">
         <button class="btn" onclick={() => leave(false)}>Sign out</button>
         {#if confirmEverywhere}
@@ -227,7 +230,7 @@
 
 <style>
   .linked { display: flex; align-items: center; gap: 0.5rem; color: var(--a); margin: 0.5rem 0 0; }
-  .google-wrap { max-width: 18rem; margin-top: 0.75rem; }
+  .google-wrap { max-width: 18rem; margin: 0.75rem auto 0; }
   main { max-width: 36rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
   header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
   /* The same Back as on a sheet. */

@@ -39,10 +39,10 @@ describe('casting', () => {
     });
     expect(slotsByLevel(d, { trackers: { s3: 1 } } as never).get(3)).toEqual({ max: 2, left: 1, trackers: [{ id: 's3', room: 1 }] });
   });
-  it('works out the attack bonus and DC from the casting ability, unless written', () => {
+  it('works out the attack bonus and DC from the casting ability, never as written', () => {
     expect(spellAttack(def({ spellcastingAbility: 'int' }))).toBe(7);
     expect(spellDc(def({ spellcastingAbility: 'int' }))).toBe(15);
-    expect(spellAttack(def({ spellcastingAbility: 'int', spellAttackBonus: 9 }))).toBe(9);
+    expect(spellAttack(def({ spellcastingAbility: 'int', spellAttackBonus: 9 }))).toBe(7);
     expect(spellDc(def())).toBeNull();
   });
 });

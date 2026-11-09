@@ -5,6 +5,7 @@
    * Each adds ordinary trackers that can be changed like any other.
    */
   import { slide } from 'svelte/transition';
+  import InfoTip from './InfoTip.svelte';
   import { cubicOut } from 'svelte/easing';
   import { classLevels, classList } from '$lib/rules/derived';
   import { buildPreset, presetsFor, type Preset } from '$lib/rules/presets';
@@ -49,6 +50,8 @@
     if (fresh.length) onadd(fresh, p.label);
   }
   const mine = $derived(new Set(groups.yours.map((p) => p.id)));
+  /** The first heading shown carries the note on how the trackers count. */
+  const firstGroup = $derived(groups.yours.length ? 'For your classes' : groups.others.length ? 'Other classes' : 'Feats and species');
   const still = prefersReducedMotion();
 </script>
 
@@ -57,7 +60,10 @@
     <div class="panel" transition:slide={{ duration: still ? 0 : 260, easing: cubicOut }}>
       {#each [{ title: 'For your classes', list: groups.yours }, { title: 'Other classes', list: groups.others }, { title: 'Feats and species', list: groups.extras }] as g (g.title)}
         {#if g.list.length}
-          <h4>{g.title}</h4>
+          <h4>{g.title}{#if g.title === firstGroup}
+            <InfoTip label="How ready-made trackers count">Each tracker counts the level of the class in its From column, taken from
+              the classes on the Character tab; one from a feat or species counts your total level. Numbers follow the 2024
+              Player’s Handbook and grow with the class’s level. A die or rest that changes with level is set for the level you are now.</InfoTip>{/if}</h4>
           <div class="grid">
             {#each g.list as p (p.id)}
               {@const done = added(p)}
@@ -71,9 +77,6 @@
           </div>
         {/if}
       {/each}
-      <p class="note">Each tracker counts the level of the class in its From column, taken from
-        the classes on the Character tab; one from a feat or species counts your total level.<br />Numbers follow the 2024 Player’s Handbook and grow with the class’s level.
-        A die or rest that changes with level is set for the level you are now.</p>
     </div>
 {/if}
 
@@ -96,5 +99,4 @@
   .preset.done { border-color: var(--a-edge); background: var(--a-wash); }
   .preset.done span { color: var(--a); }
   .preset em { font-style: normal; font-size: 0.68rem; color: var(--faint); }
-  .note { margin: 0.75rem 0 0; font-size: 0.72rem; color: var(--faint); line-height: 1.45; }
 </style>

@@ -11,6 +11,7 @@
    * reading or editing, so nothing is ever wider than the screen.
    */
   import { flipKey } from '$lib/flip';
+  import DieMark from './DieMark.svelte';
   import EntryLink from './EntryLink.svelte';
   import InfoTip from './InfoTip.svelte';
   import { onDestroy, tick, untrack } from 'svelte';
@@ -608,7 +609,7 @@
     <table class:editing={editable} class:headed={showHeadings} class:dragging={drag !== null} class:landing>
       <colgroup>
         {#if editable}<col style:width="1.75rem" />{/if}
-        {#if tickColumn}<col style:width="2rem" />{/if}
+        {#if tickColumn}<col style:width="2.25rem" />{/if}
         {#each shownColumns as col (col.key)}<col style:width={widthOf(col)} />{/each}
         {#if editable}<col style:width="2rem" />{/if}
       </colgroup>
@@ -619,7 +620,7 @@
           {#each shownColumns as col (col.key)}
             <th title={col.short ? col.label : undefined}
                 data-flip-ghost={editOnly(col) ? `${tk}:th:${col.key}` : undefined}>
-              <span class="hd" data-flip="{tk}:h:{col.key}">{col.short ?? col.label}</span>
+              <span class="hd" data-flip="{tk}:h:{col.key}">{col.short ?? col.label}{#if onpress && col.canPress && !editable}<DieMark label="Press a {col.label.toLowerCase()} to roll it" />{/if}</span>
             </th>
           {/each}
           {#if editable}<th><span class="sr">Remove</span></th>{/if}
@@ -713,6 +714,7 @@
 
             {#each rest as col (col.key)}
               <td data-label={col.label} class:muted={col.muted} class:numeric={col.numeric}
+                  class:rolls={Boolean(onpress && col.canPress && !editable)}
                   data-flip-ghost={editOnly(col) ? fk(row, `g:${col.key}`) : undefined}
                   class:wide={col.wide} class:grouped={groupBy?.key === col.key}
                   data-empty={!editable && isEmpty(item[col.key]) ? '' : undefined}>
@@ -943,7 +945,7 @@
   /* The tick column is the width of the mark and nothing more. */
   /* At the top of the row with the first line of its name, however tall the row. */
   .tick { text-align: left; vertical-align: top; }
-  th.tick { color: var(--label); }
+  th.tick { color: var(--label); letter-spacing: 0.02em; padding-right: 0; overflow: hidden; }
   .tick span.yes { color: var(--a); font-weight: 600; }
   .tick input {
     width: 1rem; height: 1rem; accent-color: var(--a); cursor: pointer;
@@ -1012,6 +1014,11 @@
       padding-right: 4.5rem;
     }
     table:not(.editing) td.name::before { content: none; }
+    /* On a card, the label of a value that rolls carries the same d20. */
+    table:not(.editing) td.rolls::before {
+      width: fit-content; padding-right: 1.1em;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888894' stroke-width='1.8' stroke-linejoin='round'%3E%3Cpath d='M12 2.5 20.5 7.4v9.2L12 21.5 3.5 16.6V7.4zM12 7.5l4.3 7.4H7.7zM12 2.5v5M20.5 7.4l-4.2 7.5M3.5 7.4l4.2 7.5M7.7 14.9 3.5 16.6M16.3 14.9l4.2 1.7M7.7 14.9 12 21.5l4.3-6.6'/%3E%3C/svg%3E") no-repeat right center / 0.85em;
+    }
     table:not(.editing) td::before {
       content: attr(data-label);
       display: block;

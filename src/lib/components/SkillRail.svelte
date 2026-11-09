@@ -1,4 +1,5 @@
 <script lang="ts">
+  import DieMark from './DieMark.svelte';
   /** Skills grouped under the ability they are scored off, in the same order as
       the ability band, each group headed by that ability's modifier. */
   import { signed as sign } from '$lib/actions';
@@ -70,7 +71,7 @@
 
     {#each grouped[ability] as skill (skill)}
       {@const prof = definition.skills?.[skill]}
-      <div class="row" class:prof={prof?.proficient}>
+      <div class="row" class:prof={prof?.proficient} class:rolls-hover={onroll && !editable}>
         <button
           class="dot"
           class:on={prof?.proficient}
@@ -80,7 +81,7 @@
           title={prof?.expertise ? 'Expertise' : prof?.proficient ? 'Proficient' : 'Not proficient'}
           onclick={() => cycle(skill)}
         ></button>
-        <span class="name">{LABELS[skill]}</span>
+        <span class="name">{LABELS[skill]}{#if onroll && !editable}<DieMark label="Rolls {LABELS[skill]}" />{/if}</span>
         {#if onroll}
           {@const total = skillTotal(definition, skill)}
           <button class="bonus roll" use:bump={total} title="Roll {LABELS[skill]}: d20 {sign(total)}"

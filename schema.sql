@@ -631,3 +631,136 @@ begin
   return new;
 end;
 $$;
+
+-- ===========================================================================
+-- 0010: what Supabase's Security and Performance Advisors asked for.
+--
+-- 1. Trigger functions get a fixed search_path.
+-- 2. The membership check used by the board's rules moves to a schema the
+--    API does not serve ("private"), so it cannot be called as an RPC; the
+--    public copy stays for the functions that run as the owner only.
+-- 3. The trigger that makes a campaign's live row can no longer be called.
+-- 4. Row rules read auth.uid() once per query, not once per row.
+-- 5. Foreign keys get the indexes they were missing.
+--
+-- The app's own functions (create_campaign, join_campaign and the rest) stay
+-- callable by signed-in players on purpose: they are how the app works, and
+-- each checks who is asking. Safe to run more than once.
+
+-- 1. Fixed search paths.
+alter function public.touch_updated_at() set search_path = public;
+alter function public.guard_sheet_campaign() set search_path = public;
+alter function public.campaign_board_cap() set search_path = public;
+
+-- 2. Membership, out of the API's reach.
+create schema if not exists private;
+grant usage on schema private to anon, authenticated;
+create or replace function private.is_campaign_member(p_campaign uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (select 1 from campaigns c where c.id = p_campaign and c.created_by = (select auth.uid()))
+      or exists (select 1 from sheets s where s.campaign_id = p_campaign and s.owner_id = (select auth.uid()));
+$$;
+revoke all on function private.is_campaign_member(uuid) from public;
+grant execute on function private.is_campaign_member(uuid) to anon, authenticated;
+-- The public one is now only for functions that run as the owner.
+revoke execute on function public.is_campaign_member(uuid) from public, anon, authenticated;
+
+-- 3. A trigger function, never an RPC.
+revoke execute on function public.make_campaign_live() from public, anon, authenticated;
+
+-- 4. Row rules, auth.uid() read once.
+drop policy if exists "sheets insert" on public.sheets;
+create policy "sheets insert" on public.sheets for insert with check ((select auth.uid()) = owner_id);
+
+drop policy if exists "sheets update" on public.sheets;
+create policy "sheets update" on public.sheets for update using ((select auth.uid()) = owner_id);
+
+drop policy if exists "sheets delete" on public.sheets;
+create policy "sheets delete" on public.sheets for delete using ((select auth.uid()) = owner_id);
+
+drop policy if exists "campaigns insert" on public.campaigns;
+create policy "campaigns insert" on public.campaigns for insert with check ((select auth.uid()) = created_by);
+
+drop policy if exists "campaigns update" on public.campaigns;
+create policy "campaigns update" on public.campaigns for update using ((select auth.uid()) = created_by);
+
+drop policy if exists "campaigns delete" on public.campaigns;
+create policy "campaigns delete" on public.campaigns for delete using ((select auth.uid()) = created_by);
+
+drop policy if exists "entries read" on public.entries;
+create policy "entries read" on public.entries for select using (
+  visibility = 'global'
+  or owner_id = (select auth.uid())
+  or (
+    visibility = 'campaign'
+    and campaign_id is not null
+    and campaign_id in (select s.campaign_id from sheets s where s.owner_id = (select auth.uid()))
+  )
+);
+
+drop policy if exists "entries insert" on public.entries;
+create policy "entries insert" on public.entries for insert with check ((select auth.uid()) = owner_id);
+
+drop policy if exists "entries update" on public.entries;
+create policy "entries update" on public.entries for update using ((select auth.uid()) = owner_id);
+
+drop policy if exists "entries delete" on public.entries;
+create policy "entries delete" on public.entries for delete using ((select auth.uid()) = owner_id);
+
+drop policy if exists "sheet_text read" on public.sheet_text;
+create policy "sheet_text read" on public.sheet_text for select
+  using (
+    is_public
+    or owner_id = (select auth.uid())
+    or exists (
+      select 1 from sheets s join campaigns c on c.id = s.campaign_id
+      where s.id = sheet_text.sheet_id and c.created_by = (select auth.uid())
+    )
+  );
+
+drop policy if exists "sheet_text insert" on public.sheet_text;
+create policy "sheet_text insert" on public.sheet_text for insert
+  with check (
+    owner_id = (select auth.uid())
+    and exists (select 1 from sheets s where s.id = sheet_id and s.owner_id = (select auth.uid()))
+  );
+
+drop policy if exists "sheet_text update" on public.sheet_text;
+create policy "sheet_text update" on public.sheet_text for update
+  using (owner_id = (select auth.uid()))
+  with check (
+    owner_id = (select auth.uid())
+    and exists (select 1 from sheets s where s.id = sheet_id and s.owner_id = (select auth.uid()))
+  );
+
+drop policy if exists "sheet_text delete" on public.sheet_text;
+create policy "sheet_text delete" on public.sheet_text for delete
+  using (owner_id = (select auth.uid()));
+
+drop policy if exists "campaign_live update" on public.campaign_live;
+create policy "campaign_live update" on public.campaign_live for update
+  using (exists (select 1 from campaigns c where c.id = campaign_id and c.created_by = (select auth.uid())));
+
+drop policy if exists "campaign_board insert" on public.campaign_board;
+create policy "campaign_board insert" on public.campaign_board for insert
+  with check (created_by = (select auth.uid()) and private.is_campaign_member(campaign_id));
+
+drop policy if exists "campaign_board update" on public.campaign_board;
+create policy "campaign_board update" on public.campaign_board for update
+  using (private.is_campaign_member(campaign_id));
+
+drop policy if exists "campaign_board delete" on public.campaign_board;
+create policy "campaign_board delete" on public.campaign_board for delete
+  using (private.is_campaign_member(campaign_id));
+
+-- 5. Indexes for the foreign keys.
+create index if not exists campaign_board_created_by_idx on public.campaign_board (created_by);
+create index if not exists campaigns_created_by_idx on public.campaigns (created_by);
+create index if not exists entries_campaign_id_idx on public.entries (campaign_id);
+create index if not exists entries_forked_from_idx on public.entries (forked_from);
+create index if not exists entries_owner_id_idx on public.entries (owner_id);

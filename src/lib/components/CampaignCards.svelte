@@ -149,7 +149,7 @@
     <li class="card themed {v.vital}" class:lifted={drag?.id === s.id} bind:this={els[s.id]}
         style={themeStyle(def?.identity?.theme)} style:transform={shift(s.id)}
         animate:glideTo in:fade={{ duration: 200 }}>
-      <a class="open" href="{base}/s/{s.id}">
+      <a class="open" href="{base}/s/{s.id}{s.campaign_id ? `?from=${s.campaign_id}` : ''}">
         <span class="portrait">
           {#if portrait}<img src={portrait} alt="" />{/if}
           <span class="lvl">LV {characterLevel(def)}</span>

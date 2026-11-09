@@ -165,6 +165,13 @@
   .rows { display: grid; gap: 0.375rem; }
   .row { border: 1px solid var(--line-soft); border-radius: var(--r-sm); padding: 0.5rem 0.625rem; transition: border-color 0.18s ease, background-color 0.18s ease; }
   .row.on { border-color: var(--a-edge); background: var(--a-wash); }
+  .row:not(.on):hover { border-color: var(--line); background: var(--raised); }
+  .pick:hover { color: var(--a); }
+  .opts input:hover, .opts select:hover { border-color: var(--a-edge); }
+  .opts input:focus-visible, .opts select:focus-visible, .pick input:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
+  .actions button { transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease; }
+  .actions button:active { transform: translateY(1px); }
+  .actions button:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
   .pick { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9375rem; }
   .pick input { accent-color: var(--a); width: 1rem; height: 1rem; }
   .opts { display: flex; flex-wrap: wrap; gap: 0.5rem 0.875rem; padding: 0.5rem 0 0 1.5rem; font-size: 0.875rem; color: var(--dim); }

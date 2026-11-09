@@ -258,3 +258,13 @@ body {
   --ink-brown: oklch(46% 0.07 55);
   --ink-grey: oklch(52% 0.01 286);
 }
+
+/* The d20 beside anything that rolls (DieMark.svelte): dim until what it
+   marks is hovered or focused, then in the accent, with a turn. */
+.diemark {
+  display: inline-block; flex: none; width: 0.8125em; height: 0.8125em; margin-left: 0.3125em; vertical-align: -0.0625em;
+  fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; color: var(--faint);
+  transition: color 0.2s ease, transform 0.35s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+.rolls-hover:hover .diemark, .rolls-hover:focus-within .diemark { color: var(--a); transform: rotate(72deg) scale(1.15); }
+@media (prefers-reduced-motion: reduce) { .diemark { transition: none; } }
