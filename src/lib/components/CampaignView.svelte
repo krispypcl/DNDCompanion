@@ -9,7 +9,7 @@
    * character, ending the campaign (it is archived, and can be reopened) and
    * deleting it, a banner like a sheet's, and a jukebox of their own music.
    */
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { fade, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import { base } from '$app/paths';
@@ -40,7 +40,7 @@
   import { setSound, soundOn } from '$lib/sound';
   import { get } from 'svelte/store';
   import SoundToggle from './SoundToggle.svelte';
-  import type { Sheet } from '$lib/types';
+  import type { ConditionLook, Sheet } from '$lib/types';
 
   let { id }: { id: string } = $props();
 
@@ -95,6 +95,56 @@
       playback = { ...pb, at };
     }
   }
+  /**
+   * Whether the DM has the campaign open somewhere (Realtime presence on the
+   * campaign's channel). The table's music only plays while they do: with the
+   * DM gone it waits at 0:00, and a DM arriving to music nobody was leading
+   * finds it stopped there too.
+   */
+  let dmHere = $state(false);
+  let presenceKnown = $state(false);
+  const presenceKey = Math.random().toString(36).slice(2);
+  let channelRef: ReturnType<typeof supabase.channel> | null = null;
+  let subscribed = $state(false);
+  let trackedAs: boolean | null = null;
+  $effect(() => {
+    const dm = isDm;
+    if (!subscribed || !channelRef || !campaign || trackedAs === dm) return;
+    trackedAs = dm;
+    void channelRef.track({ dm });
+  });
+  let liveRead = $state(false);
+  let otherDm = $state(false);
+  let mineSeen = $state(false);
+  function readPresence() {
+    if (!channelRef) return;
+    const all = Object.entries(channelRef.presenceState() as Record<string, { dm?: boolean }[]>);
+    otherDm = all.some(([k, list]) => k !== presenceKey && list.some((p) => p.dm));
+    mineSeen = all.some(([k, list]) => k === presenceKey && list.some((p) => p.dm));
+    dmHere = otherDm || mineSeen;
+    if (!isDm || mineSeen) presenceKnown = true;
+  }
+  // The DM is back, and no other page of theirs was leading the music: it
+  // stopped when they left, so it waits at 0:00 for their play.
+  // The DM's own player waits for this, so it never starts from a moment
+  // that no longer holds; if presence never answers, it goes ahead anyway.
+  let settledReturn = $state(false);
+  $effect(() => {
+    if (settledReturn || !isDm || !mineSeen || !liveRead) return;
+    const pb = untrack(() => playback);
+    if (!otherDm && pb?.playing) sendPlayback({ ...pb, playing: false, t: 0, at: Date.now() });
+    settledReturn = true;
+  });
+  onMount(() => {
+    const giveUp = setTimeout(() => (settledReturn = true), 3500);
+    return () => clearTimeout(giveUp);
+  });
+  const musicSettled = $derived(!isDm || settledReturn);
+  /** What a player's page follows: the DM's music, or with the DM away, 0:00 and still. */
+  const tablePlayback = $derived(
+    // Until presence has answered, the music is followed as it was saved.
+    isDm || !playback || !presenceKnown || dmHere ? playback : { ...playback, playing: false, t: 0 }
+  );
   /** The DM's music, told to the table (and shown here at once). */
   function sendPlayback(p: Playback) {
     if (!campaign) return;
@@ -145,7 +195,10 @@
         campaignRepo.get(id), sheetRepo.listCampaignSheets(id), first ? campaignRepo.live(id) : Promise.resolve(undefined)
       ]);
       campaign = c;
-      if (now !== undefined) takeLive(now, now?.updated_at);
+      if (now !== undefined) {
+        takeLive(now, now?.updated_at);
+        liveRead = true;
+      }
       missing = !c;
       sheets = rows;
       error = null;
@@ -176,7 +229,8 @@
     };
     const channel = isConfigured
       ? supabase
-          .channel(`campaign-${id}`)
+          .channel(`campaign-${id}`, { config: { presence: { key: presenceKey } } })
+          .on('presence', { event: 'sync' }, readPresence)
           .on('postgres_changes', { event: '*', schema: 'public', table: 'sheets', filter: `campaign_id=eq.${id}` }, refreshSoon)
           .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'campaign_live', filter: `campaign_id=eq.${id}` }, (payload) => {
             const row = payload.new as { playback?: Playback | Record<string, never>; invite_rev?: number };
@@ -188,8 +242,17 @@
             }
             takeLive({ playback: pb, invite_rev: row.invite_rev ?? 0 });
           })
-          .subscribe()
+          .subscribe((status) => {
+            subscribed = status === 'SUBSCRIBED';
+            if (subscribed) trackedAs = null;
+          })
       : null;
+    channelRef = channel;
+    // Without Realtime there is no telling who is here: the music just follows.
+    if (!channel) {
+      dmHere = true;
+      presenceKnown = true;
+    }
     return () => {
       clearInterval(timer);
       clearTimeout(soon);
@@ -266,6 +329,32 @@
       if (campaign) campaign = { ...campaign, details: before };
       error = campaignMessage(e, 'That change slipped off the page! Try again.');
     }
+  }
+
+  /**
+   * The DM chooses how a condition of a player's own looks: shown at once,
+   * saved a moment after the last change (a colour dragged across the
+   * picker is one save, not dozens).
+   */
+  const lookTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  function giveLook(sheetId: string, key: string, look: ConditionLook | null) {
+    sheets = sheets.map((s) => {
+      if (s.id !== sheetId) return s;
+      const looks = { ...(s.definition?.conditionLooks ?? {}) };
+      if (look) looks[key] = look;
+      else delete looks[key];
+      return { ...s, definition: { ...s.definition, conditionLooks: looks } };
+    });
+    const at = `${sheetId}|${key}`;
+    clearTimeout(lookTimers.get(at));
+    lookTimers.set(at, setTimeout(async () => {
+      lookTimers.delete(at);
+      try {
+        await campaignRepo.setConditionLook(sheetId, key, look);
+      } catch (e) {
+        error = campaignMessage(e, 'That colour wouldn’t stick! Try again.');
+      }
+    }, 350));
   }
 
   /** The DM gives or takes away a player's conditions: shown at once, undone if refused. */
@@ -346,10 +435,10 @@
     {/if}
 
     <!-- The table's music: the DM plays it, everyone hears it. Empty, only while the DM edits. -->
-    {#if hasMusic || (isDm && editing)}
+    {#if (hasMusic || (isDm && editing)) && musicSettled}
       <div transition:slide={unfold()}>
         <CampaignMusic campaignId={campaign.id} songs={campaign.details.songs ?? []} editing={isDm && editing}
-                       lead={isDm} {playback} onplayback={sendPlayback}
+                       lead={isDm} playback={tablePlayback} away={!isDm && presenceKnown && !dmHere} onplayback={sendPlayback}
                        onchange={(songs) => saveDetails({ songs })} />
       </div>
     {/if}
@@ -360,7 +449,7 @@
       <p class="empty">No characters yet.{#if isDm}{' '}Send your players the invite link.{/if}</p>
     {:else}
       <CampaignCards sheets={active} order={campaign.details.order ?? []} {isDm} {editing} {ended}
-                     onorder={(order) => saveDetails({ order })} onremove={remove} onconditions={giveConditions} />
+                     onorder={(order) => saveDetails({ order })} onremove={remove} onconditions={giveConditions} onlook={giveLook} />
     {/if}
 
     {#if retired.length}

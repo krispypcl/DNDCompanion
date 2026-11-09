@@ -4,14 +4,14 @@
    * the owner changes it from the sheet without entering edit mode, and it can
    * be undone. A viewer sees it only when there is something to see.
    */
-  import { STANDARD_CONDITIONS, addCondition, cleanName, conditionUrl, isStandard, lookKey, lookOf, removeCondition } from '$lib/rules/conditions';
-  import { slide } from 'svelte/transition';
+  import { STANDARD_CONDITIONS, defaultLook, addCondition, cleanName, conditionUrl, isStandard, lookKey, lookOf, removeCondition } from '$lib/rules/conditions';
   import { snapshot } from '$lib/stores/undo';
   import { flip } from 'svelte/animate';
   import { scale } from 'svelte/transition';
   import { cubicOut, quintOut } from 'svelte/easing';
   import { reorder } from '$lib/reorder';
-  import type { ConditionLook, ConditionMotion, State } from '$lib/types';
+  import ConditionLookPicker from './ConditionLookPicker.svelte';
+  import type { ConditionLook, State } from '$lib/types';
 
   let {
     state: sheetState,
@@ -31,25 +31,6 @@
 
   /** A condition of the player's own: its tint is asked for when it is added. */
   let asking = $state<string | null>(null);
-  const SWATCHES = [
-    { name: 'Pink', color: 'oklch(70% 0.19 350)' },
-    { name: 'Red', color: 'oklch(60% 0.21 25)' },
-    { name: 'Orange', color: 'oklch(70% 0.17 55)' },
-    { name: 'Gold', color: 'oklch(84% 0.16 90)' },
-    { name: 'Green', color: 'oklch(68% 0.18 145)' },
-    { name: 'Teal', color: 'oklch(72% 0.12 190)' },
-    { name: 'Blue', color: 'oklch(64% 0.15 250)' },
-    { name: 'Purple', color: 'oklch(58% 0.19 300)' },
-    { name: 'White', color: 'oklch(95% 0.01 286)' },
-    { name: 'Shadow', color: 'oklch(18% 0.01 286)' }
-  ];
-  const MOTIONS: { value: ConditionMotion; label: string }[] = [
-    { value: 'still', label: 'Still' },
-    { value: 'pulse', label: 'Pulse' },
-    { value: 'shimmer', label: 'Shimmer' },
-    { value: 'heavy', label: 'Heavy' },
-    { value: 'shiver', label: 'Shiver' }
-  ];
   const lookFor = (name: string): ConditionLook => looks[lookKey(name)] ?? { color: '', motion: 'pulse' };
   function setLook(name: string, patch: Partial<ConditionLook>) {
     onlooks?.({ ...looks, [lookKey(name)]: { ...lookFor(name), ...patch } });
@@ -74,7 +55,7 @@
     onchange(next);
     // One of their own, with no tint chosen yet: ask what it looks like.
     if (onlooks && !isStandard(name) && !(lookKey(name) in looks)) {
-      onlooks({ ...looks, [lookKey(name)]: { color: SWATCHES[0].color, motion: 'pulse' } });
+      onlooks({ ...looks, [lookKey(name)]: defaultLook() });
       asking = name;
     }
   }
@@ -125,30 +106,7 @@
     {/if}
 
     {#if editable && asking && active.includes(asking)}
-      {@const look = lookFor(asking)}
-      <div class="ask" transition:slide={{ duration: 200 }} role="group" aria-label="How {asking} tints the screen">
-        <p>What colour is <b>{asking}</b>? It tints the bottom of the screen while it lasts.</p>
-        <div class="swatches">
-          {#each SWATCHES as sw (sw.name)}
-            <button class="sw" style:--sw={sw.color} aria-label={sw.name} title={sw.name}
-                    aria-pressed={look.color === sw.color} onclick={() => setLook(asking!, { color: sw.color })}></button>
-          {/each}
-          <label class="sw custom" title="Any colour">
-            <input type="color" aria-label="Any colour"
-                   value={look.color.startsWith('#') ? look.color : '#c060a0'}
-                   oninput={(e) => setLook(asking!, { color: e.currentTarget.value })} />
-          </label>
-          <button class="sw nonebtn" aria-label="No tint" title="No tint"
-                  aria-pressed={!look.color} onclick={() => setLook(asking!, { color: '' })}>⦸</button>
-        </div>
-        <div class="motions" role="radiogroup" aria-label="How it moves">
-          {#each MOTIONS as m (m.value)}
-            <button role="radio" aria-checked={look.motion === m.value} disabled={!look.color}
-                    onclick={() => setLook(asking!, { motion: m.value })}>{m.label}</button>
-          {/each}
-        </div>
-        <div class="done"><button class="go" onclick={() => (asking = null)}>Done</button></div>
-      </div>
+      <ConditionLookPicker name={asking} look={lookFor(asking)} onchange={(patch) => setLook(asking!, patch)} ondone={() => (asking = null)} />
     {/if}
 
     {#if editable}
@@ -203,33 +161,6 @@
   }
   .dot:hover { transform: scale(1.25); }
   .dot.none { background: none; border-style: dashed; }
-  .ask {
-    background: var(--raised); border: 1px solid var(--line-soft); border-radius: var(--r);
-    padding: 0.625rem 0.75rem; margin: 0 0 0.5rem; font-size: 0.8125rem;
-  }
-  .ask p { margin: 0 0 0.5rem; color: var(--dim); line-height: 1.4; }
-  .ask b { color: var(--text); font-weight: 600; }
-  .swatches { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-bottom: 0.5rem; }
-  .sw {
-    width: 1.5rem; height: 1.5rem; border-radius: 50%; padding: 0; cursor: pointer;
-    background: var(--sw); border: 2px solid transparent; outline: 1px solid var(--line);
-    transition: transform 0.15s ease, border-color 0.15s ease; position: relative; overflow: hidden;
-    display: inline-grid; place-items: center;
-  }
-  .sw:hover { transform: scale(1.12); }
-  .sw[aria-pressed='true'] { border-color: var(--surface); outline: 2px solid var(--a); }
-  .custom { background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); }
-  .custom input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-  .nonebtn { background: var(--bg); color: var(--dim); font-size: 0.875rem; line-height: 1; }
-  .motions { display: flex; flex-wrap: wrap; gap: 0.25rem; }
-  .motions button {
-    background: var(--bg); border: 1px solid var(--line); color: var(--dim); border-radius: 999px;
-    padding: 0.1875rem 0.625rem; font: inherit; font-size: 0.75rem; cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
-  }
-  .motions button[aria-checked='true'] { color: var(--a); border-color: var(--a-edge); background: var(--a-wash); }
-  .motions button:disabled { opacity: 0.4; cursor: default; }
-  .done { display: flex; justify-content: flex-end; margin-top: 0.5rem; }
   input {
     flex: 1 1 auto; min-width: 0; background: var(--bg); border: 1px solid var(--line);
     color: var(--text); border-radius: var(--r-sm); padding: 0.3125rem 0.5rem;
@@ -254,8 +185,6 @@
     input { font-size: 16px; padding: 0.4rem 0.5rem; }
     .go { padding: 0.4rem 0.875rem; }
     .x { width: 1.75rem; height: 1.75rem; font-size: 1.125rem; }
-    .sw { width: 2rem; height: 2rem; }
     .dot { width: 1rem; height: 1rem; }
-    .motions button { padding: 0.375rem 0.75rem; font-size: 0.8125rem; }
   }
 </style>
