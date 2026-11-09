@@ -41,6 +41,13 @@ to keep as anything from the books.
   class resources, growing with the class's level.
 - **Sound effects**, off until switched on: dice, criticals, a heartbeat at
   0 hit points and the toll of death saves.
+- **Owlbear Rodeo extension**: add
+  `<site>/owlbear/manifest.json` in Owlbear (Extensions → Add custom
+  extension). Paste a sheet's or campaign's link into its panel to see the
+  characters' hit points, AC and conditions live; put their tokens on the map
+  wearing their portraits, with a hit point bar and condition dots that follow
+  the sheet; change hit points from a token's menu; and see the sheets' rolls
+  in the room.
 
 ## Built with
 

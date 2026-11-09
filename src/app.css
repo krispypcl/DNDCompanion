@@ -299,3 +299,7 @@ body {
   position: relative; z-index: 5;
   box-shadow: 0 10px 22px -8px rgb(0 0 0 / 0.55), 0 0 0 1px var(--a-edge);
 }
+
+/* Inside Owlbear Rodeo (the extension's pages): its frames are narrow and
+   fixed, so no gutter is kept for a scrollbar that may never come. */
+html.in-owlbear { scrollbar-gutter: auto; }

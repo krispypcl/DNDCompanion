@@ -31,6 +31,7 @@
     "vitest": "^2.1.8"
   },
   "dependencies": {
+    "@owlbear-rodeo/sdk": "^3.1.0",
     "@supabase/supabase-js": "^2.47.10"
   }
 }
