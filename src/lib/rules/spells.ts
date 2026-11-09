@@ -47,3 +47,15 @@ export function spellGroup(type: unknown): string {
   if (!text) return 'No level yet';
   return text[0].toUpperCase() + text.slice(1).toLowerCase();
 }
+
+/**
+ * Whether a spell needs concentration, read from how its duration was
+ * written: "Concentration, up to 1 minute", the short "Conc." or "Conc", a
+ * lone "C" or "(C)", and any of those beside the time ("1 hr. Conc."). In the
+ * notes only the clearer forms count, so "concerned" or a stray "C" doesn't.
+ */
+export function needsConcentration(duration: unknown, notes?: unknown): boolean {
+  const d = String(duration ?? '');
+  if (/\bconc/i.test(d) || /(?:^|[\s(\[,;/])c(?=$|[\s)\].,;:/])/i.test(d)) return true;
+  return /\bconc(?:entrat|\.|\b)/i.test(String(notes ?? ''));
+}
