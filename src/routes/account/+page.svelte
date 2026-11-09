@@ -230,7 +230,10 @@
 
 <style>
   .linked { display: flex; align-items: center; gap: 0.5rem; color: var(--a); margin: 0.5rem 0 0; }
-  .google-wrap { max-width: 18rem; margin: 0.75rem auto 0; }
+  .google-wrap { max-width: 18rem; margin: 0 auto; }
+  /* Straight under the heading, as in the other cards. */
+  .card > h2 + .row { margin-top: 0; }
+  h2 { display: flex; align-items: center; gap: 0.125rem; }
   main { max-width: 36rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
   header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
   /* The same Back as on a sheet. */

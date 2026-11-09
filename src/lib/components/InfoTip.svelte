@@ -92,6 +92,9 @@
     display: inline-grid; place-items: center; width: 1.75rem; height: 1.75rem;
     background: none; border: 0; border-radius: 50%; padding: 0; cursor: pointer;
     color: var(--dim); vertical-align: middle;
+    /* A big target that takes no more line height than the words beside
+       it: a heading with an "i" is as tall as one without. */
+    margin-block: -0.5rem;
     transition: color 0.15s ease, background-color 0.15s ease;
   }
   .info:hover, .info.on { color: var(--a); background: var(--a-wash); }
@@ -108,7 +111,7 @@
   @keyframes tipIn { from { opacity: 0; transform: translateY(-4px); } }
   @keyframes tipInAbove { from { opacity: 0; transform: translateY(4px); } }
   @media (max-width: 700px) {
-    .info { width: 2.25rem; height: 2.25rem; }
+    .info { width: 2.25rem; height: 2.25rem; margin-block: -0.75rem; }
     .note { font-size: 0.875rem; }
   }
 </style>

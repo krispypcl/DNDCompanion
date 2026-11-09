@@ -160,7 +160,7 @@
   .tabwrap { container-type: inline-size; }
   @container (max-width: 50rem) {
     .tablist {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(4.75rem, 1fr)); gap: 0.375rem;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(5.75rem, 1fr)); gap: 0.375rem;
       border-bottom: 0; overflow: visible;
     }
     button {

@@ -347,15 +347,20 @@
   .lbl, h3.cap { display: flex; align-items: center; gap: 0.25rem; }
   .lbl :global(.info), h3.cap :global(.info) { text-transform: none; letter-spacing: 0; }
   /* Reading: the pictures themselves, pressed for full screen. */
-  .pics { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+  /* Never wider than the module: a picture's own size (a 1920px banner)
+     must not set the box's, so each box has a fixed or capped width and the
+     picture fills it. */
+  .pics { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; min-width: 0; max-width: 100%; }
   .pic {
     flex: none; padding: 0; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden;
     background: var(--raised); cursor: zoom-in; transition: transform 0.15s ease, opacity 0.15s ease, border-color 0.15s ease;
   }
-  .pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .pic { min-width: 0; max-width: 100%; }
+  .pic img { display: block; width: 100%; height: 100%; max-width: 100%; object-fit: cover; }
   button.pic:hover { transform: scale(1.02); border-color: var(--a-edge); }
   .pic.portrait { width: 7rem; height: 7rem; }
-  .pic.banner { flex: 1 1 12rem; max-width: 22rem; height: 7rem; }
+  .pic.banner { flex: 1 1 12rem; width: 12rem; max-width: min(22rem, 100%); height: 7rem; }
+  @media (max-width: 480px) { .pic.banner { flex-basis: 100%; width: 100%; max-width: 100%; } }
   .pic.empty { display: grid; place-items: center; color: var(--faint); cursor: default; }
   .go .note { color: var(--a); flex: none; }
   .go b { flex: none; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -24,6 +24,7 @@
   let open = $state(false);
   let pos = $state({ x: 0, y: 0, below: false });
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let tapped = false;
   const sign = (n: number) => (n >= 0 ? `+${n}` : `−${Math.abs(n)}`);
 
   /** Above the whole box it explains (never over it), or below when there is no room above. */
@@ -46,6 +47,23 @@
     clearTimeout(timer);
     open = false;
   }
+  // On a phone there is no pointer leaving: a tap anywhere else, or a
+  // scroll, puts it away.
+  $effect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => {
+      if (!anchor?.contains(e.target as Node)) hide();
+    };
+    const off = () => hide();
+    window.addEventListener('pointerdown', away, true);
+    window.addEventListener('scroll', off, { passive: true, capture: true });
+    window.addEventListener('resize', off);
+    return () => {
+      window.removeEventListener('pointerdown', away, true);
+      window.removeEventListener('scroll', off, { capture: true });
+      window.removeEventListener('resize', off);
+    };
+  });
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -53,11 +71,17 @@
       onpointerenter={(e) => e.pointerType === 'mouse' && show()}
       onpointerleave={(e) => e.pointerType === 'mouse' && hide()}
       onpointerdown={(e) => {
+        tapped = e.pointerType !== 'mouse';
         // A tap on something that does a thing (a die to roll, a field) is that thing, not a question.
         if (e.pointerType === 'mouse' || (e.target as Element).closest('button, input, select, textarea, a, [contenteditable]')) return;
         if (open) hide(); else show(0);
       }}
-      onfocusin={() => show(120)} onfocusout={hide}>
+      onfocusin={() => {
+        // Focus from the keyboard opens it; focus from a tap (on a die to roll) does not.
+        if (tapped) { tapped = false; return; }
+        show(120);
+      }}
+      onfocusout={hide}>
   {@render children()}
 </span>
 
