@@ -11,6 +11,7 @@
   import { followSheets } from '$lib/owlbear/live';
   import { changeHp, type HpChange } from '$lib/owlbear/hp';
   import type { Sheet } from '$lib/types';
+  import HpBar from './HpBar.svelte';
 
   let sheet = $state.raw<Sheet | null>(null);
   let gone = $state(false);
@@ -77,8 +78,7 @@
     </div>
     {#if max > 0}
       <div class="row">
-        <span class="bar"><span class="fill" style:width="{Math.min(100, (cur / max) * 100)}%"></span></span>
-        <span class="nums"><b>{cur}</b> / {max}{#if temp > 0}<span class="t"> +{temp}</span>{/if}</span>
+        <HpBar {cur} {max} {temp} vital={v.vital} />
       </div>
     {/if}
     <form class="row" onsubmit={(e) => { e.preventDefault(); void act('damage'); }}>
@@ -101,13 +101,6 @@
   .head a { color: var(--a); font-size: 0.75rem; text-decoration: none; border-radius: 2px; }
   .head a:hover { text-decoration: underline; text-underline-offset: 2px; }
   .head a:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
-  .bar { position: relative; flex: 1; height: 0.4375rem; border-radius: 999px; background: color-mix(in oklch, var(--text) 14%, transparent); overflow: hidden; }
-  .fill { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: oklch(70% 0.17 150); transition: width 0.5s cubic-bezier(0.2, 0.8, 0.25, 1); }
-  .bloodied .fill { background: oklch(78% 0.15 80); }
-  .critical .fill { background: var(--hurt-red); }
-  .nums { color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .nums b { color: var(--text); }
-  .nums .t { color: oklch(72% 0.13 245); }
   input {
     flex: 1; min-width: 0; font: inherit; padding: 0.3125rem 0.5rem; color: var(--text);
     border: 1px solid var(--line); border-radius: var(--r-sm); background: color-mix(in oklch, var(--bg) 70%, transparent);

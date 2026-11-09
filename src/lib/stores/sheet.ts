@@ -21,6 +21,37 @@ export function scrubText(definition: Definition): Definition {
 const hasLegacyText = (definition: Definition) =>
   TEXT_KEYS.some((key) => typeof definition[key] === 'string' && definition[key] !== '');
 
+/**
+ * The parts of a sheet others may change while its owner has it open: hit
+ * points, temporary hit points, conditions and death saves (from the
+ * Owlbear Rodeo map, or the DM on the campaign page), and how the DM's
+ * conditions look. A change to these elsewhere is folded in, never a
+ * conflict.
+ */
+const VITAL_STATE = ['hpCurrent', 'hpTemp', 'conditions', 'deathSaves'] as const;
+function vitalsOf(state: State | null | undefined): Partial<State> {
+  const out: Partial<State> = {};
+  for (const k of VITAL_STATE) if (state && k in state) (out as Record<string, unknown>)[k] = state[k];
+  return out;
+}
+const withoutVitals = (state: State | null | undefined) => {
+  const copy = { ...(state ?? {}) } as Record<string, unknown>;
+  for (const k of VITAL_STATE) delete copy[k];
+  return copy;
+};
+const withoutLooks = (def: Definition | null | undefined) => {
+  const { conditionLooks: _looks, ...rest } = (def ?? {}) as Definition;
+  return rest;
+};
+const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+/** Whether what changed between two copies of a row is only its vitals. */
+export function onlyVitalsChanged(
+  was: { definition: Definition; state: State },
+  now: { definition: Definition; state: State }
+): boolean {
+  return same(withoutVitals(was.state), withoutVitals(now.state)) && same(withoutLooks(was.definition), withoutLooks(now.definition));
+}
+
 type Store = {
   sheet: Sheet | null;
   status: SaveStatus;
@@ -35,6 +66,42 @@ function createSheetStore() {
     state?: State;
     texts?: Partial<Record<TextKey, PendingText>>;
   } = {};
+  /** The row as last read from or written to the database. */
+  let base: { definition: Definition; state: State } | null = null;
+
+  /** Someone else's vitals, taken into what is shown and what waits to save. */
+  /**
+   * Takes in the vitals changed elsewhere, except any this copy changed
+   * itself since it last matched the database: those are this person's own
+   * doing and go out with the next save. Returns what was taken.
+   */
+  function takeVitals(row: { definition: Definition; state: State; updated_at: string }) {
+    const mine = get(store).sheet;
+    const vitals: Partial<State> = {};
+    for (const [k, v] of Object.entries(vitalsOf(row.state)) as [keyof State, unknown][]) {
+      const touched = base && mine && !same(mine.state?.[k], base.state?.[k]);
+      if (!touched) (vitals as Record<string, unknown>)[k] = v;
+    }
+    const looksTouched = base && mine && !same(mine.definition?.conditionLooks, base.definition?.conditionLooks);
+    const looks = looksTouched ? undefined : row.definition?.conditionLooks;
+    store.update((s) =>
+      s.sheet
+        ? {
+            ...s,
+            sheet: {
+              ...s.sheet,
+              state: { ...s.sheet.state, ...vitals },
+              definition: looks === undefined ? s.sheet.definition : { ...s.sheet.definition, conditionLooks: looks },
+              updated_at: row.updated_at
+            }
+          }
+        : s
+    );
+    if (pending.state) pending.state = { ...pending.state, ...vitals };
+    if (pending.definition && looks !== undefined) pending.definition = { ...pending.definition, conditionLooks: looks };
+    base = { definition: row.definition, state: row.state };
+    return { vitals, looks };
+  }
 
   function setStatus(status: SaveStatus, message: string | null = null) {
     store.update((s) => ({ ...s, status, message }));
@@ -58,9 +125,11 @@ function createSheetStore() {
     if (!work.definition && !work.state && !work.texts) return;
 
     setStatus('saving');
+    let from = current.updated_at;
+    let merges = 0;
     for (let attempt = 0; attempt <= RETRIES; attempt += 1) {
       try {
-        let updatedAt = current.updated_at;
+        let updatedAt = from;
         // Writing first, and the definition after: the definition is where the
         // old copy of it is cleared, and that must not happen if this fails.
         for (const key of TEXT_KEYS) {
@@ -83,6 +152,8 @@ function createSheetStore() {
         if (work.state) {
           updatedAt = await sheetRepo.saveState(current.id, work.state, updatedAt);
         }
+        const now = get(store).sheet;
+        if (now) base = { definition: work.definition ?? base?.definition ?? now.definition, state: work.state ?? base?.state ?? now.state };
         store.update((s) => ({
           ...s,
           sheet: s.sheet ? { ...s.sheet, updated_at: updatedAt } : s.sheet,
@@ -92,6 +163,19 @@ function createSheetStore() {
         return;
       } catch (error) {
         if (error instanceof StaleWriteError) {
+          // Refused because the row changed. If all that changed was hit
+          // points or conditions (the map, the DM), take theirs in and save
+          // again over it: nothing to warn about.
+          const row = merges < 3 && base ? await sheetRepo.loadRow(current.id).catch(() => null) : null;
+          if (row && base && onlyVitalsChanged(base, row)) {
+            merges += 1;
+            const { vitals, looks } = takeVitals(row);
+            if (work.state) work.state = { ...work.state, ...vitals };
+            if (work.definition && looks !== undefined) work.definition = { ...work.definition, conditionLooks: looks };
+            from = row.updated_at;
+            attempt -= 1;
+            continue;
+          }
           // Never overwrite newer data. The value stays on screen; the user decides.
           setStatus('stale', error.message);
           return;
@@ -147,6 +231,7 @@ function createSheetStore() {
 
     load(sheet: Sheet | null) {
       pending = {};
+      base = sheet ? { definition: sheet.definition, state: sheet.state } : null;
       clearTimeout(timer);
       store.set({ sheet, status: 'idle', message: null });
     },
@@ -231,13 +316,27 @@ function createSheetStore() {
         store.update((s) =>
           s.sheet ? { ...s, sheet: { ...s.sheet, definition: row.definition, state: row.state, updated_at: row.updated_at } } : s
         );
+        base = { definition: row.definition, state: row.state };
         return;
       }
-      const conditions = row.state?.conditions ?? [];
-      store.update((s) =>
-        s.sheet ? { ...s, sheet: { ...s.sheet, state: { ...s.sheet.state, conditions }, updated_at: row.updated_at } } : s
-      );
-      if (pending.state) pending.state = { ...pending.state, conditions };
+      // Changes are waiting here. Hit points and conditions from elsewhere
+      // are folded in under them; anything else changed elsewhere is left
+      // for the save to find, so it is never silently written over.
+      if (!base || onlyVitalsChanged(base, row)) takeVitals(row);
+    },
+
+    /**
+     * A look at the row now and then (and when the page comes back into
+     * view), in case a live change was missed: a sleeping tablet drops its
+     * connection. Anything newer is taken in as if it had arrived live.
+     */
+    async check() {
+      const current = get(store).sheet;
+      if (!current) return;
+      const stamp = await sheetRepo.rowStamp(current.id).catch(() => null);
+      if (!stamp || stamp <= current.updated_at) return;
+      const row = await sheetRepo.loadRow(current.id).catch(() => null);
+      if (row) this.adoptRemote(row);
     },
 
     /** Whether anything typed has not reached the database yet. */
