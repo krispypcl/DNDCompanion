@@ -87,6 +87,8 @@
   /** Someone else's change, as it happens; our own echoes are already here. */
   function takeRemote(row: BoardItem) {
     const i = items.findIndex((x) => x.id === row.id);
+    // Our own new row, still on its way back to us: the save brings it.
+    if (i < 0 && row.created_by === userId && pendingIds.size) return;
     if (i < 0) items = [...items, row];
     else if (row.updated_at > items[i].updated_at && !(dragging?.id === row.id) && editingId !== row.id) {
       items[i] = row;
@@ -119,42 +121,58 @@
   /**
    * Added at once, saved after: a line stays where it was drawn (no gap while
    * it is saved, no fade in), and a note can be written on straight away. It
-   * goes again only if the save fails.
+   * shows under a stand-in id until the database gives it its own (the app
+   * may not choose ids: campaign_board's insert grant leaves id out), and
+   * keeps its place in the page (`_key`) when the real id arrives, so a note
+   * being written on keeps its cursor. It goes again only if the save fails.
    */
   const pendingIds = new Set<string>();
   const drawnHere = new Set<string>();
+  const keyOf = (item: BoardItem) => (item as BoardItem & { _key?: string })._key ?? item.id;
   async function add(kind: BoardItem['kind'], data: BoardData) {
     if (!userId) return null;
     error = null;
-    const id = crypto.randomUUID();
-    pendingIds.add(id);
-    if (kind === 'stroke') drawnHere.add(id);
-    const local: BoardItem = { id, campaign_id: campaignId, kind, data, created_by: userId, updated_at: new Date().toISOString() };
+    const tmp = `tmp-${crypto.randomUUID()}`;
+    pendingIds.add(tmp);
+    drawnHere.add(tmp);
+    const local = { id: tmp, _key: tmp, campaign_id: campaignId, kind, data, created_by: userId, updated_at: new Date().toISOString() } as BoardItem;
     items = [...items, local];
     try {
-      const row = await campaignRepo.addToBoard(campaignId, userId, kind, data, id);
-      pendingIds.delete(id);
-      const i = items.findIndex((x) => x.id === id);
-      if (i >= 0) {
-        const changed = JSON.stringify(items[i].data) !== JSON.stringify(data);
-        items[i] = { ...items[i], updated_at: row.updated_at };
-        // Written on (or moved) while it was being saved: save that too.
-        if (changed) void save(id);
-      } else {
+      const row = await campaignRepo.addToBoard(campaignId, userId, kind, data);
+      pendingIds.delete(tmp);
+      drawnHere.add(row.id);
+      const i = items.findIndex((x) => x.id === tmp);
+      if (i < 0) {
         // Taken away again (an empty note) before it was saved.
-        void campaignRepo.removeFromBoard([id]).catch(() => {});
+        void campaignRepo.removeFromBoard([row.id]).catch(() => {});
+        return null;
       }
-      return items[i] ?? row;
+      const now = items[i];
+      const changed = JSON.stringify(now.data) !== JSON.stringify(data);
+      // The real row may already be here (a read, or the live feed): keep one.
+      items = items.filter((x) => x.id !== row.id);
+      const j = items.findIndex((x) => x.id === tmp);
+      items[j] = { ...now, id: row.id, updated_at: row.updated_at } as BoardItem;
+      if (editingId === tmp) editingId = row.id;
+      if (pageId === tmp) pageId = row.id;
+      if (dragging?.id === tmp) dragging = { ...dragging, id: row.id };
+      // Written on (or moved) while it was being saved: save that too.
+      if (changed) void save(row.id);
+      return items[j];
     } catch (e) {
-      pendingIds.delete(id);
-      items = items.filter((x) => x.id !== id);
+      pendingIds.delete(tmp);
+      items = items.filter((x) => x.id !== tmp);
+      if (pageId === tmp) pageId = MAIN;
       error = campaignMessage(e, 'The board wouldn’t take that! Try again.');
       return null;
     }
   }
-  /** A line drawn on this page appears as it is, not faded in. */
+  /** What was made on this page appears as it is; what others add fades or pops in. */
   function appear(_node: Element, { id }: { id: string }) {
     return drawnHere.has(id) ? { duration: 0 } : { duration: 160, css: (t: number) => `opacity: ${t}` };
+  }
+  function popIn(node: Element, { id }: { id: string }) {
+    return drawnHere.has(id) ? { duration: 0 } : scale(node, pop());
   }
   function patch(id: string, data: BoardData) {
     const i = items.findIndex((x) => x.id === id);
@@ -175,8 +193,11 @@
     if (!ids.length) return;
     const before = items;
     items = items.filter((x) => !ids.includes(x.id));
+    // Stand-ins were never saved: nothing to remove from the database.
+    const saved = ids.filter((id) => !id.startsWith('tmp-'));
+    if (!saved.length) return;
     try {
-      await campaignRepo.removeFromBoard(ids);
+      await campaignRepo.removeFromBoard(saved);
     } catch (e) {
       items = before;
       error = campaignMessage(e, 'That one is stuck to the board! Try again.');
@@ -340,6 +361,8 @@
       e.preventDefault();
       drawing = at(e);
     } else if (canEdit && (tool === 'note' || tool === 'text')) {
+      // The press must not move focus on: the new note's box takes it.
+      e.preventDefault();
       const [x, y] = at(e);
       const w = tool === 'note' ? 220 : 320;
       const h = tool === 'note' ? 170 : 60;
@@ -568,7 +591,6 @@
       {/if}
     </div>
   {/if}
-  {#if error}<p class="err" role="alert" transition:slide={unfold()}>{error}</p>{/if}
 
   {#if missing}
     <p class="none">The board couldn’t be read just now. It will try again shortly.</p>
@@ -579,7 +601,7 @@
          onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={cancel}>
       <div class="world" style:transform="scale({view.z}) translate({-view.x}px, {-view.y}px)">
         <svg class="ink" width="1" height="1" aria-hidden="true">
-          {#each strokes as s (s.id)}
+          {#each strokes as s (keyOf(s))}
             <path d={pathOf(s.data.points)} style:stroke={s.data.color} stroke-width={s.data.size ?? 6}
                   class:erasable={canEdit && tool === 'erase'}
                   onpointerdown={(e) => { if (canEdit && tool === 'erase') { e.stopPropagation(); erasing = true; void remove([s.id]); } }}
@@ -588,7 +610,7 @@
           {/each}
           {#if drawing}<path d={pathOf(drawing)} style:stroke={penColour} stroke-width={penSize} />{/if}
         </svg>
-        {#each cards as item (item.id)}
+        {#each cards as item (keyOf(item))}
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div class="item {item.kind}" class:lifted={dragging?.id === item.id}
                style:left="{item.data.x ?? 0}px" style:top="{item.data.y ?? 0}px"
@@ -599,7 +621,7 @@
                  else startDrag(e, item);
                }}
                ondblclick={() => canEdit && tool === 'move' && (editingId = item.id)}
-               transition:scale={pop()}>
+               in:popIn={{ id: item.id }} out:scale={pop()}>
             {#if editingId === item.id}
               <textarea value={item.data.text ?? ''} aria-label={item.kind === 'note' ? 'Sticky note' : 'Writing'}
                         use:focusOnMount oninput={(e) => write(item, e.currentTarget.value)}
@@ -634,6 +656,8 @@
       </div>
     </div>
   {/if}
+  <!-- Under the board, so a message never moves the board itself. -->
+  {#if error}<p class="err" role="alert" transition:slide={unfold()}>{error}</p>{/if}
 </section>
 
 <style>
@@ -694,7 +718,7 @@
   .paper:focus-visible, .pagetab:focus-visible, .zoom button:focus-visible, .pen:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
   .ask { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; font-size: 0.8125rem; color: var(--dim); }
   .ask .danger { border-color: var(--bad); color: var(--bad); background: none; }
-  .err { color: var(--bad); font-size: 0.8125rem; margin: 0 0 0.5rem; }
+  .err { color: var(--bad); font-size: 0.8125rem; margin: 0.5rem 0 0; }
   .none { color: var(--dim); font-size: 0.875rem; }
 
   /* The window onto the page. Frosted over the banner; the paper is drawn on
