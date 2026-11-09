@@ -228,10 +228,6 @@ export function makeCampaignRepo(client: SupabaseClient) {
         .insert({ campaign_id: campaignId, created_by: userId, kind, data })
         .select('id, campaign_id, kind, data, created_by, updated_at').single();
       if (error && /board is full/i.test(error.message)) throw new CampaignError('The board is full! Clear a few things away first.');
-      // TODO: drop once the user confirms database/0009.
-      if (error && kind === 'page' && /kind_check|check constraint/i.test(error.message)) {
-        throw new CampaignError('More pages need the 0009 migration! Run it and try again.');
-      }
       if (error) throw new Error(error.message);
       return row as BoardItem;
     },

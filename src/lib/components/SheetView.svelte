@@ -68,6 +68,7 @@
     modifierOf,
     armorClass,
     initiativeParts,
+    passiveParts,
     passiveScore,
     proficiencyBonus,
     speedParts,
@@ -756,10 +757,14 @@
           <h2 class="cap">Passives</h2>
           <div class="defense">
             {#each PASSIVES as skill (skill)}
-              <div class="defbox">
-                <b use:bump={passiveScore(definition, skill)}>{passiveScore(definition, skill)}</b>
-                <span class="cap">{skill[0].toUpperCase() + skill.slice(1)}</span>
-              </div>
+              {@const name = skill[0].toUpperCase() + skill.slice(1)}
+              <Why title="Passive {name}" parts={passiveParts(definition, skill)} total={String(passiveScore(definition, skill))}
+                   hint="What you notice without rolling: 10 plus your {name} bonus.">
+                <div class="defbox">
+                  <b use:bump={passiveScore(definition, skill)}>{passiveScore(definition, skill)}</b>
+                  <span class="cap">{name}</span>
+                </div>
+              </Why>
             {/each}
           </div>
         </div>
