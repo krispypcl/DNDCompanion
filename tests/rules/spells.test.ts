@@ -31,3 +31,23 @@ describe('spell types', () => {
   });
 
 });
+
+import { needsConcentration } from '$lib/rules/spells';
+
+describe('needsConcentration', () => {
+  it.each([
+    'Concentration, up to 1 minute', 'Conc.', 'conc', '1 hr. Conc.', '1 hr Conc', 'Conc, 10 min',
+    'C', 'C, 1 min', '(C) 1 minute', '1 minute (C)', '10 min / C', 'Up to 1 hr (conc.)', 'Concentrating'
+  ])('reads %s as concentration', (d) => expect(needsConcentration(d)).toBe(true));
+
+  it.each(['Instantaneous', '1 hour', '8 hours', 'Until dispelled', '', 'Special', '24 hr'])(
+    'reads %s as not', (d) => expect(needsConcentration(d)).toBe(false)
+  );
+
+  it('reads the notes only for the clear forms', () => {
+    expect(needsConcentration('1 min', 'Needs concentration')).toBe(true);
+    expect(needsConcentration('1 min', 'conc. while flying')).toBe(true);
+    expect(needsConcentration('1 min', 'Concerned villagers')).toBe(false);
+    expect(needsConcentration('1 min', 'Area C')).toBe(false);
+  });
+});

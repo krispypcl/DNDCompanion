@@ -88,7 +88,7 @@
   import { friendlyDate, latest } from '$lib/rules/dates';
   import { exportFileName, exportSheet } from '$lib/exchange';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
-  import { ordinal, spellGroup, spellLevel, spellRank } from '$lib/rules/spells';
+  import { needsConcentration, ordinal, spellGroup, spellLevel, spellRank } from '$lib/rules/spells';
   import { spellDamage } from '$lib/rules/spellroll';
   import CastPicker from '$lib/components/CastPicker.svelte';
   import CampaignDialog from '$lib/components/CampaignDialog.svelte';
@@ -276,7 +276,7 @@
 
   function setState(next: State) { sheetStore.setState(next); }
   /** A spell held by concentration: "Concentration" in its duration (or a C tag). */
-  const isConcentration = (sp: Spell) => /concentrat|^\s*c\b/i.test(String(sp.duration ?? '')) || /\bconcentration\b/i.test(String(sp.notes ?? ''));
+  const isConcentration = (sp: Spell) => needsConcentration(sp.duration, sp.notes);
   /** Concentrating on a spell: one at a time, so starting one ends the last. Press again to stop. */
   function toggleConcentration(sp: Spell | undefined) {
     if (!sp?.name || !sheetState) return;
