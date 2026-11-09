@@ -161,6 +161,11 @@
 :root { interpolate-size: allow-keywords; }
 
 * { box-sizing: border-box; }
+/* The type, in one place. */
+:root {
+  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: var(--font-ui);
+}
 html, body { margin: 0; height: 100%; }
 /* Nothing may make the page wider than the screen: on a phone that lets the
    whole page be panned or zoomed sideways. The banner's slant is clipped. */
@@ -180,7 +185,10 @@ body { overflow-x: clip; }
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Inter for nearly everything (app.html loads it); the device's own font
+     until it arrives, or if it cannot. Names and branding can take their
+     own later (--font-display). */
+  font-family: var(--font-ui);
   font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
