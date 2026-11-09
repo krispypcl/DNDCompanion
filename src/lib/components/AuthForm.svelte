@@ -166,8 +166,8 @@
   }
   .brand :global(.logo) { color: var(--text); }
   .brand p {
-    margin: 0; text-align: center; font-size: 1.25rem;
-    font-weight: 600; letter-spacing: -0.01em;
+    margin: 0; text-align: center; font-size: 1.375rem;
+    font-family: var(--font-brand); font-weight: 700; letter-spacing: 0.01em;
   }
   /* Its own page centres in the viewport; embedded, it sits in the flow. */
   .standalone { min-height: 100dvh; align-items: center; padding: 1.5rem; }
