@@ -275,6 +275,13 @@
   });
 
   function setState(next: State) { sheetStore.setState(next); }
+  /** A spell held by concentration: "Concentration" in its duration (or a C tag). */
+  const isConcentration = (sp: Spell) => /concentrat|^\s*c\b/i.test(String(sp.duration ?? '')) || /\bconcentration\b/i.test(String(sp.notes ?? ''));
+  /** Concentrating on a spell: one at a time, so starting one ends the last. Press again to stop. */
+  function toggleConcentration(sp: Spell | undefined) {
+    if (!sp?.name || !sheetState) return;
+    setState({ ...sheetState, concentrating: sheetState.concentrating === sp.name ? undefined : sp.name });
+  }
 
   // ── Leaving with changes not yet saved ────────────────────────────────────
   // Closing the tab: the browser's own "leave site?" prompt, and a last try to
@@ -882,6 +889,12 @@
                 addLabel="Add spell"
                 blank={() => ({ name: '' }) as Spell}
                 onpress={isOwner ? (key, spell) => rollSpell(key, spell as Spell) : undefined}
+                equip={{ key: 'name', can: !editable && isOwner,
+                         shows: (sp) => isConcentration(sp as Spell),
+                         isOn: (sp) => Boolean((sp as Spell).name) && sheetState?.concentrating === (sp as Spell).name,
+                         labels: { off: 'Concentrate', on: 'Concentrating', hint: 'Concentrating on it now (one spell at a time)' },
+                         onpress: (i) => toggleConcentration(definition.spells[i]) }}
+                marked={(sp) => Boolean((sp as Spell).name) && sheetState?.concentrating === (sp as Spell).name}
                 onchange={(spells) => setDefinition({ ...definition, spells: spells as Spell[] })}
               >
                 {#snippet info()}

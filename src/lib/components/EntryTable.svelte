@@ -12,6 +12,9 @@
    */
   import { flipKey } from '$lib/flip';
   import DieMark from './DieMark.svelte';
+  import Why from './Why.svelte';
+  import { describeEffects } from '$lib/rules/equipment';
+  import type { ItemEffect } from '$lib/types';
   import EntryLink from './EntryLink.svelte';
   import InfoTip from './InfoTip.svelte';
   import { onDestroy, tick, untrack } from 'svelte';
@@ -62,6 +65,7 @@
     columns,
     check,
     equip,
+    marked,
     editable,
     blank,
     onchange,
@@ -94,7 +98,11 @@
       isOn?: (item: T) => boolean;
       /** The tag's words, off and on (by default Equip and Equipped). */
       labels?: { off: string; on: string; hint: string };
+      /** Whether this row has the tag at all (by default every row). */
+      shows?: (item: T) => boolean;
     };
+    /** A row to pick out (a spell being concentrated on). */
+    marked?: (item: T) => boolean;
     editable: boolean;
     blank: () => T;
     onchange: (next: T[]) => void;
@@ -582,18 +590,46 @@
 
 {#snippet equipTag(item: T, index: number)}
   {@const on = equip!.isOn ? equip!.isOn(item) : Boolean(item[equip!.key])}
-  {@const words = equip!.labels}
-  {#if words}
-    <button class="equip" class:on aria-pressed={on} disabled={!equip!.can}
-            aria-label="{words.hint}: {nameOf(item) || 'this'}" title={words.hint}
+  {@const words = equip!.labels ?? { off: 'Equip', on: 'Equipped', hint: '' }}
+  {@const effects = describeEffects((item as { effects?: ItemEffect[] }).effects)}
+  {#if !equip!.can}
+    <!-- Nothing to press: a tag that says what it does, on hover or a tap. -->
+    {#if on && effects.length && !editable}
+      <Why title={nameOf(item) || words.on} lines={effects}>
+        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+        <span class="equip on still" tabindex="0" role="note" aria-label="{words.on}: {effects.join('; ')}">
+          <span class="eqroom" aria-hidden="true">{words.on.length > words.off.length ? words.on : words.off}</span>
+          <span class="eqlabel">{words.on}</span>
+        </span>
+      </Why>
+    {:else}
+      <span class="equip still" class:on aria-label={on ? words.on : words.off}>
+        <span class="eqroom" aria-hidden="true">{words.on.length > words.off.length ? words.on : words.off}</span>
+        <span class="eqlabel">{on ? words.on : words.off}</span>
+      </span>
+    {/if}
+  {:else}
+    {#if !editable && effects.length}
+      <Why title={nameOf(item) || words.on} lines={effects}
+           hint={equip!.labels ? '' : on ? 'Press to take it off.' : 'Press to equip it.'}>{@render labelledTag(item, index, on, words)}</Why>
+    {:else}
+      {@render labelledTag(item, index, on, words)}
+    {/if}
+  {/if}
+{/snippet}
+
+{#snippet labelledTag(item: T, index: number, on: boolean, words: { off: string; on: string; hint: string })}
+  {#if equip!.labels}
+    <button class="equip" class:on aria-pressed={on}
+            aria-label="{words.hint}: {nameOf(item) || 'this'}" title={editable ? words.hint : undefined}
             onclick={() => equip!.onpress(index)}>
       <span class="eqroom" aria-hidden="true">{words.on.length > words.off.length ? words.on : words.off}</span>
       {#key on}<span class="eqlabel">{on ? words.on : words.off}</span>{/key}
     </button>
   {:else}
-    <button class="equip" class:on aria-pressed={on} disabled={!equip!.can}
+    <button class="equip" class:on aria-pressed={on}
             aria-label={on ? `${nameOf(item) || 'Item'} equipped` : `Equip ${nameOf(item) || 'item'}`}
-            title={!equip!.can ? (on ? 'Equipped' : '') : editable ? 'What it does when equipped' : on ? 'Equipped · press to take off' : 'Equip it'}
+            title={editable ? 'What it does when equipped' : undefined}
             onclick={() => equip!.onpress(index)}>
       <!-- Always as wide as "Equipped", so the name beside it never shifts. -->
       <span class="eqroom" aria-hidden="true">Equipped</span>
@@ -634,6 +670,7 @@
             <tr class="group" class:lit={lit === title} in:arrive out:leave><th colspan={span} scope="colgroup"><span data-flip="{tk}:g:{title}">{title}</span></th></tr>
           {/if}
           <tr bind:this={rowEls[row.key]} in:arrive out:leave class:spotted={spotted === row.key} class:fading={fading === row.key}
+              class:marked={Boolean(marked?.(row.item))}
               class:lifted={drag?.key === row.key}
               style:transform={drag ? `translateY(${offset(row.key)}px)` : undefined}>
             <!-- The handle leads the row: the remove button holds the other end. -->
@@ -702,7 +739,7 @@
                 </div>
               {:else}
                 <span class="nm" data-flip={fk(row, nameCol.key)}>{text(item[nameCol.key])}</span>
-                {#if equip && ((equip.isOn ? equip.isOn(item) : item[equip.key]) || equip.can)}{@render equipTag(item, index)}{/if}
+                {#if equip && (equip.shows ? equip.shows(item) : true) && ((equip.isOn ? equip.isOn(item) : item[equip.key]) || equip.can)}{@render equipTag(item, index)}{/if}
                 {#if links}<EntryLink
                   name={nameOf(item)}
                   source={item.source as string | undefined}
@@ -889,6 +926,14 @@
   .equip { display: inline-grid; justify-items: center; }
   .eqroom, .eqlabel { grid-area: 1 / 1; }
   .eqroom { visibility: hidden; }
+  /* A row picked out: a spell being concentrated on. A wash and a bar down
+     its left edge, on a table and on a phone's card alike. */
+  tr.marked td { background: color-mix(in oklch, var(--a) 11%, transparent); }
+  tr.marked td:first-child { box-shadow: inset 3px 0 0 var(--a); }
+  /* A tag with nothing to press: it explains itself on hover or a tap. */
+  .equip.still { cursor: default; }
+  .equip.still[tabindex]:hover, .equip.still[tabindex]:focus-visible { border-color: var(--a-edge); }
+  .equip.still[tabindex]:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
   .eqlabel { display: inline-block; animation: eqIn 0.25s cubic-bezier(0.2, 0.8, 0.3, 1); }
   @keyframes eqIn { from { opacity: 0; transform: translateY(3px); } }
   .muted { color: var(--dim); font-size: 0.85rem; }

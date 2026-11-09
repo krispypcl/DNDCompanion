@@ -77,3 +77,34 @@ export function guessEffects(name: string): ItemEffect[] {
   if (/boots of speed|winged boots/i.test(n)) return [];
   return [];
 }
+
+const ABILITY_NAMES: Record<Ability, string> = { str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma' };
+const signed = (n: number) => (n >= 0 ? `+${n}` : `−${Math.abs(n)}`);
+const profWords = (p?: 'half' | 'full') => (p === 'full' ? ' plus proficiency' : p === 'half' ? ' plus half proficiency' : '');
+
+/** What effects do, in words, a line each, for the pop-up on an Effects or Equipped tag. */
+export function describeEffects(effects: ItemEffect[] = []): string[] {
+  return effects.map((e) => {
+    switch (e.kind) {
+      case 'armor':
+        return `Armor: AC ${e.base}${e.dex === 'full' ? ' + Dexterity' : e.dex === 'max2' ? ' + Dexterity (up to +2)' : ''}`;
+      case 'shield':
+        return `Shield: AC ${signed(e.bonus)}`;
+      case 'ac':
+        return `Armor Class ${signed(e.bonus)}`;
+      case 'speed':
+        return `Speed ${signed(e.bonus)} ft.`;
+      case 'init':
+        return e.bonus || !e.prof ? `Initiative ${signed(e.bonus)}${profWords(e.prof)}` : `Initiative${profWords(e.prof)}`;
+      case 'save': {
+        const which = e.ability === 'all' ? 'All saving throws' : `${ABILITY_NAMES[e.ability]} saves`;
+        return e.bonus || !e.prof ? `${which} ${signed(e.bonus)}${profWords(e.prof)}` : `${which}${profWords(e.prof)}`;
+      }
+      case 'ability':
+        return e.mode === 'set' ? `${ABILITY_NAMES[e.ability]} becomes ${e.value}` : `${ABILITY_NAMES[e.ability]} ${signed(e.value)}`;
+      case 'advantage':
+        return e.on === 'init' ? 'Advantage on initiative'
+          : `Advantage on ${!e.ability || e.ability === 'all' ? 'all saving throws' : `${ABILITY_NAMES[e.ability]} saves`}`;
+    }
+  });
+}

@@ -14,11 +14,20 @@
 
   let {
     title,
-    parts,
-    total,
+    parts = [],
+    total = '',
+    lines = [],
     hint = '',
     children
-  }: { title: string; parts: Part[]; total: string; hint?: string; children: Snippet } = $props();
+  }: {
+    title: string;
+    parts?: Part[];
+    total?: string;
+    /** Instead of a sum: what it does, a line each ("Advantage on initiative"). */
+    lines?: string[];
+    hint?: string;
+    children: Snippet;
+  } = $props();
 
   let anchor = $state<HTMLSpanElement>();
   let open = $state(false);
@@ -32,7 +41,7 @@
     const el = (anchor?.firstElementChild as HTMLElement | null) ?? anchor;
     if (!el) return;
     const r = el.getBoundingClientRect();
-    const tall = 46 + parts.length * 20 + (hint ? 34 : 0);
+    const tall = 46 + (parts.length + lines.length) * 20 + (hint ? 34 : 0);
     const below = r.top - tall - 12 < 0;
     pos = { x: Math.min(window.innerWidth - 134, Math.max(134, r.left + r.width / 2)), y: below ? r.bottom + 8 : r.top - 8, below };
   }
@@ -89,12 +98,17 @@
   <div class="card" class:below={pos.below} use:portal role="tooltip" style:left="{pos.x}px" style:top="{pos.y}px"
        transition:scale={{ duration: prefersReducedMotion() ? 0 : 160, start: 0.92, easing: cubicOut }}>
     <b class="t">{title}</b>
-    <ul>
-      {#each parts as p, i (i)}
-        <li><span>{p.label}{#if p.note}<em> · {p.note}</em>{/if}</span><span class="v">{i === 0 && p.value >= 0 ? p.value : sign(p.value)}</span></li>
-      {/each}
-    </ul>
-    <div class="sum"><span>Total</span><span class="v">{total}</span></div>
+    {#if parts.length}
+      <ul>
+        {#each parts as p, i (i)}
+          <li><span>{p.label}{#if p.note}<em> · {p.note}</em>{/if}</span><span class="v">{i === 0 && p.value >= 0 ? p.value : sign(p.value)}</span></li>
+        {/each}
+      </ul>
+    {/if}
+    {#if lines.length}
+      <ul class="lines">{#each lines as line, i (i)}<li>{line}</li>{/each}</ul>
+    {/if}
+    {#if total}<div class="sum"><span>Total</span><span class="v">{total}</span></div>{/if}
     {#if hint}<p>{hint}</p>{/if}
   </div>
 {/if}
@@ -112,6 +126,8 @@
   ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.125rem; }
   li, .sum { display: flex; justify-content: space-between; gap: 1rem; }
   li em { color: var(--dim); font-style: normal; font-size: 0.75rem; }
+  .lines li { display: list-item; list-style: none; padding-left: 0.75rem; position: relative; }
+  .lines li::before { content: ''; position: absolute; left: 0; top: 0.55em; width: 0.3125rem; height: 0.3125rem; border-radius: 50%; background: var(--a); }
   .v { font-variant-numeric: tabular-nums; font-weight: 600; }
   .sum { margin-top: 0.25rem; padding-top: 0.25rem; border-top: 1px solid var(--line-soft); color: var(--a); }
   p { margin: 0.375rem 0 0; font-size: 0.75rem; color: var(--dim); line-height: 1.4; }

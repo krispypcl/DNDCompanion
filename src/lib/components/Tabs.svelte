@@ -154,24 +154,22 @@
     transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), width 0.32s cubic-bezier(0.22, 1, 0.36, 1);
   }
   @media (prefers-reduced-motion: reduce) { .indicator.ready { transition: none; } }
-  /* Wherever the strip is too narrow for every tab (a phone, or the middle
-     column of a mid-sized window), the tabs become a grid of buttons, every
-     one in view, rather than a strip that hides some off its edge. */
-  .tabwrap { container-type: inline-size; }
-  @container (max-width: 50rem) {
-    .tablist {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(5.75rem, 1fr)); gap: 0.375rem;
-      border-bottom: 0; overflow: visible;
-    }
-    button {
-      padding: 0.5rem 0.25rem; border: 1px solid var(--line-soft); border-radius: var(--r-sm);
-      background: var(--raised); text-align: center; font-size: 0.8125rem;
-      overflow: hidden; text-overflow: ellipsis;
-      transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
-    }
-    .active { border-color: var(--a-edge); background: var(--a-wash); }
-    .indicator { display: none; }
+  /* The tabs are a grid of card-like buttons at every width, every one in
+     view; the rows even out as the module narrows. */
+  .tablist {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(5.75rem, 1fr)); gap: 0.375rem;
+    border-bottom: 0; overflow: visible;
   }
+  button {
+    padding: 0.5rem 0.25rem; border: 1px solid var(--line-soft); border-radius: var(--r-sm);
+    background: var(--raised); text-align: center; font-size: 0.8125rem;
+    overflow: hidden; text-overflow: ellipsis;
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
+  }
+  button:hover { border-color: var(--a-edge); color: var(--text); }
+  button:active { transform: translateY(1px); }
+  .active { border-color: var(--a-edge); background: var(--a-wash); }
+  .indicator { display: none; }
   section { padding: 1rem 0 0; }
   /* A wide screen: the module keeps its height and scrolls within it, on a
      slim scrollbar of its own. */

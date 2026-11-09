@@ -40,6 +40,13 @@
   } = $props();
 
   const nameOf = (s: Sheet) => s.definition?.identity?.name || s.name || '';
+  /** A ring of the conditions' colours, a band each; none for conditions without a colour. */
+  function conditionRing(conds: string[], looks: Record<string, { color?: string }>): string | undefined {
+    const colours = conds.map((c) => lookOf(c, looks as never)?.color).filter(Boolean) as string[];
+    if (!colours.length) return undefined;
+    const step = 100 / colours.length;
+    return `conic-gradient(from -45deg, ${colours.map((c, i) => `${c} ${i * step}% ${(i + 1) * step}%`).join(', ')})`;
+  }
   /** A character's chosen name font, if any (rules/fonts.ts). */
   const faceOf = (s: Sheet) => {
     const f = nameFont(s.definition?.identity?.nameFont);
@@ -158,11 +165,15 @@
     {@const v = vitalStatus(hp.cur, hp.max, s.state?.deathSaves)}
     {@const portrait = resolveImageUrl(def?.identity?.portraitUrl).url}
     {@const conds = s.state?.conditions ?? []}
+    {@const ring = conditionRing(conds, def?.conditionLooks ?? {})}
     <li class="card themed {v.vital}" class:lifted={drag?.id === s.id} bind:this={els[s.id]}
         style={themeStyle(def?.identity?.theme)} style:transform={shift(s.id)}
         animate:glideTo in:fade={{ duration: 200 }}>
       <a class="open" href="{base}/s/{s.id}{s.campaign_id ? `?from=${s.campaign_id}` : ''}">
-        <span class="portrait">
+        <!-- Conditions ring the portrait in their colours (the card's own edge
+             is kept for being hurt), a band for each, all the way round. -->
+        <span class="portrait" class:ringed={Boolean(ring)} style:--ring={ring}
+              title={conds.length ? conds.map(cleanName).join(', ') : undefined}>
           {#if portrait}<img src={portrait} alt="" />{/if}
           <span class="lvl">LV {characterLevel(def)}</span>
         </span>
@@ -287,6 +298,17 @@
     border: 1px solid var(--a-edge); background: linear-gradient(150deg, var(--portrait-from), var(--portrait-to));
   }
   .portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+  /* The conditions' ring: just outside the portrait, a band per condition. */
+  .portrait::before {
+    content: ''; position: absolute; inset: -4px; border-radius: calc(var(--r-sm) + 4px); padding: 2.5px;
+    background: var(--ring, transparent); opacity: 0; transition: opacity 0.3s ease;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  .portrait.ringed::before { opacity: 1; }
+  .portrait.ringed { border-color: transparent; }
   .lvl {
     position: absolute; left: 50%; bottom: -0.4375rem; transform: translateX(-50%); white-space: nowrap;
     font-size: 0.5625rem; font-weight: 700; letter-spacing: 0.06em; padding: 0.0625rem 0.3125rem;
