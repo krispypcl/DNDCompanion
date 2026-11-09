@@ -213,17 +213,61 @@
    * database/0007), and the page also looks again every few seconds in case
    * an announcement was missed; nothing is asked for while the tab is hidden.
    */
+  /**
+   * The cheap look: which sheets the campaign has and when each changed. Only
+   * when that differs from what is shown are whole sheets read again (they
+   * are large, and every open campaign page used to read them all every six
+   * seconds).
+   */
+  async function lookAgain(withCampaign: boolean) {
+    try {
+      const stamps = await sheetRepo.campaignStamps(id);
+      const shown = new Map(sheets.map((s) => [s.id, s.updated_at]));
+      const moved = stamps.length !== shown.size || stamps.some((r) => shown.get(r.id) !== r.updated_at);
+      if (moved) await load();
+      else if (withCampaign) campaign = (await campaignRepo.get(id)) ?? campaign;
+    } catch {
+      // Offline for a moment: the next look tries again.
+    }
+  }
+  /** One sheet changed: just that one is read again. */
+  async function refreshOne(sheetId: string) {
+    try {
+      const row = await sheetRepo.loadPlain(sheetId);
+      if (!row || row.campaign_id !== id) {
+        sheets = sheets.filter((s) => s.id !== sheetId);
+        return;
+      }
+      sheets = sheets.some((s) => s.id === sheetId) ? sheets.map((s) => (s.id === sheetId ? row : s)) : [...sheets, row];
+    } catch {
+      void load();
+    }
+  }
+
   onMount(() => {
     void load(true);
+    let ticks = 0;
     const timer = setInterval(() => {
-      if (document.visibilityState === 'visible') void load();
-    }, 6000);
+      if (document.visibilityState !== 'visible') return;
+      ticks += 1;
+      void lookAgain(ticks % 4 === 0);
+    }, 15000);
     const back = () => document.visibilityState === 'visible' && load();
     document.addEventListener('visibilitychange', back);
     let soon: ReturnType<typeof setTimeout> | undefined;
-    const refreshSoon = () => {
+    const waiting = new Set<string>();
+    const refreshSoon = (payload: { eventType?: string; new?: { id?: string; campaign_id?: string | null }; old?: { id?: string } }) => {
+      const sid = payload?.new?.id ?? payload?.old?.id;
+      // A sheet that stays in this campaign and changed: read just it.
+      if (payload?.eventType === 'UPDATE' && sid && payload.new?.campaign_id === id) waiting.add(sid);
+      else waiting.add('*');
       clearTimeout(soon);
-      soon = setTimeout(() => void load(), 120);
+      soon = setTimeout(() => {
+        const ids = [...waiting];
+        waiting.clear();
+        if (ids.includes('*') || ids.length > 3) void load();
+        else ids.forEach((x) => void refreshOne(x));
+      }, 120);
     };
     const channel = isConfigured
       ? supabase
