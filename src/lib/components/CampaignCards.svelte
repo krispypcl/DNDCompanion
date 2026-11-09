@@ -8,7 +8,9 @@
    * editing, take a character out of the campaign.
    */
   import { fade, scale, slide } from 'svelte/transition';
-  import { backOut, cubicOut } from 'svelte/easing';
+  import { backOut, cubicOut, quintOut } from 'svelte/easing';
+  import { flip } from 'svelte/animate';
+  import { reorder } from '$lib/reorder';
   import { base } from '$app/paths';
   import { armorClass, characterLevel, classLine, passiveScore } from '$lib/rules/derived';
   import { vitalStatus } from '$lib/rules/hp';
@@ -17,6 +19,7 @@
   import { themeStyle } from '$lib/theme';
   import { followHeight, glideTo, prefersReducedMotion } from '$lib/motion';
   import CardHp from './CardHp.svelte';
+  import ConditionRing from './ConditionRing.svelte';
   import type { Sheet } from '$lib/types';
 
   let {
@@ -40,13 +43,12 @@
   } = $props();
 
   const nameOf = (s: Sheet) => s.definition?.identity?.name || s.name || '';
-  /** A ring of the conditions' colours, a band each; none for conditions without a colour. */
-  function conditionRing(conds: string[], looks: Record<string, { color?: string }>): string | undefined {
-    const colours = conds.map((c) => lookOf(c, looks as never)?.color).filter(Boolean) as string[];
-    if (!colours.length) return undefined;
-    const step = 100 / colours.length;
-    return `conic-gradient(from -45deg, ${colours.map((c, i) => `${c} ${i * step}% ${(i + 1) * step}%`).join(', ')})`;
-  }
+  /** The conditions' colours round the portrait, a band each; none for conditions without a colour. */
+  const ringOf = (conds: string[], looks: Record<string, { color?: string }>) =>
+    conds.flatMap((c) => {
+      const color = lookOf(c, looks as never)?.color;
+      return color ? [{ key: c.toLowerCase(), color }] : [];
+    });
   /** A character's chosen name font, if any (rules/fonts.ts). */
   const faceOf = (s: Sheet) => {
     const f = nameFont(s.definition?.identity?.nameFont);
@@ -132,6 +134,8 @@
   }
 
   // ── Conditions, from the DM ──
+  /** While the DM moves a condition, the order it would land in, by sheet. */
+  let previews = $state<Record<string, string[] | null>>({});
   let picking = $state<string | null>(null);
   let custom = $state('');
   const has = (list: string[], name: string) => list.some((c) => c.toLowerCase() === name.toLowerCase());
@@ -164,17 +168,18 @@
     {@const hp = hpOf(s)}
     {@const v = vitalStatus(hp.cur, hp.max, s.state?.deathSaves)}
     {@const portrait = resolveImageUrl(def?.identity?.portraitUrl).url}
-    {@const conds = s.state?.conditions ?? []}
-    {@const ring = conditionRing(conds, def?.conditionLooks ?? {})}
+    {@const conds = previews[s.id] ?? s.state?.conditions ?? []}
+    {@const ring = ringOf(conds, def?.conditionLooks ?? {})}
     <li class="card themed {v.vital}" class:lifted={drag?.id === s.id} bind:this={els[s.id]}
         style={themeStyle(def?.identity?.theme)} style:transform={shift(s.id)}
         animate:glideTo in:fade={{ duration: 200 }}>
       <a class="open" href="{base}/s/{s.id}{s.campaign_id ? `?from=${s.campaign_id}` : ''}">
         <!-- Conditions ring the portrait in their colours (the card's own edge
              is kept for being hurt), a band for each, all the way round. -->
-        <span class="portrait" class:ringed={Boolean(ring)} style:--ring={ring}
+        <span class="portrait" class:ringed={ring.length > 0}
               title={conds.length ? conds.map(cleanName).join(', ') : undefined}>
           {#if portrait}<img src={portrait} alt="" />{/if}
+          <ConditionRing bands={ring} />
           <span class="lvl">LV {characterLevel(def)}</span>
         </span>
         <span class="who">
@@ -191,10 +196,16 @@
       </dl>
       <!-- Conditions, in their own colours; the card eases to its new height. -->
       <div class="condbox" use:followHeight>
-        <ul class="conds" aria-label="Conditions">
+        <!-- The DM moves a condition by picking it up (lib/reorder.ts). -->
+        <ul class="conds" aria-label="Conditions" class:can-reorder={isDm && !ended && conds.length > 1}
+            use:reorder={{ enabled: isDm && !ended, keys: s.state?.conditions ?? [],
+                           onpreview: (k) => (previews[s.id] = k),
+                           oncommit: (k) => void onconditions(s.id, k) }}>
           {#each conds as c (c)}
             {@const look = lookOf(c, def?.conditionLooks ?? {})}
-            <li class:plain={!look} style:--cc={look?.color} transition:scale={{ start: 0.6, duration: 220, easing: backOut }}>
+            <li class:plain={!look} style:--cc={look?.color} data-key={c}
+                animate:flip={{ duration: 300, easing: quintOut }}
+                transition:scale={{ start: 0.6, duration: 220, easing: backOut }}>
               <span class="dot" aria-hidden="true"></span>{c}
               {#if isDm && !ended}
                 <button class="cx" aria-label="Take {c} away from {nameOf(s)}" title="Take away" onclick={() => toggle(s, c)}>×</button>
@@ -298,16 +309,8 @@
     border: 1px solid var(--a-edge); background: linear-gradient(150deg, var(--portrait-from), var(--portrait-to));
   }
   .portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
-  /* The conditions' ring: just outside the portrait, a band per condition. */
-  .portrait::before {
-    content: ''; position: absolute; inset: -4px; border-radius: calc(var(--r-sm) + 4px); padding: 2.5px;
-    background: var(--ring, transparent); opacity: 0; transition: opacity 0.3s ease;
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    mask-composite: exclude;
-    pointer-events: none;
-  }
-  .portrait.ringed::before { opacity: 1; }
+  /* Ringed by conditions (ConditionRing), its own edge steps aside. */
+  .portrait { transition: border-color 0.35s ease; }
   .portrait.ringed { border-color: transparent; }
   .lvl {
     position: absolute; left: 50%; bottom: -0.4375rem; transform: translateX(-50%); white-space: nowrap;

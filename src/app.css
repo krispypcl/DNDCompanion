@@ -289,3 +289,13 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Chips that can be put in another order by picking them up (lib/reorder.ts). */
+.can-reorder { position: relative; }
+.can-reorder > [data-key] { cursor: grab; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.can-reorder > [data-key] a { -webkit-user-drag: none; }
+.reordering, .reordering * { cursor: grabbing !important; }
+[data-key].held {
+  position: relative; z-index: 5;
+  box-shadow: 0 10px 22px -8px rgb(0 0 0 / 0.55), 0 0 0 1px var(--a-edge);
+}

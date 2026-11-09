@@ -9,7 +9,8 @@
   import { snapshot } from '$lib/stores/undo';
   import { flip } from 'svelte/animate';
   import { scale } from 'svelte/transition';
-  import { cubicOut } from 'svelte/easing';
+  import { cubicOut, quintOut } from 'svelte/easing';
+  import { reorder } from '$lib/reorder';
   import type { ConditionLook, ConditionMotion, State } from '$lib/types';
 
   let {
@@ -56,6 +57,13 @@
 
   let draft = $state('');
   const active = $derived(sheetState.conditions ?? []);
+  /** While a chip is being moved, the order it would land in. */
+  let preview = $state<string[] | null>(null);
+  const shown = $derived(preview ?? active);
+  function reordered(order: string[]) {
+    snapshot(sheetState, 'Condition order');
+    onchange({ ...sheetState, conditions: order });
+  }
 
   function add() {
     const name = cleanName(draft);
@@ -89,10 +97,12 @@
     <h2 class="cap">Conditions</h2>
 
     {#if active.length > 0}
-      <ul aria-label="Active conditions">
-        {#each active as name (name)}
+      <!-- The owner moves a chip by picking it up: dragged, or held then dragged. -->
+      <ul aria-label="Active conditions" class:can-reorder={editable && active.length > 1}
+          use:reorder={{ enabled: editable, keys: active, onpreview: (k) => (preview = k), oncommit: reordered }}>
+        {#each shown as name (name)}
           {@const href = conditionUrl(name)}
-          <li class="chip" animate:flip={{ duration: 220, easing: cubicOut }}
+          <li class="chip" data-key={name} animate:flip={{ duration: 300, easing: quintOut }}
               in:scale={{ start: 0.6, duration: 240, easing: cubicOut }}
               out:scale={{ start: 0.6, duration: 160 }}>
             {#if editable && onlooks && !isStandard(name)}
