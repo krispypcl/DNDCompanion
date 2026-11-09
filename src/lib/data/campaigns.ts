@@ -128,6 +128,16 @@ export function makeCampaignRepo(client: SupabaseClient) {
       return new Map(((data ?? []) as { id: string; name: string }[]).map((c) => [c.id, c.name]));
     },
 
+    /** Campaigns by id (the ones this player's characters are in), oldest first. */
+    async byIds(ids: string[]): Promise<Campaign[]> {
+      const unique = [...new Set(ids.filter(Boolean))];
+      if (unique.length === 0) return [];
+      const { data, error } = await client.from('campaigns').select(COLUMNS).in('id', unique)
+        .order('created_at', { ascending: true });
+      if (error) throw new Error(error.message);
+      return ((data ?? []) as Campaign[]).map(asCampaign);
+    },
+
     /** The campaigns this player runs. */
     async mine(userId: string): Promise<Campaign[]> {
       const { data, error } = await client.from('campaigns').select(COLUMNS).eq('created_by', userId)

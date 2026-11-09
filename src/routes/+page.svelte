@@ -7,7 +7,7 @@
   import { sheetName, sheetRepo } from '$lib/data/sheets';
   import { campaignMessage, campaignRepo, type Campaign } from '$lib/data/campaigns';
   import { MAX_BYTES, importSheet } from '$lib/exchange';
-  import { pinnedCampaignsOf, pinnedOf, profileOf, savePinned, savePinnedCampaigns, signIn, updateProfile } from '$lib/data/session';
+  import { pinnedCampaignsOf, pinnedJoinedOf, pinnedOf, profileOf, savePinned, savePinnedCampaigns, savePinnedJoined, signIn, updateProfile } from '$lib/data/session';
   import { slide } from 'svelte/transition';
   import { tick } from 'svelte';
   import Avatar from '$lib/components/Avatar.svelte';
@@ -80,8 +80,10 @@
   /** Campaign names by id, for the sheets' cards; and the campaigns run here. */
   let campaignNames = $state(new Map<string, string>());
   let running = $state<Campaign[]>([]);
-  /** The fonts the DM chose for their campaigns' names, each loaded once. */
-  const campaignFaces = $derived([...new Set(running.map((c) => fontFace(c.details?.nameFont)?.href).filter(Boolean) as string[])]);
+  /** The campaigns this player's characters are in, run by someone else. */
+  let joined = $state<Campaign[]>([]);
+  /** The fonts the DMs chose for their campaigns' names, each loaded once. */
+  const campaignFaces = $derived([...new Set([...running, ...joined].map((c) => fontFace(c.details?.nameFont)?.href).filter(Boolean) as string[])]);
   let naming = $state(false);
   let newCampaign = $state('');
   let starting = $state(false);
@@ -112,13 +114,21 @@
    * recently updated first, campaigns oldest first. Retired sheets and ended
    * campaigns go last, in a group of their own, pinned or not.
    */
-  type Kind = 'sheets' | 'campaigns';
+  type Kind = 'sheets' | 'campaigns' | 'joined';
   let pinned = $state<string[]>([]);
   let pinnedCamps = $state<string[]>([]);
+  let pinnedJoinedIds = $state<string[]>([]);
   $effect(() => {
     pinned = pinnedOf($session.user);
     pinnedCamps = pinnedCampaignsOf($session.user);
+    pinnedJoinedIds = pinnedJoinedOf($session.user);
   });
+  const pinsOf = (kind: Kind) => (kind === 'sheets' ? pinned : kind === 'campaigns' ? pinnedCamps : pinnedJoinedIds);
+  function setPins(kind: Kind, ids: string[]) {
+    if (kind === 'sheets') pinned = ids;
+    else if (kind === 'campaigns') pinnedCamps = ids;
+    else pinnedJoinedIds = ids;
+  }
   const byId = $derived(new Map(sheets.map((s) => [s.id, s])));
   const pinnedSheets = $derived(pinned.map((id) => byId.get(id)).filter((s): s is Sheet => Boolean(s && !s.retired)));
   const byRecent = (a: Sheet, b: Sheet) => (b.updated_at ?? '').localeCompare(a.updated_at ?? '');
@@ -130,30 +140,58 @@
   );
   const otherCampaigns = $derived(running.filter((c) => !c.archived && !pinnedCamps.includes(c.id)));
   const endedCampaigns = $derived(running.filter((c) => c.archived));
+  const joinedById = $derived(new Map(joined.map((c) => [c.id, c])));
+  const pinnedJoined = $derived(
+    pinnedJoinedIds.map((id) => joinedById.get(id)).filter((c): c is Campaign => Boolean(c && !c.archived))
+  );
+  const otherJoined = $derived(joined.filter((c) => !c.archived && !pinnedJoinedIds.includes(c.id)));
+  const endedJoined = $derived(joined.filter((c) => c.archived));
+  /** This player's characters in a campaign (retired ones too: they were there). */
+  const charactersIn = (c: Campaign) => sheets.filter((s) => s.campaign_id === c.id);
 
   async function setPinned(next: string[], kind: Kind = 'sheets') {
-    const previous = kind === 'sheets' ? pinned : pinnedCamps;
-    if (kind === 'sheets') pinned = next;
-    else pinnedCamps = next;
+    const previous = pinsOf(kind);
+    setPins(kind, next);
     try {
-      await (kind === 'sheets' ? savePinned(next) : savePinnedCampaigns(next));
+      await (kind === 'sheets' ? savePinned(next) : kind === 'campaigns' ? savePinnedCampaigns(next) : savePinnedJoined(next));
     } catch (e) {
-      if (kind === 'sheets') pinned = previous;
-      else pinnedCamps = previous;
+      setPins(kind, previous);
       error = friendlyError(e, 'That pin didn’t stick! Try again in a moment.');
     }
   }
   function togglePin(id: string, kind: Kind = 'sheets') {
     if (confirming === id) confirming = null;
-    const list = kind === 'sheets' ? pinned : pinnedCamps;
+    const list = pinsOf(kind);
     void setPinned(list.includes(id) ? list.filter((p) => p !== id) : [...list, id], kind);
+  }
+
+  /**
+   * Leaving a campaign from here takes every one of this player's characters
+   * out of it, the way each sheet's own Leave does.
+   */
+  let leavingId = $state<string | null>(null);
+  async function leave(c: Campaign) {
+    leavingId = c.id;
+    error = null;
+    try {
+      for (const s of charactersIn(c)) {
+        const stamp = await sheetRepo.saveRow(s.id, { campaign_id: null }, s.updated_at);
+        sheets = sheets.map((x) => (x.id === s.id ? { ...x, campaign_id: null, updated_at: stamp } : x));
+      }
+      joined = joined.filter((x) => x.id !== c.id);
+      confirming = null;
+    } catch (e) {
+      error = friendlyError(e, 'The campaign held on to you! Try leaving again.');
+    } finally {
+      leavingId = null;
+    }
   }
 
   // Dragging a pinned card by its grip, the same way table rows move.
   let rowEls = $state<Record<string, HTMLElement>>({});
   let drag = $state<{ kind: Kind; id: string; from: number; to: number; dy: number; height: number; middles: number[]; startY: number; pointerId: number } | null>(null);
   let landing = $state(false);
-  const pinnedIds = (kind: Kind) => (kind === 'sheets' ? pinnedSheets : pinnedCampaigns).map((x) => x.id);
+  const pinnedIds = (kind: Kind) => (kind === 'sheets' ? pinnedSheets : kind === 'campaigns' ? pinnedCampaigns : pinnedJoined).map((x) => x.id);
   function grab(event: PointerEvent, id: string, kind: Kind = 'sheets') {
     const ids = pinnedIds(kind);
     if (event.button !== 0 || ids.length < 2) return;
@@ -218,6 +256,9 @@
         // The names of the campaigns they are in, and the ones this player runs.
         campaignRepo.names(rows.map((r) => r.campaign_id ?? '')).then((m) => (campaignNames = m)).catch(() => {});
         campaignRepo.mine(id).then((c) => (running = c)).catch(() => {});
+        campaignRepo.byIds(rows.map((r) => r.campaign_id ?? ''))
+          .then((cs) => (joined = cs.filter((c) => c.created_by !== id)))
+          .catch(() => {});
       })
       .catch((e) => (error = friendlyError(e, 'Your sheets wouldn’t load! Try again in a moment.')))
       .finally(() => (loading = false));
@@ -340,6 +381,29 @@
 
 {#snippet campcard(c: Campaign)}
   <a href="{base}/c/{c.id}"><strong style:font-family={faceFamily(fontFace(c.details?.nameFont))}>{c.name}</strong><span class="meta">started {friendlyDate(c.created_at)}{#if c.archived}{' '}· ended{/if}</span></a>
+{/snippet}
+
+{#snippet joinedcard(c: Campaign)}
+  {@const mine = charactersIn(c).map(nameOf)}
+  <a href="{base}/c/{c.id}"><strong style:font-family={faceFamily(fontFace(c.details?.nameFont))}>{c.name}</strong><span class="meta">{#if mine.length}as {mine.length > 1 ? `${mine.slice(0, -1).join(', ')} and ${mine.at(-1)}` : mine[0]}{' · '}{/if}started {friendlyDate(c.created_at)}{#if c.archived}{' '}· ended{/if}</span></a>
+{/snippet}
+
+{#snippet joinedrow(c: Campaign)}
+  <!-- A campaign not pinned: its star (none once ended), its card, and leaving it. -->
+  {#if !c.archived}{@render star(c.id, c.name, false, 'joined')}{/if}
+  {@render joinedcard(c)}
+  {#if confirming === c.id}
+    <div class="confirm" role="group" aria-label="Confirm leaving {c.name}">
+      <span>Leave with {charactersIn(c).length > 1 ? 'all your characters' : 'your character'}?</span>
+      <button class="danger" disabled={leavingId === c.id} onclick={() => leave(c)}>
+        {leavingId === c.id ? 'Leaving…' : 'Leave'}
+      </button>
+      <button class="ghost" onclick={() => (confirming = null)}>Stay</button>
+    </div>
+  {:else}
+    <button class="trash" aria-label="Leave {c.name}" title="Leave the campaign"
+            onclick={() => (confirming = c.id)}>×</button>
+  {/if}
 {/snippet}
 
 {#snippet card(sheet: Sheet)}
@@ -505,6 +569,42 @@
         <ul>
           {#each retiredSheets as sheet (sheet.id)}
             <li class="retired" animate:flip={{ duration: 260, easing: cubicOut }} out:fold>{@render row(sheet)}</li>
+          {/each}
+        </ul>
+      {/if}
+    {/if}
+
+    <!-- The campaigns this player's characters are in, run by someone else:
+         one card each, however many of their characters are in it. -->
+    {#if listShown && joined.length}
+      <div class="bar campaigns">
+        <h2>Campaigns you’re in</h2>
+      </div>
+      {#if pinnedJoined.length}
+        <h3 class="group">Pinned</h3>
+        <ul class="pinned" class:dragging={drag?.kind === 'joined'} class:landing>
+          {#each pinnedJoined as c (c.id)}
+            <li bind:this={rowEls[c.id]} class:lifted={drag?.id === c.id}
+                style:transform={drag?.kind === 'joined' ? `translateY(${shift(c.id)}px)` : undefined}
+                animate:flip={{ duration: drag || landing ? 0 : 260, easing: cubicOut }} out:fold>
+              {@render star(c.id, c.name, true, 'joined')}
+              {@render joinedcard(c)}
+              {@render grip(c.id, c.name, pinnedJoined.length, 'joined')}
+            </li>
+          {/each}
+        </ul>
+      {/if}
+      {#if otherJoined.length && (pinnedJoined.length || endedJoined.length)}<h3 class="group">Everything else</h3>{/if}
+      <ul>
+        {#each otherJoined as c (c.id)}
+          <li animate:flip={{ duration: 260, easing: cubicOut }} out:fold>{@render joinedrow(c)}</li>
+        {/each}
+      </ul>
+      {#if endedJoined.length}
+        <h3 class="group">Archived</h3>
+        <ul>
+          {#each endedJoined as c (c.id)}
+            <li class="retired" animate:flip={{ duration: 260, easing: cubicOut }} out:fold>{@render joinedrow(c)}</li>
           {/each}
         </ul>
       {/if}

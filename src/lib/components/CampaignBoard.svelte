@@ -305,9 +305,12 @@
   const zoomBy = (factor: number) => zoomAt(vw / 2, vh / 2, factor);
 
   /** A point on the page, from a point on the screen. */
+  /** A point on the board, to a tenth of a unit (whole units made pen lines
+      step when zoomed in). */
   function at(e: { clientX: number; clientY: number }): [number, number] {
     const r = vp!.getBoundingClientRect();
-    return [Math.round(view.x + (e.clientX - r.left) / view.z), Math.round(view.y + (e.clientY - r.top) / view.z)];
+    const k = (n: number) => Math.round(n * 10) / 10;
+    return [k(view.x + (e.clientX - r.left) / view.z), k(view.y + (e.clientY - r.top) / view.z)];
   }
 
   // ── Wheel: Ctrl + scroll zooms; plain scroll moves the page once the board
@@ -334,6 +337,16 @@
   }
 
   // ── Pointers: one draws, drags or pans; two pinch ──
+  //
+  // With a stylus (an Apple Pencil on an iPad) the hand holding it rests on
+  // the glass too, and each touch of the palm arrived as one more pointer:
+  // a palm down first started a stroke or moved the board, and the pen then
+  // made "two fingers", so it zoomed instead of drawing. Once a pen has been
+  // used here, only the pen draws: while it is down, touches are ignored,
+  // and a palm's accidental pan is put back when the pen lands. Fingers
+  // still pan and pinch while the pen is lifted.
+  let penHere = false;
+  let penDown: number | null = null;
   const pointers = new Map<number, { x: number; y: number }>();
   let pinch: { d: number; mx: number; my: number; view: View } | null = null;
   let panning = $state<{ sx: number; sy: number; view: View } | null>(null);
@@ -346,6 +359,21 @@
   function down(e: PointerEvent) {
     active = true;
     if (e.button > 0) return;
+    if (e.pointerType === 'pen') {
+      penHere = true;
+      penDown = e.pointerId;
+      // Whatever the palm started is undone: the pen alone carries on.
+      if (pointers.size) {
+        if (panning) view = panning.view;
+        if (pinch) view = pinch.view;
+        pointers.clear();
+        pinch = null;
+        panning = null;
+        drawing = null;
+      }
+    } else if (penHere && e.pointerType === 'touch' && penDown !== null) {
+      return;
+    }
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     vp?.setPointerCapture(e.pointerId);
     if (pointers.size === 2) {
@@ -357,7 +385,7 @@
       return;
     }
     if (pointers.size > 2) return;
-    if (canEdit && tool === 'pen') {
+    if (canEdit && tool === 'pen' && !(penHere && e.pointerType === 'touch')) {
       e.preventDefault();
       drawing = at(e);
     } else if (canEdit && (tool === 'note' || tool === 'text')) {
@@ -396,9 +424,16 @@
       return;
     }
     if (drawing) {
-      const [x, y] = at(e);
-      const n = drawing.length;
-      if (Math.hypot(x - drawing[n - 2], y - drawing[n - 1]) >= 3 / view.z) drawing = [...drawing, x, y];
+      // A pen reports far more often than the screen redraws; the points in
+      // between come grouped with each move, and a quick curve needs them.
+      const all = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : [];
+      const next = [...drawing];
+      for (const ev of all.length ? all : [e]) {
+        const [x, y] = at(ev);
+        const n = next.length;
+        if (Math.hypot(x - next[n - 2], y - next[n - 1]) >= 1.5 / view.z) next.push(x, y);
+      }
+      if (next.length !== drawing.length) drawing = next;
     } else if (dragging) {
       moveDrag(e);
     } else if (panning) {
@@ -406,6 +441,8 @@
     }
   }
   function up(e: PointerEvent) {
+    if (e.pointerId === penDown) penDown = null;
+    if (!pointers.has(e.pointerId)) return;
     pointers.delete(e.pointerId);
     if (pointers.size < 2) pinch = null;
     if (pointers.size > 0) return;
@@ -419,6 +456,8 @@
     if (dragging) endDrag();
   }
   function cancel(e: PointerEvent) {
+    if (e.pointerId === penDown) penDown = null;
+    if (!pointers.has(e.pointerId)) return;
     pointers.delete(e.pointerId);
     pinch = null;
     panning = null;
