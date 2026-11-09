@@ -11,6 +11,7 @@
   import { fade, slide } from 'svelte/transition';
   import { parsePlaylist, youtubeTitle } from '$lib/music';
   import InfoTip from './InfoTip.svelte';
+  import { nameFont } from '$lib/rules/fonts';
   import ThemePicker from './ThemePicker.svelte';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
   import { SOUND_NAMES, audioUrl, playClip, type SoundName } from '$lib/sound';
@@ -43,6 +44,8 @@
     void youtubeTitle(link).then((t) => { if (!gone) musicTitle = t; });
     return () => { gone = true; };
   });
+  /** The name's font, if one is set (a link or name from Google Fonts). */
+  const font = $derived(nameFont(definition.identity.nameFont));
   const musicName = $derived(musicTitle ?? (music?.list ? 'YouTube playlist' : 'YouTube video'));
   /** A picture that failed to load is shown as the empty frame. */
   let broken = $state<Record<string, boolean>>({});
@@ -102,9 +105,19 @@
 </script>
 
 <div class="links">
-  <!-- The portrait and banner. Reading, they are pictures to look at. -->
+  {#if editable}
+    <!-- Only while editing; the mode switch fades it (flip.ts), nothing else. -->
+    <section data-flip-ghost="links:theme">
+      <h3 class="cap">Character theme</h3>
+      <ThemePicker value={definition.identity.theme} onpreview={(hex) => onthemepreview?.(hex)}
+                   onchange={(name) => patchIdentity('theme', name)} />
+    </section>
+  {/if}
+
+  <!-- Media: the portrait, the banner and the music. Reading, the pictures
+       are to look at and the music goes by its name. -->
   <section>
-    <h3 class="cap" data-flip="links:h:pictures">Pictures</h3>
+    <h3 class="cap" data-flip="links:h:media">Media</h3>
     {#if editable}
       {#each [
         { role: 'portrait', label: 'Portrait URL', key: 'portraitUrl', link: portraitLink, placeholder: 'An image link' },
@@ -175,20 +188,6 @@
         {/if}
       </div>
     {/if}
-  </section>
-
-  {#if editable}
-    <!-- Only while editing; the mode switch fades it (flip.ts), nothing else. -->
-    <section data-flip-ghost="links:theme">
-      <h3 class="cap">Character theme</h3>
-      <ThemePicker value={definition.identity.theme} onpreview={(hex) => onthemepreview?.(hex)}
-                   onchange={(name) => patchIdentity('theme', name)} />
-    </section>
-  {/if}
-
-  <!-- The sheet's music. -->
-  <section>
-    <h3 class="cap" data-flip="links:h:music">Music</h3>
     {#if editable}
       <div class="wide" data-flip-ghost="links:url:playlist" data-ghost-scale="0.94">
         <span class="lbl">Playlist URL
@@ -303,6 +302,34 @@
       <p class="none" data-flip-ghost="links:none:sounds">All built-in.</p>
     {/if}
   </section>
+
+  <!-- The name's font, from Google Fonts. -->
+  <section>
+    <h3 class="cap" data-flip="links:h:font">Name font
+      <InfoTip label="About the name font">
+        The font of the character's name at the top of the sheet and on the campaign page. On
+        <a href="https://fonts.google.com" target="_blank" rel="noopener noreferrer">fonts.google.com</a>, open a font
+        and copy the address of its page from the address bar (or, from "Get font" → "Get embed code", the link). Paste
+        either here, or just the font's name. Leave it blank for the sheet's own font.
+      </InfoTip>
+    </h3>
+    {#if editable}
+      <div class="wide" data-flip-ghost="links:url:font" data-ghost-scale="0.94">
+        <EditableField value={definition.identity.nameFont ?? ''} editable={true} label="Name font"
+                       placeholder="Optional: a Google Fonts link"
+                       onchange={(v) => patchIdentity('nameFont', String(v).trim())} />
+        {#if font === 'bad'}
+          <p class="urlnote bad" role="status">That’s not a font we can find! Paste a link from fonts.google.com, or the font’s name.</p>
+        {:else if font}
+          <p class="urlnote" role="status">Using <span style:font-family="'{font.family}'">{font.family}</span></p>
+        {/if}
+      </div>
+    {:else if font && font !== 'bad'}
+      <p class="fontshow" data-flip-ghost="links:read:font"><span style:font-family="'{font.family}'">{definition.identity.name || font.family}</span> <small>{font.family}</small></p>
+    {:else}
+      <p class="none" data-flip-ghost="links:none:font">The sheet’s own font.</p>
+    {/if}
+  </section>
 </div>
 
 {#if viewing}
@@ -315,6 +342,8 @@
   .cap { margin: 0; font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600; }
   .lbl { display: block; font-size: 0.6875rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--label); font-weight: 600; margin-bottom: 0.125rem; }
   .wide { min-width: 0; }
+  .fontshow { margin: 0; font-size: 1.5rem; display: flex; align-items: baseline; gap: 0.625rem; flex-wrap: wrap; }
+  .fontshow small { font-size: 0.75rem; color: var(--dim); }
   .lbl, h3.cap { display: flex; align-items: center; gap: 0.25rem; }
   .lbl :global(.info), h3.cap :global(.info) { text-transform: none; letter-spacing: 0; }
   /* Reading: the pictures themselves, pressed for full screen. */

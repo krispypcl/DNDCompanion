@@ -151,6 +151,8 @@ export type Definition = {
     background?: string;
     backgroundSource?: string;
     player?: string;
+    /** The name's font: a Google Fonts link or a font's name (rules/fonts.ts). */
+    nameFont?: string;
     alignment?: string;
     portraitUrl?: string;
     /** A wide image behind the sheet, shown as a diagonal band. Optional:

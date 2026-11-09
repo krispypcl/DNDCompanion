@@ -81,6 +81,7 @@
   import Why from '$lib/components/Why.svelte';
   import EquipDialog from '$lib/components/EquipDialog.svelte';
   import { advantageFrom } from '$lib/rules/equipment';
+  import { nameFont } from '$lib/rules/fonts';
   import { downloadText } from '$lib/download';
   import { parseRoll, type Pool, type Roll } from '$lib/rules/dice';
   import { requestRoll } from '$lib/stores/dice';
@@ -204,6 +205,11 @@
   const cameFrom = $derived.by(() => {
     const from = page.url.searchParams.get('from') ?? '';
     return /^[0-9a-f-]{36}$/i.test(from) ? from : '';
+  });
+  /** The character name's font (rules/fonts.ts), when one is set and found. */
+  const nameFace = $derived.by(() => {
+    const f = nameFont(definition?.identity?.nameFont);
+    return f && f !== 'bad' ? f : null;
   });
   const initAdv = $derived(definition ? advantageFrom(definition, 'init') : []);
   /** The spellcasting ability, and what the spell DC and attack are made of. */
@@ -594,6 +600,8 @@
   <!-- The definition is the character's name as typed; the row's name is a
        projection of it, so prefer the definition and fall back. -->
   <title>{definition?.identity?.name?.trim() || sheet?.name || 'Character sheet'}</title>
+  <!-- The name's own font, if the player chose one (Appearance tab). -->
+  {#if nameFace}<link rel="stylesheet" href={nameFace.href} />{/if}
 </svelte:head>
 
 {#if loading || !revealed}
@@ -664,7 +672,7 @@
             {#if sheet.retired}<span class="retired">Retired</span>{/if}
           </div>
         {/if}
-        <h1>
+        <h1 style:font-family={nameFace ? `'${nameFace.family}', system-ui, sans-serif` : undefined}>
           <EditableField value={definition.identity.name} {editable} label="Name"
                          placeholder="Character Name"
                          onchange={(v) => patchIdentity('name', v)} />
@@ -1040,7 +1048,7 @@
           <!-- Worked out, never typed: Dexterity plus what items and features add. -->
           <Why title="Initiative" parts={initiativeParts(definition).parts} total={sign(initiative)}
                hint={[initAdv.length ? `Advantage from ${initAdv.join(', ')}.` : '', !editable && isOwner ? 'Press it to roll initiative.' : ''].filter(Boolean).join(' ')}>
-          <div class="defbox" class:rollable={!editable && isOwner} class:rolls-hover={!editable && isOwner}>
+          <div class="defbox" class:rollable={!editable && isOwner}>
             <b use:bump={initiative}>
               {#if !editable && isOwner}
                 <!-- Out of edit mode, initiative is a die to roll: the whole box is the button. -->
@@ -1050,7 +1058,11 @@
                 <span class="computed">{sign(initiative)}</span>
               {/if}
             </b>
-            <span class="cap">Initiative{#if !editable && isOwner}<DieMark label="Rolls initiative" />{/if}</span>
+            <span class="cap">Initiative</span>
+            {#if !editable && isOwner}
+              <!-- It rolls: the d20 in the corner. -->
+              <svg class="d20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 20.5 7.4v9.2L12 21.5 3.5 16.6V7.4zM12 7.5l4.3 7.4H7.7zM12 2.5v5M20.5 7.4l-4.2 7.5M3.5 7.4l4.2 7.5M7.7 14.9 3.5 16.6M16.3 14.9l4.2 1.7M7.7 14.9 12 21.5l4.3-6.6" /></svg>
+            {/if}
             {#if initAdv.length}<span class="adv" title="Advantage">ADV</span>{/if}
           </div>
           </Why>
@@ -1447,6 +1459,12 @@
   }
   .defbox.rollable:hover b { color: var(--a); }
   .defbox.rollable:active { transform: translateY(0); box-shadow: none; }
+  .defbox .d20 {
+    position: absolute; top: 0.375rem; right: 0.375rem; width: 0.8125rem; height: 0.8125rem;
+    fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; color: var(--faint);
+    transition: color 0.2s ease, transform 0.35s cubic-bezier(0.3, 1.5, 0.5, 1); pointer-events: none;
+  }
+  .defbox.rollable:hover .d20 { color: var(--a); transform: rotate(72deg) scale(1.2); }
   .defbox .adv {
     position: absolute; left: 0.375rem; top: 0.375rem; font-size: 0.5625rem; font-weight: 700; letter-spacing: 0.08em;
     padding: 0.0625rem 0.3125rem; border-radius: 3px; color: var(--good, var(--a)); background: color-mix(in oklch, var(--good, var(--a)) 16%, transparent);
