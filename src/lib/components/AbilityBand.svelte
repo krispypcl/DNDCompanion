@@ -146,8 +146,8 @@
   }
   /* Advantage, from a feature or an item: a small tag beside the number. */
   .adv {
-    display: inline-block; vertical-align: 0.15em; margin-left: 0.1875rem; font-size: 0.5rem; font-weight: 700;
-    letter-spacing: 0.06em; padding: 0 0.1875rem; border-radius: 3px; line-height: 1.5;
+    display: inline-block; vertical-align: 0.2em; margin-left: 0.1875rem; font-size: 0.4375rem; font-weight: 700;
+    letter-spacing: 0.05em; padding: 0 0.125rem; border-radius: 2px; line-height: 1.45;
     color: var(--good, var(--a)); background: color-mix(in oklch, var(--good, var(--a)) 16%, transparent);
   }
   .save.rollable:hover .d20 { color: var(--a); transform: rotate(72deg) scale(1.2); }

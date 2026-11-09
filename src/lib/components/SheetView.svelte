@@ -1466,8 +1466,8 @@
   }
   .defbox.rollable:hover .d20 { color: var(--a); transform: rotate(72deg) scale(1.2); }
   .defbox .adv {
-    position: absolute; left: 0.375rem; top: 0.375rem; font-size: 0.5625rem; font-weight: 700; letter-spacing: 0.08em;
-    padding: 0.0625rem 0.3125rem; border-radius: 3px; color: var(--good, var(--a)); background: color-mix(in oklch, var(--good, var(--a)) 16%, transparent);
+    position: absolute; left: 0.375rem; top: 0.375rem; font-size: 0.4375rem; font-weight: 700; letter-spacing: 0.05em;
+    padding: 0 0.1875rem; border-radius: 2px; line-height: 1.5; color: var(--good, var(--a)); background: color-mix(in oklch, var(--good, var(--a)) 16%, transparent);
   }
   .defbox:has(.adv) { position: relative; }
   .defbox b {
