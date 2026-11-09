@@ -261,10 +261,26 @@
         const row = payload.new as Partial<Sheet>;
         if (row.definition && row.state && row.updated_at) {
           sheetStore.adoptRemote({ definition: row.definition, state: row.state, updated_at: row.updated_at });
+        } else {
+          // A big column left unchanged (the definition, when only hit points
+          // moved) is not sent along: read the row instead.
+          void sheetStore.check();
         }
       })
-      .subscribe();
-    return () => void supabase.removeChannel(channel);
+      .subscribe((status) => {
+        // Back after a dropped connection: anything missed meanwhile.
+        if (status === 'SUBSCRIBED') void sheetStore.check();
+      });
+    // A sleeping tablet loses the live connection without saying so: a look
+    // whenever the page is shown again, and now and then while it is.
+    const look = () => document.visibilityState === 'visible' && void sheetStore.check();
+    document.addEventListener('visibilitychange', look);
+    const every = setInterval(look, 45000);
+    return () => {
+      document.removeEventListener('visibilitychange', look);
+      clearInterval(every);
+      void supabase.removeChannel(channel);
+    };
   });
 
   $effect(() => {
