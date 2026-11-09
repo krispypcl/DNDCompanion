@@ -60,7 +60,8 @@
   }
 </script>
 
-<h2 class="cap">Skills</h2>
+<!-- One die beside the heading: every skill below rolls. It lights while any is hovered. -->
+<h2 class="cap skills-h">Skills{#if onroll && !editable}<DieMark label="Press a skill to roll it" />{/if}</h2>
 
 {#each withSkills as ability (ability)}
   <section class="group" aria-label="{ability} skills">
@@ -71,7 +72,7 @@
 
     {#each grouped[ability] as skill (skill)}
       {@const prof = definition.skills?.[skill]}
-      <div class="row" class:prof={prof?.proficient} class:rolls-hover={onroll && !editable}>
+      <div class="row" class:prof={prof?.proficient}>
         <button
           class="dot"
           class:on={prof?.proficient}
@@ -81,7 +82,7 @@
           title={prof?.expertise ? 'Expertise' : prof?.proficient ? 'Proficient' : 'Not proficient'}
           onclick={() => cycle(skill)}
         ></button>
-        <span class="name">{LABELS[skill]}{#if onroll && !editable}<DieMark label="Rolls {LABELS[skill]}" />{/if}</span>
+        <span class="name">{LABELS[skill]}</span>
         {#if onroll}
           {@const total = skillTotal(definition, skill)}
           <button class="bonus roll" use:bump={total} title="Roll {LABELS[skill]}: d20 {sign(total)}"
@@ -96,6 +97,7 @@
 {/each}
 
 <style>
+  :global(.rail-skills:has(.roll:hover)) .skills-h :global(.diemark), :global(.rail-skills:has(.roll:focus-visible)) .skills-h :global(.diemark) { color: var(--a); transform: rotate(72deg) scale(1.15); }
   .cap {
     font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
     color: var(--label); font-weight: 600; margin: 0 0 0.875rem;

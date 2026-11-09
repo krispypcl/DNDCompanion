@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { nameFont } from '$lib/rules/fonts';
   /**
    * The campaign's character cards: hit points, AC, passive Perception and
    * Insight, and conditions, each tinted as it tints the player's own
@@ -39,6 +40,13 @@
   } = $props();
 
   const nameOf = (s: Sheet) => s.definition?.identity?.name || s.name || '';
+  /** A character's chosen name font, if any (rules/fonts.ts). */
+  const faceOf = (s: Sheet) => {
+    const f = nameFont(s.definition?.identity?.nameFont);
+    return f && f !== 'bad' ? f : null;
+  };
+  /** Each font the table's names use, loaded once. */
+  const faces = $derived([...new Set(sheets.map((s) => faceOf(s)?.href).filter(Boolean) as string[])]);
   /** The DM's order first; anyone not in it yet follows by name. */
   const cards = $derived.by(() => {
     const at = new Map(order.map((id, i) => [id, i]));
@@ -137,6 +145,10 @@
   });
 </script>
 
+<svelte:head>
+  {#each faces as href (href)}<link rel="stylesheet" {href} />{/each}
+</svelte:head>
+
 <svelte:window onkeydown={(e) => { if (e.key === 'Escape') picking = null; }} />
 
 <ul class="cards" class:dragging={drag}>
@@ -155,7 +167,7 @@
           <span class="lvl">LV {characterLevel(def)}</span>
         </span>
         <span class="who">
-          <strong>{nameOf(s)}</strong>
+          <strong style:font-family={faceOf(s) ? `'${faceOf(s)!.family}', system-ui, sans-serif` : undefined}>{nameOf(s)}</strong>
           <span class="sub">{classLine(def) || 'No class yet'}</span>
         </span>
       </a>
