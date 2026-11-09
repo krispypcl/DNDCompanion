@@ -78,7 +78,8 @@
       return;
     }
     missing = false;
-    items = rows;
+    // What is still being saved stays, even if this read came back without it.
+    items = [...rows, ...items.filter((x) => pendingIds.has(x.id) && !rows.some((r) => r.id === x.id))];
     loaded = true;
   }
   let loaded = $state(false);
@@ -115,17 +116,45 @@
     };
   });
 
+  /**
+   * Added at once, saved after: a line stays where it was drawn (no gap while
+   * it is saved, no fade in), and a note can be written on straight away. It
+   * goes again only if the save fails.
+   */
+  const pendingIds = new Set<string>();
+  const drawnHere = new Set<string>();
   async function add(kind: BoardItem['kind'], data: BoardData) {
     if (!userId) return null;
     error = null;
+    const id = crypto.randomUUID();
+    pendingIds.add(id);
+    if (kind === 'stroke') drawnHere.add(id);
+    const local: BoardItem = { id, campaign_id: campaignId, kind, data, created_by: userId, updated_at: new Date().toISOString() };
+    items = [...items, local];
     try {
-      const row = await campaignRepo.addToBoard(campaignId, userId, kind, data);
-      if (!items.some((x) => x.id === row.id)) items = [...items, row];
-      return row;
+      const row = await campaignRepo.addToBoard(campaignId, userId, kind, data, id);
+      pendingIds.delete(id);
+      const i = items.findIndex((x) => x.id === id);
+      if (i >= 0) {
+        const changed = JSON.stringify(items[i].data) !== JSON.stringify(data);
+        items[i] = { ...items[i], updated_at: row.updated_at };
+        // Written on (or moved) while it was being saved: save that too.
+        if (changed) void save(id);
+      } else {
+        // Taken away again (an empty note) before it was saved.
+        void campaignRepo.removeFromBoard([id]).catch(() => {});
+      }
+      return items[i] ?? row;
     } catch (e) {
+      pendingIds.delete(id);
+      items = items.filter((x) => x.id !== id);
       error = campaignMessage(e, 'The board wouldn’t take that! Try again.');
       return null;
     }
+  }
+  /** A line drawn on this page appears as it is, not faded in. */
+  function appear(_node: Element, { id }: { id: string }) {
+    return drawnHere.has(id) ? { duration: 0 } : { duration: 160, css: (t: number) => `opacity: ${t}` };
   }
   function patch(id: string, data: BoardData) {
     const i = items.findIndex((x) => x.id === id);
@@ -134,7 +163,8 @@
   }
   async function save(id: string) {
     const item = items.find((x) => x.id === id);
-    if (!item) return;
+    // Still being saved: the save, when it lands, carries what changed.
+    if (!item || pendingIds.has(id)) return;
     try {
       await campaignRepo.updateBoard(id, item.data);
     } catch (e) {
@@ -168,8 +198,11 @@
   }
   async function newPage() {
     const order = Math.max(0, ...pageRows.map((p) => p.data.order ?? 0)) + 1;
-    const row = await add('page', { name: `Page ${pages.length + 1}`, paper: page.paper, order });
-    if (row) pageId = row.id;
+    const saved = add('page', { name: `Page ${pages.length + 1}`, paper: page.paper, order });
+    // It is on the board already (add puts it there before saving): open it now.
+    const made = items[items.length - 1];
+    if (made?.kind === 'page') pageId = made.id;
+    if (!(await saved)) pageId = MAIN;
   }
   let renaming = $state<string | null>(null);
   let deleting = $state<string | null>(null);
@@ -313,12 +346,13 @@
       void add(tool, stamp({
         x: x - w / 2, y: y - 20, w, h, text: '',
         color: tool === 'note' ? noteColour : penColour, size: tool === 'note' ? 22 : 34, z: topZ()
-      })).then((row) => {
-        if (row) {
-          editingId = row.id;
-          tool = 'move';
-        }
-      });
+      }));
+      // On the board at once (saved behind it): write on it straight away.
+      const made = items[items.length - 1];
+      if (made && made.kind === tool) {
+        editingId = made.id;
+        tool = 'move';
+      }
     } else if (canEdit && tool === 'erase') {
       erasing = true;
     } else {
@@ -550,7 +584,7 @@
                   class:erasable={canEdit && tool === 'erase'}
                   onpointerdown={(e) => { if (canEdit && tool === 'erase') { e.stopPropagation(); erasing = true; void remove([s.id]); } }}
                   onpointerenter={() => canEdit && tool === 'erase' && erasing && remove([s.id])}
-                  in:fade={{ duration: 160 }} out:fade={{ duration: 160 }} />
+                  in:appear={{ id: s.id }} out:fade={{ duration: 160 }} />
           {/each}
           {#if drawing}<path d={pathOf(drawing)} style:stroke={penColour} stroke-width={penSize} />{/if}
         </svg>
