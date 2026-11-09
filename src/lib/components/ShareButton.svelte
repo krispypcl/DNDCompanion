@@ -2,7 +2,7 @@
   /** Copies a page's link (a sheet's, or a campaign's), for pasting to the rest of the table. */
   import { base } from '$app/paths';
   import { copyText } from '$lib/clipboard';
-  import { sheetLink } from '$lib/rules/share';
+  import { sheetLink, siteRoot } from '$lib/rules/share';
 
   let {
     id,
@@ -27,7 +27,7 @@
   let timer: ReturnType<typeof setTimeout> | undefined;
 
   async function share() {
-    const ok = await copyText(link ?? sheetLink(location.origin, base, id ?? ''));
+    const ok = await copyText(link ?? sheetLink(siteRoot(location.origin, base), '', id ?? ''));
     done = ok;
     clearTimeout(timer);
     timer = setTimeout(() => (done = false), 1600);

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { siteRoot } from '$lib/rules/share';
   /**
    * A campaign's page, /c/<id>: a card for each character in it, with what a
    * DM glances at mid-fight (hit points, AC, passive Perception, conditions),
@@ -103,7 +104,7 @@
   /** The campaign's colour, as a sheet's: picked while editing, previewed while picking. */
   let themePreview = $state<string | null>(null);
   const themeCss = $derived(themeStyle(themePreview ?? campaign?.details.theme));
-  const pageLink = $derived(typeof location !== 'undefined' ? `${location.origin}${base}/c?id=${encodeURIComponent(id)}` : '');
+  const pageLink = $derived(typeof location !== 'undefined' ? `${siteRoot(location.origin, base)}/c?id=${encodeURIComponent(id)}` : '');
 
   /** The keys, as on a sheet: E edits, M plays or pauses the music, ? lists them. */
   let showKeys = $state(false);
@@ -127,7 +128,7 @@
   const active = $derived(sheets.filter((s) => !s.retired));
   const retired = $derived(sheets.filter((s) => s.retired));
   const inviteLink = $derived(
-    invite && typeof location !== 'undefined' ? `${location.origin}${base}/join?code=${invite}` : ''
+    invite && typeof location !== 'undefined' ? `${siteRoot(location.origin, base)}/join?code=${invite}` : ''
   );
 
   async function load(first = false) {

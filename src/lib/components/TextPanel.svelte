@@ -74,6 +74,7 @@
   });
   /** Removing a page that has writing on it takes a second press. */
   let confirming = $state(false);
+  let clearingInk = $state(false);
   let confirmTimer: ReturnType<typeof setTimeout> | undefined;
 
   // A page removed elsewhere (or a shorter book loaded) must not leave us past the end.
@@ -177,7 +178,15 @@
         </select>
         {#if ink.s.length}
           <button class="itool" title="Take back the last line" onclick={() => eraseStroke(ink.s.length - 1)}>Undo</button>
-          <button class="itool" title="Clear this page's drawing" onclick={() => writePage(parts.text, { ...ink, s: [] })}>Clear</button>
+          {#if clearingInk}
+            <!-- Asked first: a whole page of drawing is a lot to lose to a slip. -->
+            <span class="askink" transition:fade={{ duration: 140 }}>Clear the drawing?
+              <button class="itool danger" onclick={() => { clearingInk = false; writePage(parts.text, { ...ink, s: [] }); }}>Clear</button>
+              <button class="itool" onclick={() => (clearingInk = false)}>Keep</button>
+            </span>
+          {:else}
+            <button class="itool" title="Clear this page's drawing" disabled={!ink.s.length} onclick={() => (clearingInk = true)}>Clear</button>
+          {/if}
         {/if}
         <button class="itool done" onclick={() => (drawing = false)}>Done</button>
       </div>
@@ -246,6 +255,8 @@
     flex: 1 0 auto; display: flex; flex-direction: column;
   }
   .page { flex: 1 0 auto; display: flex; flex-direction: column; position: relative; }
+  .askink { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.8125rem; color: var(--dim); }
+  .itool.danger { color: var(--bad); border-color: var(--bad); }
   .inkbar { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; }
   .inkbar .sw { width: 1.125rem; height: 1.125rem; }
   .inkbar .sw {

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { siteRoot } from '$lib/rules/share';
   /**
    * A sheet's campaign, from its header in edit mode: join one with an invite,
    * start one (and run it as its DM), leave, or retire the character. A DM
@@ -53,7 +54,7 @@
   let copied = $state(false);
 
   const inviteLink = $derived(
-    invite && typeof location !== 'undefined' ? `${location.origin}${base}/join?code=${invite}` : ''
+    invite && typeof location !== 'undefined' ? `${siteRoot(location.origin, base)}/join?code=${invite}` : ''
   );
 
   // The DM sees the invite as soon as the dialog opens.

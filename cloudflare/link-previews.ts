@@ -28,9 +28,21 @@ import { resolveImageUrl } from '../src/lib/rules/imageUrl';
 type Env = { SUPABASE_URL: string; SUPABASE_ANON_KEY: string; ORIGIN?: string; HOME_PATH?: string };
 type Preview = { title: string; description: string; image?: string };
 
-const ID = '([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})';
-const SHEET = new RegExp(`/s/${ID}/?$`, 'i');
-const CAMPAIGN = new RegExp(`/c/${ID}/?$`, 'i');
+const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * A sheet's or a campaign's page, either way it is written: /s/<id> (the
+ * address bar's) or /s?id=<id> (the Share button's), and the same for /c.
+ */
+function pageOf(url: URL): { kind: 's' | 'c'; id: string } | null {
+  const path = url.pathname.replace(/\/+$/, '').replace(/\.html$/, '');
+  const byPath = path.match(/\/([sc])\/([^/]+)$/);
+  if (byPath && ID.test(byPath[2])) return { kind: byPath[1] as 's' | 'c', id: byPath[2] };
+  const byQuery = path.match(/\/([sc])$/);
+  const id = url.searchParams.get('id') ?? '';
+  if (byQuery && ID.test(id)) return { kind: byQuery[1] as 's' | 'c', id };
+  return null;
+}
 
 async function rows<T>(env: Env, path: string): Promise<T[]> {
   const res = await fetch(`${env.SUPABASE_URL}/rest/v1/${path}`, {
@@ -114,7 +126,7 @@ export default {
     const upstream = keepHere(await fetch(env.ORIGIN ? fromOrigin(url, request, env.ORIGIN) : request), url, env.ORIGIN);
 
     const html = (upstream.headers.get('content-type') ?? '').includes('text/html');
-    const match = url.pathname.match(SHEET) ?? url.pathname.match(CAMPAIGN);
+    const match = pageOf(url);
     if (!html || !match) {
       // Any other page the app draws itself: the shell, but not an error.
       if (html && upstream.status === 404) return new Response(upstream.body, { status: 200, headers: upstream.headers });
@@ -123,7 +135,7 @@ export default {
 
     let preview: Preview | null = null;
     try {
-      preview = SHEET.test(url.pathname) ? await sheetPreview(match[1], env) : await campaignPreview(match[1], env);
+      preview = match.kind === 's' ? await sheetPreview(match.id, env) : await campaignPreview(match.id, env);
     } catch {
       preview = null;
     }

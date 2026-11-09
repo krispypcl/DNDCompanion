@@ -141,7 +141,7 @@
     border-bottom: 1px solid var(--line-soft);
   }
   /* Ten details, two rows of five. */
-  dl {
+  .details dl {
     margin: 0;
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -149,10 +149,14 @@
     flex: 1 1 18rem;
     min-width: 0;
   }
-  @media (max-width: 900px) { dl { grid-template-columns: repeat(3, 1fr); } }
-  @media (max-width: 560px) { dl { grid-template-columns: repeat(2, 1fr); } }
+  /* The species row never grows: in a tab laid out as a column (the writing
+     below makes it one), a growing row took all the spare height and pushed
+     the details to the bottom. */
+  .origin { flex: none; }
+  @media (max-width: 900px) { .details dl { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 560px) { .details dl { grid-template-columns: repeat(2, 1fr); } }
   /* Every detail hangs from the top of its row, whatever its neighbours hold. */
-  dl { align-items: start; align-content: start; }
+  .details dl { align-items: start; align-content: start; }
   dl > div { text-align: center; display: flex; flex-direction: column; justify-content: flex-start; align-self: start; }
   dt {
     font-size: 0.6875rem;
