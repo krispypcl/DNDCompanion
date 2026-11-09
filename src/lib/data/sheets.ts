@@ -105,6 +105,20 @@ export function makeSheetRepo(client: SupabaseClient) {
       return { ...sheet, texts: await loadTexts(sheet) };
     },
 
+    /** The sheet's row as stored now (no notes or backstory): for settling a refused save. */
+    async loadRow(id: string): Promise<Pick<Sheet, 'definition' | 'state' | 'updated_at'> | null> {
+      const { data, error } = await client.from('sheets').select('definition, state, updated_at').eq('id', id).maybeSingle();
+      if (error) throw new Error(error.message);
+      return (data as Pick<Sheet, 'definition' | 'state' | 'updated_at'> | null) ?? null;
+    },
+
+    /** Only the row's stamp: cheap enough to ask now and then. */
+    async rowStamp(id: string): Promise<string | null> {
+      const { data, error } = await client.from('sheets').select('updated_at').eq('id', id).maybeSingle();
+      if (error) throw new Error(error.message);
+      return (data as { updated_at: string } | null)?.updated_at ?? null;
+    },
+
     /** Is the table there? Asked before an import, which has to choose where text goes. */
     async textsAvailable(): Promise<boolean> {
       const { error } = await client.from('sheet_text').select('field').limit(0);
@@ -191,6 +205,21 @@ export function makeSheetRepo(client: SupabaseClient) {
     },
 
     /** The sheets in a campaign, for its page. */
+    /** Just which sheets a campaign has and when each last changed: what the
+        campaign page polls, so it reads whole sheets only when one moved. */
+    async campaignStamps(campaignId: string): Promise<{ id: string; updated_at: string }[]> {
+      const { data, error } = await client.from('sheets').select('id, updated_at').eq('campaign_id', campaignId);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as { id: string; updated_at: string }[];
+    },
+
+    /** One sheet's row, without its notes and backstory. */
+    async loadPlain(id: string): Promise<Sheet | null> {
+      const { data, error } = await client.from('sheets').select(COLUMNS).eq('id', id).maybeSingle();
+      if (error) throw new Error(error.message);
+      return (data as Sheet | null) ?? null;
+    },
+
     async listCampaignSheets(campaignId: string): Promise<Sheet[]> {
       const { data, error } = await client.from('sheets').select(COLUMNS).eq('campaign_id', campaignId);
       if (error) throw new Error(error.message);

@@ -18,6 +18,8 @@
   import { prefersReducedMotion } from '$lib/motion';
   import { INKS, PAPERS } from '$lib/palette';
   import InfoTip from './InfoTip.svelte';
+  import { get } from 'svelte/store';
+  import { isPalm, keepStylus, penOnly, sawPen } from '$lib/pen';
 
   let {
     campaignId,
@@ -345,7 +347,10 @@
   // used here, only the pen draws: while it is down, touches are ignored,
   // and a palm's accidental pan is put back when the pen lands. Fingers
   // still pan and pinch while the pen is lifted.
-  let penHere = false;
+  const penHere = () => get(penOnly);
+  /** The toggle shows once this device has a pencil, or chose pencil-only before. */
+  let pencilSeen = $state(get(penOnly));
+  $effect(() => penOnly.subscribe((on) => { if (on) pencilSeen = true; }));
   let penDown: number | null = null;
   const pointers = new Map<number, { x: number; y: number }>();
   let pinch: { d: number; mx: number; my: number; view: View } | null = null;
@@ -360,7 +365,7 @@
     active = true;
     if (e.button > 0) return;
     if (e.pointerType === 'pen') {
-      penHere = true;
+      sawPen();
       penDown = e.pointerId;
       // Whatever the palm started is undone: the pen alone carries on.
       if (pointers.size) {
@@ -371,7 +376,8 @@
         panning = null;
         drawing = null;
       }
-    } else if (penHere && e.pointerType === 'touch' && penDown !== null) {
+    } else if (e.pointerType === 'touch' && ((penHere() && penDown !== null) || (canEdit && tool === 'pen' && isPalm(e)))) {
+      // The hand holding the pen, or a palm: not a finger meaning anything.
       return;
     }
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -385,7 +391,7 @@
       return;
     }
     if (pointers.size > 2) return;
-    if (canEdit && tool === 'pen' && !(penHere && e.pointerType === 'touch')) {
+    if (canEdit && tool === 'pen' && !(penHere() && e.pointerType === 'touch')) {
       e.preventDefault();
       drawing = at(e);
     } else if (canEdit && (tool === 'note' || tool === 'text')) {
@@ -456,6 +462,12 @@
     if (dragging) endDrag();
   }
   function cancel(e: PointerEvent) {
+    // Safari sometimes calls off a pencil's stroke part way (it took it for a
+    // gesture of its own): what was drawn so far is kept, not lost.
+    if (e.pointerId === penDown && drawing && drawing.length >= 4 && pointers.size === 1) {
+      penDown = null;
+      return up(e);
+    }
     if (e.pointerId === penDown) penDown = null;
     if (!pointers.has(e.pointerId)) return;
     pointers.delete(e.pointerId);
@@ -600,6 +612,13 @@
                       onclick={() => (penSize = size)}><i style:--d="{Math.max(3, size / 2)}px"></i></button>
             {/each}
           </div>
+          {#if pencilSeen}
+            <button class="tool penonly" class:on={$penOnly} aria-pressed={$penOnly} transition:fade={{ duration: 140 }}
+                    aria-label="Only the pencil draws" title={$penOnly ? 'Only the pencil draws (fingers move the page)' : 'Fingers draw too'}
+                    onclick={() => penOnly.update((on) => !on)}>
+              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M5 19l1.2-4.2L16 5l3 3-9.8 9.8zM14 7l3 3M4 21h6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+          {/if}
         {/if}
       {:else if tool === 'note'}
         <span class="sep" aria-hidden="true"></span>
@@ -636,7 +655,7 @@
   {:else}
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div class="board tool-{tool} paper-{page.paper}" class:live={canEdit} class:panning={Boolean(panning)} class:active
-         bind:this={vp} use:wheel style={paperStyle}
+         bind:this={vp} use:wheel use:keepStylus style={paperStyle}
          onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={cancel}>
       <div class="world" style:transform="scale({view.z}) translate({-view.x}px, {-view.y}px)">
         <svg class="ink" width="1" height="1" aria-hidden="true">
@@ -765,6 +784,7 @@
   .board {
     position: relative; height: min(36rem, 70vh); overflow: hidden; border-radius: var(--r);
     border: 1px solid var(--line-soft); touch-action: none; cursor: grab; user-select: none;
+    -webkit-user-select: none; -webkit-touch-callout: none;
     background-color: color-mix(in oklch, var(--surface) 70%, transparent);
     backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
     background-position: var(--px) var(--py); background-size: var(--step) var(--step);

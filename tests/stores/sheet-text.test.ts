@@ -6,7 +6,9 @@ const calls: string[] = [];
 const repo = vi.hoisted(() => ({
   saveDefinition: vi.fn(),
   saveState: vi.fn(),
-  saveText: vi.fn()
+  saveText: vi.fn(),
+  loadRow: vi.fn(async () => null as unknown),
+  rowStamp: vi.fn(async () => null as unknown)
 }));
 vi.mock('$lib/data/sheets', () => {
   class StaleWriteError extends Error {
@@ -16,7 +18,7 @@ vi.mock('$lib/data/sheets', () => {
 });
 
 import { StaleWriteError } from '$lib/data/sheets';
-import { scrubText, sheetStore } from '$lib/stores/sheet';
+import { onlyVitalsChanged, scrubText, sheetStore } from '$lib/stores/sheet';
 import { blankDefinition } from '$lib/sample';
 import { blankTexts, emptyState, type Definition, type Sheet, type SheetTexts } from '$lib/types';
 
@@ -173,5 +175,56 @@ describe('a save that cannot land', () => {
     await vi.advanceTimersByTimeAsync(3000);
     await sheetStore.retry();
     expect(repo.saveState).toHaveBeenLastCalledWith('s1', expect.objectContaining({ hpCurrent: 9 }), expect.anything());
+  });
+});
+
+describe('hit points changed elsewhere (the map, the DM)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    repo.saveDefinition.mockReset().mockResolvedValue('T-def');
+    repo.saveText.mockReset().mockResolvedValue('T-t');
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    repo.loadRow.mockReset().mockResolvedValue(null);
+  });
+
+  it('tells vitals from everything else', () => {
+    const a = { definition: blankDefinition('T'), state: emptyState() };
+    expect(onlyVitalsChanged(a, { ...a, state: { ...a.state, hpCurrent: 3, hpTemp: 5 } })).toBe(true);
+    expect(onlyVitalsChanged(a, { ...a, definition: { ...a.definition, conditionLooks: {} } })).toBe(true);
+    expect(onlyVitalsChanged(a, { ...a, definition: { ...a.definition, identity: { ...a.definition.identity, name: 'X' } } })).toBe(false);
+  });
+
+  it('takes their hit points in and saves its own change over them, without a warning', async () => {
+    const theirs = { definition: blankDefinition('T'), state: { ...emptyState(), hpCurrent: 3 }, updated_at: 'T1' };
+    repo.loadRow.mockReset().mockResolvedValue(theirs);
+    repo.saveState.mockReset().mockRejectedValueOnce(new StaleWriteError()).mockResolvedValue('T2');
+    sheetStore.load(sheet());
+    sheetStore.setState({ ...emptyState(), hpTemp: 4 });
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(get(sheetStore).status).not.toBe('stale');
+    expect(repo.saveState).toHaveBeenLastCalledWith('s1', expect.objectContaining({ hpCurrent: 3, hpTemp: 4 }), 'T1');
+    expect(get(sheetStore).sheet?.state.hpCurrent).toBe(3);
+  });
+
+  it('keeps hit points this person just changed over the ones from elsewhere', async () => {
+    const theirs = { definition: blankDefinition('T'), state: { ...emptyState(), hpCurrent: 3 }, updated_at: 'T1' };
+    repo.loadRow.mockReset().mockResolvedValue(theirs);
+    repo.saveState.mockReset().mockRejectedValueOnce(new StaleWriteError()).mockResolvedValue('T2');
+    sheetStore.load(sheet());
+    sheetStore.setState({ ...emptyState(), hpCurrent: 9 });
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(repo.saveState).toHaveBeenLastCalledWith('s1', expect.objectContaining({ hpCurrent: 9 }), 'T1');
+  });
+
+  it('still warns when something else changed', async () => {
+    const theirs = { definition: { ...blankDefinition('T'), identity: { ...blankDefinition('T').identity, name: 'Other' } }, state: emptyState(), updated_at: 'T1' };
+    repo.loadRow.mockReset().mockResolvedValue(theirs);
+    repo.saveState.mockReset().mockRejectedValue(new StaleWriteError());
+    sheetStore.load(sheet());
+    sheetStore.setState({ ...emptyState(), hpCurrent: 9 });
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(get(sheetStore).status).toBe('stale');
   });
 });

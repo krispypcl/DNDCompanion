@@ -54,10 +54,33 @@ export async function readSheets(follow: Follow): Promise<Sheet[]> {
 export function followSheets(follow: Follow, onsheets: (sheets: Sheet[]) => void, onerror?: (e: unknown) => void): () => void {
   let stopped = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const read = () => readSheets(follow).then((s) => !stopped && onsheets(s)).catch((e) => !stopped && onerror?.(e));
-  const soon = () => {
+  let shown: Sheet[] = [];
+  const show = (list: Sheet[]) => {
+    shown = list;
+    if (!stopped) onsheets(list);
+  };
+  const read = () => readSheets(follow).then(show).catch((e) => !stopped && onerror?.(e));
+  /** One sheet changed: read just it, rather than the whole room's. */
+  const readOne = async (id: string) => {
+    const { data, error } = await supabase.from('sheets').select(COLUMNS).eq('id', id).maybeSingle();
+    if (error) throw new Error(error.message);
+    const row = data as Sheet | null;
+    const keep = row && (follow.sheets.includes(row.id) || (row.campaign_id && follow.campaigns.includes(row.campaign_id) && !row.retired));
+    if (!keep) return show(shown.filter((s) => s.id !== id));
+    const done = complete(row!);
+    show(shown.some((s) => s.id === id) ? shown.map((s) => (s.id === id ? done : s)) : [...shown, done]);
+  };
+  const waiting = new Set<string>();
+  const soon = (payload?: { eventType?: string; new?: { id?: string } }) => {
+    const id = payload?.eventType === 'UPDATE' ? payload.new?.id : undefined;
+    waiting.add(id ?? '*');
     clearTimeout(timer);
-    timer = setTimeout(read, 250);
+    timer = setTimeout(() => {
+      const ids = [...waiting];
+      waiting.clear();
+      if (ids.includes('*') || ids.length > 4) void read();
+      else ids.forEach((x) => void readOne(x).catch(() => read()));
+    }, 250);
   };
   void read();
   if (!isConfigured || (!follow.sheets.length && !follow.campaigns.length)) return () => (stopped = true);
@@ -66,9 +89,10 @@ export function followSheets(follow: Follow, onsheets: (sheets: Sheet[]) => void
     ch = ch.on('postgres_changes', { event: '*', schema: 'public', table: 'sheets', filter: `id=in.(${follow.sheets.join(',')})` }, soon);
   if (follow.campaigns.length)
     ch = ch.on('postgres_changes', { event: '*', schema: 'public', table: 'sheets', filter: `campaign_id=in.(${follow.campaigns.join(',')})` }, soon);
-  ch.subscribe();
   // Back from sleep or a lost connection: read again rather than trust what is shown.
   const wake = () => document.visibilityState === 'visible' && soon();
+  // Joined (or back after a drop): read again in case anything was missed.
+  ch.subscribe((status) => status === 'SUBSCRIBED' && soon());
   document.addEventListener('visibilitychange', wake);
   return () => {
     stopped = true;

@@ -303,3 +303,5 @@ body {
 /* Inside Owlbear Rodeo (the extension's pages): its frames are narrow and
    fixed, so no gutter is kept for a scrollbar that may never come. */
 html.in-owlbear { scrollbar-gutter: auto; }
+/* Owlbear's panels are small and sit beside the map: everything one step
+   smaller there (the extension's sizes are all in rem). */
