@@ -236,6 +236,8 @@ export type State = {
   conditions: string[];
   /** Spent and earned mid-session, so it lives with play state. */
   inspiration?: number;
+  /** The concentration spell being held right now (its name), if any: one at a time. */
+  concentrating?: string;
 };
 
 /** The two long-form writings. They live apart from the definition so that
