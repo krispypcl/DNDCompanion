@@ -85,7 +85,15 @@
      * An Equip tag beside the name (equipment): pressed, it asks what the item
      * does or takes it off. Shown to everyone when on; pressable by the owner.
      */
-    equip?: { key: string; can: boolean; onpress: (index: number) => void };
+    equip?: {
+      key: string;
+      can: boolean;
+      onpress: (index: number) => void;
+      /** Whether it is on; by default the key's value. */
+      isOn?: (item: T) => boolean;
+      /** The tag's words, off and on (by default Equip and Equipped). */
+      labels?: { off: string; on: string; hint: string };
+    };
     editable: boolean;
     blank: () => T;
     onchange: (next: T[]) => void;
@@ -572,15 +580,25 @@
 </script>
 
 {#snippet equipTag(item: T, index: number)}
-  {@const on = Boolean(item[equip!.key])}
-  <button class="equip" class:on aria-pressed={on} disabled={!equip!.can}
-          aria-label={on ? `${nameOf(item) || 'Item'} equipped` : `Equip ${nameOf(item) || 'item'}`}
-          title={!equip!.can ? (on ? 'Equipped' : '') : editable ? 'What it does when equipped' : on ? 'Equipped · press to take off' : 'Equip it'}
-          onclick={() => equip!.onpress(index)}>
-    <!-- Always as wide as "Equipped", so the name beside it never shifts. -->
-    <span class="eqroom" aria-hidden="true">Equipped</span>
-    {#key on}<span class="eqlabel">{on ? 'Equipped' : 'Equip'}</span>{/key}
-  </button>
+  {@const on = equip!.isOn ? equip!.isOn(item) : Boolean(item[equip!.key])}
+  {@const words = equip!.labels}
+  {#if words}
+    <button class="equip" class:on aria-pressed={on} disabled={!equip!.can}
+            aria-label="{words.hint}: {nameOf(item) || 'this'}" title={words.hint}
+            onclick={() => equip!.onpress(index)}>
+      <span class="eqroom" aria-hidden="true">{words.on.length > words.off.length ? words.on : words.off}</span>
+      {#key on}<span class="eqlabel">{on ? words.on : words.off}</span>{/key}
+    </button>
+  {:else}
+    <button class="equip" class:on aria-pressed={on} disabled={!equip!.can}
+            aria-label={on ? `${nameOf(item) || 'Item'} equipped` : `Equip ${nameOf(item) || 'item'}`}
+            title={!equip!.can ? (on ? 'Equipped' : '') : editable ? 'What it does when equipped' : on ? 'Equipped · press to take off' : 'Equip it'}
+            onclick={() => equip!.onpress(index)}>
+      <!-- Always as wide as "Equipped", so the name beside it never shifts. -->
+      <span class="eqroom" aria-hidden="true">Equipped</span>
+      {#key on}<span class="eqlabel">{on ? 'Equipped' : 'Equip'}</span>{/key}
+    </button>
+  {/if}
 {/snippet}
 
 {#if items.length === 0 && !editable}
@@ -683,7 +701,7 @@
                 </div>
               {:else}
                 <span class="nm" data-flip={fk(row, nameCol.key)}>{text(item[nameCol.key])}</span>
-                {#if equip && (item[equip.key] || equip.can)}{@render equipTag(item, index)}{/if}
+                {#if equip && ((equip.isOn ? equip.isOn(item) : item[equip.key]) || equip.can)}{@render equipTag(item, index)}{/if}
                 {#if links}<EntryLink
                   name={nameOf(item)}
                   source={item.source as string | undefined}

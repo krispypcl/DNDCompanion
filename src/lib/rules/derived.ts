@@ -52,9 +52,9 @@ export function saveParts(def: Definition, ability: Ability): Part[] {
 }
 
 /**
- * Armour Class. With nothing equipped that touches it, it is the number
- * written on the sheet. Otherwise it is worked out: the armour's base (or 10
- * unarmoured) plus Dexterity as the armour allows, shields, and bonuses.
+ * Armor Class, always worked out: the armor's base (or 10 unarmored, or
+ * Unarmored Defense) plus Dexterity as the armor allows, shields, and bonuses
+ * from items and features.
  */
 export function armorClass(def: Definition): { total: number; parts: Part[]; computed: boolean } {
   // Always worked out: from what is worn, or from the body (and the class)
@@ -65,16 +65,16 @@ export function armorClass(def: Definition): { total: number; parts: Part[]; com
   const shielded = effects.some(({ effect }) => effect.kind === 'shield');
   const parts: Part[] = [];
   if (armor && armor.effect.kind === 'armor') {
-    parts.push({ label: armor.item, value: armor.effect.base, note: 'armour' });
+    parts.push({ label: armor.item, value: armor.effect.base, note: 'armor' });
     const allowed = armor.effect.dex === 'none' ? 0 : armor.effect.dex === 'max2' ? Math.min(2, dex) : dex;
     if (armor.effect.dex !== 'none') parts.push({ label: armor.effect.dex === 'max2' ? 'Dexterity (up to +2)' : 'Dexterity', value: allowed });
   } else {
     // Unarmoured Defence: a Barbarian adds Constitution, a Monk (without a
     // shield) Wisdom. The better one counts, as the rules have it.
     const levels = classLevels(def);
-    const options: { label: string; extra: Part | null }[] = [{ label: 'Unarmoured', extra: null }];
-    if (levels.barbarian) options.push({ label: 'Unarmoured Defence (Barbarian)', extra: { label: 'Constitution', value: modifierOf(def, 'con') } });
-    if (levels.monk && !shielded) options.push({ label: 'Unarmoured Defence (Monk)', extra: { label: 'Wisdom', value: modifierOf(def, 'wis') } });
+    const options: { label: string; extra: Part | null }[] = [{ label: 'Unarmored', extra: null }];
+    if (levels.barbarian) options.push({ label: 'Unarmored Defense (Barbarian)', extra: { label: 'Constitution', value: modifierOf(def, 'con') } });
+    if (levels.monk && !shielded) options.push({ label: 'Unarmored Defense (Monk)', extra: { label: 'Wisdom', value: modifierOf(def, 'wis') } });
     const best = options.reduce((a, b) => ((b.extra?.value ?? 0) > (a.extra?.value ?? 0) ? b : a));
     parts.push({ label: best.label, value: 10 }, { label: 'Dexterity', value: dex });
     if (best.extra) parts.push(best.extra);
@@ -86,19 +86,17 @@ export function armorClass(def: Definition): { total: number; parts: Part[]; com
 }
 
 /** Speed: as written, plus anything worn that changes it. */
+/** Speed: the species' walking speed (set on the Character tab), plus anything that changes it. */
 export function speedParts(def: Definition): { total: number; parts: Part[] } {
-  const written = Number(def.combat?.speed) || 0;
-  const parts: Part[] = [{ label: 'As written', value: written }];
+  const written = def.combat?.speed == null || def.combat.speed === ('' as unknown) ? 30 : Number(def.combat.speed) || 0;
+  const parts: Part[] = [{ label: 'Walking speed', value: written, note: 'species' }];
   for (const { item, effect } of equippedEffects(def)) if (effect.kind === 'speed') parts.push({ label: item, value: effect.bonus });
   return { total: parts.reduce((s, p) => s + p.value, 0), parts };
 }
 
-/** Initiative: as written (or Dexterity), plus anything worn that changes it. */
+/** Initiative: the Dexterity modifier, plus what items and features add. Never typed. */
 export function initiativeParts(def: Definition): { total: number; parts: Part[] } {
-  const written = def.combat?.initiative;
-  const parts: Part[] = written == null
-    ? [{ label: 'Dexterity modifier', value: modifierOf(def, 'dex') }]
-    : [{ label: 'As written', value: Number(written) || 0 }];
+  const parts: Part[] = [{ label: 'Dexterity modifier', value: modifierOf(def, 'dex') }];
   for (const { item, effect } of equippedEffects(def)) if (effect.kind === 'init') parts.push({ label: item, value: effect.bonus });
   return { total: parts.reduce((s, p) => s + p.value, 0), parts };
 }

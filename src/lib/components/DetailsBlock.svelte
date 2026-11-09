@@ -79,6 +79,16 @@
       </dd>
     </div>
   {/each}
+  {#if editable}
+    <!-- The species' walking speed: the Speed box on the right adds what items and features give. -->
+    <div data-flip-ghost="origin:speed">
+      <dt>Walking speed</dt>
+      <dd>
+        <EditableField value={definition.combat?.speed ?? 30} editable={true} type="number" label="Walking speed" hint="30"
+                       onchange={(v) => onchange({ ...definition, combat: { ...definition.combat, speed: v === '' ? 30 : Number(v) } })} />
+      </dd>
+    </div>
+  {/if}
 </dl>
 
 <section class="details">
@@ -126,11 +136,12 @@
 
 <style>
   .origin {
-    margin: 0 0 1.25rem; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 0 0 1.25rem; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 0.75rem 1.25rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--line-soft);
   }
   .origin > div { text-align: center; min-width: 0; }
   .origin.reading { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 760px) { .origin:not(.reading) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   @media (max-width: 560px) { .origin { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .details {
     display: flex;

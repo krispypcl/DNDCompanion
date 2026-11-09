@@ -76,7 +76,7 @@ describe('DetailsBlock', () => {
 import { render as renderDetails, screen as detailsScreen } from '@testing-library/svelte';
 import DetailsBlockForOrigin from '$lib/components/DetailsBlock.svelte';
 describe('origin row', () => {
-  it('has species, species source, background and background source, in that order', () => {
+  it('has species, species source, background, background source and walking speed, in that order', () => {
     const def = {
       identity: { name: 'X', level: 1, ancestry: 'Tiefling (Glasya)', ancestrySource: 'mtf', background: 'Criminal' },
       abilities: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 }, proficiency: 2,
@@ -85,7 +85,7 @@ describe('origin row', () => {
     };
     const { container } = renderDetails(DetailsBlockForOrigin, { props: { definition: def as never, editable: true, onchange: () => {} } });
     expect([...container.querySelectorAll('.origin dt')].map((d) => d.textContent)).toEqual([
-      'Species', 'Species source', 'Background', 'Background source'
+      'Species', 'Species source', 'Background', 'Background source', 'Walking speed'
     ]);
     expect((detailsScreen.getByLabelText('Species source') as HTMLInputElement).value).toBe('mtf');
   });

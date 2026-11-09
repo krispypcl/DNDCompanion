@@ -7,11 +7,26 @@ import type { Ability, Definition, Item, ItemEffect } from '$lib/types';
 
 export type Part = { label: string; value: number; note?: string };
 
-/** Each equipped item's effects, with the item's name. */
+/**
+ * Everything that changes the numbers, with the name of where it comes
+ * from: each equipped item's effects, then each feature's (a feature is
+ * always on). Items first, so worn armour comes before a feature's natural
+ * armour.
+ */
 export function equippedEffects(def: Definition): { item: string; effect: ItemEffect }[] {
-  return (def.equipment ?? [])
+  const worn = (def.equipment ?? [])
     .filter((it: Item) => it.equipped)
     .flatMap((it: Item) => (it.effects ?? []).map((effect) => ({ item: it.name || 'An item', effect })));
+  const features = (def.features ?? []).flatMap((f) => (f.effects ?? []).map((effect) => ({ item: f.title || 'A feature', effect })));
+  return [...worn, ...features];
+}
+
+/** Where advantage on initiative, or on one ability's saves, comes from. */
+export function advantageFrom(def: Definition, on: 'init' | 'save', ability?: Ability): string[] {
+  return equippedEffects(def)
+    .filter(({ effect }) => effect.kind === 'advantage' && effect.on === on &&
+      (on === 'init' || !effect.ability || effect.ability === 'all' || effect.ability === ability))
+    .map(({ item }) => item);
 }
 
 const NAMES: Record<Ability, string> = {

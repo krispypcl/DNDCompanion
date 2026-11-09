@@ -75,6 +75,8 @@ export type Feature = LinkableEntry & {
   /** Where it comes from: Class, Subclass, Species, Background, Feat… The
       features list is grouped by it. */
   kind?: string;
+  /** What it does to the numbers, always (like an equipped item's effects). */
+  effects?: ItemEffect[];
 };
 export type Spell = LinkableEntry & {
   /** 'Cantrip' or '1'–'10', as written: a free-form string so a homebrew
@@ -106,8 +108,9 @@ export type Item = LinkableEntry & {
   effects?: ItemEffect[];
 };
 
-/** Something an equipped item does to the numbers. */
+/** Something an equipped item, or a feature, does to the numbers. */
 export type ItemEffect =
+  | { kind: 'advantage'; on: 'init' | 'save'; ability?: Ability | 'all' }
   | { kind: 'armor'; base: number; dex: 'full' | 'max2' | 'none' }
   | { kind: 'shield'; bonus: number }
   | { kind: 'ac'; bonus: number }

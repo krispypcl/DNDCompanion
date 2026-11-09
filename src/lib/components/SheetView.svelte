@@ -76,6 +76,7 @@
   } from '$lib/rules/derived';
   import Why from '$lib/components/Why.svelte';
   import EquipDialog from '$lib/components/EquipDialog.svelte';
+  import { advantageFrom } from '$lib/rules/equipment';
   import { downloadText } from '$lib/download';
   import { parseRoll, type Pool, type Roll } from '$lib/rules/dice';
   import { requestRoll } from '$lib/stores/dice';
@@ -195,6 +196,7 @@
 
   const attunedCount = $derived((definition?.equipment ?? []).filter((i) => i.attuned).length);
   const initiative = $derived(definition ? initiativeParts(definition).total : 0);
+  const initAdv = $derived(definition ? advantageFrom(definition, 'init') : []);
   const ac = $derived(definition ? armorClass(definition) : { total: 10, parts: [], computed: false });
   const speed = $derived(definition ? speedParts(definition) : { total: 30, parts: [] });
 
@@ -376,12 +378,13 @@
   let spotTimer: ReturnType<typeof setTimeout> | undefined;
 
   /** A skill, pressed: the Combat tab comes up, and the roll is made there. */
-  function rollSkill(label: string, bonus: number) {
+  function rollSkill(label: string, bonus: number, mode: 'normal' | 'advantage' = 'normal') {
     if (activeTab !== 'Combat') {
       activeTab = 'Combat';
       if (typeof location !== 'undefined') history.replaceState(null, '', '#combat');
     }
-    requestRoll({ dice: { 20: 1 }, modifier: bonus, mode: 'normal' }, label);
+    // With advantage from a feature or item, the roll takes it; otherwise whatever the tray is set to.
+    requestRoll({ dice: { 20: 1 }, modifier: bonus, mode }, label, undefined, mode === 'advantage' ? 'pool' : 'keep');
   }
 
   /** Keeps the public note of which writings are private in step. */
@@ -472,6 +475,8 @@
    * known; the first time, or while editing, it asks what the item does.
    */
   let equipping = $state<number | null>(null);
+  /** The feature whose effects are being set, if any. */
+  let effecting = $state<number | null>(null);
   function setItem(index: number, patch: Partial<Item>) {
     if (!definition) return;
     setDefinition({ ...definition, equipment: definition.equipment.map((it, i) => (i === index ? { ...it, ...patch } : it)) });
@@ -894,6 +899,9 @@
                 emptyText="No features yet."
                 addLabel="Add feature"
                 blank={() => ({ title: '', body: '' }) as Feature}
+                equip={{ key: 'effects', can: editable && isOwner, onpress: (i) => (effecting = i),
+                         isOn: (f) => Boolean((f as Feature).effects?.length),
+                         labels: { off: '+ Effect', on: 'Effects', hint: 'What it changes on the sheet' } }}
                 onchange={(features) => setDefinition({ ...definition, features: features as Feature[] })}
               >
                 {#snippet info()}
@@ -995,31 +1003,29 @@
         <h2 class="cap defs-h">Defenses</h2>
         <div class="defense">
           <Why title="Armor Class" parts={ac.parts} total={String(ac.total)}
-               hint={ac.computed ? 'Worked out from what is equipped.' : 'Nothing worn yet. Equip armour or a shield on the Equipment tab to change it.'}>
+               hint={ac.computed ? 'Worked out from what is equipped.' : 'Nothing worn yet. Equip armor or a shield on the Equipment tab to change it.'}>
           <div class="defbox">
             <!-- Worked out, never typed: armour and shields are equipped on the Equipment tab. -->
             <b use:bump={ac.total}><span class="computed">{ac.total}</span></b>
             <span class="cap">Armor Class</span>
           </div>
           </Why>
+          <!-- Worked out, never typed: Dexterity plus what items and features add. -->
           <Why title="Initiative" parts={initiativeParts(definition).parts} total={sign(initiative)}
-               hint={!editable && isOwner ? 'Press it to roll initiative.' : ''}>
+               hint={[initAdv.length ? `Advantage from ${initAdv.join(', ')}.` : '', !editable && isOwner ? 'Press it to roll initiative.' : ''].filter(Boolean).join(' ')}>
           <div class="defbox" class:rollable={!editable && isOwner}>
             <b use:bump={initiative}>
               {#if !editable && isOwner}
                 <!-- Out of edit mode, initiative is a die to roll: the whole box is the button. -->
-                <button class="rollnum" title="Roll initiative: d20 {sign(initiative)}" aria-label="Roll initiative"
-                        onclick={() => rollSkill('Initiative', initiative)}>{sign(initiative)}</button>
+                <button class="rollnum" title="Roll initiative: d20 {sign(initiative)}{initAdv.length ? ' with advantage' : ''}" aria-label="Roll initiative"
+                        onclick={() => rollSkill('Initiative', initiative, initAdv.length ? 'advantage' : 'normal')}>{sign(initiative)}</button>
                 <svg class="d20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 20.5 7.4v9.2L12 21.5 3.5 16.6V7.4zM12 7.5l4.3 7.4H7.7zM12 2.5v5M20.5 7.4l-4.2 7.5M3.5 7.4l4.2 7.5M7.7 14.9 3.5 16.6M16.3 14.9l4.2 1.7M7.7 14.9 12 21.5l4.3-6.6" /></svg>
               {:else}
-                <EditableField value={definition.combat?.initiative ?? ''}
-                               display={definition.combat?.initiative == null ? sign(initiative) : undefined}
-                               {editable} type="number" label="Initiative"
-                               placeholder={sign(initiative)} hint={String(modifierOf(definition, 'dex'))}
-                               onchange={(v) => patchCombat('initiative', v === '' ? undefined : Number(v))} />
+                <span class="computed">{sign(initiative)}</span>
               {/if}
             </b>
             <span class="cap">Initiative</span>
+            {#if initAdv.length}<span class="adv" title="Advantage">ADV</span>{/if}
           </div>
           </Why>
           <!-- From total level, all classes together; not typed in. -->
@@ -1030,16 +1036,11 @@
             <span class="cap">Proficiency</span>
           </div>
           </Why>
-          <Why title="Speed" parts={speed.parts} total="{speed.total} ft.">
+          <!-- Worked out: the species' walking speed (Character tab) plus what items and features add. -->
+          <Why title="Speed" parts={speed.parts} total="{speed.total} ft."
+               hint="The walking speed is set beside the species on the Character tab.">
           <div class="defbox">
-            <b use:bump={speed.total}>
-              <EditableField value={definition.combat?.speed}
-                             display={definition.combat?.speed != null
-                               ? `${speed.total} ft.`
-                               : undefined}
-                             {editable} type="number"
-                             label="Speed" onchange={(v) => patchCombat('speed', Number(v))} />
-            </b>
+            <b use:bump={speed.total}><span class="computed">{speed.total} ft.</span></b>
             <span class="cap">Speed</span>
           </div>
           </Why>
@@ -1149,6 +1150,15 @@
                   attack={spellAtk} saveDc={saveDc} characterLevel={totalLevel}
                   onroll={(kind, at, spend) => castRoll(casting!, kind, at, spend)}
                   oncancel={() => (casting = null)} />
+    {/if}
+    {#if effecting !== null && definition?.features?.[effecting]}
+      {@const f = definition.features[effecting]}
+      <EquipDialog item={{ name: f.title, effects: f.effects }} feature
+                   onclose={() => (effecting = null)}
+                   onsave={(effects) => {
+                     setDefinition({ ...definition!, features: definition!.features.map((x, i) => (i === effecting ? { ...x, effects: effects.length ? effects : undefined } : x)) });
+                     effecting = null;
+                   }} />
     {/if}
     {#if equipping !== null && definition?.equipment?.[equipping]}
       <EquipDialog item={definition.equipment[equipping]}
@@ -1411,6 +1421,11 @@
   }
   .defbox.rollable:hover b { color: var(--a); }
   .defbox.rollable:active { transform: translateY(0); box-shadow: none; }
+  .defbox .adv {
+    position: absolute; left: 0.375rem; top: 0.375rem; font-size: 0.5625rem; font-weight: 700; letter-spacing: 0.08em;
+    padding: 0.0625rem 0.3125rem; border-radius: 3px; color: var(--good, var(--a)); background: color-mix(in oklch, var(--good, var(--a)) 16%, transparent);
+  }
+  .defbox:has(.adv) { position: relative; }
   .defbox .d20 {
     position: absolute; top: 0.375rem; right: 0.375rem; width: 0.8125rem; height: 0.8125rem;
     fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; color: var(--faint);
