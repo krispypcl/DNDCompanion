@@ -56,7 +56,7 @@ async function rows<T>(env: Env, path: string): Promise<T[]> {
 type ClassEntry = { name?: string; subclass?: string; level?: number };
 type Identity = {
   name?: string; class?: string; subclass?: string; level?: number; ancestry?: string;
-  player?: string; portraitUrl?: string; bannerUrl?: string; classes?: ClassEntry[];
+  portraitUrl?: string; bannerUrl?: string; classes?: ClassEntry[];
 };
 
 async function sheetPreview(id: string, env: Env): Promise<Preview | null> {
@@ -71,7 +71,7 @@ async function sheetPreview(id: string, env: Env): Promise<Preview | null> {
   const image = resolveImageUrl(who.portraitUrl).url || resolveImageUrl(who.bannerUrl).url || undefined;
   return {
     title: who.name || row.name || 'A character',
-    description: [line, who.player ? `played by ${who.player}` : ''].filter(Boolean).join(', ') || 'A D&D 5e character sheet.',
+    description: line || 'A D&D 5e character sheet.',
     image
   };
 }

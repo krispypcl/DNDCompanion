@@ -1,4 +1,5 @@
 <script lang="ts">
+  import InfoTip from './InfoTip.svelte';
   import { siteRoot } from '$lib/rules/share';
   /**
    * A campaign's page, /c/<id>: a card for each character in it, with what a
@@ -357,7 +358,7 @@
         <summary>Retired ({retired.length})</summary>
         <ul>
           {#each retired as s (s.id)}
-            <li><a href="{base}/s/{s.id}">{s.definition?.identity?.name || s.name}</a>
+            <li><a href="{base}/s/{s.id}?from={id}">{s.definition?.identity?.name || s.name}</a>
               <span class="sub">{classLine(s.definition)}</span></li>
           {/each}
         </ul>
@@ -372,12 +373,13 @@
       {#if !ended}
         <section class="dm">
           <div class="invite">
-            <span class="label">Invite link</span>
+            <span class="label">Invite link
+              <InfoTip label="About the invite link">Players open it, sign in and pick which character joins. Anyone with this page’s own link can watch, but only the invite lets a character in. A new link stops the old one working.</InfoTip>
+            </span>
             <input readonly value={inviteLink || 'Fetching…'} aria-label="Invite link" onfocus={(e) => e.currentTarget.select()} />
             <button onclick={() => copy(inviteLink, 'invite')} disabled={!inviteLink}>{copied === 'invite' ? 'Copied!' : 'Copy'}</button>
             <button class="ghost" onclick={newInvite} title="Make a new link; the old one stops working">New link</button>
           </div>
-          <p class="hint">Players open it, sign in and pick which character joins. Anyone with this page’s own link can watch, but only the invite lets a character in.</p>
         </section>
       {/if}
       <section class="dm look">
