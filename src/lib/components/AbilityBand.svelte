@@ -144,10 +144,11 @@
     fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; color: var(--faint);
     transition: color 0.2s ease, transform 0.35s cubic-bezier(0.3, 1.5, 0.5, 1);
   }
-  /* Advantage, from a feature or an item: a small tag under the number. */
+  /* Advantage, from a feature or an item: a small tag beside the number. */
   .adv {
-    position: absolute; left: 50%; top: 0.3125rem; translate: -50% 0; font-size: 0.5rem; font-weight: 700;
-    letter-spacing: 0.08em; padding: 0 0.25rem; border-radius: 3px; color: var(--good, var(--a)); background: color-mix(in oklch, var(--good, var(--a)) 16%, transparent);
+    display: inline-block; vertical-align: 0.15em; margin-left: 0.1875rem; font-size: 0.5rem; font-weight: 700;
+    letter-spacing: 0.06em; padding: 0 0.1875rem; border-radius: 3px; line-height: 1.5;
+    color: var(--good, var(--a)); background: color-mix(in oklch, var(--good, var(--a)) 16%, transparent);
   }
   .save.rollable:hover .d20 { color: var(--a); transform: rotate(72deg) scale(1.2); }
   .cap {

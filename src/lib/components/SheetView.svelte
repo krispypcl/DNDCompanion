@@ -946,6 +946,7 @@
               {/if}
             {:else if tab === 'Character'}
               {#if editable}
+              <div data-flip-ghost="class:table">
               <EntryTable
                 items={classes}
                 columns={CLASS_COLUMNS}
@@ -962,6 +963,7 @@
                   rather than the total. Source is the book code for the 5e.tools link.
                 {/snippet}
               </EntryTable>
+              </div>
               {:else}
                 <ClassCards {classes} />
               {/if}

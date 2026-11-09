@@ -6,9 +6,7 @@
    * characters have one class, so one card is the usual look; a multiclass
    * character gets a card each and their total under them.
    */
-  import { fade } from 'svelte/transition';
   import EntryLink from './EntryLink.svelte';
-  import { prefersReducedMotion } from '$lib/motion';
   import type { ClassEntry } from '$lib/types';
 
   let { classes }: { classes: ClassEntry[] } = $props();
@@ -23,9 +21,10 @@
 </script>
 
 {#if shown.length === 0}
-  <p class="none">No class yet.</p>
+  <p class="none" data-flip-ghost="class:none">No class yet.</p>
 {:else}
-  <div class="classes" class:multi={shown.length > 1} in:fade={{ duration: prefersReducedMotion() ? 0 : 200 }}>
+  <!-- The mode switch fades it in and out (flip.ts), in step with the table it replaces. -->
+  <div class="classes" class:multi={shown.length > 1} data-flip-ghost="class:cards" data-ghost-scale="0.98">
     {#each shown as c, i (i + c.name)}
       {@const die = DIE[c.name.trim().toLowerCase()]}
       <article class="cls">
@@ -57,8 +56,9 @@
 
 <style>
   .none { margin: 0; color: var(--dim); font-size: 0.875rem; }
-  .classes { display: grid; gap: 0.75rem; }
-  .classes.multi { grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); }
+  /* Always the module's full width: one card across it, or several sharing it. */
+  .classes { display: grid; gap: 0.75rem; width: 100%; grid-template-columns: minmax(0, 1fr); }
+  .classes.multi { grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr)); }
   .cls {
     display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'lvl who' 'track track';
     align-items: center; gap: 0.875rem 1rem; padding: 1rem 1.125rem 0.875rem; border-radius: var(--r);
