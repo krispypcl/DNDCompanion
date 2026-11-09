@@ -30,7 +30,7 @@ describe('ready-made trackers', () => {
     const trackers = buildPreset(PRESETS.find((p) => p.id === 'slots-wizard')!, 5, () => Math.random().toString(36));
     const ctx = formulaContext(def);
     expect(trackers.slice(0, 4).map((t) => trackerMax(t, ctx))).toEqual([4, 3, 2, 0]);
-    expect(trackers[0].label).toBe('1st-level slots');
+    expect(trackers[0].label).toBe('1st-Level Slots');
   });
 
   it('sets a level-dependent die for the level now', () => {
