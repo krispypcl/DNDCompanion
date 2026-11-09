@@ -14,7 +14,8 @@
   import { nameFont } from '$lib/rules/fonts';
   import ThemePicker from './ThemePicker.svelte';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
-  import { SOUND_NAMES, audioUrl, playClip, type SoundName } from '$lib/sound';
+  import { SOUND_NAMES, audioUrl, previewSound, type SoundName } from '$lib/sound';
+  import SpeakerButton from './SpeakerButton.svelte';
   import { foldRow, prefersReducedMotion } from '$lib/motion';
   import EditableField from './EditableField.svelte';
   import Lightbox from './Lightbox.svelte';
@@ -272,18 +273,17 @@
       <div class="sounds">
         {#each SOUND_KEYS as key (key)}
           <div class="snd" data-flip-ghost="links:sound:{key}" data-ghost-scale="0.96">
-            <span class="lbl">{SOUND_NAMES[key]}</span>
+            <span class="lbl">{SOUND_NAMES[key]}
+              <SpeakerButton label="Hear {SOUND_NAMES[key]}{sounds[key] ? '' : ' (built-in)'}" disabled={Boolean(sounds[key]) && !audioUrl(sounds[key])}
+                             onplay={() => previewSound(key, sounds[key])} />
+            </span>
             <div class="urlrow">
               <div class="urlfield">
                 <EditableField value={sounds[key] ?? ''} editable={true} label="{SOUND_NAMES[key]} sound link"
                                placeholder="Built-in" onchange={(v) => setSoundUrl(key, String(v))} />
               </div>
-              {#if sounds[key]}
-                {@const url = audioUrl(sounds[key])}
-                <button class="play" aria-label="Play {SOUND_NAMES[key]}" title={url ? 'Play it' : 'That isn’t a link we can play'}
-                        disabled={!url} onclick={() => url && playClip(url)} in:fade={{ duration: 150 }}>
-                  <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z" fill="currentColor" /></svg>
-                </button>
+              {#if sounds[key] && !audioUrl(sounds[key])}
+                <span class="badlink" in:fade={{ duration: 150 }}>Not a link we can play</span>
               {/if}
             </div>
           </div>
@@ -293,9 +293,8 @@
       <ul class="chips" data-flip-ghost="links:read:sounds">
         {#each customSounds as key (key)}
           {@const url = audioUrl(sounds[key])}
-          <li><button class="chipbtn" disabled={!url} onclick={() => url && playClip(url)} title="Play it">
-            <svg viewBox="0 0 16 16" width="10" height="10" aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z" fill="currentColor" /></svg>
-            {SOUND_NAMES[key]}</button></li>
+          <li class="chip">{SOUND_NAMES[key]}
+            <SpeakerButton label="Hear {SOUND_NAMES[key]}" disabled={!url} onplay={() => previewSound(key, sounds[key])} /></li>
         {/each}
       </ul>
     {:else}
@@ -350,7 +349,7 @@
   /* Never wider than the module: a picture's own size (a 1920px banner)
      must not set the box's, so each box has a fixed or capped width and the
      picture fills it. */
-  .pics { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; min-width: 0; max-width: 100%; }
+  .pics { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: center; min-width: 0; max-width: 100%; }
   .pic {
     flex: none; padding: 0; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden;
     background: var(--raised); cursor: zoom-in; transition: transform 0.15s ease, opacity 0.15s ease, border-color 0.15s ease;
@@ -385,14 +384,7 @@
   .hint, .none { margin: 0; font-size: 0.8125rem; color: var(--dim); line-height: 1.45; }
   .chips, .own { list-style: none; margin: 0; padding: 0; }
   .chips { display: flex; flex-wrap: wrap; gap: 0.375rem; }
-  .chipbtn {
-    display: inline-flex; align-items: baseline; gap: 0.375rem; padding: 0.3125rem 0.625rem; border-radius: 999px;
-    border: 1px solid var(--line); background: var(--raised); color: var(--text); text-decoration: none; font: inherit; font-size: 0.8125rem;
-    transition: border-color 0.15s ease, color 0.15s ease;
-  }
-  .chipbtn { align-items: center; cursor: pointer; }
-  .chipbtn:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
-  .own { display: grid; gap: 0.375rem; }
+  .own { display: grid; gap: 0.5rem; }
   .go {
     display: flex; align-items: center; gap: 0.625rem; padding: 0.5rem 0.75rem; border-radius: var(--r-sm);
     border: 1px solid var(--line-soft); background: var(--raised); color: var(--text); text-decoration: none;
@@ -402,23 +394,50 @@
   .go svg { color: var(--dim); flex: none; }
   .go:hover { border-color: var(--a-edge); background: var(--hover-bg); }
   .go:hover svg { color: var(--a); }
-  .linkedit { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto; gap: 0.5rem; align-items: center; }
-  .x { width: 1.75rem; height: 1.75rem; padding: 0; border: 0; background: none; color: var(--dim); font-size: 1.1rem; cursor: pointer; }
-  .x:hover { color: var(--bad); }
-  .add { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto; gap: 0.5rem; }
+  /* The saved links and the new one share one set of columns, so the name,
+     the address and the end button line up row after row, all one height. */
+  .linkedit, .add {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) 5.5rem; gap: 0.5rem; align-items: center;
+  }
+  .add { margin-top: 0.5rem; }
+  .linkedit :global(.field), .add input { height: 2.125rem; }
+  .x {
+    justify-self: end; width: 2.125rem; height: 2.125rem; padding: 0; border: 1px solid transparent; border-radius: var(--r-sm);
+    background: none; color: var(--dim); font-size: 1.1rem; cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
+  }
+  .x:hover { color: var(--bad); border-color: var(--line); background: var(--raised); }
+  .x:active { transform: translateY(1px); }
+  .x:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
   .add input {
-    min-width: 0; font: inherit; font-size: 0.875rem; padding: 0.4375rem 0.625rem; color: var(--text);
-    border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg);
+    min-width: 0; font: inherit; font-size: 0.875rem; padding: 0 0.625rem; color: var(--text); box-sizing: border-box;
+    border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg); transition: border-color 0.15s ease;
   }
+  .add input:hover { border-color: var(--a-edge); }
   .add input:focus { outline: none; border-color: var(--a-edge); }
-  .add button, .play {
-    font: inherit; font-size: 0.8125rem; cursor: pointer; border-radius: var(--r-sm); padding: 0.4375rem 0.75rem;
+  .add input:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
+  .add button {
+    height: 2.125rem; font: inherit; font-size: 0.8125rem; cursor: pointer; border-radius: var(--r-sm); padding: 0 0.75rem;
     border: 1px solid var(--a-edge); background: var(--a-wash); color: var(--a); white-space: nowrap;
+    transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
   }
-  .add button:disabled, .play:disabled, .chipbtn:disabled { opacity: 0.5; cursor: default; }
-  .play { width: 2rem; height: 2rem; padding: 0; display: grid; place-items: center; flex: none; }
+  .add button:hover:not(:disabled) { border-color: var(--a); }
+  .add button:active:not(:disabled) { transform: translateY(1px); }
+  .add button:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
+  .add button:disabled { opacity: 0.5; cursor: default; }
+  .badlink { flex: none; font-size: 0.75rem; color: var(--bad); }
+  .chips .chip { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.1875rem 0.25rem 0.1875rem 0.625rem; border: 1px solid var(--line); border-radius: 999px; background: var(--raised); font-size: 0.8125rem; }
   .sounds { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.75rem 1rem; }
   @media (max-width: 560px) {
-    .add, .linkedit { grid-template-columns: 1fr; }
+    /* Phones: name and address stacked, the remove button beside the name. */
+    .linkedit, .add { grid-template-columns: minmax(0, 1fr) auto; }
+    .linkedit > :global(:nth-child(2)) { grid-column: 1 / -1; grid-row: 2; }
+    .add input:nth-of-type(1) { grid-column: 1 / -1; }
+    .add input:nth-of-type(2) { grid-column: 1; grid-row: 2; }
+    .linkedit .x { grid-column: 2; grid-row: 1; }
+    .add button { grid-column: 2; grid-row: 2; }
+    .linkedit { padding-bottom: 0.5rem; border-bottom: 1px solid var(--line-soft); }
+    .linkedit :global(.field), .add input, .add button { height: 2.5rem; }
+    .add input { font-size: 16px; }
   }
 </style>
