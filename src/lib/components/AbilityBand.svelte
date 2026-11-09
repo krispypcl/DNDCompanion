@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { advantageFrom } from '$lib/rules/equipment';
   /** Abilities and saving throws. The modifier is the hero number and the
       score sits under it, because the modifier is what you use every round. */
   import { signed as sign } from '$lib/actions';
@@ -19,7 +20,7 @@
     editable: boolean;
     onchange: (next: Definition) => void;
     /** Out of edit mode, a saving throw rolls in the dice tray (the owner's). */
-    onroll?: (label: string, bonus: number) => void;
+    onroll?: (label: string, bonus: number, mode?: 'normal' | 'advantage') => void;
   } = $props();
 
   const NAMES: Record<Ability, string> = {
@@ -86,8 +87,9 @@
 <span class="cap saves-cap">Saving throws</span>
 <div class="saves">
   {#each ABILITIES as ability (ability)}
+    {@const adv = advantageFrom(definition, 'save', ability)}
     <Why title="{NAMES[ability]} save" parts={saveParts(definition, ability)} total={sign(saveBonus(definition, ability))}
-         hint={!editable && onroll ? 'Press it to roll the save.' : ''}>
+         hint={[adv.length ? `Advantage from ${adv.join(', ')}.` : '', !editable && onroll ? 'Press it to roll the save.' : ''].filter(Boolean).join(' ')}>
     <div class="save" class:on={definition.saves?.[ability]} class:rollable={!editable && onroll}>
       <button
         class="toggle"
@@ -96,7 +98,7 @@
         aria-pressed={editable ? Boolean(definition.saves?.[ability]) : undefined}
         aria-label={editable || !onroll ? `${NAMES[ability]} saving throw proficiency` : `Roll a ${NAMES[ability]} saving throw`}
         title={editable || !onroll ? breakdown(ability) : `Roll a ${NAMES[ability]} save: d20 ${sign(saveBonus(definition, ability))} (${breakdown(ability)})`}
-        onclick={() => (editable ? toggleSave(ability) : onroll?.(`${NAMES[ability]} save`, saveBonus(definition, ability)))}
+        onclick={() => (editable ? toggleSave(ability) : onroll?.(`${NAMES[ability]} save`, saveBonus(definition, ability), adv.length ? 'advantage' : 'normal'))}
       >
         <!-- The same mark as a skill's, but only ever empty or full: there
              is no expertise in a saving throw. -->
@@ -106,6 +108,7 @@
           <svg class="d20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 20.5 7.4v9.2L12 21.5 3.5 16.6V7.4zM12 7.5l4.3 7.4H7.7zM12 2.5v5M20.5 7.4l-4.2 7.5M3.5 7.4l4.2 7.5M7.7 14.9 3.5 16.6M16.3 14.9l4.2 1.7M7.7 14.9 12 21.5l4.3-6.6" /></svg>
         {/if}
         <b use:bump={saveBonus(definition, ability)}>{sign(saveBonus(definition, ability))}</b>
+        {#if adv.length}<span class="adv" title="Advantage from {adv.join(', ')}">ADV</span>{/if}
       </button>
       <!-- A flat bonus from an item or aura. Always rendered, so entering edit
            mode does not move the band. -->
@@ -140,6 +143,11 @@
     position: absolute; top: 0.3125rem; right: 0.3125rem; width: 0.75rem; height: 0.75rem;
     fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; color: var(--faint);
     transition: color 0.2s ease, transform 0.35s cubic-bezier(0.3, 1.5, 0.5, 1);
+  }
+  /* Advantage, from a feature or an item: a small tag under the number. */
+  .adv {
+    position: absolute; left: 50%; top: 0.3125rem; translate: -50% 0; font-size: 0.5rem; font-weight: 700;
+    letter-spacing: 0.08em; padding: 0 0.25rem; border-radius: 3px; color: var(--good, var(--a)); background: color-mix(in oklch, var(--good, var(--a)) 16%, transparent);
   }
   .save.rollable:hover .d20 { color: var(--a); transform: rotate(72deg) scale(1.2); }
   .cap {
