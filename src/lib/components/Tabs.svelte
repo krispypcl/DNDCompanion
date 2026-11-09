@@ -169,6 +169,9 @@
   button:hover { border-color: var(--a-edge); color: var(--text); }
   button:active { transform: translateY(1px); }
   .active { border-color: var(--a-edge); background: var(--a-wash); }
+  /* On a light page the grey of a resting tab was too faint to read. */
+  :global([data-mode='light']) button:not(.active) { color: color-mix(in oklch, var(--text) 82%, transparent); }
+  :global([data-mode='light']) button:not(.active):hover { color: var(--text); }
   .indicator { display: none; }
   section { padding: 1rem 0 0; }
   /* A wide screen: the module keeps its height and scrolls within it, on a
@@ -191,5 +194,8 @@
   /* The writing tabs fill the rest of the card, so a page has the whole
      height to be written on and its page controls sit at the foot. */
   .panels { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
-  section:has(:global(.book)) { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+  /* It fills the card when the page is short, and grows past it when long
+     (the card then scrolls it), so the page controls can stick to the
+     card's foot: held to a box shorter than the page, they could not. */
+  section:has(:global(.book)) { flex: 1 0 auto; display: flex; flex-direction: column; min-height: 0; }
 </style>
