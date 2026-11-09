@@ -738,14 +738,20 @@
                   {#if equip}{@render equipTag(item, index)}{/if}
                 </div>
               {:else}
-                <span class="nm" data-flip={fk(row, nameCol.key)}>{text(item[nameCol.key])}</span>
-                {#if equip && (equip.shows ? equip.shows(item) : true) && ((equip.isOn ? equip.isOn(item) : item[equip.key]) || equip.can)}{@render equipTag(item, index)}{/if}
-                {#if links}<EntryLink
-                  name={nameOf(item)}
-                  source={item.source as string | undefined}
-                  {category}
-                  override={(item.lookupUrl as string | undefined) || linkOf?.(item) || undefined}
-                />{/if}
+                <!-- The name (and its link) on the left; any tag at the cell's far
+                     edge, so the tags of every row stand in one column. -->
+                <div class="nameview" class:tagged={Boolean(equip)}>
+                  <span class="nmline">
+                    <span class="nm" data-flip={fk(row, nameCol.key)}>{text(item[nameCol.key])}</span>
+                    {#if links}<EntryLink
+                      name={nameOf(item)}
+                      source={item.source as string | undefined}
+                      {category}
+                      override={(item.lookupUrl as string | undefined) || linkOf?.(item) || undefined}
+                    />{/if}
+                  </span>
+                  {#if equip && (equip.shows ? equip.shows(item) : true) && ((equip.isOn ? equip.isOn(item) : item[equip.key]) || equip.can)}{@render equipTag(item, index)}{/if}
+                </div>
               {/if}
             </td>
 
@@ -925,6 +931,10 @@
   .equip:disabled { cursor: default; }
   .equip { display: inline-grid; justify-items: center; }
   .eqroom, .eqlabel { grid-area: 1 / 1; }
+  .nameview { display: flex; align-items: flex-start; gap: 0.5rem; min-width: 0; width: 100%; }
+  .nmline { min-width: 0; flex: 1 1 auto; }
+  /* The tag, bare or inside its explaining pop-up, at the far edge. */
+  .nameview > :global(:not(.nmline)) { margin-left: auto; flex: none; }
   .eqroom { visibility: hidden; }
   /* A row picked out: a spell being concentrated on. A wash and a bar down
      its left edge, on a table and on a phone's card alike. */
