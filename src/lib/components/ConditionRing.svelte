@@ -63,5 +63,7 @@
     transition: stroke-dasharray 0.5s cubic-bezier(0.2, 0.8, 0.25, 1), stroke-dashoffset 0.5s cubic-bezier(0.2, 0.8, 0.25, 1),
       stroke 0.4s ease;
   }
+  /* On a light page a pale band (Invisible, White) needs an edge to be seen. */
+  :global([data-mode='light']) .ring { filter: drop-shadow(0 0 0.6px rgb(0 0 0 / 0.55)); }
   @media (prefers-reduced-motion: reduce) { path { transition: none; } }
 </style>

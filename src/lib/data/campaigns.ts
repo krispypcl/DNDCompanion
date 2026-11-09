@@ -7,6 +7,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '$lib/supabase';
 import { friendlyError } from '$lib/errors';
+import type { ConditionLook } from '$lib/types';
 
 /** A song on the DM's list: a YouTube link, and what to call it. */
 export type Song = { url: string; name?: string };
@@ -196,6 +197,13 @@ export function makeCampaignRepo(client: SupabaseClient) {
     },
 
     /** The DM sets a player's conditions (only those). */
+    /** The DM sets (or, with null, clears) how a condition of a player's own looks (database/0012). */
+    async setConditionLook(sheetId: string, key: string, look: ConditionLook | null): Promise<string> {
+      const { data, error } = await client.rpc('set_sheet_condition_look', { p_sheet: sheetId, p_key: key, p_look: look });
+      if (error) throw new Error(error.message);
+      return data as string;
+    },
+
     async setConditions(sheetId: string, conditions: string[]): Promise<string> {
       const { data, error } = await client.rpc('set_sheet_conditions', { p_sheet: sheetId, p_conditions: conditions });
       if (error) throw refusal(error);

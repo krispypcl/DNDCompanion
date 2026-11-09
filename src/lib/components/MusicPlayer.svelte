@@ -31,6 +31,7 @@
     lead,
     follow = null,
     resume = null,
+    away = false,
     idle = ''
   }: {
     url: string;
@@ -51,21 +52,46 @@
     follow?: (Moment & { at: number }) | null;
     /** The DM coming back to music already playing: carry on from there, once. */
     resume?: (Moment & { at: number }) | null;
+    /** Following, and the DM is not on the campaign page: the music waits at 0:00. */
+    away?: boolean;
   } = $props();
 
   type Moment = { playing: boolean; t: number; item?: number };
   const following = $derived(Boolean(follow));
   /** Where the DM's music should be now, by the clock. */
   const expected = (m: Moment & { at: number }) => m.t + (m.playing ? Math.max(0, (Date.now() - m.at) / 1000) : 0);
+  /** What the DM's page last told the table, to notice when the song wanders from it. */
+  let told: (Moment & { at: number }) | null = null;
   function tell() {
     if (!lead || !yt || hushed) return;
     const state = yt.getPlayerState();
-    lead({
+    const now = {
       playing: state === 1 || state === 3,
       t: yt.getCurrentTime?.() ?? 0,
       ...(playlist?.list ? { item: Math.max(0, yt.getPlaylistIndex?.() ?? 0) } : {})
-    });
+    };
+    told = { ...now, at: Date.now() };
+    lead(now);
   }
+  /**
+   * The DM's song can fall behind the clock (buffering, a slow device); the
+   * table follows the clock. Every few seconds the DM's page checks, and
+   * tells the table again when it has wandered more than a second.
+   */
+  $effect(() => {
+    if (!lead || !playing) return;
+    const check = setInterval(() => {
+      if (!yt || !told || !told.playing || hushed) return;
+      if (Math.abs((yt.getCurrentTime?.() ?? 0) - expected(told)) > 1.2) tell();
+    }, 4000);
+    return () => clearInterval(check);
+  });
+  /** A follower's page checks just as often that it is still where the DM is. */
+  $effect(() => {
+    if (!following || !ready) return;
+    const check = setInterval(() => untrack(syncFollow), 4000);
+    return () => clearInterval(check);
+  });
   /** A player's page catching up with the DM's music. */
   function syncFollow() {
     const f = untrack(() => follow);
@@ -80,11 +106,11 @@
     const cur = yt.getCurrentTime?.() ?? 0;
     const state = yt.getPlayerState();
     if (f.playing) {
-      if (Math.abs(cur - want) > 2) yt.seekTo(want, true);
+      if (Math.abs(cur - want) > 1.5) yt.seekTo(want, true);
       if (state !== 1 && state !== 3) yt.playVideo();
     } else {
       if (state === 1 || state === 3) fadeThen(() => yt?.pauseVideo());
-      if (Math.abs(cur - f.t) > 1) yt.seekTo(f.t, true);
+      if (Math.abs(cur - f.t) > 0.75) yt.seekTo(f.t, true);
     }
   }
   /** Where to go once the new song has started (a playlist item asked for by number). */
@@ -308,11 +334,14 @@
   let ticker: ReturnType<typeof setInterval> | undefined;
   function readTime() {
     if (!yt || scrubbing) return;
-    at = yt.getCurrentTime?.() ?? 0;
     length = yt.getDuration?.() ?? 0;
+    // Following, the bar shows where the DM is, listening or not.
+    const f = untrack(() => follow);
+    at = f ? Math.min(expected(f), length || Infinity) : (yt.getCurrentTime?.() ?? 0);
   }
   $effect(() => {
-    if (!playing) return;
+    void follow;
+    if (!playing && !following) return;
     untrack(readTime);
     ticker = setInterval(readTime, 250);
     return () => clearInterval(ticker);
@@ -366,6 +395,14 @@
     if (r && resumeOnce) {
       resumeOnce = false;
       if (r.playing) yt.seekTo(expected(r), true);
+      else {
+        // Paused when the DM left it: it waits where it stopped, for their play.
+        yt.seekTo(r.t, true);
+        yt.pauseVideo();
+        userPaused = true;
+        readTime();
+        return;
+      }
     }
     // Anything a fade-out was about to do is called off; the sound rises
     // once the song is actually playing.
@@ -585,7 +622,9 @@
             <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2.5 6.2h2.3l3-2.6v8.8l-3-2.6H2.5z" fill="currentColor" /><path d="M10.5 6.2l3.4 3.6M13.9 6.2l-3.4 3.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /></svg>
           {/if}
         </button>
-        <span class="by">{follow?.playing ? 'The DM is playing' : 'The DM has paused'}</span>
+        {#key away ? 'away' : follow?.playing}
+          <span class="by" in:fade={{ duration: 200 }}>{away ? 'The DM isn’t here yet' : follow?.playing ? 'The DM is playing' : 'The DM has paused'}</span>
+        {/key}
       </div>
     {:else}
     <div class="row">

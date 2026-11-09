@@ -21,6 +21,7 @@
     editing,
     lead,
     playback = null,
+    away = false,
     onplayback,
     onchange
   }: {
@@ -32,6 +33,8 @@
     /** What the DM's music is doing (its `at` already on this device's clock). */
     playback?: Playback | null;
     onplayback?: (p: Playback) => void;
+    /** A player's page, with the DM not on the campaign page. */
+    away?: boolean;
     onchange: (songs: Song[]) => Promise<void> | void;
   } = $props();
 
@@ -173,7 +176,7 @@
     <div class="player">
       {#if playingSong}
         <MusicPlayer url={playingSong.url} place="campaign" onended={next} ontitle={learnTitle}
-                     lead={lead ? told : undefined} follow={followMoment} resume={resumeMoment} />
+                     lead={lead ? told : undefined} follow={followMoment} resume={resumeMoment} {away} />
       {:else if lead}
         <p class="none" in:fade={{ duration: 160 }}>Add a song or a playlist and it plays here, for the whole table.</p>
       {:else}
