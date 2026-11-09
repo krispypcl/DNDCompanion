@@ -82,6 +82,7 @@
   import EquipDialog from '$lib/components/EquipDialog.svelte';
   import { advantageFrom } from '$lib/rules/equipment';
   import { nameFont } from '$lib/rules/fonts';
+  import { shareRoll } from '$lib/owlbear/channel';
   import { downloadText } from '$lib/download';
   import { parseRoll, type Pool, type Roll } from '$lib/rules/dice';
   import { requestRoll } from '$lib/stores/dice';
@@ -823,7 +824,7 @@
                 onchange={(attacks) => setDefinition({ ...definition, attacks: attacks as Attack[] })}
               />
               <!-- Below the table, so they move when it changes size: they glide too. -->
-              {#if isOwner}<div class="flipbox" data-flip="dice"><DiceRoller /></div>{/if}
+              {#if isOwner}<div class="flipbox" data-flip="dice"><DiceRoller onrolled={(r) => sheet && shareRoll(sheet.id, definition?.identity?.name || sheet.name || '', r)} /></div>{/if}
               <div class="flipbox" data-flip="combat-features">
                 <CombatFeatures features={definition.features ?? []} onpick={showFeature} />
               </div>

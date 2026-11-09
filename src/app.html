@@ -108,6 +108,16 @@
           }
         }
       } catch (e) {}
+      /* The Owlbear Rodeo extension's pages sit inside Owlbear: no splash. */
+      if (/\/owlbear\//.test(location.pathname)) {
+        document.documentElement.setAttribute('data-known-user', '');
+        document.documentElement.classList.add('in-owlbear');
+        /* Owlbear says it is ready once, when the page has loaded, which can
+           be before the extension's code has. Kept here to be told again. */
+        window.addEventListener('message', function (e) {
+          if (e.data && e.data.id === 'OBR_READY') window.__obrReady = { data: e.data, origin: e.origin };
+        });
+      }
       if (!document.documentElement.hasAttribute('data-known-user')) {
         document.documentElement.classList.add('splashing');
       }

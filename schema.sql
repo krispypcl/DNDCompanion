@@ -450,6 +450,54 @@ revoke all on function public.set_sheet_conditions(uuid, text[]) from public, an
 grant execute on function public.set_sheet_conditions(uuid, text[]) to authenticated;
 
 -- ---------------------------------------------------------------------------
+-- Hit points from the Owlbear Rodeo map (0011): the player or the DM.
+create or replace function public.set_sheet_hp(
+  p_sheet uuid,
+  p_current integer,
+  p_temp integer,
+  p_conditions text[] default null,
+  p_death_saves jsonb default null
+)
+returns timestamptz
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  stamp timestamptz;
+  me uuid := (select auth.uid());
+begin
+  if me is null then raise exception 'Not signed in'; end if;
+  if p_current is null or p_current < 0 or p_current > 100000
+     or coalesce(p_temp, 0) < 0 or coalesce(p_temp, 0) > 100000 then
+    raise exception 'Hit points out of range';
+  end if;
+  if p_conditions is not null and (
+       coalesce(array_length(p_conditions, 1), 0) > 40
+       or exists (select 1 from unnest(p_conditions) n where length(n) > 60 or length(trim(n)) = 0)) then
+    raise exception 'Too many conditions';
+  end if;
+  if p_death_saves is not null and (
+       jsonb_typeof(p_death_saves) <> 'object' or octet_length(p_death_saves::text) > 200) then
+    raise exception 'Bad death saves';
+  end if;
+  update sheets s
+    set state = coalesce(s.state, '{}'::jsonb)
+      || jsonb_build_object('hpCurrent', p_current, 'hpTemp', coalesce(p_temp, 0))
+      || case when p_conditions is null then '{}'::jsonb else jsonb_build_object('conditions', to_jsonb(p_conditions)) end
+      || case when p_death_saves is null then '{}'::jsonb else jsonb_build_object('deathSaves', p_death_saves) end
+    where s.id = p_sheet
+      and (s.owner_id = me
+           or exists (select 1 from campaigns c where c.id = s.campaign_id and c.created_by = me))
+    returning s.updated_at into stamp;
+  if stamp is null then raise exception 'Only the player or the DM can do that'; end if;
+  return stamp;
+end;
+$$;
+revoke all on function public.set_sheet_hp(uuid, integer, integer, text[], jsonb) from public, anon;
+grant execute on function public.set_sheet_hp(uuid, integer, integer, text[], jsonb) to authenticated;
+
+-- ---------------------------------------------------------------------------
 -- The invite, for everyone in the campaign (not only its DM).
 create or replace function public.campaign_invite(p_campaign uuid)
 returns text
