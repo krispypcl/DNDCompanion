@@ -58,7 +58,12 @@
   .none { margin: 0; color: var(--dim); font-size: 0.875rem; }
   /* Always the module's full width: one card across it, or several sharing it. */
   .classes { display: grid; gap: 0.75rem; width: 100%; grid-template-columns: minmax(0, 1fr); }
-  .classes.multi { grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr)); }
+  /* Several share each row evenly, wrapping only when a card would get too
+     narrow. (A grid's auto-fit kept an empty column here: the total line
+     spanning every column stopped the spare one from collapsing.) */
+  .classes.multi { display: flex; flex-wrap: wrap; }
+  .classes.multi .cls { flex: 1 1 min(17rem, 100%); min-width: 0; }
+  .classes.multi .total { flex: 1 1 100%; }
   .cls {
     display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'lvl who' 'track track';
     align-items: center; gap: 0.875rem 1rem; padding: 1rem 1.125rem 0.875rem; border-radius: var(--r);

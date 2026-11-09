@@ -15,12 +15,13 @@
   import { armorClass, characterLevel, classLine, passiveScore } from '$lib/rules/derived';
   import { vitalStatus } from '$lib/rules/hp';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
-  import { STANDARD_CONDITIONS, cleanName, lookOf } from '$lib/rules/conditions';
+  import { STANDARD_CONDITIONS, cleanName, defaultLook, isStandard, lookKey, lookOf } from '$lib/rules/conditions';
+  import ConditionLookPicker from './ConditionLookPicker.svelte';
   import { themeStyle } from '$lib/theme';
   import { followHeight, glideTo, prefersReducedMotion } from '$lib/motion';
   import CardHp from './CardHp.svelte';
   import ConditionRing from './ConditionRing.svelte';
-  import type { Sheet } from '$lib/types';
+  import type { ConditionLook, Sheet } from '$lib/types';
 
   let {
     sheets,
@@ -30,7 +31,8 @@
     ended,
     onorder,
     onremove,
-    onconditions
+    onconditions,
+    onlook
   }: {
     sheets: Sheet[];
     order?: string[];
@@ -40,6 +42,8 @@
     onorder: (ids: string[]) => void;
     onremove: (id: string) => Promise<void> | void;
     onconditions: (id: string, conditions: string[]) => Promise<void> | void;
+    /** The DM sets how a condition of the player's own looks (null clears it). */
+    onlook?: (id: string, key: string, look: ConditionLook | null) => void;
   } = $props();
 
   const nameOf = (s: Sheet) => s.definition?.identity?.name || s.name || '';
@@ -149,6 +153,18 @@
     custom = '';
     if (!name || has(s.state?.conditions ?? [], name)) return;
     void onconditions(s.id, [...(s.state?.conditions ?? []), name]);
+    // One of the DM's own, with no look yet: ask what it looks like.
+    if (onlook && !isStandard(name)) {
+      if (!(lookKey(name) in (s.definition?.conditionLooks ?? {}))) onlook(s.id, lookKey(name), defaultLook());
+      tinting = { sheet: s.id, name };
+    }
+  }
+  /** The condition whose look the DM is choosing, on which card. */
+  let tinting = $state<{ sheet: string; name: string } | null>(null);
+  const lookFor = (s: Sheet, name: string): ConditionLook =>
+    s.definition?.conditionLooks?.[lookKey(name)] ?? { color: '', motion: 'pulse' };
+  function setLook(s: Sheet, name: string, patch: Partial<ConditionLook>) {
+    onlook?.(s.id, lookKey(name), { ...lookFor(s, name), ...patch });
   }
   let removing = $state<string | null>(null);
   $effect(() => {
@@ -206,7 +222,14 @@
             <li class:plain={!look} style:--cc={look?.color} data-key={c}
                 animate:flip={{ duration: 300, easing: quintOut }}
                 transition:scale={{ start: 0.6, duration: 220, easing: backOut }}>
-              <span class="dot" aria-hidden="true"></span>{c}
+              {#if isDm && !ended && onlook && !isStandard(c)}
+                <!-- One of their own: the DM chooses its colour and motion. -->
+                <button class="dot tint" class:none={!look} aria-label="Choose how {c} looks" title="Colour and motion"
+                        aria-expanded={tinting?.sheet === s.id && tinting.name === c}
+                        onclick={() => (tinting = tinting?.sheet === s.id && tinting.name === c ? null : { sheet: s.id, name: c })}></button>
+              {:else}
+                <span class="dot" aria-hidden="true"></span>
+              {/if}{c}
               {#if isDm && !ended}
                 <button class="cx" aria-label="Take {c} away from {nameOf(s)}" title="Take away" onclick={() => toggle(s, c)}>×</button>
               {/if}
@@ -219,6 +242,10 @@
             </li>
           {/if}
         </ul>
+        {#if tinting?.sheet === s.id && has(s.state?.conditions ?? [], tinting.name)}
+          <ConditionLookPicker name={tinting.name} look={lookFor(s, tinting.name)} who={nameOf(s)}
+                               onchange={(patch) => setLook(s, tinting!.name, patch)} ondone={() => (tinting = null)} />
+        {/if}
         {#if picking === s.id}
           <div class="picker" transition:slide={unfold()} role="group" aria-label="Conditions for {nameOf(s)}">
             <div class="grid">
@@ -349,10 +376,32 @@
     border: 1px solid color-mix(in oklch, var(--cc) 60%, var(--line));
     background: color-mix(in oklch, var(--cc) 18%, var(--raised));
   }
+  /* Light mode: the colours were chosen against a dark page. On a light one
+     a dark colour (Blinded, Unconscious) turned the chip into a grey slab
+     and a pale one (Invisible) all but vanished, so the wash is lighter, the
+     edge carries the colour, and the dot gets a darker rim. */
+  :global([data-mode='light']) .conds li:not(.add) {
+    background: color-mix(in oklch, var(--cc) 9%, var(--surface));
+    border-color: color-mix(in oklch, var(--cc) 55%, var(--line));
+  }
+  :global([data-mode='light']) .opt.on {
+    background: color-mix(in oklch, var(--cc) 12%, var(--surface));
+    border-color: color-mix(in oklch, var(--cc) 60%, var(--line));
+  }
+  :global([data-mode='light']) .dot { box-shadow: 0 0 0 1px color-mix(in oklch, var(--text) 40%, transparent); }
   .dot {
     flex: none; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--cc, var(--dim));
     box-shadow: 0 0 0 1px color-mix(in oklch, var(--text) 25%, transparent);
   }
+  .dot.tint {
+    width: 0.6875rem; height: 0.6875rem; padding: 0; border: 0; cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .dot.tint:hover, .dot.tint[aria-expanded='true'] { transform: scale(1.15); box-shadow: 0 0 0 1.5px var(--a); }
+  .dot.tint:active { transform: scale(1.15) translateY(1px); }
+  .dot.tint:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
+  .dot.tint.none { background: none; box-shadow: inset 0 0 0 1px var(--dim); }
+  .condbox :global(.ask) { margin: 0.625rem 0 0; }
   .cx {
     margin: 0 -0.25rem 0 0; padding: 0 0.125rem; border: 0; background: none; color: var(--dim);
     font-size: 0.875rem; line-height: 1; cursor: pointer;

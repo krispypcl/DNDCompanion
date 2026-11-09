@@ -153,8 +153,10 @@ let master: GainNode | null = null;
 let noiseBuf: AudioBuffer | null = null;
 
 /** The audio context, or null when sound is off or unavailable. */
+/** Set while a sound is previewed: it plays even with sound switched off. */
+let previewing = false;
 function ready(): AudioContext | null {
-  if (!get(soundOn) || typeof window === 'undefined') return null;
+  if ((!get(soundOn) && !previewing) || typeof window === 'undefined') return null;
   const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!Ctor) return null;
   if (!ctx) {
@@ -362,6 +364,40 @@ export function dawn() {
     tone(ac, t + i * 0.09, f, 0.9, 0.08, 'sine');
     tone(ac, t + i * 0.09, f * 2, 0.4, 0.02, 'sine');
   });
+}
+
+const BUILT_IN: Record<SoundName, () => void> = {
+  dice: () => clatter(2),
+  land,
+  nat20,
+  nat1,
+  hit: () => hit(0.5),
+  heal,
+  shield,
+  shortRest,
+  longRest,
+  dawn,
+  deathSave: () => deathSave('save', 2),
+  deathBell
+};
+
+/**
+ * Plays an effect to hear it (the speaker beside its name): the link in its
+ * field if there is one, otherwise the built-in sound, even with the sheet's
+ * own recordings set and sound switched off.
+ */
+export function previewSound(name: SoundName, link?: string | null) {
+  const url = audioUrl(link);
+  if (url) return playClip(url);
+  const kept = custom;
+  custom = {};
+  previewing = true;
+  try {
+    BUILT_IN[name]();
+  } finally {
+    custom = kept;
+    previewing = false;
+  }
 }
 
 /** For tests: forget the audio context. */

@@ -6,7 +6,7 @@
  * table, the same as everywhere else on the sheet; the list below exists so
  * the common ones are one pick away, not so the app can apply them.
  */
-import type { ConditionLook, State } from '$lib/types';
+import type { ConditionLook, ConditionMotion, State } from '$lib/types';
 
 export const STANDARD_CONDITIONS = [
   'Blinded',
@@ -98,3 +98,26 @@ export function lookOf(name: string, custom: Record<string, ConditionLook> = {})
   const look = STANDARD_LOOKS[k] ?? custom[k];
   return look && look.color ? look : null;
 }
+
+/** The colours offered for a condition of the player's own, and how its tint can move. */
+export const CONDITION_SWATCHES = [
+  { name: 'Pink', color: 'oklch(70% 0.19 350)' },
+  { name: 'Red', color: 'oklch(60% 0.21 25)' },
+  { name: 'Orange', color: 'oklch(70% 0.17 55)' },
+  { name: 'Gold', color: 'oklch(84% 0.16 90)' },
+  { name: 'Green', color: 'oklch(68% 0.18 145)' },
+  { name: 'Teal', color: 'oklch(72% 0.12 190)' },
+  { name: 'Blue', color: 'oklch(64% 0.15 250)' },
+  { name: 'Purple', color: 'oklch(58% 0.19 300)' },
+  { name: 'White', color: 'oklch(95% 0.01 286)' },
+  { name: 'Shadow', color: 'oklch(18% 0.01 286)' }
+] as const;
+export const CONDITION_MOTIONS: { value: ConditionMotion; label: string }[] = [
+  { value: 'still', label: 'Still' },
+  { value: 'pulse', label: 'Pulse' },
+  { value: 'shimmer', label: 'Shimmer' },
+  { value: 'heavy', label: 'Heavy' },
+  { value: 'shiver', label: 'Shiver' }
+];
+/** A new condition's look, before one is chosen. */
+export const defaultLook = (): ConditionLook => ({ color: CONDITION_SWATCHES[0].color, motion: 'pulse' });
