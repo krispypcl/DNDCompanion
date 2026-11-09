@@ -16,7 +16,7 @@ export function GET() {
     version: '1.0.0',
     manifest_version: 1,
     author: 'DND Companion',
-    description: 'Your DND Companion characters at the table: live hit points, AC and conditions, tokens that wear their portraits and follow their sheets, and the sheets’ rolls in the room.',
+    description: 'Your DND Companion characters in the room: live HP, AC and conditions, tokens tied to sheets, and rolls.',
     ...(site ? { homepage_url: `${site}/` } : {}),
     icon: at('icon.svg'),
     background_url: at('background'),
