@@ -25,7 +25,7 @@ export type Preset = {
 
 const slots = (kind: 'full' | 'half' | 'third', className: string, top: number) => (): Omit<Tracker, 'id'>[] =>
   Array.from({ length: top }, (_, i) => ({
-    label: `${ordinal(i + 1)}-level slots`,
+    label: `${ordinal(i + 1)}-Level Slots`,
     group: 'Spell slots',
     max: `${kind}(${i + 1})`,
     type: 'pips' as const,
@@ -57,39 +57,39 @@ export const PRESETS: Preset[] = [
   // Spell slots
   ...(['Bard', 'Cleric', 'Druid', 'Sorcerer', 'Wizard'] as const).map((c) => ({
     id: `slots-${c.toLowerCase()}`,
-    label: `${c} spell slots`,
+    label: `${c} Spell Slots`,
     className: c,
     blurb: 'Full caster: 1st to 9th level',
     build: slots('full', c, 9)
   })),
   ...(['Paladin', 'Ranger', 'Artificer'] as const).map((c) => ({
     id: `slots-${c.toLowerCase()}`,
-    label: `${c} spell slots`,
+    label: `${c} Spell Slots`,
     className: c,
     blurb: 'Half caster: 1st to 5th level',
     build: slots('half', c, 5)
   })),
   {
     id: 'slots-fighter',
-    label: 'Eldritch Knight spell slots',
+    label: 'Eldritch Knight Spell Slots',
     className: 'Fighter',
     blurb: 'Third caster, from 3rd level: 1st to 4th',
     build: slots('third', 'Fighter', 4)
   },
   {
     id: 'slots-rogue',
-    label: 'Arcane Trickster spell slots',
+    label: 'Arcane Trickster Spell Slots',
     className: 'Rogue',
     blurb: 'Third caster, from 3rd level: 1st to 4th',
     build: slots('third', 'Rogue', 4)
   },
   {
     id: 'pact',
-    label: 'Pact Magic slots',
+    label: 'Pact Magic Slots',
     className: 'Warlock',
     blurb: 'Back on a short rest; all at one level',
     build: () => [
-      resource('Pact Magic slots', 'Warlock', 'pact()', 'short', {
+      resource('Pact Magic Slots', 'Warlock', 'pact()', 'short', {
         group: 'Spell slots'
       })
     ]
