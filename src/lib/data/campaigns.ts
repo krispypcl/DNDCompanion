@@ -223,10 +223,10 @@ export function makeCampaignRepo(client: SupabaseClient) {
       return (data ?? []) as BoardItem[];
     },
 
-    /** `id`, when given, is the one the page already shows it under (drawn before it is saved). */
-    async addToBoard(campaignId: string, userId: string, kind: BoardItem['kind'], data: BoardData, id?: string): Promise<BoardItem> {
+    /** The database names it (the insert grant leaves `id` out on purpose). */
+    async addToBoard(campaignId: string, userId: string, kind: BoardItem['kind'], data: BoardData): Promise<BoardItem> {
       const { data: row, error } = await client.from('campaign_board')
-        .insert({ ...(id ? { id } : {}), campaign_id: campaignId, created_by: userId, kind, data })
+        .insert({ campaign_id: campaignId, created_by: userId, kind, data })
         .select('id, campaign_id, kind, data, created_by, updated_at').single();
       if (error && /board is full/i.test(error.message)) throw new CampaignError('The board is full! Clear a few things away first.');
       if (error) throw new Error(error.message);
