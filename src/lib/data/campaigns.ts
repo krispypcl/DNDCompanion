@@ -17,6 +17,8 @@ export type CampaignDetails = {
   theme?: string;
   /** The DM's order for the character cards (sheet ids); the rest follow by name. */
   order?: string[];
+  /** The campaign name's font: a Google Fonts link or name (rules/fonts.ts). */
+  nameFont?: string;
 };
 
 /**
