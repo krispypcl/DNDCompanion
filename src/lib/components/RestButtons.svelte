@@ -134,8 +134,12 @@
     font: inherit;
     font-size: 0.875rem;
     cursor: pointer;
-    transition: border-color 0.15s ease, color 0.15s ease;
+    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
   }
   button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
   button:disabled { opacity: 0.5; cursor: default; }
+  button:active:not(:disabled) { transform: translateY(1px); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .step .sq:hover:not(:disabled) { background: var(--a-wash); }
+  .cancel:hover:not(:disabled) { color: var(--bad); border-color: var(--bad); }
 </style>

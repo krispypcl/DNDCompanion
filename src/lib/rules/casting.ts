@@ -8,16 +8,16 @@ import { slotLevel } from './print';
 import { trackerMax } from './tracker';
 import type { Definition, State } from '$lib/types';
 
+/** Always worked out from the spellcasting ability: modifier + proficiency. */
 export function spellAttack(definition: Definition | undefined): number | null {
-  if (!definition) return null;
-  return definition.spellAttackBonus ??
-    (definition.spellcastingAbility ? spellAttackBonus(definition, definition.spellcastingAbility) : null);
+  if (!definition?.spellcastingAbility) return null;
+  return spellAttackBonus(definition, definition.spellcastingAbility);
 }
 
+/** Always worked out: 8 + proficiency + the spellcasting modifier. */
 export function spellDc(definition: Definition | undefined): number | null {
-  if (!definition) return null;
-  return definition.spellSaveDc ??
-    (definition.spellcastingAbility ? spellSaveDC(definition, definition.spellcastingAbility) : null);
+  if (!definition?.spellcastingAbility) return null;
+  return spellSaveDC(definition, definition.spellcastingAbility);
 }
 
 export type SlotLevel = { max: number; left: number; trackers: { id: string; room: number }[] };

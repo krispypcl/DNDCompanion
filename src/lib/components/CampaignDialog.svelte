@@ -1,4 +1,5 @@
 <script lang="ts">
+  import InfoTip from './InfoTip.svelte';
   import { siteRoot } from '$lib/rules/share';
   /**
    * A sheet's campaign, from its header in edit mode: join one with an invite,
@@ -133,8 +134,9 @@
         In <a href="{base}/c/{campaign.id}">{campaign.name}</a>{#if isDm}<span class="dm">You’re the DM</span>{/if}
       </p>
       {#if isDm}
-        <h3>Invite link</h3>
-        <p class="hint">Anyone with it can bring a character in. Make a new one to stop the old one working.</p>
+        <h3>Invite link
+          <InfoTip label="About the invite link">Anyone with it can bring a character in. Make a new one to stop the old one working.</InfoTip>
+        </h3>
         <div class="row">
           <input class="link" readonly value={inviteLink || 'Fetching…'} aria-label="Invite link"
                  onfocus={(e) => e.currentTarget.select()} />
@@ -155,8 +157,9 @@
       </div>
       {#if preview}<p class="found" in:fade={{ duration: 160 }}>That’s the invite to <b>{preview.name}</b>.</p>{/if}
 
-      <h3>Or start one</h3>
-      <p class="hint">You run it as its DM, and get a link to invite the others.</p>
+      <h3>Or start one
+        <InfoTip label="About starting a campaign">You run it as its DM, and get a link to invite the others.</InfoTip>
+      </h3>
       <div class="row">
         <input bind:value={newName} placeholder="Campaign name" aria-label="Campaign name"
                onkeydown={(e) => e.key === 'Enter' && newName.trim() && start()} />
@@ -194,7 +197,6 @@
     font-size: 0.6875rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--a);
     border: 1px solid var(--a-edge); background: var(--a-wash); border-radius: 999px; padding: 0.0625rem 0.5rem;
   }
-  .hint { margin: 0 0 0.5rem; color: var(--dim); font-size: 0.8125rem; line-height: 1.45; }
   .found { margin: 0.375rem 0 0; font-size: 0.8125rem; color: var(--text); }
   .row { display: flex; gap: 0.5rem; align-items: center; }
   .row.end { justify-content: flex-end; margin-top: 1rem; }
