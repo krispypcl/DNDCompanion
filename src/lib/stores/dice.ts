@@ -7,13 +7,15 @@
 import { writable } from 'svelte/store';
 import type { Pool, Roll } from '$lib/rules/dice';
 
-/** `then` hears the result, for a roll that does something (a short rest healing). */
-export type DiceRequest = { pool: Pool; label: string; id: number; then?: (result: Roll) => void; mode?: 'keep' | 'normal' };
+/** mode: 'keep' leaves the tray's advantage as chosen, 'normal' rolls plainly,
+    'pool' rolls as the pool says (a save with advantage from a feature).
+    `then` hears the result, for a roll that does something (a short rest healing). */
+export type DiceRequest = { pool: Pool; label: string; id: number; then?: (result: Roll) => void; mode?: 'keep' | 'normal' | 'pool' };
 
 let next = 0;
 export const diceRequest = writable<DiceRequest | null>(null);
 
-export function requestRoll(pool: Pool, label: string, then?: (result: Roll) => void, mode: 'keep' | 'normal' = 'keep') {
+export function requestRoll(pool: Pool, label: string, then?: (result: Roll) => void, mode: 'keep' | 'normal' | 'pool' = 'keep') {
   next += 1;
   diceRequest.set({ pool, label, id: next, then, mode });
 }

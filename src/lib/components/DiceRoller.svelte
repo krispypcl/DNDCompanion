@@ -55,7 +55,7 @@
     handled = req.id;
     takeRoll(req.id);
     // The tray's advantage stays for a d20 roll; a roll that heals is just dice.
-    pool = { ...req.pool, mode: req.mode === 'normal' ? 'normal' : pool.mode };
+    pool = { ...req.pool, mode: req.mode === 'normal' ? 'normal' : req.mode === 'pool' ? req.pool.mode : pool.mode };
     open = true;
     const result = go(req.label);
     if (result) req.then?.(result);

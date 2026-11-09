@@ -5,6 +5,9 @@
    * initiative or saving throws, or an ability score it sets or raises.
    * The name gives a first guess ("Leather armor" starts as armour 11 + Dex).
    * What is chosen is kept on the item, so equipping it again is one press.
+   *
+   * A feature uses the same dialog (`feature`): what it does, always, with
+   * no equipping. Either can also give advantage on initiative or on saves.
    */
   import { untrack } from 'svelte';
   import { fade, scale, slide } from 'svelte/transition';
@@ -16,21 +19,31 @@
 
   let {
     item,
+    feature = false,
     onsave,
     onclose
-  }: { item: Item; onsave: (effects: ItemEffect[], equipped: boolean) => void; onclose: () => void } = $props();
+  }: {
+    item: Pick<Item, 'name' | 'effects' | 'equipped'>;
+    /** A feature's effects, not an item's: nothing to equip, always on. */
+    feature?: boolean;
+    onsave: (effects: ItemEffect[], equipped: boolean) => void;
+    onclose: () => void;
+  } = $props();
 
   const NAMES: Record<Ability, string> = { str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma' };
   type Kind = ItemEffect['kind'];
   // Read once, when the dialog opens: the fields below are the draft.
-  const start = untrack(() => (item.effects?.length ? item.effects : guessEffects(item.name ?? '')));
+  const start = untrack(() => (item.effects?.length ? item.effects : feature ? [] : guessEffects(item.name ?? '')));
   const has = (k: Kind) => start.find((e) => e.kind === k);
 
   // One of each kind, switched on or off.
   let on = $state<Record<Kind, boolean>>({
     armor: Boolean(has('armor')), shield: Boolean(has('shield')), ac: Boolean(has('ac')), speed: Boolean(has('speed')),
-    init: Boolean(has('init')), save: Boolean(has('save')), ability: Boolean(has('ability'))
+    init: Boolean(has('init')), save: Boolean(has('save')), ability: Boolean(has('ability')), advantage: Boolean(has('advantage'))
   });
+  const adv = has('advantage') as Extract<ItemEffect, { kind: 'advantage' }> | undefined;
+  // Advantage on initiative, on all saves, or on one ability's saves.
+  let advOn = $state<'init' | Ability | 'all'>(adv ? (adv.on === 'init' ? 'init' : adv.ability ?? 'all') : 'init');
   const a = has('armor') as Extract<ItemEffect, { kind: 'armor' }> | undefined;
   let armorBase = $state(a?.base ?? 11);
   let armorDex = $state<'full' | 'max2' | 'none'>(a?.dex ?? 'full');
@@ -55,12 +68,13 @@
     if (on.init) out.push({ kind: 'init', bonus: Number(initBonus) || 0 });
     if (on.save) out.push({ kind: 'save', ability: saveAbility, bonus: Number(saveBonus) || 0 });
     if (on.ability) out.push({ kind: 'ability', ability: abAbility, mode: abMode, value: Number(abValue) || 0 });
+    if (on.advantage) out.push(advOn === 'init' ? { kind: 'advantage', on: 'init' } : { kind: 'advantage', on: 'save', ability: advOn });
     return out;
   }
   const ROWS: { k: Kind; label: string }[] = [
-    { k: 'armor', label: 'Armour' }, { k: 'shield', label: 'Shield' }, { k: 'ac', label: 'Armor Class bonus' },
-    { k: 'speed', label: 'Speed' }, { k: 'init', label: 'Initiative' }, { k: 'save', label: 'Saving throws' },
-    { k: 'ability', label: 'Ability score' }
+    { k: 'armor', label: 'Armor' }, { k: 'shield', label: 'Shield' }, { k: 'ac', label: 'Armor Class Bonus' },
+    { k: 'speed', label: 'Speed' }, { k: 'init', label: 'Initiative' }, { k: 'save', label: 'Saving Throws' },
+    { k: 'ability', label: 'Ability Score' }, { k: 'advantage', label: 'Advantage' }
   ];
   const unfold = () => ({ duration: prefersReducedMotion() ? 0 : 200, easing: cubicOut });
   function focusFirst(node: HTMLElement) {
@@ -72,10 +86,14 @@
 
 <div class="scrim" use:portal transition:fade={{ duration: prefersReducedMotion() ? 0 : 160 }}
      onclick={onclose} role="presentation"></div>
-<div class="dialog" use:portal use:focusFirst role="dialog" aria-modal="true" aria-label="Equip {item.name || 'item'}"
+<div class="dialog" use:portal use:focusFirst role="dialog" aria-modal="true"
+     aria-label={feature ? `What ${item.name || 'this feature'} does` : `Equip ${item.name || 'item'}`}
      transition:scale={{ duration: prefersReducedMotion() ? 0 : 200, start: 0.94, easing: cubicOut }}>
-  <h2>Equip {item.name || 'this item'}</h2>
-  <p class="lead">What does it do while it’s worn? Tick what applies; the sheet works out the rest.</p>
+  <h2>{feature ? `What ${item.name || 'This Feature'} Does` : `Equip ${item.name || 'This Item'}`}</h2>
+  <p class="lead">
+    {feature ? 'What does it change, always? Tick what applies; the sheet works out the rest.'
+             : 'What does it do while it’s worn? Tick what applies; the sheet works out the rest.'}
+  </p>
   <div class="rows">
     {#each ROWS as row (row.k)}
       <div class="row" class:on={on[row.k]}>
@@ -86,7 +104,7 @@
               <label>Base AC <input type="number" min="10" max="25" bind:value={armorBase} /></label>
               <label>Dexterity
                 <select bind:value={armorDex}>
-                  <option value="full">Full (light)</option><option value="max2">Up to +2 (medium)</option><option value="none">None (heavy)</option>
+                  <option value="full">Full (Light)</option><option value="max2">Up to +2 (Medium)</option><option value="none">None (Heavy)</option>
                 </select>
               </label>
             {:else if row.k === 'shield'}
@@ -100,16 +118,24 @@
             {:else if row.k === 'save'}
               <label>
                 <select bind:value={saveAbility}>
-                  <option value="all">All saves</option>
-                  {#each ABILITIES as ab (ab)}<option value={ab}>{NAMES[ab]} saves</option>{/each}
+                  <option value="all">All Saves</option>
+                  {#each ABILITIES as ab (ab)}<option value={ab}>{NAMES[ab]} Saves</option>{/each}
                 </select>
                 + <input type="number" min="-5" max="10" bind:value={saveBonus} />
               </label>
             {:else if row.k === 'ability'}
               <label>
                 <select bind:value={abAbility}>{#each ABILITIES as ab (ab)}<option value={ab}>{NAMES[ab]}</option>{/each}</select>
-                <select bind:value={abMode}><option value="set">becomes</option><option value="bonus">goes up by</option></select>
+                <select bind:value={abMode}><option value="set">Becomes</option><option value="bonus">Goes Up By</option></select>
                 <input type="number" min="-10" max="30" bind:value={abValue} />
+              </label>
+            {:else if row.k === 'advantage'}
+              <label>On
+                <select bind:value={advOn}>
+                  <option value="init">Initiative</option>
+                  <option value="all">All Saves</option>
+                  {#each ABILITIES as ab (ab)}<option value={ab}>{NAMES[ab]} Saves</option>{/each}
+                </select>
               </label>
             {/if}
           </div>
@@ -118,12 +144,12 @@
     {/each}
   </div>
   <div class="actions">
-    {#if item.equipped}
-      <button class="ghost" onclick={() => onsave(effects(), false)}>Take it off</button>
+    {#if !feature && item.equipped}
+      <button class="ghost" onclick={() => onsave(effects(), false)}>Take It Off</button>
     {/if}
     <span class="grow"></span>
     <button class="ghost" onclick={onclose}>Cancel</button>
-    <button class="go" onclick={() => onsave(effects(), true)}>{item.equipped ? 'Save' : 'Equip'}</button>
+    <button class="go" onclick={() => onsave(effects(), true)}>{feature || item.equipped ? 'Save' : 'Equip'}</button>
   </div>
 </div>
 
