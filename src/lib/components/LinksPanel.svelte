@@ -104,7 +104,7 @@
 <div class="links">
   <!-- The portrait and banner. Reading, they are pictures to look at. -->
   <section>
-    <h3 class="cap">Pictures</h3>
+    <h3 class="cap" data-flip="links:h:pictures">Pictures</h3>
     {#if editable}
       {#each [
         { role: 'portrait', label: 'Portrait URL', key: 'portraitUrl', link: portraitLink, placeholder: 'An image link' },
@@ -178,7 +178,8 @@
   </section>
 
   {#if editable}
-    <section transition:slide={unfold()}>
+    <!-- Only while editing; the mode switch fades it (flip.ts), nothing else. -->
+    <section data-flip-ghost="links:theme">
       <h3 class="cap">Character theme</h3>
       <ThemePicker value={definition.identity.theme} onpreview={(hex) => onthemepreview?.(hex)}
                    onchange={(name) => patchIdentity('theme', name)} />
@@ -187,7 +188,7 @@
 
   <!-- The sheet's music. -->
   <section>
-    <h3 class="cap">Music</h3>
+    <h3 class="cap" data-flip="links:h:music">Music</h3>
     {#if editable}
       <div class="wide" data-flip-ghost="links:url:playlist" data-ghost-scale="0.94">
         <span class="lbl">Playlist URL
@@ -208,20 +209,20 @@
         {/if}
       </div>
     {:else if music}
-      <a class="go" href={cleanUrl(definition.identity.playlistUrl ?? '')} target="_blank" rel="noopener noreferrer">
+      <a class="go" href={cleanUrl(definition.identity.playlistUrl ?? '')} target="_blank" rel="noopener noreferrer" data-flip-ghost="links:read:music">
         <span class="note" aria-hidden="true">♪</span>
-        {#key musicName}<b in:fade={{ duration: 200 }}>{musicName}</b>{/key}
+        <b>{musicName}</b>
         <span>{music.list ? 'Playlist' : 'Video'} on YouTube</span>
         <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
       </a>
     {:else}
-      <p class="none">No music yet.</p>
+      <p class="none" data-flip-ghost="links:none:music">No music yet.</p>
     {/if}
   </section>
 
   <!-- The player's own links. -->
   <section>
-    <h3 class="cap">Your links
+    <h3 class="cap" data-flip="links:h:links">Your links
       <InfoTip label="About your links">
         Anything you keep reaching for during a game: a map, the campaign wiki, a character builder. Each opens in a new tab.
       </InfoTip>
@@ -231,7 +232,7 @@
       {#each links as link, i (i + link.url)}
         <li animate:flip={{ duration: 200, easing: cubicOut }} transition:foldRow>
           {#if editable}
-            <div class="linkedit">
+            <div class="linkedit" data-flip-ghost="links:own:edit:{i}">
               <EditableField value={link.label} editable={true} label="Link name" placeholder="Name"
                              onchange={(v) => patchLink(i, { label: String(v) })} />
               <EditableField value={link.url} editable={true} label="Link address" placeholder="https://…"
@@ -239,7 +240,7 @@
               <button class="x" aria-label="Remove {link.label}" title="Remove" onclick={() => removeLink(i)}>×</button>
             </div>
           {:else}
-            <a class="go" href={link.url} target="_blank" rel="noopener noreferrer">
+            <a class="go" href={link.url} target="_blank" rel="noopener noreferrer" data-flip-ghost="links:own:read:{i}">
               <b>{link.label}</b><span>{hostOf(link.url)}</span>
               <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
             </a>
@@ -248,20 +249,20 @@
       {/each}
     </ul>
     {#if editable}
-      <div class="add" transition:slide={unfold()}>
+      <div class="add" data-flip-ghost="links:add">
         <input bind:value={draftLabel} placeholder="Name (e.g. Campaign wiki)" aria-label="New link name" />
         <input bind:value={draftUrl} placeholder="Address" aria-label="New link address"
                onkeydown={(e) => { if (e.key === 'Enter') addLink(); }} />
         <button onclick={addLink} disabled={!draftUrl.trim()}>Add link</button>
       </div>
     {:else if !links.length}
-      <p class="none">No links yet.</p>
+      <p class="none" data-flip-ghost="links:none:links">No links yet.</p>
     {/if}
   </section>
 
   <!-- Sound effects: any of them can be a recording of the player's own. -->
   <section>
-    <h3 class="cap">Sound effects
+    <h3 class="cap" data-flip="links:h:sounds">Sound effects
       <InfoTip label="About sound effects">
         Swap any built-in sound for your own: a link to a sound file (mp3, ogg or wav; a Google Drive or Dropbox share
         link works), or a YouTube video. A YouTube clip plays from its t= time (or the start) for up to 12 seconds, or
@@ -299,7 +300,7 @@
         {/each}
       </ul>
     {:else}
-      <p class="none">All built-in.</p>
+      <p class="none" data-flip-ghost="links:none:sounds">All built-in.</p>
     {/if}
   </section>
 </div>

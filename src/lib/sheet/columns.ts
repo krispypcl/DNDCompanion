@@ -75,8 +75,8 @@ export const FEATURE_KINDS = ['Class', 'Subclass', 'Species', 'Background', 'Fea
   'Weapon Mastery', 'Maneuver', 'Invocation', 'Metamagic', 'Item', 'Other'];
 export const kindOf = (f: Feature) => (FEATURE_KINDS.includes(f.kind ?? '') ? f.kind! : 'Other');
 export const FEATURE_COLUMNS = [
-  { key: 'title', label: 'Title', width: '24%', placeholder: 'Second Wind' },
-  { key: 'kind', label: 'Type', width: '14%', options: ['Other', ...FEATURE_KINDS.slice(0, -1)] },
-  { key: 'body', label: 'Description', width: '48%', wide: true, placeholder: 'Regain 1d10 + level hit points' },
-  { key: 'source', label: 'Source', width: '14%', muted: true, placeholder: 'phb' }
+  { key: 'title', label: 'Title', width: '34%', placeholder: 'Second Wind' },
+  { key: 'kind', label: 'Type', width: '13%', options: ['Other', ...FEATURE_KINDS.slice(0, -1)] },
+  { key: 'body', label: 'Description', width: '40%', wide: true, placeholder: 'Regain 1d10 + level hit points' },
+  { key: 'source', label: 'Source', width: '13%', muted: true, placeholder: 'phb' }
 ];
