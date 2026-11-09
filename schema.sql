@@ -498,6 +498,48 @@ revoke all on function public.set_sheet_hp(uuid, integer, integer, text[], jsonb
 grant execute on function public.set_sheet_hp(uuid, integer, integer, text[], jsonb) to authenticated;
 
 -- ---------------------------------------------------------------------------
+-- The DM chooses how a condition they give looks (0012).
+create or replace function public.set_sheet_condition_look(p_sheet uuid, p_key text, p_look jsonb)
+returns timestamptz
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  stamp timestamptz;
+  me uuid := (select auth.uid());
+  k text := lower(trim(coalesce(p_key, '')));
+begin
+  if me is null then raise exception 'Not signed in'; end if;
+  if length(k) = 0 or length(k) > 60 then raise exception 'Bad condition name'; end if;
+  if p_look is not null and (
+       jsonb_typeof(p_look) <> 'object'
+       or octet_length(p_look::text) > 200
+       or (p_look ? 'color' and jsonb_typeof(p_look->'color') <> 'string')
+       or (p_look ? 'motion' and coalesce(p_look->>'motion', '') not in ('still', 'pulse', 'shimmer', 'heavy', 'shiver', 'daze'))) then
+    raise exception 'Bad condition look';
+  end if;
+  update sheets s
+    set definition = case
+      when p_look is null then
+        jsonb_set(coalesce(s.definition, '{}'::jsonb), '{conditionLooks}',
+                  coalesce(s.definition->'conditionLooks', '{}'::jsonb) - k)
+      else
+        jsonb_set(coalesce(s.definition, '{}'::jsonb), '{conditionLooks}',
+                  coalesce(s.definition->'conditionLooks', '{}'::jsonb) || jsonb_build_object(k, p_look))
+      end
+    where s.id = p_sheet
+      and (s.owner_id = me
+           or exists (select 1 from campaigns c where c.id = s.campaign_id and c.created_by = me))
+    returning s.updated_at into stamp;
+  if stamp is null then raise exception 'Only the player or the DM can do that'; end if;
+  return stamp;
+end;
+$$;
+revoke all on function public.set_sheet_condition_look(uuid, text, jsonb) from public, anon;
+grant execute on function public.set_sheet_condition_look(uuid, text, jsonb) to authenticated;
+
+-- ---------------------------------------------------------------------------
 -- The invite, for everyone in the campaign (not only its DM).
 create or replace function public.campaign_invite(p_campaign uuid)
 returns text
