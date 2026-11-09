@@ -295,7 +295,16 @@
      the page and privacy controls on their right. Where the card is too
      narrow for all three on one line, the arrows take a line of their own,
      still centred, and on a phone everything stacks. */
-  .pagerwrap { container-type: inline-size; }
+  /* The page controls stay in sight at the module's foot while a long page
+     scrolls under them (in the module on a wide screen, on the page on a
+     phone), on the module's own colour with a soft edge above. */
+  .pagerwrap {
+    container-type: inline-size;
+    position: sticky; bottom: 0; z-index: 3;
+    margin-top: auto; padding-bottom: 0.5rem;
+    background: var(--surface);
+    box-shadow: 0 -10px 12px -8px color-mix(in oklch, var(--bg) 85%, transparent);
+  }
   .pager:not(.reading) {
     display: grid; align-items: center; column-gap: 0.75rem; row-gap: 0.625rem;
     grid-template-columns: auto 1fr;

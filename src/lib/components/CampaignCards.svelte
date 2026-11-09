@@ -376,19 +376,18 @@
     border: 1px solid color-mix(in oklch, var(--cc) 60%, var(--line));
     background: color-mix(in oklch, var(--cc) 18%, var(--raised));
   }
-  /* Light mode: the colours were chosen against a dark page. On a light one
-     a dark colour (Blinded, Unconscious) turned the chip into a grey slab
-     and a pale one (Invisible) all but vanished, so the wash is lighter, the
-     edge carries the colour, and the dot gets a darker rim. */
+  /* Light mode: the chips look like the sheet's own, in the character's
+     colour, and the condition's colour stays in the dot. (Washed in their
+     own colours they read as grey slabs on a light page.) */
   :global([data-mode='light']) .conds li:not(.add) {
-    background: color-mix(in oklch, var(--cc) 9%, var(--surface));
-    border-color: color-mix(in oklch, var(--cc) 55%, var(--line));
+    background: var(--a-wash);
+    border-color: var(--a-edge);
   }
   :global([data-mode='light']) .opt.on {
-    background: color-mix(in oklch, var(--cc) 12%, var(--surface));
-    border-color: color-mix(in oklch, var(--cc) 60%, var(--line));
+    background: var(--a-wash);
+    border-color: var(--a-edge);
   }
-  :global([data-mode='light']) .dot { box-shadow: 0 0 0 1px color-mix(in oklch, var(--text) 40%, transparent); }
+  :global([data-mode='light']) .dot { width: 0.5625rem; height: 0.5625rem; box-shadow: 0 0 0 1px color-mix(in oklch, var(--text) 35%, transparent); }
   .dot {
     flex: none; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--cc, var(--dim));
     box-shadow: 0 0 0 1px color-mix(in oklch, var(--text) 25%, transparent);

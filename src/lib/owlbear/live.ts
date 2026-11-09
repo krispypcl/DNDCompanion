@@ -6,7 +6,28 @@
  * campaign page does it.
  */
 import { isConfigured, supabase } from '$lib/supabase';
-import type { Sheet } from '$lib/types';
+import { blankDefinition } from '$lib/sample';
+import { emptyState, type Sheet } from '$lib/types';
+
+/**
+ * A sheet as stored can be missing parts a newer version of the app adds
+ * (or be nearly empty, made and never filled in). The room fills the gaps
+ * from a blank sheet, so one odd sheet can't stop the others from showing.
+ */
+export function complete(sheet: Sheet): Sheet {
+  const blank = blankDefinition('');
+  const def = (sheet.definition ?? {}) as Partial<Sheet['definition']>;
+  return {
+    ...sheet,
+    definition: {
+      ...blank,
+      ...def,
+      identity: { ...blank.identity, ...(def.identity ?? {}) },
+      combat: { ...blank.combat, ...(def.combat ?? {}) }
+    } as Sheet['definition'],
+    state: { ...emptyState(), ...((sheet.state ?? {}) as Partial<Sheet['state']>) }
+  };
+}
 
 const COLUMNS = 'id, owner_id, campaign_id, name, retired, definition, state, created_at, updated_at';
 
@@ -21,7 +42,7 @@ export async function readSheets(follow: Follow): Promise<Sheet[]> {
   const byId = new Map<string, Sheet>();
   for (const r of results) {
     if (r.error) throw new Error(r.error.message);
-    for (const s of (r.data ?? []) as Sheet[]) byId.set(s.id, s);
+    for (const s of (r.data ?? []) as Sheet[]) byId.set(s.id, complete(s));
   }
   // In the order they were linked, then campaign members by name.
   const order = new Map(follow.sheets.map((id, i) => [id, i]));
