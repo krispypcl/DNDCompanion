@@ -86,9 +86,14 @@
   .track i:nth-child(5n) { margin-right: 3px; }
   .total { margin: 0; font-size: 0.8125rem; color: var(--dim); text-align: right; grid-column: 1 / -1; }
   .total b { color: var(--text); font-size: 1rem; margin-left: 0.25rem; }
+  /* Phones: a smaller circle, its ring kept inside the card's padding, and
+     the label and number sized to sit in it without crowding. */
   @media (max-width: 520px) {
-    .lvl { width: 3.25rem; height: 3.25rem; }
-    .lvl b { font-size: 1.3rem; }
+    .cls { padding: 0.875rem 0.875rem 0.75rem; gap: 0.75rem 0.875rem; }
+    .lvl { width: 3.375rem; height: 3.375rem; margin: 4px 0 0 4px; box-shadow: 0 0 0 3px var(--a-wash); }
+    .lvl small { font-size: 0.5rem; letter-spacing: 0.1em; }
+    .lvl b { font-size: 1.375rem; line-height: 1; margin-top: 0.125rem; }
     h4 { font-size: 1.25rem; }
+    .sub { font-size: 0.875rem; }
   }
 </style>

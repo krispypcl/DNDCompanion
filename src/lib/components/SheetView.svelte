@@ -892,7 +892,7 @@
                 equip={{ key: 'name', can: !editable && isOwner,
                          shows: (sp) => isConcentration(sp as Spell),
                          isOn: (sp) => Boolean((sp as Spell).name) && sheetState?.concentrating === (sp as Spell).name,
-                         labels: { off: 'Concentrate', on: 'Concentrating', hint: 'Concentrating on it now (one spell at a time)' },
+                         labels: { off: 'C', on: 'C', hint: 'Concentration: press to mark it as held now (one spell at a time)' },
                          onpress: (i) => toggleConcentration(definition.spells[i]) }}
                 marked={(sp) => Boolean((sp as Spell).name) && sheetState?.concentrating === (sp as Spell).name}
                 onchange={(spells) => setDefinition({ ...definition, spells: spells as Spell[] })}

@@ -1059,6 +1059,12 @@
       padding-right: 4.5rem;
     }
     table:not(.editing) td.name::before { content: none; }
+    /* A picked-out row on a card: the whole card takes the wash and the bar. */
+    table:not(.editing) tr.marked:not(.group) {
+      background: color-mix(in oklch, var(--a) 11%, var(--surface)); border-color: var(--a-edge);
+      box-shadow: inset 3px 0 0 var(--a);
+    }
+    table:not(.editing) tr.marked td, table:not(.editing) tr.marked td:first-child { background: none; box-shadow: none; }
     /* On a card, the label of a value that rolls carries the same d20. */
     table:not(.editing) td.rolls::before {
       width: fit-content; padding-right: 1.1em;
