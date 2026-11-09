@@ -115,6 +115,17 @@ export function passiveScore(def: Definition, skill: SkillName): number {
   return 10 + skillTotal(def, skill);
 }
 
+/** What a passive score is made of: 10, the ability, and proficiency or expertise. */
+export function passiveParts(def: Definition, skill: SkillName): Part[] {
+  const ability = SKILLS[skill];
+  const NAMES = { str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma' } as const;
+  const parts: Part[] = [{ label: 'Base', value: 10 }, { label: NAMES[ability], value: modifierOf(def, ability) }];
+  const prof = def.skills?.[skill];
+  if (prof?.expertise) parts.push({ label: 'Expertise', value: proficiencyBonus(def) * 2, note: 'twice proficiency' });
+  else if (prof?.proficient) parts.push({ label: 'Proficiency', value: proficiencyBonus(def) });
+  return parts;
+}
+
 export function spellSaveDC(def: Definition, ability: Ability): number {
   return 8 + proficiencyBonus(def) + modifierOf(def, ability);
 }

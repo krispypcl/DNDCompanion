@@ -151,7 +151,9 @@
   }
   @media (max-width: 900px) { dl { grid-template-columns: repeat(3, 1fr); } }
   @media (max-width: 560px) { dl { grid-template-columns: repeat(2, 1fr); } }
-  dl > div { text-align: center; }
+  /* Every detail hangs from the top of its row, whatever its neighbours hold. */
+  dl { align-items: start; align-content: start; }
+  dl > div { text-align: center; display: flex; flex-direction: column; justify-content: flex-start; align-self: start; }
   dt {
     font-size: 0.6875rem;
     letter-spacing: 0.1em;
@@ -160,7 +162,7 @@
     font-weight: 600;
     margin-bottom: 0.125rem;
   }
-  dd { margin: 0; font-size: 0.9375rem; }
+  dd { margin: 0; font-size: 0.9375rem; display: flex; justify-content: center; align-items: flex-start; text-align: center; }
   dd :global(.field) { width: 100%; field-sizing: fixed; }
   /* The URL is long and reads left to right; the writing below is prose. */
   .writing {
