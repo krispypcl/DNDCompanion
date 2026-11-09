@@ -20,3 +20,17 @@ describe('the name font', () => {
     expect(nameFont('<script>')).toBe('bad');
   });
 });
+
+import { faceFamily, fontFace } from '$lib/rules/fonts';
+
+describe('fontFace', () => {
+  it('gives the face, or nothing for blank or unreadable', () => {
+    expect(fontFace('Cinzel Decorative')?.family).toBe('Cinzel Decorative');
+    expect(fontFace('')).toBeNull();
+    expect(fontFace('https://example.com/nope')).toBeNull();
+  });
+  it('falls back to the site font', () => {
+    expect(faceFamily(fontFace('Lora'))).toBe("'Lora', system-ui, sans-serif");
+    expect(faceFamily(null)).toBeUndefined();
+  });
+});

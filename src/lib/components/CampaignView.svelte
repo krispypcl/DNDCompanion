@@ -20,6 +20,7 @@
   import { session } from '$lib/stores/session';
   import { classLine } from '$lib/rules/derived';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
+  import { faceFamily, nameFont } from '$lib/rules/fonts';
   import { themeStyle } from '$lib/theme';
   import { friendlyError } from '$lib/errors';
   import { prefersReducedMotion } from '$lib/motion';
@@ -102,6 +103,9 @@
   }
   const ended = $derived(Boolean(campaign?.archived));
   const bannerLink = $derived(resolveImageUrl(campaign?.details.bannerUrl));
+  /** The campaign name's own font, if the DM chose one. */
+  const font = $derived(nameFont(campaign?.details.nameFont));
+  const face = $derived(font && font !== 'bad' ? font : null);
   /** The campaign's colour, as a sheet's: picked while editing, previewed while picking. */
   let themePreview = $state<string | null>(null);
   const themeCss = $derived(themeStyle(themePreview ?? campaign?.details.theme));
@@ -278,7 +282,10 @@
   }
 </script>
 
-<svelte:head><title>{campaign?.name ?? 'Campaign'}</title></svelte:head>
+<svelte:head>
+  <title>{campaign?.name ?? 'Campaign'}</title>
+  {#if face}<link rel="stylesheet" href={face.href} />{/if}
+</svelte:head>
 <svelte:window onkeydown={onKey} />
 
 {#if loading || !landed}
@@ -298,7 +305,7 @@
       <a class="home" href="{base}/" title="Your characters"><Logo size={26} /></a>
       <div class="title">
         <span class="eyebrow">Campaign{#if ended}<span class="sep">·</span>ended{/if}{#if isDm}<span class="sep">·</span>you’re the DM{/if}</span>
-        <h1>
+        <h1 style:font-family={faceFamily(face)}>
           {#if isDm}
             <EditableField value={campaign.name} editable={editing} label="Campaign name" placeholder="Campaign name"
                            onchange={(v) => rename(String(v))} />
@@ -392,6 +399,23 @@
                  onchange={(e) => saveDetails({ bannerUrl: e.currentTarget.value.trim() })} />
         </label>
         {#if bannerLink.note}<p class="hint" class:bad={bannerLink.source === 'invalid'}>{bannerLink.note}</p>{/if}
+        <label class="invite fontrow">
+          <span class="label">Name font
+            <InfoTip label="About the name font">
+              The font of the campaign's name, on this page and in your list of campaigns. On
+              <a href="https://fonts.google.com" target="_blank" rel="noopener noreferrer">fonts.google.com</a>, open a font
+              and copy the address of its page (or the link from "Get font" → "Get embed code"). Paste either here, or
+              just the font's name. Leave it blank for the site's own font.
+            </InfoTip>
+          </span>
+          <input value={campaign.details.nameFont ?? ''} placeholder="Optional: a Google Fonts link"
+                 onchange={(e) => saveDetails({ nameFont: e.currentTarget.value.trim() })} />
+        </label>
+        {#if font === 'bad'}
+          <p class="hint bad" role="status">That’s not a font we can find! Paste a link from fonts.google.com, or the font’s name.</p>
+        {:else if face}
+          <p class="hint" role="status">Using <span style:font-family={faceFamily(face)}>{face.family}</span></p>
+        {/if}
         <div class="themerow">
           <span class="label">Campaign theme</span>
           <ThemePicker value={campaign.details.theme} label="Campaign theme"
@@ -481,6 +505,8 @@
   .manage { padding-top: 1.5rem; }
   .manage > .dm:first-child { margin-top: 0; }
   .look { margin-top: 1rem; }
+  .fontrow { margin-top: 0.875rem; }
+  .label { display: inline-flex; align-items: center; gap: 0.25rem; }
   .themerow { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.875rem; }
   .look + .end { margin-top: 1.25rem; }
   .edit {

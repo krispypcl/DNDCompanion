@@ -14,6 +14,7 @@
   import Logo from '$lib/components/Logo.svelte';
   import { friendlyError } from '$lib/errors';
   import { friendlyDate } from '$lib/rules/dates';
+  import { faceFamily, fontFace } from '$lib/rules/fonts';
   import D20Loader from '$lib/components/D20Loader.svelte';
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
@@ -79,6 +80,8 @@
   /** Campaign names by id, for the sheets' cards; and the campaigns run here. */
   let campaignNames = $state(new Map<string, string>());
   let running = $state<Campaign[]>([]);
+  /** The fonts the DM chose for their campaigns' names, each loaded once. */
+  const campaignFaces = $derived([...new Set(running.map((c) => fontFace(c.details?.nameFont)?.href).filter(Boolean) as string[])]);
   let naming = $state(false);
   let newCampaign = $state('');
   let starting = $state(false);
@@ -336,7 +339,7 @@
 {/snippet}
 
 {#snippet campcard(c: Campaign)}
-  <a href="{base}/c/{c.id}"><strong>{c.name}</strong><span class="meta">started {friendlyDate(c.created_at)}{#if c.archived}{' '}· ended{/if}</span></a>
+  <a href="{base}/c/{c.id}"><strong style:font-family={faceFamily(fontFace(c.details?.nameFont))}>{c.name}</strong><span class="meta">started {friendlyDate(c.created_at)}{#if c.archived}{' '}· ended{/if}</span></a>
 {/snippet}
 
 {#snippet card(sheet: Sheet)}
@@ -373,7 +376,10 @@
   {/if}
 {/snippet}
 
-<svelte:head><title>DND Companion</title></svelte:head>
+<svelte:head>
+  <title>DND Companion</title>
+  {#each campaignFaces as href (href)}<link rel="stylesheet" {href} />{/each}
+</svelte:head>
 
 {#key view}
 <div class="swap" in:rise={{ y: 10, duration: 240, delay: 30 }}>
