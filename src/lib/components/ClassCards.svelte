@@ -40,7 +40,7 @@
           {/if}
           <p class="meta">
             {#if die}<span>d{die} hit die</span>{/if}
-            {#if c.source?.trim()}<span class="book">{c.source.trim().toUpperCase()}</span>{/if}
+            {#if c.source?.trim()}<span class="src">{c.source.trim().toUpperCase()}</span>{/if}
           </p>
         </div>
         <!-- Twenty levels, filled to this one. -->
@@ -79,7 +79,7 @@
   .sub { margin: 0.125rem 0 0; font-size: 0.9375rem; color: var(--text); display: flex; align-items: center; gap: 0.3125rem; }
   .meta { margin: 0.375rem 0 0; display: flex; flex-wrap: wrap; gap: 0.375rem; font-size: 0.75rem; color: var(--dim); }
   .meta span { padding: 0.0625rem 0.5rem; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); }
-  .meta .book { letter-spacing: 0.06em; }
+  .meta .src { letter-spacing: 0.06em; }
   .track { grid-area: track; display: grid; grid-template-columns: repeat(20, 1fr); gap: 3px; }
   .track i { height: 5px; border-radius: 3px; background: color-mix(in oklch, var(--text) 10%, transparent); }
   .track i.on { background: var(--a); }
