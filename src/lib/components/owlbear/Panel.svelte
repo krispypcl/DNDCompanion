@@ -19,7 +19,7 @@
   import { applyMode } from '$lib/stores/mode';
   import { session } from '$lib/stores/session';
   import { signIn, signOut } from '$lib/data/session';
-  import { campaignRepo } from '$lib/data/campaigns';
+  import { campaignRepo, inviteCode } from '$lib/data/campaigns';
   import { prefersReducedMotion } from '$lib/motion';
   import { addLink, parseLink, removeLink, type RoomLink, type RoomLinks } from '$lib/owlbear/links';
   import { followSheets } from '$lib/owlbear/live';
@@ -28,6 +28,7 @@
   import Logo from '../Logo.svelte';
   import ConditionRing from '../ConditionRing.svelte';
   import InfoTip from '../InfoTip.svelte';
+  import HpBar from './HpBar.svelte';
 
   type O = typeof import('$lib/owlbear/obr');
   let obr = $state.raw<O | null>(null);
@@ -98,14 +99,25 @@
     };
   });
 
+  /** The add field: shown up front only while the room is empty; after that it waits below. */
+  let adding = $state<boolean | 'busy'>(false);
   async function add() {
-    const link = parseLink(draft);
+    let link = parseLink(draft);
+    error = null;
+    if (!link && /[?&]code=|^[a-z0-9]{4,12}$/i.test(draft.trim())) {
+      // An invite link: the campaign it opens.
+      const code = inviteCode(draft);
+      adding = 'busy';
+      const found = await campaignRepo.byInvite(code).catch(() => null);
+      adding = links.length ? true : false;
+      if (found) link = { kind: 'campaign', id: found.id };
+    }
     if (!link) {
-      error = 'That’s not a DND Companion link! Paste the address of a character’s sheet or a campaign page.';
+      error = 'That’s not a DND Companion link! Paste your campaign page’s link (or its invite link), or a character’s sheet.';
       return;
     }
-    error = null;
     draft = '';
+    adding = false;
     await addToRoom(link);
   }
   async function addToRoom(link: RoomLink) {
@@ -205,6 +217,21 @@
   });
 </script>
 
+{#snippet addForm(first: boolean)}
+  <form class="add" onsubmit={(e) => { e.preventDefault(); void add(); }}>
+    <!-- svelte-ignore a11y_autofocus -->
+    <input bind:value={draft} autofocus={!first} placeholder={first ? 'Paste your campaign’s link' : 'A campaign’s or character’s link'} aria-label="A DND Companion link" />
+    <button class="go" disabled={!draft.trim() || adding === 'busy'}>{adding === 'busy' ? 'Adding…' : 'Add'}</button>
+    {#if !first}<button type="button" class="link" onclick={() => { adding = false; draft = ''; error = null; }}>Cancel</button>{/if}
+    <InfoTip label="Where to find the link">
+      On your campaign’s page in DND Companion, use “Copy link to this page”, or paste its invite link: either one brings
+      in every character in the campaign. Got a character who isn’t in a campaign? Their sheet’s link works too.
+      Everyone in the room sees them, live.
+    </InfoTip>
+  </form>
+  {#if error}<p class="err" role="alert" transition:slide={ease()}>{error}</p>{/if}
+{/snippet}
+
 <svelte:head>
   <title>DND Companion</title>
   {#each faces as href (href)}<link rel="stylesheet" {href} />{/each}
@@ -220,20 +247,14 @@
     <p class="note">This page is the DND Companion extension for Owlbear Rodeo. Add it in Owlbear (Extensions → Add custom extension) with this address:
       <code>{location.origin}{location.pathname.replace(/panel\/?$/, 'manifest.json')}</code></p>
   {:else}
-    <form class="add" onsubmit={(e) => { e.preventDefault(); void add(); }}>
-      <input bind:value={draft} placeholder="Paste a character’s or campaign’s link" aria-label="A DND Companion link" />
-      <button class="go" disabled={!draft.trim()}>Add</button>
-      <InfoTip label="About adding characters">
-        Copy the link of a character’s sheet, or of a campaign page for all its characters, from DND Companion and
-        paste it here. Everyone in the room sees them, live.
-      </InfoTip>
-    </form>
-    {#if error}<p class="err" role="alert" transition:slide={ease()}>{error}</p>{/if}
-
     {#if !loaded}
       <p class="note">Gathering the party…</p>
     {:else if !links.length}
-      <p class="note">No characters here yet. Paste a link above to bring one to the table.</p>
+      <section class="start" in:fade={{ duration: 180 }}>
+        <h2 class="lead">Bring your campaign to the table</h2>
+        <p class="note">Paste your campaign’s link and every character in it joins this room, live.</p>
+        {@render addForm(true)}
+      </section>
     {/if}
 
     {#each groups as g (g.link?.id ?? 'solo')}
@@ -273,11 +294,7 @@
                 {/if}
               </div>
               {#if max > 0}
-                <div class="hp" title="{v.label}">
-                  <span class="bar"><span class="fill" style:width="{Math.min(100, (cur / max) * 100)}%"></span>
-                    {#if temp > 0}<span class="temp" style:width="{Math.min(100, (temp / max) * 100)}%"></span>{/if}</span>
-                  <span class="nums"><b>{cur}</b> / {max}{#if temp > 0}<span class="t"> +{temp}</span>{/if}</span>
-                </div>
+                <div title={v.label}><HpBar {cur} {max} {temp} vital={v.vital} /></div>
               {/if}
               {#if conds.length}
                 <ul class="conds" aria-label="Conditions">
@@ -328,6 +345,16 @@
       {/if}
     </section>
 
+    {#if loaded && links.length}
+      <section class="more">
+        {#if adding}
+          <div transition:slide={ease()}>{@render addForm(false)}</div>
+        {:else}
+          <button class="link" onclick={() => (adding = true)}>+ Add another campaign or character</button>
+        {/if}
+      </section>
+    {/if}
+
     <footer>
       {#if $session.user}
         <span>Signed in as {$session.user.email}. Hit points can be changed from a token’s menu.</span>
@@ -361,6 +388,13 @@
   .err { margin: 0; color: var(--bad); font-size: 0.8125rem; line-height: 1.4; }
 
   .add { display: flex; gap: 0.375rem; align-items: center; }
+  .start {
+    display: grid; gap: 0.5rem; padding: 0.875rem; border: 1px solid var(--a-edge); border-radius: var(--r);
+    background: color-mix(in oklch, var(--a) 6%, var(--surface));
+  }
+  .start .lead { margin: 0; font-size: 0.9375rem; letter-spacing: 0.01em; text-transform: none; color: var(--text); }
+  .more { display: grid; gap: 0.375rem; }
+  .more > .link { justify-self: start; }
   input {
     flex: 1; min-width: 0; font: inherit; font-size: 0.8125rem; padding: 0.4375rem 0.625rem; color: var(--text);
     border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface);
@@ -425,15 +459,6 @@
   .ac b { font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
   .ac small { font-size: 0.5rem; letter-spacing: 0.1em; color: var(--label); }
 
-  .hp { display: flex; align-items: center; gap: 0.5rem; }
-  .bar { position: relative; flex: 1; height: 0.4375rem; border-radius: 999px; background: var(--raised); overflow: hidden; }
-  .fill { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: oklch(70% 0.17 150); transition: width 0.5s cubic-bezier(0.2, 0.8, 0.25, 1), background-color 0.4s ease; }
-  .bloodied .fill { background: oklch(78% 0.15 80); }
-  .critical .fill { background: var(--hurt-red); }
-  .temp { position: absolute; inset: 0 auto auto 0; height: 35%; background: oklch(72% 0.13 245); transition: width 0.5s cubic-bezier(0.2, 0.8, 0.25, 1); }
-  .nums { font-size: 0.8125rem; color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .nums b { color: var(--text); }
-  .nums .t { color: oklch(72% 0.13 245); }
 
   .conds { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.25rem; }
   .conds li {
