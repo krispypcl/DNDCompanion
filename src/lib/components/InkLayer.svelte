@@ -51,12 +51,21 @@
 
   let live = $state<number[] | null>(null);
   let pressed = false;
-  function pt(e: PointerEvent): [number, number] {
+  function pt(e: { clientX: number; clientY: number }): [number, number] {
     const r = box!.getBoundingClientRect();
     return [((e.clientX - r.left) / r.width) * 1000, ((e.clientY - r.top) / r.width) * 1000];
   }
+  /** Once a pen (an Apple Pencil) has drawn here, a palm resting on the
+      glass no longer draws: only the pen does. */
+  let penHere = false;
+  let liveId: number | null = null;
   function down(e: PointerEvent) {
     if (!drawing || e.button > 0) return;
+    if (e.pointerType === 'pen') penHere = true;
+    else if (penHere && e.pointerType === 'touch') return;
+    if (live && e.pointerType === 'pen' && liveId !== e.pointerId) live = null;
+    else if (live) return;
+    liveId = e.pointerId;
     e.preventDefault();
     pressed = true;
     if (erasing) return;
@@ -64,14 +73,19 @@
     live = pt(e);
   }
   function move(e: PointerEvent) {
-    if (!live) return;
-    const [x, y] = pt(e);
-    const n = live.length;
-    if (Math.hypot(x - live[n - 2], y - live[n - 1]) >= 2) live = [...live, x, y];
+    if (!live || e.pointerId !== liveId) return;
+    const all = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : [];
+    const next = [...live];
+    for (const ev of all.length ? all : [e]) {
+      const [x, y] = pt(ev);
+      const n = next.length;
+      if (Math.hypot(x - next[n - 2], y - next[n - 1]) >= 1.5) next.push(x, y);
+    }
+    if (next.length !== live.length) live = next;
   }
-  function up() {
+  function up(e: PointerEvent) {
     pressed = false;
-    if (!live) return;
+    if (!live || e.pointerId !== liveId) return;
     const p = live.length >= 4 ? live : [...live, live[0] + 0.5, live[1] + 0.5];
     live = null;
     onstroke({ c: pen.c, w: pen.w, p: p.slice(0, 3000) });

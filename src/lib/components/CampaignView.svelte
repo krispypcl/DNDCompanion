@@ -182,8 +182,6 @@
   }
   const active = $derived(sheets.filter((s) => !s.retired));
   /** Back goes to your own character at this table, or home if you have none here. */
-  const mine = $derived(active.find((s) => s.owner_id === $session.user?.id) ?? sheets.find((s) => s.owner_id === $session.user?.id));
-  const backTo = $derived(mine ? `${base}/s/${mine.id}` : `${base}/`);
   const retired = $derived(sheets.filter((s) => s.retired));
   const inviteLink = $derived(
     invite && typeof location !== 'undefined' ? `${siteRoot(location.origin, base)}/join?code=${invite}` : ''
@@ -409,7 +407,7 @@
             {#key editing}<span class="edlabel">{editing ? 'Done' : 'Edit'}</span>{/key}
           </button>
         {/if}
-        <a class="back" href={backTo} title={mine ? `Back to ${mine.definition?.identity?.name || mine.name || 'your character'}` : 'Back to your characters'}>Back</a>
+        <a class="back" href="{base}/" title="Back to your characters and campaigns">Back</a>
         {#if isMember && !ended}
           <ShareButton link={inviteLink} icon="invite" disabled={!inviteLink}
                        label="Copy the invite link (it lets a character join)"

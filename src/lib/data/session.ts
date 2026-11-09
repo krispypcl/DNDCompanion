@@ -111,6 +111,16 @@ export async function savePinnedCampaigns(ids: string[]) {
   await unwrap(supabase.auth.updateUser({ data: { pinned_campaigns: [...new Set(ids)] } }));
 }
 
+/** The campaigns this player is in (as a player) pinned to the top, in their order. */
+export function pinnedJoinedOf(user: { user_metadata?: Record<string, unknown> } | null | undefined): string[] {
+  const raw = user?.user_metadata?.pinned_joined;
+  return Array.isArray(raw) ? raw.filter((id): id is string => typeof id === 'string') : [];
+}
+
+export async function savePinnedJoined(ids: string[]) {
+  await unwrap(supabase.auth.updateUser({ data: { pinned_joined: [...new Set(ids)] } }));
+}
+
 /** Whether this player wants the sheets' music shuffled; kept with their account. */
 export function shuffleOf(user: { user_metadata?: Record<string, unknown> } | null | undefined): boolean | null {
   const raw = user?.user_metadata?.music_shuffle;
