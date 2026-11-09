@@ -396,7 +396,7 @@
 {:else}
 <main>
   <header>
-    <h1><Logo size={30} />DND Companion</h1>
+    <h1><Logo size={30} /><span class="brandname">DND Companion</span></h1>
     <div class="tools">
       <SoundToggle />
       <ModeToggle />

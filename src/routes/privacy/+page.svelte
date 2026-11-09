@@ -9,7 +9,7 @@
 <svelte:head><title>Privacy · DND Companion</title></svelte:head>
 
 <main class="policy">
-  <a class="back" href="{base}/">← DND Companion</a>
+  <a class="back" href="{base}/">← <span class="brandname">DND Companion</span></a>
   <h1>Privacy</h1>
   <p class="dim">Last updated 9 November 2026.</p>
 

@@ -165,6 +165,8 @@
 :root {
   --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: var(--font-ui);
+  /* The name "DND Companion" where it stands for the site: header, sign-in, splash. */
+  --font-brand: 'Cinzel Decorative', Georgia, 'Times New Roman', serif;
 }
 html, body { margin: 0; height: 100%; }
 /* Nothing may make the page wider than the screen: on a phone that lets the
@@ -276,3 +278,14 @@ body {
 }
 .rolls-hover:hover .diemark, .rolls-hover:focus-within .diemark { color: var(--a); transform: rotate(72deg) scale(1.15); }
 @media (prefers-reduced-motion: reduce) { .diemark { transition: none; } }
+
+/* "DND Companion" as the site's name. Cinzel Decorative sets its lower case
+   as small capitals, so the words keep their case and size a touch larger. */
+.brandname {
+  font-family: var(--font-brand);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
