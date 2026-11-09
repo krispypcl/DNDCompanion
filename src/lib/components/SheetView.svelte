@@ -45,7 +45,9 @@
   import TrackerPresets from '$lib/components/TrackerPresets.svelte';
   import { resetTray } from '$lib/stores/tray';
   import TextPanel from '$lib/components/TextPanel.svelte';
+  import { page } from '$app/state';
   import ClassCards from '$lib/components/ClassCards.svelte';
+  import DieMark from '$lib/components/DieMark.svelte';
   import LinksPanel from '$lib/components/LinksPanel.svelte';
   import UndoToast from '$lib/components/UndoToast.svelte';
   import { sheetRepo } from '$lib/data/sheets';
@@ -72,6 +74,8 @@
     passiveScore,
     proficiencyBonus,
     speedParts,
+    spellAttackBonus,
+    spellSaveDC,
     weightCarried
   } from '$lib/rules/derived';
   import Why from '$lib/components/Why.svelte';
@@ -196,7 +200,17 @@
 
   const attunedCount = $derived((definition?.equipment ?? []).filter((i) => i.attuned).length);
   const initiative = $derived(definition ? initiativeParts(definition).total : 0);
+  /** The campaign this sheet was opened from, if any (a valid id only). */
+  const cameFrom = $derived.by(() => {
+    const from = page.url.searchParams.get('from') ?? '';
+    return /^[0-9a-f-]{36}$/i.test(from) ? from : '';
+  });
   const initAdv = $derived(definition ? advantageFrom(definition, 'init') : []);
+  /** The spellcasting ability, and what the spell DC and attack are made of. */
+  const castAb = $derived(definition?.spellcastingAbility);
+  const castParts = $derived(definition && castAb
+    ? [{ label: `${castAb.toUpperCase()} modifier`, value: modifierOf(definition, castAb) }, { label: 'Proficiency', value: proficiencyBonus(definition) }]
+    : []);
   const ac = $derived(definition ? armorClass(definition) : { total: 10, parts: [], computed: false });
   const speed = $derived(definition ? speedParts(definition) : { total: 30, parts: [] });
 
@@ -719,7 +733,9 @@
             <div><dt>Last updated</dt><dd>{friendlyDate(updated)}</dd></div>
           </dl>
         {/if}
-        <a class="back" href="{base}/">Back</a>
+        <!-- Opened from a campaign (?from=<campaign>): back goes to that campaign. -->
+        <a class="back" href={cameFrom ? `${base}/c/${cameFrom}` : `${base}/`}
+           title={cameFrom ? 'Back to the campaign' : 'Back to your characters'}>Back</a>
         <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
         <PrintButton />
         {#if isOwner}<DownloadButton ondownload={exportNow} />{/if}
@@ -821,20 +837,29 @@
                     <p class="castval">{definition.spellcastingAbility?.toUpperCase() ?? '—'}</p>
                   {/if}
                 </div>
-                <div>
-                  <h3>Spell save DC</h3>
-                  <EditableField value={definition.spellSaveDc ?? ''} {editable} type="number"
-                                 label="Spell save DC" placeholder="13"
-                                 onchange={(v) => setDefinition({ ...definition, spellSaveDc: v === '' ? undefined : Number(v) })} />
-                </div>
-                <div>
-                  <h3>Spell attack bonus</h3>
-                  <EditableField value={definition.spellAttackBonus ?? ''}
-                                 display={definition.spellAttackBonus != null ? sign(definition.spellAttackBonus) : undefined}
-                                 {editable} type="number"
-                                 label="Spell attack bonus" placeholder="5"
-                                 onchange={(v) => setDefinition({ ...definition, spellAttackBonus: v === '' ? undefined : Number(v) })} />
-                </div>
+                <!-- Both worked out from the spellcasting ability, never typed. -->
+                <Why title="Spell save DC" parts={castAb ? [{ label: 'Base', value: 8 }, ...castParts] : []}
+                     total={castAb ? String(spellSaveDC(definition, castAb)) : '—'}
+                     hint={castAb ? '8 + proficiency + spellcasting modifier.' : 'Choose a spellcasting ability to work it out.'}>
+                  <div>
+                    <h3>Spell save DC</h3>
+                    <p class="castval" use:bump={castAb ? spellSaveDC(definition, castAb) : 0}>{castAb ? spellSaveDC(definition, castAb) : '—'}</p>
+                  </div>
+                </Why>
+                <Why title="Spell attack bonus" parts={castParts}
+                     total={castAb ? sign(spellAttackBonus(definition, castAb)) : '—'}
+                     hint={castAb ? `Spellcasting modifier + proficiency.${!editable && isOwner ? ' Press it to roll a spell attack.' : ''}` : 'Choose a spellcasting ability to work it out.'}>
+                  <div class:rolls-hover={castAb && !editable && isOwner}>
+                    <h3>Spell attack bonus{#if castAb && !editable && isOwner}<DieMark label="Rolls a spell attack" />{/if}</h3>
+                    {#if castAb && !editable && isOwner}
+                      <button class="castval castroll" title="Roll a spell attack: d20 {sign(spellAttackBonus(definition, castAb))}"
+                              use:bump={spellAttackBonus(definition, castAb)}
+                              onclick={() => rollSkill('Spell attack', spellAttackBonus(definition, castAb))}>{sign(spellAttackBonus(definition, castAb))}</button>
+                    {:else}
+                      <p class="castval">{castAb ? sign(spellAttackBonus(definition, castAb)) : '—'}</p>
+                    {/if}
+                  </div>
+                </Why>
               </div>
 
               <EntryTable
@@ -1015,18 +1040,17 @@
           <!-- Worked out, never typed: Dexterity plus what items and features add. -->
           <Why title="Initiative" parts={initiativeParts(definition).parts} total={sign(initiative)}
                hint={[initAdv.length ? `Advantage from ${initAdv.join(', ')}.` : '', !editable && isOwner ? 'Press it to roll initiative.' : ''].filter(Boolean).join(' ')}>
-          <div class="defbox" class:rollable={!editable && isOwner}>
+          <div class="defbox" class:rollable={!editable && isOwner} class:rolls-hover={!editable && isOwner}>
             <b use:bump={initiative}>
               {#if !editable && isOwner}
                 <!-- Out of edit mode, initiative is a die to roll: the whole box is the button. -->
                 <button class="rollnum" title="Roll initiative: d20 {sign(initiative)}{initAdv.length ? ' with advantage' : ''}" aria-label="Roll initiative"
                         onclick={() => rollSkill('Initiative', initiative, initAdv.length ? 'advantage' : 'normal')}>{sign(initiative)}</button>
-                <svg class="d20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 20.5 7.4v9.2L12 21.5 3.5 16.6V7.4zM12 7.5l4.3 7.4H7.7zM12 2.5v5M20.5 7.4l-4.2 7.5M3.5 7.4l4.2 7.5M7.7 14.9 3.5 16.6M16.3 14.9l4.2 1.7M7.7 14.9 12 21.5l4.3-6.6" /></svg>
               {:else}
                 <span class="computed">{sign(initiative)}</span>
               {/if}
             </b>
-            <span class="cap">Initiative</span>
+            <span class="cap">Initiative{#if !editable && isOwner}<DieMark label="Rolls initiative" />{/if}</span>
             {#if initAdv.length}<span class="adv" title="Advantage">ADV</span>{/if}
           </div>
           </Why>
@@ -1428,12 +1452,6 @@
     padding: 0.0625rem 0.3125rem; border-radius: 3px; color: var(--good, var(--a)); background: color-mix(in oklch, var(--good, var(--a)) 16%, transparent);
   }
   .defbox:has(.adv) { position: relative; }
-  .defbox .d20 {
-    position: absolute; top: 0.375rem; right: 0.375rem; width: 0.8125rem; height: 0.8125rem;
-    fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; color: var(--faint);
-    transition: color 0.2s ease, transform 0.35s cubic-bezier(0.3, 1.5, 0.5, 1); pointer-events: none;
-  }
-  .defbox.rollable:hover .d20 { color: var(--a); transform: rotate(72deg) scale(1.2); }
   .defbox b {
     display: block; font-size: 1.375rem; font-weight: 600; line-height: 1;
     color: var(--text); font-variant-numeric: tabular-nums;
@@ -1496,6 +1514,16 @@
     field-sizing: fixed; display: inline-block; text-align: center;
   }
   .castval { margin: 0; font-size: 1.0625rem; font-weight: 600; padding: 0.15rem 0.3rem; border: 1px solid transparent; }
+  .casting h3 { display: flex; align-items: center; justify-content: center; }
+  /* The spell attack rolls: the same pill as initiative's number. */
+  .castroll {
+    font: inherit; font-size: 1.0625rem; font-weight: 600; color: var(--text); cursor: pointer; background: none;
+    border-radius: var(--r-sm); padding: 0.15rem 0.625rem; border: 1px solid transparent;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+  }
+  .castroll:hover { color: var(--a); background: var(--a-wash); border-color: var(--a-edge); }
+  .castroll:active { transform: translateY(1px); }
+  .castroll:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
   .casting select {
     background: var(--bg); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.15rem 0.3rem; font: inherit;
