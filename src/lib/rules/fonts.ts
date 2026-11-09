@@ -45,3 +45,13 @@ export function nameFont(raw: string | null | undefined): NameFont | null | 'bad
   const family = clean(text.replace(/^["']|["']$/g, ''));
   return OK.test(family) ? { family, href: css2(family) } : 'bad';
 }
+
+/** The font to use, or null for none (blank or unreadable). */
+export function fontFace(raw: string | null | undefined): NameFont | null {
+  const f = nameFont(raw);
+  return f && f !== 'bad' ? f : null;
+}
+
+/** A font-family for a chosen face, falling back to the site's own. */
+export const faceFamily = (f: NameFont | null | undefined): string | undefined =>
+  f ? `'${f.family}', system-ui, sans-serif` : undefined;
