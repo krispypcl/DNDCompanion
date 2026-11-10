@@ -26,6 +26,23 @@ export function rise(_node: Element, { y = 8, duration = 220, delay = 0 }: RiseO
 }
 
 /**
+ * The same arrival for a whole page. It moves the page by `top`, never by
+ * `transform`: a transformed element becomes the frame its fixed children
+ * are placed in, so the loading die (fixed, centred on the screen) would
+ * appear in a corner and then jump to the middle. The element needs
+ * `position: relative`.
+ */
+export function arrive(_node: Element, { y = 10, duration = 260, delay = 0 }: RiseOptions = {}) {
+  const span = prefersReducedMotion() ? 0 : duration;
+  return {
+    duration: span,
+    delay: span === 0 ? 0 : delay,
+    easing: cubicOut,
+    css: (t: number, u: number) => `opacity: ${t}; top: ${u * y}px;`
+  };
+}
+
+/**
  * A number that changed gives a small pop, so the eye catches it: an ability
  * modifier after a score changes, a skill after proficiency is toggled, AC.
  * Not on the first render, only on a change. `kind` picks the effect:

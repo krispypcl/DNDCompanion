@@ -4,7 +4,7 @@
   import { onNavigate } from '$app/navigation';
   import Splash from '$lib/components/Splash.svelte';
   import ConnectionNotice from '$lib/components/ConnectionNotice.svelte';
-  import { prefersReducedMotion, rise } from '$lib/motion';
+  import { arrive, prefersReducedMotion } from '$lib/motion';
 
   let { children } = $props();
 
@@ -38,12 +38,13 @@
   would jump.
 -->
 {#key page.url.pathname}
-  <div class="route" in:rise={{ y: 10, duration: 260, delay: 30 }}>
+  <div class="route" in:arrive={{ y: 10, duration: 260, delay: 30 }}>
     {@render children()}
   </div>
 {/key}
 
 <style>
+  .route { position: relative; }
   /* The old page leaves; the new one brings its own arrival (the rise above). */
   :global(::view-transition-old(root)) {
     animation: leave-page 0.2s cubic-bezier(0.4, 0, 1, 1) both;

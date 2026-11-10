@@ -419,7 +419,7 @@
          eases to its new height so nothing below jumps. -->
     {#if loaded && campaignId}
       <section class="more smooth-height" use:smoothHeight>
-        <div class="swap">
+        <div class="swap-cell">
           {#if adding}
             <div in:fade={{ duration: 200, delay: 90 }} out:fade={{ duration: 120 }}>{@render addForm(adding, false)}</div>
           {:else}
@@ -433,7 +433,7 @@
     {/if}
 
     <footer class="smooth-height" use:smoothHeight>
-      <div class="swap">
+      <div class="swap-cell">
         {#if signing && !$session.user}
           <form class="signin" onsubmit={doSignIn} in:fade={{ duration: 200, delay: 90 }} out:fade={{ duration: 120 }}>
             <input type="email" bind:value={email} placeholder="Email" autocomplete="email" aria-label="Email" required />
