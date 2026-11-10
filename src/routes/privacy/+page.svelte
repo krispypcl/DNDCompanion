@@ -9,7 +9,7 @@
 <svelte:head><title>Privacy · DND Companion</title></svelte:head>
 
 <main class="policy">
-  <a class="back" href="{base}/">← <span class="brandname">DND Companion</span></a>
+  <a class="smallbtn back" href="{base}/">← <span class="brandname">DND Companion</span></a>
   <h1>Privacy</h1>
   <p class="dim">Last updated 9 November 2026.</p>
 
@@ -37,12 +37,11 @@
 
 <style>
   .policy { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; line-height: 1.6; }
-  .back { color: var(--dim); text-decoration: none; font-size: 0.875rem; }
-  .back:hover { color: var(--a, var(--text)); }
   h1 { margin: 1rem 0 0.25rem; font-size: 2rem; }
   h2 { margin: 2rem 0 0.5rem; font-size: 1.0625rem; }
   .dim { color: var(--dim); margin-top: 0; font-size: 0.875rem; }
   ul { padding-left: 1.25rem; }
   li { margin: 0.375rem 0; }
-  a { color: var(--a, var(--text)); }
+  /* Links inside the writing (a policy, an address) read as part of it. */
+  p a { color: var(--a, var(--text)); }
 </style>
