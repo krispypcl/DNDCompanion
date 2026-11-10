@@ -296,3 +296,38 @@ export async function followTheme(apply: (mode: 'light' | 'dark') => void): Prom
   apply((await OBR.theme.getTheme()).mode === 'LIGHT' ? 'light' : 'dark');
   return OBR.theme.onChange((t) => apply(t.mode === 'LIGHT' ? 'light' : 'dark'));
 }
+
+// ── The campaign's music and board, in the room ──
+export const MUSIC_ID = `${NS}/music`;
+export const BOARD_ID = `${NS}/board`;
+const withCampaign = (path: string, campaignId: string) => `${asset(path)}?c=${encodeURIComponent(campaignId)}`;
+
+/**
+ * The table's music as a small player in the room's bottom-left corner. It
+ * stays open (a click on the map leaves it be) until closed, so the music
+ * keeps playing while the panel is shut.
+ */
+export async function openMusic(campaignId: string): Promise<void> {
+  const height = await OBR.viewport.getHeight().catch(() => 800);
+  await OBR.popover.open({
+    id: MUSIC_ID,
+    url: withCampaign('music', campaignId),
+    width: 340,
+    height: 168,
+    anchorReference: 'POSITION',
+    anchorPosition: { left: 16, top: height - 16 },
+    anchorOrigin: { horizontal: 'LEFT', vertical: 'BOTTOM' },
+    transformOrigin: { horizontal: 'LEFT', vertical: 'BOTTOM' },
+    disableClickAway: true,
+    marginThreshold: 8
+  });
+}
+export const closeMusic = () => OBR.popover.close(MUSIC_ID);
+/** The music player asks for the height its contents need. */
+export const sizeMusic = (height: number) => OBR.popover.setHeight(MUSIC_ID, Math.ceil(height));
+
+/** The campaign's board, over the whole room. */
+export async function openBoard(campaignId: string): Promise<void> {
+  await OBR.modal.open({ id: BOARD_ID, url: withCampaign('board', campaignId), fullScreen: true });
+}
+export const closeBoard = () => OBR.modal.close(BOARD_ID);
