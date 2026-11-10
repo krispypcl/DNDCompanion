@@ -4,7 +4,7 @@
  * what the new contents need, and the contents cross-fade in one place.
  *
  * Put `use:smoothHeight` on the box and its contents inside one child with
- * class `swap`; the swapped parts are direct children of `.swap` (they sit
+ * class `swap-cell`; the swapped parts are direct children of it (they sit
  * on top of each other while one fades out and the other in). See app.css.
  */
 export function smoothHeight(node: HTMLElement) {
