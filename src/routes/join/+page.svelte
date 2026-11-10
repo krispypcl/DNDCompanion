@@ -82,7 +82,8 @@
         <a class="btn ghost" href="{base}/signup">Create an account</a>
       </div>
     {:else if sheets.length === 0}
-      <p>You have no characters yet. Make one on <a href="{base}/">your list</a>, then open this link again.</p>
+      <p>You have no characters yet. Make one, then open this link again.</p>
+      <div class="row"><a class="btn" href="{base}/">Your characters</a></div>
     {:else}
       <p>Which character joins?</p>
       <ul>

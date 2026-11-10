@@ -460,8 +460,8 @@
       await signIn(v.email, v.password);
     }}
   >
-    <a href="{base}/signup">Create an account</a>
-    <a href="{base}/reset">Forgot password</a>
+    <a class="smallbtn" href="{base}/signup">Create an account</a>
+    <a class="smallbtn" href="{base}/reset">Forgot password</a>
   </AuthForm>
 {:else}
 <main>
@@ -527,7 +527,7 @@
       {:else if !me.avatarUrl && !pictureNudgeGone}
         <div class="hello slim" transition:slide={{ duration: 260 }}>
           <span>Add a profile picture, {me.displayName.split(' ')[0]}? It is how the rest of the table spots you.</span>
-          <a class="hellolink" href="{base}/account">Add one</a>
+          <a class="smallbtn accent" href="{base}/account">Add one</a>
           <button class="ghost" onclick={dismissPictureNudge} aria-label="Not now">Not now</button>
         </div>
       {/if}
@@ -684,7 +684,6 @@
     border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg);
   }
   .hellorow input:focus { outline: none; border-color: var(--a-edge); }
-  .hellolink { color: var(--a); font-size: 0.875rem; }
   main { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
   header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
   .tools { display: flex; align-items: center; gap: 0.5rem; flex: none; }

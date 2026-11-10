@@ -12,7 +12,7 @@
    */
   import { onMount, untrack } from 'svelte';
   import { fade, scale, slide } from 'svelte/transition';
-  import { backOut, cubicOut } from 'svelte/easing';
+  import { cubicOut } from 'svelte/easing';
   import { campaignMessage, campaignRepo, type BoardData, type BoardItem } from '$lib/data/campaigns';
   import { isConfigured, supabase } from '$lib/supabase';
   import { prefersReducedMotion } from '$lib/motion';
@@ -567,7 +567,7 @@
   }
 
   let clearing = $state(false);
-  const pop = () => ({ duration: prefersReducedMotion() ? 0 : 220, start: 0.85, easing: backOut });
+  const pop = () => ({ duration: prefersReducedMotion() ? 0 : 220, start: 0.9, easing: cubicOut });
   const unfold = () => ({ duration: prefersReducedMotion() ? 0 : 220, easing: cubicOut });
   $effect(() => {
     // Leaving the move tool ends any writing.

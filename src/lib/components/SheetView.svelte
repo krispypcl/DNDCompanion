@@ -1361,9 +1361,15 @@
     animation: campaignIn 0.4s cubic-bezier(0.2, 0.8, 0.3, 1);
   }
   .campaign svg { flex: none; }
-  .campaign > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .campaign a { color: inherit; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .campaign a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .campaign > span { overflow-wrap: anywhere; }
+  /* The campaign it is in opens with a press: a small pill, not bare text. */
+  .campaign a {
+    color: inherit; text-decoration: none; overflow-wrap: anywhere; border: 1px solid var(--a-edge); border-radius: 999px;
+    padding: 0.0625rem 0.5rem; transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  }
+  .campaign a:hover { background: color-mix(in oklch, var(--a) 12%, transparent); border-color: var(--a); }
+  .campaign a:active { transform: translateY(1px); }
+  .campaign a:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
   .campaign .retired {
     color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 0 0.4375rem;
     font-size: 0.625rem; letter-spacing: 0.1em;

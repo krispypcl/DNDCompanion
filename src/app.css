@@ -198,10 +198,10 @@ body {
 /* The loading die, in the middle of the window wherever it is drawn. */
 .screen-center { position: fixed; inset: 0; z-index: 5; display: grid; place-items: center; pointer-events: none; }
 /* Shared by the `bump` action in src/lib/motion.ts. */
-.fx-bump { animation: fx-bump 0.45s cubic-bezier(0.3, 1.5, 0.5, 1); }
+.fx-bump { animation: fx-bump 0.5s cubic-bezier(0.33, 1, 0.68, 1); }
 @keyframes fx-bump {
   0% { transform: scale(1); }
-  35% { transform: scale(1.18); }
+  35% { transform: scale(1.12); }
   100% { transform: scale(1); }
 }
 .fx-glow { animation: fx-glow 1.2s ease-out; }
@@ -210,7 +210,7 @@ body {
   30% { box-shadow: 0 0 0 2px var(--a), 0 0 22px 4px color-mix(in oklch, var(--a) 55%, transparent); transform: translate(-50%, 50%) scale(1.12); }
   100% { box-shadow: 0 0 0 0 transparent; }
 }
-.fx-sparkle { position: relative; animation: fx-bump 0.5s cubic-bezier(0.3, 1.5, 0.5, 1); }
+.fx-sparkle { position: relative; animation: fx-bump 0.55s cubic-bezier(0.33, 1, 0.68, 1); }
 .fx-sparkle::after {
   content: ''; position: absolute; inset: -0.6em; border-radius: 50%; pointer-events: none;
   background:
@@ -227,6 +227,25 @@ body {
   100% { opacity: 0; transform: scale(1.5) rotate(40deg); }
 }
 
+/*
+ * Anything you click that is words (Back, Add, Sign in, Open ↗, Cancel) is a
+ * button, never bare text: a small bordered one, the same everywhere.
+ * `quiet` is the muted kind (the privacy link under sign-in).
+ */
+.smallbtn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.3125rem;
+  padding: 0.3125rem 0.625rem; font: inherit; font-size: 0.8125rem; line-height: 1.25; letter-spacing: normal;
+  text-transform: none; color: var(--text); text-decoration: none; cursor: pointer; white-space: normal;
+  border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--raised);
+  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
+}
+.smallbtn:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
+.smallbtn:active:not(:disabled) { transform: translateY(1px); }
+.smallbtn:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
+.smallbtn:disabled { opacity: 0.5; cursor: default; }
+.smallbtn.quiet { color: var(--dim); background: none; border-color: var(--line-soft); font-size: 0.75rem; padding: 0.25rem 0.5rem; }
+.smallbtn.accent { color: var(--a); border-color: var(--a-edge); }
+
 /* A small square × that closes what it sits in (the Owlbear player and board). */
 .closex {
   flex: none; width: var(--x-size, 2rem); height: var(--x-size, 2rem); display: grid; place-items: center; padding: 0;
@@ -237,6 +256,25 @@ body {
 .closex:hover { border-color: var(--a-edge); color: var(--a); }
 .closex:active { transform: translateY(1px); }
 .closex:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
+
+/* Light ↔ dark by hand: colours ease across (stores/mode.ts adds the class for a moment). */
+html.mode-easing, html.mode-easing *, html.mode-easing *::before, html.mode-easing *::after {
+  transition: background-color 0.35s ease, color 0.35s ease, border-color 0.35s ease, fill 0.35s ease, stroke 0.35s ease,
+    box-shadow 0.35s ease !important;
+}
+
+/* Folding sections (<details>) open and close smoothly where the browser can
+   animate to "auto"; elsewhere they simply open. */
+:root { interpolate-size: allow-keywords; }
+details::details-content {
+  block-size: 0; overflow: clip;
+  transition: block-size 0.3s cubic-bezier(0.33, 1, 0.68, 1), content-visibility 0.3s allow-discrete;
+}
+details[open]::details-content { block-size: auto; }
+
+/* Messages (errors, "Saved", "Copied!") ease in instead of popping up. */
+p[role='alert'], p[role='status'] { animation: message-in 0.28s cubic-bezier(0.33, 1, 0.68, 1) backwards; }
+@keyframes message-in { from { opacity: 0; transform: translateY(-3px); } }
 
 /* Lists of cards arrive one after another, a beat apart, rather than all
    at once: give the list `cascade` and each item `--i` (its place). Only the
@@ -307,9 +345,6 @@ body {
   font-family: var(--font-brand);
   font-weight: 700;
   letter-spacing: 0.01em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* Chips that can be put in another order by picking them up (lib/reorder.ts). */
