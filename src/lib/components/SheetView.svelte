@@ -1077,7 +1077,7 @@
           </Why>
           <!-- Worked out, never typed: Dexterity plus what items and features add. -->
           <Why title="Initiative" parts={initiativeParts(definition).parts} total={sign(initiative)}
-               hint={[initAdv.length ? `Advantage from ${initAdv.join(', ')}.` : '', !editable && isOwner ? 'Press it to roll initiative.' : ''].filter(Boolean).join(' ')}>
+               hint={[initAdv.length ? `Advantage from ${initAdv.join(', ')}.` : '', !editable && isOwner ? 'Press it to roll initiative (hold it to see this).' : ''].filter(Boolean).join(' ')}>
           <div class="defbox" class:rollable={!editable && isOwner}>
             <b use:bump={initiative}>
               {#if !editable && isOwner}

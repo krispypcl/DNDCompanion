@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
-   * Why a number is what it is: hovering it (or focusing it, or a tap on a
-   * phone) brings up a small card of its parts — "Leather armour 11,
+   * Why a number is what it is: hovering it (or focusing it, a tap on a
+   * phone, or holding a finger or pencil on it) brings up a small card of its parts — "Leather armour 11,
    * Dexterity +3, Shield +2 = 16". Drawn over the page, so no module's edge
    * clips it.
    */
@@ -34,6 +34,37 @@
   let pos = $state({ x: 0, y: 0, below: false });
   let timer: ReturnType<typeof setTimeout> | undefined;
   let tapped = false;
+  /**
+   * Holding a finger or a pencil on the box: after a moment the card opens,
+   * and that is all the press does. It doesn't roll the die under it, and
+   * the browser doesn't select the text or bring up its magnifier.
+   */
+  let hold: { id: number; x: number; y: number; timer: ReturnType<typeof setTimeout> } | null = null;
+  let held = false;
+  function startHold(e: PointerEvent) {
+    endHold();
+    held = false;
+    const timer = setTimeout(() => {
+      held = true;
+      hold = null;
+      clearTimeout(timer);
+      place();
+      open = true;
+      try { navigator.vibrate?.(8); } catch { /* not everywhere */ }
+    }, 420);
+    hold = { id: e.pointerId, x: e.clientX, y: e.clientY, timer };
+  }
+  function endHold() {
+    if (hold) clearTimeout(hold.timer);
+    hold = null;
+  }
+  /** The click that ends a hold is not a press of what is under it. */
+  function swallow(e: MouseEvent) {
+    if (!held) return;
+    held = false;
+    e.preventDefault();
+    e.stopPropagation();
+  }
   const sign = (n: number) => (n >= 0 ? `+${n}` : `−${Math.abs(n)}`);
 
   /** Above the whole box it explains (never over it), or below when there is no room above. */
@@ -81,10 +112,21 @@
       onpointerleave={(e) => e.pointerType === 'mouse' && hide()}
       onpointerdown={(e) => {
         tapped = e.pointerType !== 'mouse';
-        // A tap on something that does a thing (a die to roll, a field) is that thing, not a question.
-        if (e.pointerType === 'mouse' || (e.target as Element).closest('button, input, select, textarea, a, [contenteditable]')) return;
+        if (e.pointerType === 'mouse') return;
+        // A tap on something that does a thing (a die to roll, a field) is that thing, not a question;
+        // holding it still shows the card.
+        const field = (e.target as Element).closest('input, select, textarea, [contenteditable]');
+        if (!field) startHold(e);
+        if ((e.target as Element).closest('button, input, select, textarea, a, [contenteditable]')) return;
         if (open) hide(); else show(0);
       }}
+      onpointermove={(e) => {
+        if (hold && e.pointerId === hold.id && Math.hypot(e.clientX - hold.x, e.clientY - hold.y) > 10) endHold();
+      }}
+      onpointerup={endHold}
+      onpointercancel={endHold}
+      onclickcapture={swallow}
+      oncontextmenu={(e) => { if (tapped) e.preventDefault(); }}
       onfocusin={() => {
         // Focus from the keyboard opens it; focus from a tap (on a die to roll) does not.
         if (tapped) { tapped = false; return; }
@@ -115,6 +157,10 @@
 
 <style>
   .why { display: contents; }
+  /* Holding a box is for its card: no text selection, no magnifier, no
+     long-press menu. Fields inside still take text as usual. */
+  .why > :global(*) { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  .why > :global(*) :global(:is(input, textarea, [contenteditable='true'])) { -webkit-user-select: text; user-select: text; }
   .card {
     position: fixed; z-index: 90; transform: translate(-50%, -100%); transform-origin: 50% 100%;
     width: max-content; max-width: min(16rem, 90vw); padding: 0.5rem 0.625rem; border-radius: var(--r-sm);

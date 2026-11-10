@@ -688,7 +688,15 @@
   main { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
   header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
   .tools { display: flex; align-items: center; gap: 0.5rem; flex: none; }
-  h1 { font-size: 1.5rem; margin: 0; display: flex; align-items: center; gap: 0.625rem; min-width: 0; }
+  /* The title takes the room the buttons leave and its name is sized to fit
+     it, so a narrow phone shows all of "DND Companion" a little smaller
+     rather than cut short ("DND COMPA…"). */
+  h1 {
+    font-size: 1.5rem; margin: 0; display: flex; align-items: center; gap: 0.625rem;
+    flex: 1 1 auto; min-width: 0; container-type: inline-size;
+  }
+  h1 .brandname { font-size: min(1em, calc((100cqi - 2.5rem) / 10.2)); }
+  h1 :global(.logo) { flex: none; }
   h2 { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin: 0; }
   .bar { display: flex; align-items: center; justify-content: space-between; margin: 2rem 0 0.75rem; }
   .actions { display: flex; gap: 0.5rem; }
@@ -812,6 +820,8 @@
   .dragging li.lifted { transition: none; z-index: 2; position: relative; box-shadow: 0 12px 28px -10px rgb(0 0 0 / 0.6); border-color: var(--a-edge); cursor: grabbing; }
   @media (max-width: 420px) {
     h1 { font-size: 1.3125rem; gap: 0.5rem; }
+    header { gap: 0.625rem; }
+    .tools { gap: 0.375rem; }
     /* The picture alone says whose account it is: a round button, no pill. */
     .me span { display: none; }
     .me { padding: 0; border: 0; background: none; border-radius: 50%; }
