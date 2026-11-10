@@ -765,7 +765,7 @@
     font-size: 0.8125rem; color: var(--dim);
   }
   .playing .title { color: var(--text); }
-  .text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .text { min-width: 0; overflow-wrap: anywhere; }
   .text.bad { color: var(--bad); white-space: normal; text-align: center; }
   /* Three small bars that dance while it plays and rest while it doesn't. */
   .eq { flex: none; display: inline-flex; align-items: flex-end; gap: 2px; height: 0.75rem; }

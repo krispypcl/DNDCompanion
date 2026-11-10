@@ -262,7 +262,7 @@
   li.on .pick { color: var(--a); }
   .n { flex: none; width: 1.125rem; text-align: center; font-size: 0.75rem; color: var(--faint); font-variant-numeric: tabular-nums; }
   li.on .n { color: var(--a); }
-  .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nm { overflow-wrap: anywhere; }
   .x {
     flex: none; width: 1.75rem; height: 1.75rem; display: grid; place-items: center; padding: 0;
     background: none; border: 0; color: var(--faint); font-size: 1.05rem; cursor: pointer; border-radius: var(--r-sm);

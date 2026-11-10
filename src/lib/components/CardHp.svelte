@@ -6,7 +6,7 @@
    * stretch lost or gained, a light runs along it, the amount floats up, and
    * a hit jolts the bar as hard as it was.
    */
-  import { backOut } from 'svelte/easing';
+  import { cubicOut } from 'svelte/easing';
   import { hitSeverity, type Vital } from '$lib/rules/hp';
   import { prefersReducedMotion } from '$lib/motion';
   import CountUp from './CountUp.svelte';
@@ -86,8 +86,8 @@
   function pop(_node: Element) {
     return {
       duration: prefersReducedMotion() ? 0 : 320,
-      easing: backOut,
-      css: (t: number) => `opacity: ${Math.min(1, t * 1.6)}; transform: scale(${0.7 + 0.3 * t});`
+      easing: cubicOut,
+      css: (t: number) => `opacity: ${Math.min(1, t * 1.6)}; transform: scale(${0.85 + 0.15 * t});`
     };
   }
 </script>

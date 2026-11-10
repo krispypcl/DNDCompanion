@@ -401,7 +401,7 @@
         <summary>Retired ({retired.length})</summary>
         <ul>
           {#each retired as s (s.id)}
-            <li><a href="{base}/s/{s.id}?from={id}">{s.definition?.identity?.name || s.name}</a>
+            <li><a class="smallbtn" href="{base}/s/{s.id}?from={id}">{s.definition?.identity?.name || s.name}</a>
               <span class="sub">{classLine(s.definition)}</span></li>
           {/each}
         </ul>
@@ -564,7 +564,7 @@
   .retired { margin-top: 2rem; }
   .retired summary { cursor: pointer; color: var(--dim); font-size: 0.875rem; }
   .retired ul { list-style: none; padding: 0; margin: 0.625rem 0 0; display: grid; gap: 0.375rem; }
-  .retired a { color: var(--text); margin-right: 0.5rem; }
+  .retired .smallbtn { margin-right: 0.5rem; }
   .end { margin-top: 3rem; display: flex; align-items: center; gap: 0.625rem; flex-wrap: wrap; font-size: 0.875rem; color: var(--dim); }
   @media (max-width: 600px) {
     main { padding-top: 1.25rem; }

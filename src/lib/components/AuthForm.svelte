@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { base } from '$app/paths';
   import GoogleButton from './GoogleButton.svelte';
   import Logo from './Logo.svelte';
   import { friendlyError } from '$lib/errors';
@@ -131,6 +132,10 @@
 
       <nav>{@render children?.()}</nav>
     </section>
+    {#if standalone}
+      <!-- Quietly there for anyone who wants to know what is kept. -->
+      <p class="foot"><a class="smallbtn quiet" href="{base}/privacy">Privacy</a></p>
+    {/if}
   </div>
 </div>
 
@@ -158,6 +163,7 @@
   .meter p { margin: 0.3125rem 0 0; font-size: 0.78rem; color: var(--dim); line-height: 1.4; }
   .meter b { color: var(--text); font-weight: 600; }
   .wrap { display: flex; justify-content: center; }
+  .foot { margin: 1rem 0 0; text-align: center; animation: cardIn 0.32s cubic-bezier(0.2, 0.7, 0.3, 1) 0.08s backwards; }
   .stack { width: 100%; max-width: 23rem; }
   .brand {
     animation: cardIn 0.32s cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
@@ -226,8 +232,6 @@
   .notice { color: var(--a); font-size: 0.85rem; margin: 0; }
   nav {
     margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--line-soft);
-    font-size: 0.85rem; display: flex; gap: 1.25rem; flex-wrap: wrap;
+    display: flex; gap: 0.5rem; flex-wrap: wrap;
   }
-  nav :global(a) { color: var(--dim); text-decoration: none; }
-  nav :global(a:hover) { color: var(--a); }
 </style>

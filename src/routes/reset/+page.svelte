@@ -14,5 +14,5 @@
     return 'If that address has an account, a reset link is on its way.';
   }}
 >
-  <a href="{base}/login">Back to sign in</a>
+  <a class="smallbtn" href="{base}/login">Back to sign in</a>
 </AuthForm>

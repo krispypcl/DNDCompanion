@@ -59,7 +59,7 @@
           runs or plays in this campaign.
         {/if}
       </InfoTip>
-      <a class="open" href={obr?.campaignUrl(campaign.id)} target="_blank" rel="noopener noreferrer">Campaign ↗</a>
+      <a class="smallbtn open" href={obr?.campaignUrl(campaign.id)} target="_blank" rel="noopener noreferrer">Campaign ↗</a>
     {/if}
     <button class="closex" aria-label="Close the board" title="Close the board (Esc)" onclick={() => obr?.closeBoard()}>×</button>
   </header>
@@ -78,10 +78,8 @@
   :global(html.in-owlbear body) { background: var(--bg); }
   main { height: 100dvh; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 0.5rem; padding: 0.75rem 1rem 1rem; box-sizing: border-box; }
   header { display: flex; align-items: center; gap: 0.625rem; min-width: 0; }
-  h1 { margin: 0; font-size: 1.125rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .open { margin-left: auto; color: var(--a); font-size: 0.875rem; text-decoration: none; border-radius: 2px; }
-  .open:hover { text-decoration: underline; text-underline-offset: 2px; }
-  .open:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
+  h1 { margin: 0; font-size: 1.125rem; min-width: 0; overflow-wrap: anywhere; }
+  .open { margin-left: auto; }
   .msg { margin: 0; color: var(--dim); }
   /* The board takes the whole room below its heading. */
   .board { min-height: 0; display: grid; }
