@@ -5,13 +5,12 @@
    * portrait and from then on carries their hit points and conditions.
    */
   import { onMount } from 'svelte';
-  import { applyMode } from '$lib/stores/mode';
+  import { joinRoom, type Obr } from '$lib/owlbear/frame';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
   import { readSheets } from '$lib/owlbear/live';
   import type { Sheet } from '$lib/types';
 
-  type O = typeof import('$lib/owlbear/obr');
-  let obr = $state.raw<O | null>(null);
+  let obr = $state.raw<Obr | null>(null);
   let itemId = $state<string | null>(null);
   let sheets = $state.raw<Sheet[] | null>(null);
   let message = $state<{ ok: boolean; text: string } | null>(null);
@@ -20,10 +19,8 @@
   onMount(() => {
     const stops: (() => void)[] = [];
     void (async () => {
-      const m = await import('$lib/owlbear/obr');
-      await m.ready();
+      const m = await joinRoom(stops);
       obr = m;
-      stops.push(await m.followTheme(applyMode));
       itemId = ((await m.OBR.player.getSelection()) ?? [])[0] ?? null;
       const links = await m.getLinks();
       sheets = await readSheets({

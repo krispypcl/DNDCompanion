@@ -112,6 +112,7 @@
       onpointerleave={(e) => e.pointerType === 'mouse' && hide()}
       onpointerdown={(e) => {
         tapped = e.pointerType !== 'mouse';
+        held = false;
         if (e.pointerType === 'mouse') return;
         // A tap on something that does a thing (a die to roll, a field) is that thing, not a question;
         // holding it still shows the card.

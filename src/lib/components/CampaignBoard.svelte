@@ -584,7 +584,8 @@
 <section class="boardwrap" aria-label="Table board">
   <div class="head">
     <span class="cap">Table board
-      <InfoTip label="How the board works">Everyone in the campaign can add to it, and sees changes as they happen. Drag the page to look
+      <InfoTip label="How the board works">Everyone in the campaign can add to it, and sees changes as they happen: drop sticky notes,
+        write, or draw with the tools. Drag the page to look
         around (or scroll, once you have clicked the board); Ctrl + scroll or two fingers zoom. Double-click a page's name to rename it.
         Each page opens fitted to what is on it.</InfoTip>
     </span>
@@ -724,7 +725,7 @@
       </div>
       {#if loaded && !here.length}
         <p class="hint" in:fade={{ duration: 200 }}>
-          {canEdit ? 'Pick a tool above: drop sticky notes, write, or draw. Everyone at the table sees it live.' : 'Nothing on this page yet.'}
+          {canEdit ? 'An empty page. Pick a tool above to begin.' : 'Nothing on this page yet.'}
         </p>
       {/if}
       <!-- Zoom, in the corner. -->

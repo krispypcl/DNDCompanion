@@ -6,7 +6,7 @@
    * to Owlbear's background and stays small.
    */
   import { onMount, tick } from 'svelte';
-  import { applyMode } from '$lib/stores/mode';
+  import { joinRoom } from '$lib/owlbear/frame';
   import { vitalStatus } from '$lib/rules/hp';
   import { followSheets } from '$lib/owlbear/live';
   import { changeHp, type HpChange } from '$lib/owlbear/hp';
@@ -25,9 +25,7 @@
   onMount(() => {
     const stops: (() => void)[] = [];
     void (async () => {
-      const m = await import('$lib/owlbear/obr');
-      await m.ready();
-      stops.push(await m.followTheme(applyMode));
+      const m = await joinRoom(stops);
       const sel = (await m.OBR.player.getSelection()) ?? [];
       const item = sel.length ? (await m.OBR.scene.items.getItems(sel))[0] : undefined;
       const link = item ? m.linkOf(item) : null;
