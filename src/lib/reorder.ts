@@ -20,6 +20,8 @@ export type ReorderOptions = {
   /** The order to show while dragging; null when the drag ends or is called off. */
   onpreview: (keys: string[] | null) => void;
   oncommit: (keys: string[]) => void;
+  /** How much the picked-up item grows: chips a little, whole cards hardly. */
+  scale?: number;
 };
 
 const HOLD = 280;
@@ -82,7 +84,7 @@ export function reorder(node: HTMLElement, options: ReorderOptions) {
     const tx = px - drag.gx - box.left;
     const ty = py - drag.gy - box.top;
     // Important, so the list's own glide (animate:flip) does not take it back.
-    drag.el.style.setProperty('transform', `translate(${tx}px, ${ty}px) scale(${LIFT})`, 'important');
+    drag.el.style.setProperty('transform', `translate(${tx}px, ${ty}px) scale(${o.scale ?? LIFT})`, 'important');
   }
 
   async function follow(x: number, y: number) {
@@ -97,7 +99,9 @@ export function reorder(node: HTMLElement, options: ReorderOptions) {
       if (px < b.left || px > b.left + b.w || py < b.top || py > b.top + b.h) continue;
       const rest = drag.order.filter((k) => k !== drag!.key);
       const at = rest.indexOf(c.dataset.key!);
-      rest.splice(px < b.left + b.w / 2 ? at : at + 1, 0, drag.key);
+      // A row of chips is ordered across; a column of cards, down.
+      const before = b.w > node.clientWidth * 0.6 ? py < b.top + b.h / 2 : px < b.left + b.w / 2;
+      rest.splice(before ? at : at + 1, 0, drag.key);
       next = rest;
       break;
     }

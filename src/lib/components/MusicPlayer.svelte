@@ -611,17 +611,8 @@
       <span class="t">−{clock(Math.max(0, length - at))}</span>
     </div>
     {#if following}
-      <!-- A player's page: the DM plays; this one listens (the speaker up top is theirs). -->
+      <!-- A player's page: the DM plays; the speaker up top turns the sound on or off. -->
       <div class="row follow">
-        <button class="ctl play listen" class:on={$soundOn} aria-pressed={$soundOn}
-                aria-label={$soundOn ? 'Stop listening' : 'Listen along'} title={$soundOn ? 'Stop listening' : 'Listen along'}
-                disabled={!ready || failed} onclick={() => setSound(!$soundOn)}>
-          {#if $soundOn}
-            <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2.5 6.2h2.3l3-2.6v8.8l-3-2.6H2.5z" fill="currentColor" /><path d="M10.4 6a2.8 2.8 0 0 1 0 4M12.3 4.2a5.4 5.4 0 0 1 0 7.6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /></svg>
-          {:else}
-            <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2.5 6.2h2.3l3-2.6v8.8l-3-2.6H2.5z" fill="currentColor" /><path d="M10.5 6.2l3.4 3.6M13.9 6.2l-3.4 3.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /></svg>
-          {/if}
-        </button>
         {#key away ? 'away' : follow?.playing}
           <span class="by" in:fade={{ duration: 200 }}>{away ? 'The DM isn’t here yet' : follow?.playing ? 'The DM is playing' : 'The DM has paused'}</span>
         {/key}
@@ -700,11 +691,6 @@
       <span class="t">0:00</span>
       <input type="range" min="0" max="1" value="0" aria-label="Song position" disabled style:--p="0%" />
       <span class="t">−0:00</span>
-    </div>
-    <div class="row follow">
-      <button class="ctl play listen" aria-label="Listen along" title="Nothing to listen to yet" disabled>
-        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2.5 6.2h2.3l3-2.6v8.8l-3-2.6H2.5z" fill="currentColor" /><path d="M10.4 6a2.8 2.8 0 0 1 0 4M12.3 4.2a5.4 5.4 0 0 1 0 7.6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /></svg>
-      </button>
     </div>
   </div>
 {/if}
@@ -805,7 +791,6 @@
   .ctl:disabled { opacity: 0.4; cursor: default; }
   .ctl.play { width: 2.125rem; height: 2.125rem; background: var(--a-wash); color: var(--a); border-color: var(--a-edge); }
   .row.follow { gap: 0.625rem; }
-  .listen:not(.on) { background: none; color: var(--dim); border-color: var(--line); }
   .by { font-size: 0.75rem; color: var(--dim); }
   @media (prefers-reduced-motion: reduce) { .playing .eq i { animation: none; } }
 </style>

@@ -8,6 +8,8 @@ export const NS = 'com.dndcompanion';
 export const ROOM_KEY = `${NS}/room`;
 /** Room metadata: the latest rolls made on the room's sheets (RollNote[]). */
 export const ROLLS_KEY = `${NS}/rolls`;
+/** Room metadata: the order the DM put the room's characters in (sheet ids). */
+export const ORDER_KEY = `${NS}/order`;
 /** A token's metadata: the sheet it stands for (TokenLink). */
 export const SHEET_KEY = `${NS}/sheet`;
 /** An attachment's metadata: what it shows, for which token (PartLink). */

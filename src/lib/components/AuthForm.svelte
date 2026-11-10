@@ -232,6 +232,6 @@
   .notice { color: var(--a); font-size: 0.85rem; margin: 0; }
   nav {
     margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--line-soft);
-    display: flex; gap: 0.5rem; flex-wrap: wrap;
+    display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap;
   }
 </style>
