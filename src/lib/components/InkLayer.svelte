@@ -8,7 +8,7 @@
    */
   import { fade } from 'svelte/transition';
   import { get } from 'svelte/store';
-  import type { Ink, Stroke } from '$lib/rules/ink';
+  import { swept, type Ink, type Stroke } from '$lib/rules/ink';
   import { isPalm, keepStylus, penOnly, sawPen } from '$lib/pen';
 
   let {
@@ -25,7 +25,8 @@
     pen: { c: string; w: number };
     erasing: boolean;
     onstroke: (s: Stroke) => void;
-    onerase: (index: number) => void;
+    /** The lines one swipe of the eraser went over, all at once. */
+    onerase: (indices: number[]) => void;
     /** How tall the page must be to show every stroke; the page takes it. */
     minHeight?: number;
   } = $props();
@@ -52,7 +53,6 @@
   });
 
   let live = $state<number[] | null>(null);
-  let pressed = false;
   function pt(e: { clientX: number; clientY: number }): [number, number] {
     const r = box!.getBoundingClientRect();
     return [((e.clientX - r.left) / r.width) * 1000, ((e.clientY - r.top) / r.width) * 1000];
@@ -68,12 +68,36 @@
     else if (live) return;
     liveId = e.pointerId;
     e.preventDefault();
-    pressed = true;
-    if (erasing) return;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    if (erasing) {
+      rubbing = null;
+      rub(pt(e));
+      return;
+    }
     live = pt(e);
   }
+  /** The eraser's last point while it is down, and the lines it went over. */
+  let rubbing: [number, number] | null = null;
+  let gone = $state<Set<number>>(new Set());
+  function rub(to: [number, number]) {
+    const from = rubbing ?? to;
+    rubbing = to;
+    const hits = swept(ink?.s ?? [], from, to, 6).filter((i) => !gone.has(i));
+    if (hits.length) gone = new Set([...gone, ...hits]);
+  }
+  function stopRubbing() {
+    rubbing = null;
+    if (!gone.size) return;
+    const all = [...gone];
+    gone = new Set();
+    onerase(all);
+  }
   function move(e: PointerEvent) {
+    if (rubbing && e.pointerId === liveId) {
+      const all = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : [];
+      for (const ev of all.length ? all : [e]) rub(pt(ev));
+      return;
+    }
     if (!live || e.pointerId !== liveId) return;
     const all = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : [];
     const next = [...live];
@@ -85,7 +109,7 @@
     if (next.length !== live.length) live = next;
   }
   function up(e: PointerEvent) {
-    pressed = false;
+    if (rubbing) return stopRubbing();
     if (!live || e.pointerId !== liveId) return;
     const p = live.length >= 4 ? live : [...live, live[0] + 0.5, live[1] + 0.5];
     live = null;
@@ -101,12 +125,10 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="ink paper-{ink?.paper ?? 'plain'}" class:drawing class:erasing bind:this={box}
-     onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={(e) => (live && live.length >= 4 ? up(e) : (live = null))} use:keepStylus
-     onpointerleave={() => (pressed = false)}>
+     onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={(e) => (rubbing ? stopRubbing() : live && live.length >= 4 ? up(e) : (live = null))} use:keepStylus>
   <svg viewBox="0 0 1000 {Math.max(1, height / scale)}" preserveAspectRatio="xMinYMin meet" aria-hidden="true">
     {#each ink?.s ?? [] as s, i (i + ':' + s.p.length + ':' + s.p[0])}
-      <path d={d(s.p)} style:stroke={s.c} stroke-width={s.w} class:hit={drawing && erasing}
-            onpointerdown={() => drawing && erasing && onerase(i)} onpointerenter={() => drawing && erasing && pressed && onerase(i)}
+      <path d={d(s.p)} style:stroke={s.c} stroke-width={s.w} class:hit={drawing && erasing} class:gone={gone.has(i)}
             in:fade={{ duration: 150 }} out:fade={{ duration: 150 }} />
     {/each}
     {#if live}<path d={d(live)} style:stroke={pen.c} stroke-width={pen.w} />{/if}
@@ -122,6 +144,7 @@
   svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
   path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
   path.hit { cursor: pointer; }
+  path.gone { opacity: 0; transition: opacity 0.12s ease; }
   path.hit:hover { opacity: 0.45; }
   /* The paper, drawn by the layer under the writing's own background. */
   .paper-lines { background-image: repeating-linear-gradient(to bottom, transparent 0 calc(1.55em - 1px), color-mix(in oklch, var(--text) 13%, transparent) calc(1.55em - 1px) 1.55em); background-position: 0 calc(0.15rem + 1px); }

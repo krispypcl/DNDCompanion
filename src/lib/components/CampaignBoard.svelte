@@ -20,6 +20,7 @@
   import InfoTip from './InfoTip.svelte';
   import { get } from 'svelte/store';
   import { isPalm, keepStylus, penOnly, sawPen } from '$lib/pen';
+  import { swept } from '$lib/rules/ink';
 
   let {
     campaignId,
@@ -356,7 +357,24 @@
   let pinch: { d: number; mx: number; my: number; view: View } | null = null;
   let panning = $state<{ sx: number; sy: number; view: View } | null>(null);
   let drawing = $state<number[] | null>(null);
-  let erasing = false;
+  /** The eraser's last point while it is down, and the lines it has gone over so far. */
+  let erasing: [number, number] | null = null;
+  let sweptIds = $state<Set<string>>(new Set());
+  /** Every line between the eraser's last point and this one goes. */
+  function sweep(to: [number, number]) {
+    const from = erasing ?? to;
+    erasing = to;
+    const list = strokes.filter((x) => !sweptIds.has(x.id));
+    const hits = swept(list.map((x) => ({ p: x.data.points ?? [], w: x.data.size ?? 6 })), from, to, 7 / view.z);
+    if (hits.length) sweptIds = new Set([...sweptIds, ...hits.map((i) => list[i].id)]);
+  }
+  /** Lifting the eraser takes the lines away for good (one save for the whole swipe). */
+  function endSweep() {
+    erasing = null;
+    if (!sweptIds.size) return;
+    const ids = [...sweptIds];
+    void remove(ids).finally(() => (sweptIds = new Set()));
+  }
   const spread = () => {
     const [a, b] = [...pointers.values()];
     return { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
@@ -385,13 +403,16 @@
     if (pointers.size === 2) {
       // Two fingers: whatever one finger began, they zoom and move instead.
       drawing = null;
+      erasing = null;
+      sweptIds = new Set();
       panning = null;
       dragging = null;
       pinch = { ...spread(), view };
       return;
     }
     if (pointers.size > 2) return;
-    if (canEdit && tool === 'pen' && !(penHere() && e.pointerType === 'touch')) {
+    const fingerOnly = penHere() && e.pointerType === 'touch';
+    if (canEdit && tool === 'pen' && !fingerOnly) {
       e.preventDefault();
       drawing = at(e);
     } else if (canEdit && (tool === 'note' || tool === 'text')) {
@@ -410,8 +431,10 @@
         editingId = made.id;
         tool = 'move';
       }
-    } else if (canEdit && tool === 'erase') {
-      erasing = true;
+    } else if (canEdit && tool === 'erase' && !fingerOnly) {
+      e.preventDefault();
+      erasing = null;
+      sweep(at(e));
     } else {
       panning = { sx: e.clientX, sy: e.clientY, view };
     }
@@ -440,6 +463,9 @@
         if (Math.hypot(x - next[n - 2], y - next[n - 1]) >= 1.5 / view.z) next.push(x, y);
       }
       if (next.length !== drawing.length) drawing = next;
+    } else if (erasing) {
+      const all = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : [];
+      for (const ev of all.length ? all : [e]) sweep(at(ev));
     } else if (dragging) {
       moveDrag(e);
     } else if (panning) {
@@ -452,7 +478,7 @@
     pointers.delete(e.pointerId);
     if (pointers.size < 2) pinch = null;
     if (pointers.size > 0) return;
-    erasing = false;
+    if (erasing) endSweep();
     panning = null;
     if (drawing) {
       const pts = drawing.length >= 4 ? drawing : [...drawing, drawing[0] + 1, drawing[1] + 1];
@@ -474,7 +500,7 @@
     pinch = null;
     panning = null;
     drawing = null;
-    erasing = false;
+    if (erasing) endSweep();
     endDrag();
   }
 
@@ -590,7 +616,7 @@
         { t: 'pen', label: 'Draw', d: 'M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10zM14 7l3 3' },
         { t: 'note', label: 'Sticky note', d: 'M5 4h14v10l-6 6H5zM13 20v-6h6' },
         { t: 'text', label: 'Writing', d: 'M5 6V4h14v2M12 4v16M9 20h6' },
-        { t: 'erase', label: 'Eraser (tap or drag over)', d: 'M8 20h12M5.5 14.5l8-8a2 2 0 0 1 2.8 0l2.2 2.2a2 2 0 0 1 0 2.8L12 18H8z' }
+        { t: 'erase', label: 'Eraser (tap a line, or swipe across lines)', d: 'M8 20h12M5.5 14.5l8-8a2 2 0 0 1 2.8 0l2.2 2.2a2 2 0 0 1 0 2.8L12 18H8z' }
       ] as b (b.t)}
         <button class="tool" class:on={tool === b.t} aria-pressed={tool === b.t} aria-label={b.label} title={b.label}
                 onclick={() => (tool = b.t as Tool)}>
@@ -659,11 +685,9 @@
          onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={cancel}>
       <div class="world" style:transform="scale({view.z}) translate({-view.x}px, {-view.y}px)">
         <svg class="ink" width="1" height="1" aria-hidden="true">
-          {#each strokes as s (keyOf(s))}
+          {#each strokes.filter((x) => !sweptIds.has(x.id)) as s (keyOf(s))}
             <path d={pathOf(s.data.points)} style:stroke={s.data.color} stroke-width={s.data.size ?? 6}
                   class:erasable={canEdit && tool === 'erase'}
-                  onpointerdown={(e) => { if (canEdit && tool === 'erase') { e.stopPropagation(); erasing = true; void remove([s.id]); } }}
-                  onpointerenter={() => canEdit && tool === 'erase' && erasing && remove([s.id])}
                   in:appear={{ id: s.id }} out:fade={{ duration: 160 }} />
           {/each}
           {#if drawing}<path d={pathOf(drawing)} style:stroke={penColour} stroke-width={penSize} />{/if}

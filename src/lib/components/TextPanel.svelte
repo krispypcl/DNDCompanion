@@ -64,7 +64,11 @@
     writePage(parts.text, { ...ink, s: [...ink.s, st] });
   }
   function eraseStroke(i: number) {
-    writePage(parts.text, { ...ink, s: ink.s.filter((_, j) => j !== i) });
+    eraseStrokes([i]);
+  }
+  /** One swipe of the eraser: every line it went over, in one save. */
+  function eraseStrokes(gone: number[]) {
+    writePage(parts.text, { ...ink, s: ink.s.filter((_, j) => !gone.includes(j)) });
   }
   function setPaper(paper: Paper) {
     writePage(parts.text, { ...ink, paper });
@@ -148,7 +152,7 @@
         onchange={(v) => writePage(v, parts.ink)}
         onstate={(a) => (active = a)}
       />
-      <InkLayer ink={parts.ink} {drawing} {pen} {erasing} onstroke={addStroke} onerase={eraseStroke} bind:minHeight={inkHeight} />
+      <InkLayer ink={parts.ink} {drawing} {pen} {erasing} onstroke={addStroke} onerase={eraseStrokes} bind:minHeight={inkHeight} />
     </div>
   {/key}
 </div>
@@ -171,7 +175,7 @@
           <button class="thick" aria-label="Thickness {w}" aria-pressed={!erasing && pen.w === w}
                   onclick={() => { pen = { ...pen, w }; erasing = false; }}><i style:--d="{Math.max(3, w / 1.4)}px"></i></button>
         {/each}
-        <button class="itool" aria-pressed={erasing} title="Eraser: tap or drag over a line" onclick={() => (erasing = !erasing)}>Eraser</button>
+        <button class="itool" aria-pressed={erasing} title="Eraser: tap a line, or swipe across lines" onclick={() => (erasing = !erasing)}>Eraser</button>
         <span class="isep" aria-hidden="true"></span>
         <select aria-label="Paper" value={ink.paper} onchange={(e) => setPaper(e.currentTarget.value as Paper)}>
           <option value="plain">Plain paper</option><option value="lines">Lines</option><option value="grid">Grid</option><option value="dots">Dots</option>
