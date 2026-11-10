@@ -18,7 +18,7 @@
   import D20Loader from '$lib/components/D20Loader.svelte';
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
-  import { prefersReducedMotion, rise } from '$lib/motion';
+  import { arrive, prefersReducedMotion, rise } from '$lib/motion';
   import { blankDefinition, blankState } from '$lib/sample';
   import { session } from '$lib/stores/session';
   import { isConfigured } from '$lib/supabase';
@@ -70,6 +70,8 @@
   let loading = $state(false);
   /** The die has landed: the list shows. */
   let listShown = $state(false);
+  /** Everything loaded and the die has landed: the lists show, all at once. */
+  const ready = $derived(listShown && !loading);
   let error = $state<string | null>(null);
   let creating = $state(false);
   /** id of the sheet awaiting confirmation; deleting is permanent. */
@@ -249,16 +251,19 @@
     }
     loading = true;
     listShown = false;
-    sheetRepo
-      .listMySheets(id)
-      .then((rows) => {
+    // Everything the page lists arrives together, so the lists appear at once
+    // instead of one after another, each pushing the next down the page.
+    Promise.all([sheetRepo.listMySheets(id), campaignRepo.mine(id).catch(() => [])])
+      .then(async ([rows, mine]) => {
+        const ids = rows.map((r) => r.campaign_id ?? '');
+        const [names, theirs] = await Promise.all([
+          campaignRepo.names(ids).catch(() => new Map<string, string>()),
+          campaignRepo.byIds(ids).catch(() => [])
+        ]);
         sheets = rows;
-        // The names of the campaigns they are in, and the ones this player runs.
-        campaignRepo.names(rows.map((r) => r.campaign_id ?? '')).then((m) => (campaignNames = m)).catch(() => {});
-        campaignRepo.mine(id).then((c) => (running = c)).catch(() => {});
-        campaignRepo.byIds(rows.map((r) => r.campaign_id ?? ''))
-          .then((cs) => (joined = cs.filter((c) => c.created_by !== id)))
-          .catch(() => {});
+        running = mine;
+        campaignNames = names;
+        joined = theirs.filter((c) => c.created_by !== id);
       })
       .catch((e) => (error = friendlyError(e, 'Your sheets wouldn’t load! Try again in a moment.')))
       .finally(() => (loading = false));
@@ -446,7 +451,7 @@
 </svelte:head>
 
 {#key view}
-<div class="swap" in:rise={{ y: 10, duration: 240, delay: 30 }}>
+<div class="swap" in:arrive={{ y: 10, duration: 240, delay: 30 }}>
 {#if view === 'auth'}
   <AuthForm
     google
@@ -539,8 +544,13 @@
     {#if loading || !listShown}
       <div class="dieload screen-center">
         <D20Loader size={56} label="Loading your characters" result={loading ? null : error ? 1 : 20}
-                   onlanded={() => (listShown = true)} />
+                   onlanded={() => { if (!loading) listShown = true; }} />
       </div>
+    {/if}
+    <!-- Not an {:else}: that would wait for the die to finish leaving while
+         the sections below it arrived, and the page would jump. -->
+    {#if !ready}
+      <!-- the die above says what is happening -->
     {:else if sheets.length === 0}
       <p class="dim">No characters yet. Make one and start filling it in.</p>
     {:else}
@@ -576,7 +586,7 @@
 
     <!-- The campaigns this player's characters are in, run by someone else:
          one card each, however many of their characters are in it. -->
-    {#if listShown && joined.length}
+    {#if ready && joined.length}
       <div class="bar campaigns">
         <h2>Campaigns you’re in</h2>
       </div>
@@ -611,7 +621,7 @@
     {/if}
 
     <!-- The campaigns this player runs as DM, and starting a new one. -->
-    {#if listShown}
+    {#if ready}
       <div class="bar campaigns">
         <h2>Campaigns you run</h2>
         <div class="actions">
@@ -670,6 +680,7 @@
 {/key}
 
 <style>
+  .swap { position: relative; }
   .hello {
     display: flex; align-items: center; gap: 0.75rem 1rem; flex-wrap: wrap; margin: 0 0 1.25rem; padding: 0.875rem 1rem;
     border: 1px solid var(--a-edge); border-radius: var(--r); background: var(--a-wash);
@@ -694,7 +705,7 @@
     font-size: 1.5rem; margin: 0; display: flex; align-items: center; gap: 0.625rem;
     flex: 1 1 auto; min-width: 0; container-type: inline-size;
   }
-  h1 .brandname { font-size: min(1em, calc((100cqi - 2.5rem) / 10.2)); }
+  h1 .brandname { font-size: max(0.875rem, min(1em, calc((100cqi - 2.5rem) / 10.2))); }
   h1 :global(.logo) { flex: none; }
   h2 { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin: 0; }
   .bar { display: flex; align-items: center; justify-content: space-between; margin: 2rem 0 0.75rem; }
