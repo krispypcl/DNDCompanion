@@ -9,9 +9,9 @@
 <svelte:head><title>Privacy · DND Companion</title></svelte:head>
 
 <main class="policy">
-  <a class="smallbtn back" href="{base}/">← <span class="brandname">DND Companion</span></a>
+  <a class="smallbtn back" href="{base}/">Back</a>
   <h1>Privacy</h1>
-  <p class="dim">Last updated 9 November 2026.</p>
+  <p class="dim">Last updated 10 November 2026.</p>
 
   <p>DND Companion is a free, hobby D&amp;D 5e character sheet. It keeps only what it needs to run your sheets and campaigns, and it never sells, rents or shares it for advertising.</p>
 
@@ -28,6 +28,10 @@
   <h2>Where it is stored</h2>
   <p>Accounts and sheets are stored with <a href="https://supabase.com/privacy" rel="noopener">Supabase</a>, which runs the database and sign-in. The site itself is served by GitHub Pages. Pictures and music you link to stay where they are: the page loads them from those sites (for example YouTube for music), and those sites' own policies apply. Fonts are loaded from Google Fonts.</p>
 
+  <h2>The code</h2>
+  <p>DND Companion’s code is open for anyone to read, so you can see exactly what it does with what you give it.</p>
+  <p><a class="smallbtn" href="https://github.com/krispypcl/DNDCompanion" target="_blank" rel="noopener noreferrer">GitHub repository</a></p>
+
   <h2>Removing it</h2>
   <p>You can delete any sheet or campaign yourself. Deleting your account on the <a href="{base}/account">Account</a> page removes the account and its sheets for good. You can also remove the site's access to your Google account at <a href="https://myaccount.google.com/connections" rel="noopener">myaccount.google.com/connections</a>.</p>
 
@@ -43,5 +47,5 @@
   ul { padding-left: 1.25rem; }
   li { margin: 0.375rem 0; }
   /* Links inside the writing (a policy, an address) read as part of it. */
-  p a { color: var(--a, var(--text)); }
+  p a:not(.smallbtn) { color: var(--a, var(--text)); }
 </style>
