@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addLink, parseLink, readLinks, removeLink } from '$lib/owlbear/links';
+import { addLink, campaignOf, orderSheets, parseLink, readLinks, removeLink } from '$lib/owlbear/links';
 import { toHex } from '$lib/owlbear/colour';
 import { diceLine, headline, natural, noteOf, pushNote, readLog, ROLL_LOG_MAX } from '$lib/owlbear/rolls';
 import { partsFor, sameParts, tokenBox } from '$lib/owlbear/layout';
@@ -30,6 +30,19 @@ describe('room links', () => {
     expect(readLinks('nope')).toEqual([]);
     expect(addLink([a], a)).toHaveLength(1);
     expect(removeLink([a], a)).toEqual([]);
+  });
+  it('keeps one campaign: a new one takes the old one’s place, characters stay', () => {
+    const a = { kind: 'sheet' as const, id: ID };
+    const c1 = { kind: 'campaign' as const, id: '11111111-1111-4111-8111-111111111111' };
+    const c2 = { kind: 'campaign' as const, id: '22222222-2222-4222-8222-222222222222' };
+    expect(addLink([a, c1], c2)).toEqual([a, c2]);
+    expect(campaignOf(addLink([a, c1], c2))).toBe(c2.id);
+    expect(readLinks([c1, a, c2])).toEqual([a, c2]);
+  });
+  it('orders characters by the room, then the campaign, then by name', () => {
+    const s = (id: string, name: string) => ({ id, name });
+    const list = [s('a', 'Zed'), s('b', 'Amy'), s('c', 'Bo'), s('d', 'Cy')];
+    expect(orderSheets(list, ['c'], ['d', 'a']).map((x) => x.id)).toEqual(['c', 'd', 'a', 'b']);
   });
 });
 

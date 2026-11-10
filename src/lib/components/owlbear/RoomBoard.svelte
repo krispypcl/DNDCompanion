@@ -59,7 +59,7 @@
           runs or plays in this campaign.
         {/if}
       </InfoTip>
-      <a class="smallbtn open" href={obr?.campaignUrl(campaign.id)} target="_blank" rel="noopener noreferrer">Campaign ↗</a>
+      <a class="smallbtn open" href={obr?.campaignUrl(campaign.id)} target="_blank" rel="noopener noreferrer">Campaign</a>
     {/if}
     <button class="closex" aria-label="Close the board" title="Close the board (Esc)" onclick={() => obr?.closeBoard()}>×</button>
   </header>

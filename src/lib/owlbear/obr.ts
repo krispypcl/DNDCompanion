@@ -10,7 +10,7 @@ import { resolveImageUrl } from '$lib/rules/imageUrl';
 import { siteRoot } from '$lib/rules/share';
 import { easeMode } from '$lib/stores/mode';
 import type { Sheet } from '$lib/types';
-import { NS, PART_KEY, ROLLS_KEY, ROOM_KEY, SHEET_KEY, type PartLink, type TokenLink } from './keys';
+import { NS, ORDER_KEY, PART_KEY, ROLLS_KEY, ROOM_KEY, SHEET_KEY, type PartLink, type TokenLink } from './keys';
 import { readLinks, type RoomLinks } from './links';
 import { partsFor, sameParts, tokenBox, type Part } from './layout';
 import { pushNote, readLog, type RollNote } from './rolls';
@@ -56,6 +56,18 @@ export async function setLinks(links: RoomLinks): Promise<void> {
 export function onLinks(cb: (links: RoomLinks) => void): () => void {
   return OBR.room.onMetadataChange((m) => cb(readLinks(m[ROOM_KEY])));
 }
+// ── The order the DM put the characters in ──
+const readOrder = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
+export async function getOrder(): Promise<string[]> {
+  return readOrder((await OBR.room.getMetadata())[ORDER_KEY]);
+}
+export async function setOrder(ids: string[]): Promise<void> {
+  await OBR.room.setMetadata({ [ORDER_KEY]: [...ids] });
+}
+export function onOrder(cb: (ids: string[]) => void): () => void {
+  return OBR.room.onMetadataChange((m) => cb(readOrder(m[ORDER_KEY])));
+}
+
 export async function getRolls(): Promise<RollNote[]> {
   return readLog((await OBR.room.getMetadata())[ROLLS_KEY]);
 }

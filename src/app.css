@@ -276,6 +276,12 @@ details[open]::details-content { block-size: auto; }
 p[role='alert'], p[role='status'] { animation: message-in 0.28s cubic-bezier(0.33, 1, 0.68, 1) backwards; }
 @keyframes message-in { from { opacity: 0; transform: translateY(-3px); } }
 
+/* lib/smoothHeight.ts: the box eases to its contents' height; inside, the
+   parts being swapped share one cell, so one fades out where the other fades in. */
+.smooth-height { transition: height 0.32s cubic-bezier(0.33, 1, 0.68, 1); overflow: clip; overflow-clip-margin: 6px; }
+.swap { display: grid; }
+.swap > * { grid-area: 1 / 1; min-width: 0; }
+
 /* Lists of cards arrive one after another, a beat apart, rather than all
    at once: give the list `cascade` and each item `--i` (its place). Only the
    first few wait; later ones come with the last of them. */
