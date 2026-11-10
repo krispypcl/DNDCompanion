@@ -72,7 +72,7 @@
   {:else}
     <div class="row head">
       <strong>{name}</strong>
-      <a class="smallbtn" href={open} target="_blank" rel="noopener noreferrer" title="Open the sheet">Sheet ↗</a>
+      <a class="smallbtn" href={open} target="_blank" rel="noopener noreferrer" title="Open the sheet">Sheet</a>
     </div>
     {#if max > 0}
       <div class="row">

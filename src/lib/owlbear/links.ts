@@ -39,11 +39,33 @@ export function readLinks(value: unknown): RoomLinks {
     seen.add(`${kind}:${id}`);
     out.push({ kind, id });
   }
-  return out;
+  // Rooms from before one campaign per room: the latest one stays.
+  const camps = out.filter((l) => l.kind === 'campaign');
+  return camps.length > 1 ? out.filter((l) => l.kind !== 'campaign' || l === camps[camps.length - 1]) : out;
 }
 
+/**
+ * A room has one campaign: adding a campaign puts it in place of the one
+ * there (a character added on its own stays).
+ */
 export function addLink(links: RoomLinks, link: RoomLink): RoomLinks {
-  return links.some((l) => l.kind === link.kind && l.id === link.id) ? links : [...links, link];
+  if (links.some((l) => l.kind === link.kind && l.id === link.id)) return links;
+  if (link.kind === 'campaign') return [...links.filter((l) => l.kind !== 'campaign'), link];
+  return [...links, link];
+}
+
+/** The room's campaign, if it has one. */
+export const campaignOf = (links: RoomLinks): string | null => links.find((l) => l.kind === 'campaign')?.id ?? null;
+
+/** The order to show characters in: the DM's for the room, then the campaign's, then by name. */
+export function orderSheets<T extends { id: string; name?: string | null }>(sheets: T[], roomOrder: string[], campaignOrder: string[] = []): T[] {
+  const rank = (id: string) => {
+    const r = roomOrder.indexOf(id);
+    if (r >= 0) return r;
+    const c = campaignOrder.indexOf(id);
+    return c >= 0 ? 10000 + c : 20000;
+  };
+  return [...sheets].sort((a, b) => rank(a.id) - rank(b.id) || String(a.name ?? '').localeCompare(String(b.name ?? '')));
 }
 
 export function removeLink(links: RoomLinks, link: RoomLink): RoomLinks {

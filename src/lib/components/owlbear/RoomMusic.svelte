@@ -13,6 +13,7 @@
   import { TableMusic } from '$lib/tableMusic.svelte';
   import CampaignMusic from '../CampaignMusic.svelte';
   import InfoTip from '../InfoTip.svelte';
+  import SoundToggle from '../SoundToggle.svelte';
 
   let obr = $state.raw<Obr | null>(null);
   let campaign = $state<Campaign | null>(null);
@@ -74,13 +75,9 @@
 <main bind:this={box}>
   <header>
     <span class="cap">Table music</span>
-    {#if campaign}<span class="camp" in:fade={{ duration: 160 }}>{campaign.name}</span>{/if}
-    <span class="end"><InfoTip label="If you hear nothing">
-      Press the play button once to listen along: browsers don’t start sound by themselves. Still quiet? Your browser
-      may be keeping Owlbear Rodeo muted; allow sound for owlbear.rodeo in its site settings. Phones and tablets don’t
-      let a room play music, so listen there from the campaign page instead.
-    </InfoTip></span>
-    <button class="closex" style:--x-size="1.75rem" aria-label="Close the music" title="Close the music" onclick={() => obr?.closeMusic()}>×</button>
+    <InfoTip label="If you hear nothing">Turn the speaker on. Still quiet? Allow sound for owlbear.rodeo in your browser. Phones can’t play it here.</InfoTip>
+    <span class="end"><SoundToggle /></span>
+    <button class="closex" aria-label="Close the music" title="Close the music" onclick={() => obr?.closeMusic()}>×</button>
   </header>
   {#if gone}
     <p class="msg">This campaign has wandered off! It may have been deleted.</p>
@@ -106,7 +103,6 @@
   main { padding: 0.625rem 0.75rem 0.75rem; display: grid; gap: 0.5rem; }
   header { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
   .cap { font-size: 0.6875rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--label); flex: none; }
-  .camp { flex: 1; min-width: 0; font-size: 0.8125rem; color: var(--dim); overflow-wrap: anywhere; }
   .end { margin-left: auto; display: inline-flex; }
   .msg { margin: 0; color: var(--dim); font-size: 0.8125rem; line-height: 1.4; }
 </style>
