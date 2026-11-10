@@ -53,9 +53,14 @@
     if (campaign.details.songs?.[pb.index]?.url !== pb.url) void read(campaign.id);
   });
 
-  // The popover takes the height its contents need.
+  /**
+   * The popover takes the height its contents need, once they are there:
+   * while it is still tuning up it keeps the size it opened at, so it grows
+   * once rather than shrinking and growing again.
+   */
+  const settled = $derived(gone || Boolean(campaign && music?.ready));
   $effect(() => {
-    if (!box || !obr) return;
+    if (!box || !obr || !settled) return;
     const o = obr;
     const el = box;
     const ro = new ResizeObserver(() => void o.sizeMusic(el.offsetHeight).catch(() => {}));
@@ -101,7 +106,7 @@
   main { padding: 0.625rem 0.75rem 0.75rem; display: grid; gap: 0.5rem; }
   header { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
   .cap { font-size: 0.6875rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--label); flex: none; }
-  .camp { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8125rem; color: var(--dim); }
+  .camp { flex: 1; min-width: 0; font-size: 0.8125rem; color: var(--dim); overflow-wrap: anywhere; }
   .end { margin-left: auto; display: inline-flex; }
   .msg { margin: 0; color: var(--dim); font-size: 0.8125rem; line-height: 1.4; }
 </style>

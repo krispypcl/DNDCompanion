@@ -72,7 +72,7 @@
   {:else}
     <div class="row head">
       <strong>{name}</strong>
-      <a href={open} target="_blank" rel="noopener noreferrer" title="Open the sheet">Sheet ↗</a>
+      <a class="smallbtn" href={open} target="_blank" rel="noopener noreferrer" title="Open the sheet">Sheet ↗</a>
     </div>
     {#if max > 0}
       <div class="row">
@@ -95,10 +95,8 @@
   :global(html.in-owlbear), :global(html.in-owlbear body) { background: transparent !important; }
   .hp { --hurt-red: oklch(66% 0.22 25); padding: 0.5rem 0.75rem 0.625rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.4375rem; font-size: 0.8125rem; }
   .row { display: flex; align-items: center; gap: 0.375rem; }
-  .head strong { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.875rem; }
-  .head a { color: var(--a); font-size: 0.75rem; text-decoration: none; border-radius: 2px; }
-  .head a:hover { text-decoration: underline; text-underline-offset: 2px; }
-  .head a:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
+  .head strong { flex: 1; min-width: 0; font-size: 0.875rem; overflow-wrap: anywhere; }
+  .head .smallbtn { padding: 0.1875rem 0.5rem; font-size: 0.75rem; }
   input {
     flex: 1; min-width: 0; font: inherit; padding: 0.3125rem 0.5rem; color: var(--text);
     border: 1px solid var(--line); border-radius: var(--r-sm); background: color-mix(in oklch, var(--bg) 70%, transparent);

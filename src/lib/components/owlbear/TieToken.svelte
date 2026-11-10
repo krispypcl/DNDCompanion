@@ -82,7 +82,7 @@
   button:disabled { opacity: 0.6; cursor: default; }
   .pic { position: relative; flex: none; width: 1.75rem; height: 1.75rem; border-radius: 0.3125rem; background: color-mix(in oklch, var(--text) 12%, transparent); overflow: hidden; }
   .pic img { width: 100%; height: 100%; object-fit: cover; }
-  .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .name { overflow-wrap: anywhere; }
   .msg { margin: 0; color: var(--dim); font-size: 0.75rem; line-height: 1.4; padding: 0 0.25rem; }
   .msg.bad { color: var(--bad); }
 </style>
