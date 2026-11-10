@@ -37,7 +37,21 @@ export function applyMode(next: Mode) {
   else root.removeAttribute('data-mode');
 }
 
+/**
+ * Switching by hand eases the whole page across (colours fade over a third of
+ * a second) instead of snapping; the class is only on for that moment, so it
+ * never slows anything else down.
+ */
+let easing: ReturnType<typeof setTimeout> | undefined;
+export function easeMode() {
+  if (typeof document === 'undefined' || typeof matchMedia !== 'function') return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.documentElement.classList.add('mode-easing');
+  clearTimeout(easing);
+  easing = setTimeout(() => document.documentElement.classList.remove('mode-easing'), 450);
+}
 export function toggleMode() {
+  easeMode();
   mode.update((current) => {
     const next: Mode = current === 'dark' ? 'light' : 'dark';
     applyMode(next);

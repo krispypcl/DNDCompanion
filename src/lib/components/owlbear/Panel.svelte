@@ -77,6 +77,10 @@
       }
       await m.ready();
       obr = m;
+      // The panel asks for its full size itself: a room that added the
+      // extension under an older, smaller manifest keeps that size otherwise.
+      void m.OBR.action.setWidth(460).catch(() => {});
+      void m.OBR.action.setHeight(760).catch(() => {});
       stops.push(await m.followTheme(applyMode));
       role = await m.OBR.player.getRole();
       links = await m.getLinks();
@@ -229,9 +233,9 @@
 {#snippet addForm(first: boolean)}
   <form class="add" onsubmit={(e) => { e.preventDefault(); void add(); }}>
     <!-- svelte-ignore a11y_autofocus -->
-    <input bind:value={draft} autofocus={!first} placeholder={first ? 'Paste your campaign’s link' : 'A campaign’s or character’s link'} aria-label="A DND Companion link" />
+    <input bind:value={draft} autofocus={!first} placeholder={first ? 'Paste your campaign’s link' : 'Paste a link'} aria-label="A DND Companion link" />
     <button class="go" disabled={!draft.trim() || adding === 'busy'}>{adding === 'busy' ? 'Adding…' : 'Add'}</button>
-    {#if !first}<button type="button" class="link" onclick={() => { adding = false; draft = ''; error = null; }}>Cancel</button>{/if}
+    {#if !first}<button type="button" class="smallbtn" onclick={() => { adding = false; draft = ''; error = null; }}>Cancel</button>{/if}
     <InfoTip label="Where to find the link">
       On your campaign’s page in DND Companion, use “Copy link to this page”, or paste its invite link: either one brings
       in every character in the campaign. Got a character who isn’t in a campaign? Their sheet’s link works too.
@@ -271,7 +275,7 @@
         {#if g.link}
           <h2>
             <span class="gname">{g.title}</span><span class="tag">Campaign</span>
-            <a class="open" href={obr?.campaignUrl(g.link.id)} target="_blank" rel="noopener noreferrer" title="Open the campaign page">Open ↗</a>
+            <a class="smallbtn open" href={obr?.campaignUrl(g.link.id)} target="_blank" rel="noopener noreferrer" title="Open the campaign page">Open ↗</a>
             <button class="x" title="Take this campaign out of the room" aria-label="Take {g.title} out of the room" onclick={() => unlink(g.link!)}>×</button>
           </h2>
           <div class="acts room" in:fade={{ duration: 160 }}>
@@ -332,9 +336,9 @@
               {#if s.campaign_id && !g.link}
                 <!-- Linked on its own, it may be in a campaign: there, or the whole table here. -->
                 <p class="camp">In <b>{campaignNames.get(s.campaign_id) ?? 'a campaign'}</b>
-                  <a class="link" href={obr?.campaignUrl(s.campaign_id)} target="_blank" rel="noopener noreferrer">Open ↗</a>
+                  <a class="smallbtn" href={obr?.campaignUrl(s.campaign_id)} target="_blank" rel="noopener noreferrer">Open ↗</a>
                   {#if !campaignLinked(s.campaign_id)}
-                    <button class="link" onclick={() => addToRoom({ kind: 'campaign', id: s.campaign_id! })}>Add the campaign</button>
+                    <button class="smallbtn" onclick={() => addToRoom({ kind: 'campaign', id: s.campaign_id! })}>Add the campaign</button>
                   {/if}
                 </p>
               {/if}
@@ -375,7 +379,7 @@
         {#if adding}
           <div transition:slide={ease()}>{@render addForm(false)}</div>
         {:else}
-          <button class="link" onclick={() => (adding = true)}>+ Add another campaign or character</button>
+          <button class="smallbtn" in:fade={{ duration: 180, delay: 120 }} onclick={() => (adding = true)}>+ Add another campaign or character</button>
         {/if}
       </section>
     {/if}
@@ -384,21 +388,21 @@
       {#if $session.user}
         <span>Signed in as {$session.user.email}</span>
         <InfoTip label="What signing in does">Hit points can be changed from a token’s right-click menu, and the campaign’s board drawn on.</InfoTip>
-        <button class="link" onclick={() => signOut()}>Sign out</button>
+        <button class="smallbtn" onclick={() => signOut()}>Sign out</button>
       {:else if !signing}
         <span>Not signed in</span>
         <InfoTip label="Why sign in">
           {role === 'GM' ? 'Signed in, you change your players’ hit points from their tokens and draw on the campaign’s board.' : 'Signed in, you change your hit points from your token and draw on the campaign’s board.'}
           Owlbear keeps its own sign-in, apart from the site’s. Signed up with Google? Set a password on your DND Companion account page first.
         </InfoTip>
-        <button class="link" onclick={() => (signing = true)}>Sign in</button>
+        <button class="smallbtn" onclick={() => (signing = true)}>Sign in</button>
       {:else}
         <form class="signin" onsubmit={doSignIn} transition:slide={ease()}>
           <input type="email" bind:value={email} placeholder="Email" autocomplete="email" aria-label="Email" required />
           <input type="password" bind:value={password} placeholder="Password" autocomplete="current-password" aria-label="Password" required />
           <div class="row">
             <button class="go" disabled={authBusy}>{authBusy ? 'Signing in…' : 'Sign in'}</button>
-            <button type="button" class="link" onclick={() => (signing = false)}>Cancel</button>
+            <button type="button" class="smallbtn" onclick={() => (signing = false)}>Cancel</button>
           </div>
           {#if authError}<p class="err" role="alert">{authError}</p>{/if}
         </form>
@@ -409,23 +413,23 @@
 
 <style>
   :global(html.in-owlbear), :global(html.in-owlbear body) { background: var(--bg); }
-  .panel { padding: 0.875rem 0.875rem 1.25rem; font-size: 0.875rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.75rem; }
+  .panel { padding: 1.125rem 1.125rem 1.5rem; font-size: 0.9375rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.125rem; }
   header { display: flex; align-items: center; gap: 0.5rem; color: var(--text); }
-  header .brandname { font-size: 1.0625rem; }
-  .note { margin: 0; color: var(--dim); font-size: 0.8125rem; line-height: 1.45; }
+  header .brandname { font-size: 1.1875rem; }
+  .note { margin: 0; color: var(--dim); font-size: 0.875rem; line-height: 1.5; }
   .note code { display: block; margin-top: 0.375rem; word-break: break-all; color: var(--text); }
   .err { margin: 0; color: var(--bad); font-size: 0.8125rem; line-height: 1.4; }
 
-  .add { display: flex; gap: 0.375rem; align-items: center; }
+  .add { display: flex; gap: 0.5rem; align-items: center; }
   .start {
-    display: grid; gap: 0.5rem; padding: 0.875rem; border: 1px solid var(--a-edge); border-radius: var(--r);
+    display: grid; gap: 0.625rem; padding: 1rem; border: 1px solid var(--a-edge); border-radius: var(--r);
     background: color-mix(in oklch, var(--a) 6%, var(--surface));
   }
-  .start .lead { margin: 0; font-size: 0.9375rem; letter-spacing: 0.01em; text-transform: none; color: var(--text); }
-  .more { display: grid; gap: 0.375rem; }
-  .more > .link { justify-self: start; }
+  .start .lead { margin: 0; font-size: 1rem; letter-spacing: 0.01em; text-transform: none; color: var(--text); }
+  .more { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.5rem; }
+  .more > .smallbtn { justify-self: start; }
   input {
-    flex: 1; min-width: 0; font: inherit; font-size: 0.8125rem; padding: 0.4375rem 0.625rem; color: var(--text);
+    flex: 1; min-width: 0; width: 0; font: inherit; font-size: 0.875rem; padding: 0.5rem 0.6875rem; color: var(--text);
     border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface);
     transition: border-color 0.15s ease;
   }
@@ -434,83 +438,77 @@
   button, .btn { font: inherit; cursor: pointer; }
   .go, .btn {
     border: 1px solid var(--line); background: var(--raised); color: var(--text); border-radius: var(--r-sm);
-    padding: 0.375rem 0.625rem; font-size: 0.8125rem; text-decoration: none; white-space: nowrap;
+    padding: 0.4375rem 0.75rem; font-size: 0.875rem; text-decoration: none; white-space: nowrap;
     transition: border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
   }
   .go:hover:not(:disabled), .btn:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
   .go:active:not(:disabled), .btn:active:not(:disabled) { transform: translateY(1px); }
-  .go:focus-visible, .btn:focus-visible, .x:focus-visible, .link:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
+  .go:focus-visible, .btn:focus-visible, .x:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
   .go:disabled, .btn:disabled { opacity: 0.5; cursor: default; }
   .x {
-    margin-left: auto; width: 1.5rem; height: 1.5rem; border: 0; background: none; color: var(--faint); border-radius: 50%;
+    margin-left: auto; width: 1.75rem; height: 1.75rem; border: 0; background: none; color: var(--faint); border-radius: 50%;
     font-size: 1rem; line-height: 1; padding: 0; display: grid; place-items: center; transition: color 0.15s ease, background-color 0.15s ease;
   }
   .x:hover { color: var(--danger, var(--bad)); background: var(--raised); }
   .x:active { transform: translateY(1px); }
 
-  .group { display: grid; gap: 0.5rem; }
+  .group { display: grid; gap: 0.75rem; }
   h2 {
-    margin: 0.25rem 0 0; display: flex; align-items: center; gap: 0.375rem; font-size: 0.6875rem; letter-spacing: 0.12em;
+    margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; font-size: 0.75rem; letter-spacing: 0.12em;
     text-transform: uppercase; color: var(--label); font-weight: 600;
   }
-  .gname { color: var(--text); letter-spacing: 0.06em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .open {
-    margin-left: 0.25rem; font-size: 0.6875rem; letter-spacing: 0.02em; text-transform: none; color: var(--a);
-    text-decoration: none; border-radius: 2px; transition: color 0.15s ease;
-  }
-  .open:hover { color: var(--text); text-decoration: underline; text-underline-offset: 2px; }
-  .open:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
-  .camp { margin: 0; font-size: 0.75rem; color: var(--dim); display: flex; flex-wrap: wrap; gap: 0.25rem 0.5rem; align-items: baseline; }
+  .gname { color: var(--text); letter-spacing: 0.06em; overflow-wrap: anywhere; }
+  h2 .open { font-size: 0.75rem; padding: 0.25rem 0.5625rem; font-weight: 500; }
+  .camp { margin: 0; font-size: 0.8125rem; color: var(--dim); display: flex; flex-wrap: wrap; gap: 0.375rem 0.5rem; align-items: center; }
   .camp b { color: var(--text); font-weight: 600; }
-  .tag { font-size: 0.5625rem; border: 1px solid var(--line); border-radius: 999px; padding: 0.0625rem 0.375rem; color: var(--dim); }
-  .chars { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+  .tag { font-size: 0.625rem; border: 1px solid var(--line); border-radius: 999px; padding: 0.125rem 0.4375rem; color: var(--dim); }
+  .chars { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
   .char {
     --hurt-red: oklch(66% 0.22 25);
-    border: 1px solid var(--line-soft); border-radius: var(--r); background: var(--surface); padding: 0.625rem 0.6875rem;
-    display: grid; gap: 0.5rem; transition: border-color 0.3s ease;
+    border: 1px solid var(--line-soft); border-radius: var(--r); background: var(--surface); padding: 0.875rem 1rem;
+    display: grid; gap: 0.75rem; transition: border-color 0.3s ease;
   }
   .char:hover { border-color: var(--a-edge); }
   .char.bloodied { border-color: color-mix(in oklch, var(--hurt-red) 45%, var(--line-soft)); }
   .char.critical, .char.down { border-color: color-mix(in oklch, var(--hurt-red) 80%, transparent); }
   .char.dead { opacity: 0.7; }
-  .top { display: flex; align-items: center; gap: 0.625rem; min-width: 0; }
+  .top { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
   .portrait {
-    position: relative; flex: none; width: 2.75rem; height: 2.75rem; border-radius: var(--r-sm);
+    position: relative; flex: none; width: 3rem; height: 3rem; border-radius: var(--r-sm);
     border: 1px solid var(--a-edge); background: linear-gradient(150deg, var(--portrait-from, var(--raised)), var(--portrait-to, var(--surface)));
     transition: border-color 0.35s ease;
   }
   .portrait.ringed { border-color: transparent; }
   .portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
   .who { display: grid; min-width: 0; flex: 1; }
-  .who strong { font-size: 0.9375rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .sub { font-size: 0.75rem; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .ac { display: grid; justify-items: center; line-height: 1.05; padding: 0.25rem 0.4375rem; border: 1px solid var(--line-soft); border-radius: var(--r-sm); background: var(--raised); }
-  .ac b { font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
-  .ac small { font-size: 0.5rem; letter-spacing: 0.1em; color: var(--label); }
+  .who { gap: 0.125rem; }
+  .who strong { font-size: 1rem; overflow-wrap: anywhere; }
+  .sub { font-size: 0.8125rem; color: var(--dim); overflow-wrap: anywhere; }
+  .ac { display: grid; justify-items: center; line-height: 1.1; padding: 0.3125rem 0.5625rem; border: 1px solid var(--line-soft); border-radius: var(--r-sm); background: var(--raised); }
+  .ac b { font-size: 1.0625rem; font-variant-numeric: tabular-nums; }
+  .ac small { font-size: 0.5625rem; letter-spacing: 0.1em; color: var(--label); }
 
 
-  .conds { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.25rem; }
+  .conds { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.375rem; }
   .conds li {
-    display: inline-flex; align-items: center; gap: 0.3125rem; font-size: 0.75rem; padding: 0.0625rem 0.5rem;
+    display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.8125rem; padding: 0.125rem 0.5625rem;
     border-radius: 999px; border: 1px solid color-mix(in oklch, var(--cc, var(--line)) 55%, transparent);
     background: color-mix(in oklch, var(--cc, var(--raised)) 14%, transparent);
   }
   .conds .dot { width: 0.4375rem; height: 0.4375rem; border-radius: 50%; background: var(--cc, var(--faint)); }
   .conds .plain .dot { background: none; border: 1px solid var(--faint); }
-  .acts { display: flex; gap: 0.375rem; flex-wrap: wrap; }
-  .acts .btn { padding: 0.3125rem 0.5625rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.3125rem; }
+  .acts { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .acts .btn { display: inline-flex; align-items: center; gap: 0.375rem; }
   .acts.room { align-items: center; }
 
-  .rolls ol { list-style: none; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.375rem; }
-  .rolls li { display: grid; gap: 0.0625rem; padding: 0.375rem 0.5rem; border-radius: var(--r-sm); background: var(--surface); border: 1px solid var(--line-soft); }
+  .rolls ol { list-style: none; margin: 0.625rem 0 0; padding: 0; display: grid; gap: 0.5rem; }
+  .rolls li { display: grid; gap: 0.125rem; padding: 0.5rem 0.75rem; border-radius: var(--r-sm); background: var(--surface); border: 1px solid var(--line-soft); }
   .rolls li.crit { border-color: color-mix(in oklch, oklch(78% 0.15 80) 70%, transparent); }
   .rolls li.fumble { border-color: color-mix(in oklch, var(--bad) 60%, transparent); }
-  .head { font-size: 0.8125rem; }
-  .dice { font-size: 0.6875rem; color: var(--faint); }
+  .head { font-size: 0.875rem; }
+  .dice { font-size: 0.75rem; color: var(--faint); }
 
-  footer { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem; font-size: 0.75rem; color: var(--dim); border-top: 1px solid var(--line-soft); padding-top: 0.625rem; }
-  .link { border: 0; background: none; color: var(--a); padding: 0; font-size: 0.75rem; text-decoration: underline; text-underline-offset: 2px; border-radius: 2px; }
-  .link:hover { color: var(--text); }
-  .signin { display: grid; gap: 0.375rem; width: 100%; }
+  footer { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; font-size: 0.8125rem; color: var(--dim); border-top: 1px solid var(--line-soft); padding-top: 0.875rem; }
+  .signin { display: grid; gap: 0.5rem; width: 100%; }
   .signin .row { display: flex; gap: 0.625rem; align-items: center; }
 </style>

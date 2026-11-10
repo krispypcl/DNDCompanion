@@ -11,7 +11,7 @@
   import { snapshot } from '$lib/stores/undo';
   import { heal, hit, shield } from '$lib/sound';
   import { prefersReducedMotion } from '$lib/motion';
-  import { backOut } from 'svelte/easing';
+  import { cubicOut } from 'svelte/easing';
   import type { Definition, State } from '$lib/types';
 
   let {
@@ -185,8 +185,8 @@
   function pop(_node: Element) {
     return {
       duration: prefersReducedMotion() ? 0 : 320,
-      easing: backOut,
-      css: (t: number) => `opacity: ${Math.min(1, t * 1.6)}; transform: scale(${0.7 + 0.3 * t});`
+      easing: cubicOut,
+      css: (t: number) => `opacity: ${Math.min(1, t * 1.6)}; transform: scale(${0.85 + 0.15 * t});`
     };
   }
 

@@ -29,11 +29,8 @@
     })).filter((g) => g.items.length > 0)
   );
 
-  /** The first line of what it does, as a hint on hover. */
-  const hint = (f: Feature) => {
-    const line = (f.body ?? '').trim().split('\n')[0];
-    return line.length > 160 ? `${line.slice(0, 157)}…` : line;
-  };
+  /** The first line of what it does, as a hint on hover (whole: nothing is cut short with "…"). */
+  const hint = (f: Feature) => (f.body ?? '').trim().split('\n')[0];
 </script>
 
 {#if groups.length}

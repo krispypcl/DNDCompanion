@@ -131,7 +131,7 @@
 
     {#if campaign}
       <p class="lead">
-        In <a href="{base}/c/{campaign.id}">{campaign.name}</a>{#if isDm}<span class="dm">You’re the DM</span>{/if}
+        In <b>{campaign.name}</b>{#if isDm}<span class="dm">You’re the DM</span>{/if}
       </p>
       {#if isDm}
         <h3>Invite link
@@ -192,7 +192,7 @@
     color: var(--label); font-weight: 600;
   }
   .lead { margin: 0.5rem 0 0; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-  .lead a { color: var(--a); font-weight: 600; }
+  .lead b { color: var(--a); font-weight: 600; }
   .dm {
     font-size: 0.6875rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--a);
     border: 1px solid var(--a-edge); background: var(--a-wash); border-radius: 999px; padding: 0.0625rem 0.5rem;

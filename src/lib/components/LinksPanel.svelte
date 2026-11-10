@@ -367,7 +367,7 @@
   @media (max-width: 480px) { .pic.banner { flex-basis: 100%; width: 100%; max-width: 100%; } }
   .pic.empty { display: grid; place-items: center; color: var(--faint); cursor: default; }
   .go .note { color: var(--a); flex: none; }
-  .go b { flex: none; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .go b { flex: none; max-width: 60%; overflow-wrap: anywhere; }
   .wide :global(.field), .snd :global(.field), .linkedit :global(.field) { width: 100%; field-sizing: fixed; }
   .urlrow { display: flex; align-items: center; gap: 0.625rem; }
   .urlfield { flex: 1 1 auto; min-width: 0; }
@@ -395,7 +395,7 @@
     border: 1px solid var(--line-soft); background: var(--raised); color: var(--text); text-decoration: none;
     transition: border-color 0.15s ease, background-color 0.15s ease;
   }
-  .go span { color: var(--dim); font-size: 0.8125rem; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .go span { color: var(--dim); font-size: 0.8125rem; flex: 1; min-width: 0; overflow-wrap: anywhere; }
   .go svg { color: var(--dim); flex: none; }
   .go:hover { border-color: var(--a-edge); background: var(--hover-bg); }
   .go:hover svg { color: var(--a); }

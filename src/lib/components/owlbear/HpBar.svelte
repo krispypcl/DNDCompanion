@@ -4,7 +4,7 @@
    * fills to their current hit points, and temporary ones follow on as a
    * blue stretch of their own (the bar grows to hold them), with the count
    * beside it and the temporary ones in their own small tag. A change from
-   * the table flashes it: red for a hit, green for healing.
+   * the table glows it softly: red for a hit, green for healing.
    */
   let { cur, max, temp = 0, vital = 'healthy' }: { cur: number; max: number; temp?: number; vital?: string } = $props();
   const total = $derived(Math.max(max, cur + temp, 1));
@@ -43,21 +43,19 @@
   .bloodied .fill { background: oklch(74% 0.15 75); }
   .critical .fill, .down .fill { background: var(--hurt-red); }
   .temp { background: var(--temp); box-shadow: inset 1.5px 0 0 color-mix(in oklch, var(--bg) 70%, transparent); }
-  .hit .bar { animation: hp-hit 0.6s ease-out; }
-  .heal .bar { animation: hp-heal 0.8s ease-out; }
-  .hit .nums b { animation: hp-num 0.5s ease-out; color: var(--hurt-red); transition: color 0.6s ease; }
+  /* Smooth, not jumpy: a soft ring that widens and fades, and the number eases up and back. */
+  .hit .bar { animation: hp-hit 0.9s cubic-bezier(0.33, 1, 0.68, 1); }
+  .heal .bar { animation: hp-heal 0.9s cubic-bezier(0.33, 1, 0.68, 1); }
+  .hit .nums b, .heal .nums b { animation: hp-num 0.6s cubic-bezier(0.33, 1, 0.68, 1); }
   @keyframes hp-hit {
-    0% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--hurt-red) 70%, transparent); transform: translateX(0); }
-    20% { transform: translateX(-2px); }
-    40% { transform: translateX(2px); }
-    60% { transform: translateX(-1px); }
-    100% { box-shadow: 0 0 0 5px transparent; transform: none; }
-  }
-  @keyframes hp-heal {
-    from { box-shadow: 0 0 0 0 color-mix(in oklch, oklch(66% 0.16 150) 70%, transparent); }
+    from { box-shadow: 0 0 0 0 color-mix(in oklch, var(--hurt-red) 65%, transparent); }
     to { box-shadow: 0 0 0 6px transparent; }
   }
-  @keyframes hp-num { 30% { transform: scale(1.18); } }
+  @keyframes hp-heal {
+    from { box-shadow: 0 0 0 0 color-mix(in oklch, oklch(66% 0.16 150) 65%, transparent); }
+    to { box-shadow: 0 0 0 6px transparent; }
+  }
+  @keyframes hp-num { 35% { transform: scale(1.1); } }
   .nums b { display: inline-block; }
   .nums { font-size: 0.8125rem; color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .nums b { color: var(--text); }

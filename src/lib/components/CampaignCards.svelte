@@ -8,7 +8,7 @@
    * editing, take a character out of the campaign.
    */
   import { fade, scale, slide } from 'svelte/transition';
-  import { backOut, cubicOut, quintOut } from 'svelte/easing';
+  import { cubicOut, quintOut } from 'svelte/easing';
   import { flip } from 'svelte/animate';
   import { reorder } from '$lib/reorder';
   import { base } from '$app/paths';
@@ -221,7 +221,7 @@
             {@const look = lookOf(c, def?.conditionLooks ?? {})}
             <li class:plain={!look} style:--cc={look?.color} data-key={c}
                 animate:flip={{ duration: 300, easing: quintOut }}
-                transition:scale={{ start: 0.6, duration: 220, easing: backOut }}>
+                transition:scale={{ start: 0.8, duration: 220, easing: cubicOut }}>
               {#if isDm && !ended && onlook && !isStandard(c)}
                 <!-- One of their own: the DM chooses its colour and motion. -->
                 <button class="dot tint" class:none={!look} aria-label="Choose how {c} looks" title="Colour and motion"
@@ -345,8 +345,8 @@
     border-radius: 999px; background: var(--surface); border: 1px solid var(--a-edge); color: var(--a);
   }
   .who { display: grid; min-width: 0; }
-  .who strong { font-size: 1.0625rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .sub { font-size: 0.8125rem; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .who strong { font-size: 1.0625rem; overflow-wrap: anywhere; }
+  .sub { font-size: 0.8125rem; color: var(--dim); overflow-wrap: anywhere; }
   .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.375rem; margin: 0; }
   .stats div { background: var(--raised); border: 1px solid var(--line-soft); border-radius: var(--r-sm); padding: 0.375rem 0.25rem; text-align: center; container-type: inline-size; }
   .stats dt { font-size: 0.5625rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--label); white-space: nowrap; }

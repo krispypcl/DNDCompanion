@@ -123,7 +123,7 @@
   .step small { font-weight: 400; color: var(--dim); font-size: 0.8em; }
   .step .sq { border: 0; background: none; padding: 0 0.375rem; }
   .sq { padding: 0 0.5rem; display: grid; place-items: center; }
-  .go { flex: 1.4; min-width: 0; border-color: var(--accent); color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .go { flex: 1.4; min-width: 0; border-color: var(--accent); color: var(--accent); overflow-wrap: anywhere; }
   .cancel { color: var(--dim); }
   button {
     background: var(--surface);

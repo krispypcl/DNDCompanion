@@ -344,7 +344,7 @@
   .namebox small { margin-top: 1mm; }
   .facts { border: 1.2pt solid #000; border-radius: 2.5mm; padding: 1.5mm 3mm; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5mm 3mm; }
   .facts.six { grid-template-columns: repeat(3, 1fr); }
-  .facts b { font-size: 9pt; font-weight: 600; min-height: 1.3em; display: block; border-bottom: 0.6pt solid #000; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .facts b { font-size: 9pt; font-weight: 600; min-height: 1.3em; display: block; border-bottom: 0.6pt solid #000; overflow-wrap: anywhere; }
   .facts small { font-weight: 600; color: #333; padding-top: 0.5mm; font-size: 5.6pt; }
 
   .cols { display: grid; grid-template-columns: 1.08fr 1fr 1fr; gap: 3mm; align-items: stretch; }
@@ -370,7 +370,7 @@
   .pill small { font-size: 5.8pt; }
   .pill.wide .v { width: 8mm; }
   .list .row { display: flex; align-items: center; gap: 1.2mm; font-size: 7.4pt; line-height: 1.45; white-space: nowrap; }
-  .list .row span { overflow: hidden; text-overflow: ellipsis; }
+  .list .row span { overflow-wrap: anywhere; }
   .list u { text-decoration: none; border-bottom: 0.6pt solid #000; min-width: 5mm; text-align: center; font-weight: 600; }
   .list i { font-style: normal; color: #555; font-size: 6pt; }
   .bub { width: 2.4mm; height: 2.4mm; flex: none; vertical-align: -0.3mm; }

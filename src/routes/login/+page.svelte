@@ -30,6 +30,6 @@
     await goto(next());
   }}
 >
-  <a href="{base}/signup">Create an account</a>
-  <a href="{base}/reset">Forgot password</a>
+  <a class="smallbtn" href="{base}/signup">Create an account</a>
+  <a class="smallbtn" href="{base}/reset">Forgot password</a>
 </AuthForm>
