@@ -546,9 +546,9 @@
     {:else}
       {#if pinnedSheets.length}
         <h3 class="group">Pinned</h3>
-        <ul class="pinned" class:dragging={drag?.kind === 'sheets'} class:landing>
-          {#each pinnedSheets as sheet (sheet.id)}
-            <li bind:this={rowEls[sheet.id]} class:lifted={drag?.id === sheet.id}
+        <ul class="pinned cascade" class:dragging={drag?.kind === 'sheets'} class:landing>
+          {#each pinnedSheets as sheet, i (sheet.id)}
+            <li style:--i={i} bind:this={rowEls[sheet.id]} class:lifted={drag?.id === sheet.id}
                 style:transform={drag ? `translateY(${shift(sheet.id)}px)` : undefined}
                 animate:flip={{ duration: drag || landing ? 0 : 260, easing: cubicOut }} out:fold>
               {@render pin(sheet, true)}
@@ -559,16 +559,16 @@
         </ul>
       {/if}
       {#if otherSheets.length && (pinnedSheets.length || retiredSheets.length)}<h3 class="group">Everything else</h3>{/if}
-      <ul>
-        {#each otherSheets as sheet (sheet.id)}
-          <li animate:flip={{ duration: 260, easing: cubicOut }} out:fold>{@render row(sheet)}</li>
+      <ul class="cascade">
+        {#each otherSheets as sheet, i (sheet.id)}
+          <li style:--i={i} animate:flip={{ duration: 260, easing: cubicOut }} out:fold>{@render row(sheet)}</li>
         {/each}
       </ul>
       {#if retiredSheets.length}
         <h3 class="group">Retired</h3>
-        <ul>
-          {#each retiredSheets as sheet (sheet.id)}
-            <li class="retired" animate:flip={{ duration: 260, easing: cubicOut }} out:fold>{@render row(sheet)}</li>
+        <ul class="cascade">
+          {#each retiredSheets as sheet, i (sheet.id)}
+            <li style:--i={i} class="retired" animate:flip={{ duration: 260, easing: cubicOut }} out:fold>{@render row(sheet)}</li>
           {/each}
         </ul>
       {/if}
@@ -582,9 +582,9 @@
       </div>
       {#if pinnedJoined.length}
         <h3 class="group">Pinned</h3>
-        <ul class="pinned" class:dragging={drag?.kind === 'joined'} class:landing>
-          {#each pinnedJoined as c (c.id)}
-            <li bind:this={rowEls[c.id]} class:lifted={drag?.id === c.id}
+        <ul class="pinned cascade" class:dragging={drag?.kind === 'joined'} class:landing>
+          {#each pinnedJoined as c, i (c.id)}
+            <li style:--i={i} bind:this={rowEls[c.id]} class:lifted={drag?.id === c.id}
                 style:transform={drag?.kind === 'joined' ? `translateY(${shift(c.id)}px)` : undefined}
                 animate:flip={{ duration: drag || landing ? 0 : 260, easing: cubicOut }} out:fold>
               {@render star(c.id, c.name, true, 'joined')}
@@ -595,16 +595,16 @@
         </ul>
       {/if}
       {#if otherJoined.length && (pinnedJoined.length || endedJoined.length)}<h3 class="group">Everything else</h3>{/if}
-      <ul>
-        {#each otherJoined as c (c.id)}
-          <li animate:flip={{ duration: 260, easing: cubicOut }} out:fold>{@render joinedrow(c)}</li>
+      <ul class="cascade">
+        {#each otherJoined as c, i (c.id)}
+          <li style:--i={i} animate:flip={{ duration: 260, easing: cubicOut }} out:fold>{@render joinedrow(c)}</li>
         {/each}
       </ul>
       {#if endedJoined.length}
         <h3 class="group">Archived</h3>
-        <ul>
-          {#each endedJoined as c (c.id)}
-            <li class="retired" animate:flip={{ duration: 260, easing: cubicOut }} out:fold>{@render joinedrow(c)}</li>
+        <ul class="cascade">
+          {#each endedJoined as c, i (c.id)}
+            <li style:--i={i} class="retired" animate:flip={{ duration: 260, easing: cubicOut }} out:fold>{@render joinedrow(c)}</li>
           {/each}
         </ul>
       {/if}
@@ -630,9 +630,9 @@
       {#if running.length}
         {#if pinnedCampaigns.length}
           <h3 class="group">Pinned</h3>
-          <ul class="pinned" class:dragging={drag?.kind === 'campaigns'} class:landing>
-            {#each pinnedCampaigns as c (c.id)}
-              <li bind:this={rowEls[c.id]} class:lifted={drag?.id === c.id}
+          <ul class="pinned cascade" class:dragging={drag?.kind === 'campaigns'} class:landing>
+            {#each pinnedCampaigns as c, i (c.id)}
+              <li style:--i={i} bind:this={rowEls[c.id]} class:lifted={drag?.id === c.id}
                   style:transform={drag?.kind === 'campaigns' ? `translateY(${shift(c.id)}px)` : undefined}
                   animate:flip={{ duration: drag || landing ? 0 : 260, easing: cubicOut }}>
                 {@render star(c.id, c.name, true, 'campaigns')}
@@ -643,9 +643,9 @@
           </ul>
         {/if}
         {#if otherCampaigns.length && (pinnedCampaigns.length || endedCampaigns.length)}<h3 class="group">Everything else</h3>{/if}
-        <ul>
-          {#each otherCampaigns as c (c.id)}
-            <li animate:flip={{ duration: 260, easing: cubicOut }}>
+        <ul class="cascade">
+          {#each otherCampaigns as c, i (c.id)}
+            <li style:--i={i} animate:flip={{ duration: 260, easing: cubicOut }}>
               {@render star(c.id, c.name, false, 'campaigns')}
               {@render campcard(c)}
             </li>
@@ -653,9 +653,9 @@
         </ul>
         {#if endedCampaigns.length}
           <h3 class="group">Archived</h3>
-          <ul>
-            {#each endedCampaigns as c (c.id)}
-              <li class="retired" animate:flip={{ duration: 260, easing: cubicOut }}>{@render campcard(c)}</li>
+          <ul class="cascade">
+            {#each endedCampaigns as c, i (c.id)}
+              <li style:--i={i} class="retired" animate:flip={{ duration: 260, easing: cubicOut }}>{@render campcard(c)}</li>
             {/each}
           </ul>
         {/if}

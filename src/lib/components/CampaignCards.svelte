@@ -178,8 +178,8 @@
 
 <svelte:window onkeydown={(e) => { if (e.key === 'Escape') picking = null; }} />
 
-<ul class="cards" class:dragging={drag}>
-  {#each cards as s (s.id)}
+<ul class="cards cascade" class:dragging={drag}>
+  {#each cards as s, i (s.id)}
     {@const def = s.definition}
     {@const hp = hpOf(s)}
     {@const v = vitalStatus(hp.cur, hp.max, s.state?.deathSaves)}
@@ -187,8 +187,8 @@
     {@const conds = previews[s.id] ?? s.state?.conditions ?? []}
     {@const ring = ringOf(conds, def?.conditionLooks ?? {})}
     <li class="card themed {v.vital}" class:lifted={drag?.id === s.id} bind:this={els[s.id]}
-        style={themeStyle(def?.identity?.theme)} style:transform={shift(s.id)}
-        animate:glideTo in:fade={{ duration: 200 }}>
+        style={themeStyle(def?.identity?.theme)} style:transform={shift(s.id)} style:--i={i}
+        animate:glideTo>
       <a class="open" href="{base}/s/{s.id}{s.campaign_id ? `?from=${s.campaign_id}` : ''}">
         <!-- Conditions ring the portrait in their colours (the card's own edge
              is kept for being hurt), a band for each, all the way round. -->

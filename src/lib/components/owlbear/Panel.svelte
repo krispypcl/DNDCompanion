@@ -17,6 +17,7 @@
   import { faceFamily, fontFace } from '$lib/rules/fonts';
   import { friendlyDate } from '$lib/rules/dates';
   import { applyMode } from '$lib/stores/mode';
+  import { themeStyle } from '$lib/theme';
   import { session } from '$lib/stores/session';
   import { signIn, signOut } from '$lib/data/session';
   import { campaignRepo, inviteCode } from '$lib/data/campaigns';
@@ -40,6 +41,8 @@
   /** Which sheets have a token on the map: sheet id → token ids. */
   let onMap = $state.raw<Record<string, string[]>>({});
   let campaignNames = $state(new Map<string, string>());
+  /** Campaigns in view that have music on them. */
+  let withMusic = $state(new Set<string>());
   let draft = $state('');
   let error = $state<string | null>(null);
   let busy = $state<string | null>(null);
@@ -177,7 +180,13 @@
     const missing = ids.filter((id) => !askedNames.has(id));
     if (!missing.length) return;
     missing.forEach((id) => askedNames.add(id));
-    campaignRepo.names(missing).then((m) => (campaignNames = new Map([...campaignNames, ...m]))).catch(() => {});
+    campaignRepo
+      .byIds(missing)
+      .then((list) => {
+        campaignNames = new Map([...campaignNames, ...list.map((c) => [c.id, c.name] as const)]);
+        withMusic = new Set([...withMusic, ...list.filter((c) => c.details.songs?.length).map((c) => c.id)]);
+      })
+      .catch(() => {});
   });
   const campaignLinked = (id: string) => links.some((l) => l.kind === 'campaign' && l.id === id);
   const directLink = (s: Sheet) => links.find((l) => l.kind === 'sheet' && l.id === s.id) ?? null;
@@ -265,10 +274,26 @@
             <a class="open" href={obr?.campaignUrl(g.link.id)} target="_blank" rel="noopener noreferrer" title="Open the campaign page">Open ↗</a>
             <button class="x" title="Take this campaign out of the room" aria-label="Take {g.title} out of the room" onclick={() => unlink(g.link!)}>×</button>
           </h2>
+          <div class="acts room" in:fade={{ duration: 160 }}>
+            <button class="btn" onclick={() => obr?.openBoard(g.link!.id)}>
+              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M4 5h16v11H4zM8 20h8M12 16v4M7.5 12.5l3-3 2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              Board
+            </button>
+            {#if withMusic.has(g.link.id)}
+              <button class="btn" onclick={() => obr?.openMusic(g.link!.id)}>
+                <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                Music
+              </button>
+            {/if}
+            <InfoTip label="About the board and music">
+              Board opens the campaign’s board over the room, live. Music opens a small player in the corner that follows
+              the DM’s table music, and keeps playing while this panel is shut.
+            </InfoTip>
+          </div>
           {#if !g.sheets.length}<p class="note">No characters in this campaign yet.</p>{/if}
         {/if}
-        <ul class="chars">
-          {#each g.sheets as s (s.id)}
+        <ul class="chars cascade">
+          {#each g.sheets as s, i (s.id)}
             {@const def = s.definition}
             {@const max = Number(def?.combat?.hpMax) || 0}
             {@const cur = Number(s.state?.hpCurrent) || 0}
@@ -278,7 +303,7 @@
             {@const conds = s.state?.conditions ?? []}
             {@const ring = conds.flatMap((c) => { const color = lookOf(c, def?.conditionLooks ?? {})?.color; return color ? [{ key: c.toLowerCase(), color }] : []; })}
             {@const face = fontFace(def?.identity?.nameFont)}
-            <li class="char {v.vital}" animate:flip={{ duration: 280, easing: quintOut }} in:fade={{ duration: 180 }}>
+            <li class="char themed {v.vital}" style={themeStyle(def?.identity?.theme)} style:--i={i} animate:flip={{ duration: 280, easing: quintOut }}>
               <div class="top">
                 <span class="portrait" class:ringed={ring.length > 0}>
                   {#if portrait}<img src={portrait} alt="" />{/if}
@@ -341,7 +366,7 @@
           {/each}
         </ol>
       {:else}
-        <p class="note">No rolls yet. Roll in a sheet’s dice tray and it lands here.</p>
+        <p class="note">No rolls yet.</p>
       {/if}
     </section>
 
@@ -357,10 +382,15 @@
 
     <footer>
       {#if $session.user}
-        <span>Signed in as {$session.user.email}. Hit points can be changed from a token’s menu.</span>
+        <span>Signed in as {$session.user.email}</span>
+        <InfoTip label="What signing in does">Hit points can be changed from a token’s right-click menu, and the campaign’s board drawn on.</InfoTip>
         <button class="link" onclick={() => signOut()}>Sign out</button>
       {:else if !signing}
-        <span>{role === 'GM' ? 'Sign in to change your players’ hit points from their tokens.' : 'Sign in to change your hit points from your token.'}</span>
+        <span>Not signed in</span>
+        <InfoTip label="Why sign in">
+          {role === 'GM' ? 'Signed in, you change your players’ hit points from their tokens and draw on the campaign’s board.' : 'Signed in, you change your hit points from your token and draw on the campaign’s board.'}
+          Owlbear keeps its own sign-in, apart from the site’s. Signed up with Google? Set a password on your DND Companion account page first.
+        </InfoTip>
         <button class="link" onclick={() => (signing = true)}>Sign in</button>
       {:else}
         <form class="signin" onsubmit={doSignIn} transition:slide={ease()}>
@@ -371,7 +401,6 @@
             <button type="button" class="link" onclick={() => (signing = false)}>Cancel</button>
           </div>
           {#if authError}<p class="err" role="alert">{authError}</p>{/if}
-          <p class="fine">Owlbear keeps its own sign-in. Signed up with Google? Set a password on your DND Companion account page first.</p>
         </form>
       {/if}
     </footer>
@@ -469,7 +498,8 @@
   .conds .dot { width: 0.4375rem; height: 0.4375rem; border-radius: 50%; background: var(--cc, var(--faint)); }
   .conds .plain .dot { background: none; border: 1px solid var(--faint); }
   .acts { display: flex; gap: 0.375rem; flex-wrap: wrap; }
-  .acts .btn { padding: 0.3125rem 0.5625rem; font-size: 0.75rem; }
+  .acts .btn { padding: 0.3125rem 0.5625rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.3125rem; }
+  .acts.room { align-items: center; }
 
   .rolls ol { list-style: none; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.375rem; }
   .rolls li { display: grid; gap: 0.0625rem; padding: 0.375rem 0.5rem; border-radius: var(--r-sm); background: var(--surface); border: 1px solid var(--line-soft); }
@@ -478,10 +508,9 @@
   .head { font-size: 0.8125rem; }
   .dice { font-size: 0.6875rem; color: var(--faint); }
 
-  footer { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.5rem; font-size: 0.75rem; color: var(--dim); border-top: 1px solid var(--line-soft); padding-top: 0.625rem; }
+  footer { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem; font-size: 0.75rem; color: var(--dim); border-top: 1px solid var(--line-soft); padding-top: 0.625rem; }
   .link { border: 0; background: none; color: var(--a); padding: 0; font-size: 0.75rem; text-decoration: underline; text-underline-offset: 2px; border-radius: 2px; }
   .link:hover { color: var(--text); }
   .signin { display: grid; gap: 0.375rem; width: 100%; }
   .signin .row { display: flex; gap: 0.625rem; align-items: center; }
-  .fine { margin: 0; font-size: 0.6875rem; color: var(--faint); line-height: 1.4; }
 </style>

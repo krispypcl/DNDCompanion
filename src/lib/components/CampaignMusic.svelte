@@ -22,6 +22,7 @@
     lead,
     playback = null,
     away = false,
+    room = false,
     onplayback,
     onchange
   }: {
@@ -35,6 +36,8 @@
     onplayback?: (p: Playback) => void;
     /** A player's page, with the DM not on the campaign page. */
     away?: boolean;
+    /** In an Owlbear Rodeo room: no card or heading of its own, and the list only for the DM. */
+    room?: boolean;
     onchange: (songs: Song[]) => Promise<void> | void;
   } = $props();
 
@@ -170,9 +173,9 @@
   const motion = () => ({ duration: prefersReducedMotion() ? 0 : 240, easing: cubicOut });
 </script>
 
-<section class="jukebox" aria-label="Table music">
-  <span class="cap">Table music</span>
-  <div class="body">
+<section class="jukebox" class:room aria-label="Table music">
+  {#if !room}<span class="cap">Table music</span>{/if}
+  <div class="body" class:solo={room && !lead}>
     <div class="player">
       {#if playingSong}
         <MusicPlayer url={playingSong.url} place="campaign" onended={next} ontitle={learnTitle}
@@ -183,6 +186,7 @@
         <MusicPlayer url="" idle="Waiting for the DM to play music..." />
       {/if}
     </div>
+    {#if !(room && !lead)}
     <div class="list">
       <ol>
         {#each songs as song, i (song.url)}
@@ -218,6 +222,7 @@
         </div>
       {/if}
     </div>
+    {/if}
   </div>
 </section>
 
@@ -234,6 +239,10 @@
     .jukebox { background: color-mix(in oklch, var(--surface) 92%, transparent); }
   }
   .cap { font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600; }
+  .jukebox.room { margin: 0; padding: 0; border: 0; background: none; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
+  .room .body { margin-top: 0; grid-template-columns: minmax(0, 1fr); }
+  .room .list ol { max-height: 9rem; }
+  .body.solo { display: block; }
   .body { display: grid; grid-template-columns: minmax(0, 19rem) minmax(0, 1fr); gap: 1rem; margin-top: 0.625rem; align-items: start; }
   .player { display: grid; justify-items: center; }
   .none { margin: 0; color: var(--dim); font-size: 0.8125rem; line-height: 1.45; align-self: center; }

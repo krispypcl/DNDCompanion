@@ -227,6 +227,28 @@ body {
   100% { opacity: 0; transform: scale(1.5) rotate(40deg); }
 }
 
+/* A small square × that closes what it sits in (the Owlbear player and board). */
+.closex {
+  flex: none; width: var(--x-size, 2rem); height: var(--x-size, 2rem); display: grid; place-items: center; padding: 0;
+  font: inherit; font-size: 1.125rem; line-height: 1; color: var(--dim); cursor: pointer;
+  border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--raised);
+  transition: border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+.closex:hover { border-color: var(--a-edge); color: var(--a); }
+.closex:active { transform: translateY(1px); }
+.closex:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
+
+/* Lists of cards arrive one after another, a beat apart, rather than all
+   at once: give the list `cascade` and each item `--i` (its place). Only the
+   first few wait; later ones come with the last of them. */
+.cascade > * {
+  animation: cascade-in 0.34s cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
+  animation-delay: calc(min(var(--i, 0), 8) * 45ms);
+}
+@keyframes cascade-in {
+  from { opacity: 0; transform: translateY(8px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
