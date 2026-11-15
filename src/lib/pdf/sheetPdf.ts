@@ -579,9 +579,7 @@ async function portrait(url: string): Promise<{ bytes: Uint8Array; png: boolean 
     const canvas = document.createElement('canvas');
     canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
     canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
-    const ctx = canvas.getContext('2d')!;
-    ctx.filter = 'grayscale(1)';
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
     const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/png'));
     if (!blob) return null;
     return { bytes: new Uint8Array(await blob.arrayBuffer()), png: true };
@@ -744,7 +742,7 @@ export async function sheetPdf(
   doc.setSubject('Dungeons & Dragons 5e character sheet');
 
   // Grayscale, so it prints the same on any printer: the accent is black
-  // and the spell levels' band a light grey.
+  // and the spell levels' band a light grey. The portrait keeps its colours.
   const accent = INK;
   const wash = hexRgb('#e9e9e9');
   const load: FontLoader = opts.loadFont ?? (async (file) => new Uint8Array(await (await fetch(`${opts.base ?? ''}/pdf/${file}`)).arrayBuffer()));
