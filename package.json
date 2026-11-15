@@ -32,6 +32,8 @@
   },
   "dependencies": {
     "@owlbear-rodeo/sdk": "^3.1.0",
-    "@supabase/supabase-js": "^2.47.10"
+    "@pdf-lib/fontkit": "^1.1.1",
+    "@supabase/supabase-js": "^2.47.10",
+    "pdf-lib": "^1.17.1"
   }
 }
