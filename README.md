@@ -1,4 +1,9 @@
-# DND Companion
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/readme/brand-dark.png">
+    <img src=".github/readme/brand-light.png" alt="DND Companion" width="400">
+  </picture>
+</h1>
 
 An online D&D 5e character sheet for a group of friends. Each player has an
 account and their own characters; anyone with a sheet's link can read it, and
