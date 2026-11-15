@@ -12,7 +12,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { peek } from '$lib/stores/peek.svelte';
-  import { FRAME_WIDTH, PANEL_FOOT, peekCrop } from '$lib/rules/peek';
+  import { FRAME_WIDTH, peekCrop } from '$lib/rules/peek';
 
   /** Laptop: the window opens beside the name. Phone: a sheet from the bottom. */
   const NARROW = 640;
@@ -63,7 +63,7 @@
     if (!crop || !holeWidth || !holeHeight) return null;
     const scale = Math.min(1, holeWidth / crop.width);
     const seen = holeHeight / scale;
-    const tall = crop.wholePage ? seen : crop.y + seen + PANEL_FOOT;
+    const tall = crop.y + seen + crop.foot;
     return {
       scale,
       height: Math.ceil(tall),
