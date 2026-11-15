@@ -35,7 +35,6 @@
   import SheetSkeleton from '$lib/components/SheetSkeleton.svelte';
   import D20Loader from '$lib/components/D20Loader.svelte';
   import PrintButton from '$lib/components/PrintButton.svelte';
-  import PrintSheet from '$lib/components/PrintSheet.svelte';
   import { beforeNavigate, goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import Flash from '$lib/components/Flash.svelte';
@@ -83,7 +82,7 @@
   import { advantageFrom } from '$lib/rules/equipment';
   import { nameFont } from '$lib/rules/fonts';
   import { shareRoll } from '$lib/owlbear/channel';
-  import { downloadText } from '$lib/download';
+  import { downloadBlob, downloadText } from '$lib/download';
   import { parseRoll, type Pool, type Roll } from '$lib/rules/dice';
   import { requestRoll } from '$lib/stores/dice';
   import { friendlyDate, latest } from '$lib/rules/dates';
@@ -488,6 +487,12 @@
     if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
     if (document.querySelector('.lightbox, [role="dialog"]:not([data-keys]), [role="alertdialog"]')) return;
     const mod = e.ctrlKey || e.metaKey;
+    // Printing the page itself would print the app: the sheet's PDF is what prints.
+    if (mod && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'p') {
+      e.preventDefault();
+      void makePdf();
+      return;
+    }
     if (mod && !e.shiftKey && e.key.toLowerCase() === 'z') {
       if (isOwner && $canUndo) {
         e.preventDefault();
@@ -508,7 +513,7 @@
       setSound(!get(soundOn));
     } else if (e.key.toLowerCase() === 'p') {
       e.preventDefault();
-      window.print();
+      void makePdf();
     } else if (/^[1-9]$/.test(e.key)) {
       activeTab = TABS[Number(e.key) - 1];
     }
@@ -540,6 +545,27 @@
   }
 
   /** A copy of the character as it is on screen right now, as a text file. */
+  /**
+   * The sheet as a fillable PDF (lib/pdf), made in the browser and saved.
+   * Writing this reader may not see is left out, as everywhere else.
+   */
+  let makingPdf = $state(false);
+  async function makePdf() {
+    if (!definition || !sheetState || makingPdf) return;
+    makingPdf = true;
+    try {
+      const { sheetPdf } = await import('$lib/pdf/sheetPdf');
+      const bytes = await sheetPdf(definition, sheetState, { base, notes: readable('notes') });
+      const name = (definition.identity?.name || 'Character').replace(/[\\/:*?"<>|]+/g, '').trim() || 'Character';
+      downloadBlob(`${name}.pdf`, new Blob([bytes as BlobPart], { type: 'application/pdf' }));
+      say('PDF saved');
+    } catch {
+      say('The printer jammed! Try again.');
+    } finally {
+      makingPdf = false;
+    }
+  }
+
   function exportNow() {
     if (!definition || !sheetState) return;
     downloadText(
@@ -769,7 +795,7 @@
         <a class="back" href={cameFrom ? `${base}/c/${cameFrom}` : `${base}/`}
            title={cameFrom ? 'Back to the campaign' : 'Back to your characters'}>Back</a>
         <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
-        <PrintButton />
+        <PrintButton onprint={makePdf} busy={makingPdf} />
         {#if isOwner}<DownloadButton ondownload={exportNow} />{/if}
         <button class="keys" onclick={() => (showKeys = true)} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
@@ -1244,7 +1270,6 @@
   </div>
   <!-- Only the printer shows this. Private writing a visitor cannot read is
        not passed in, so it is never on their paper either. -->
-  <PrintSheet {definition} state={sheetState} notes={readable('notes')} backstory={readable('backstory')} />
 {/if}
 
 <style>
