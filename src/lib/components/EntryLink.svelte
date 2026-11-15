@@ -1,5 +1,7 @@
 <script lang="ts">
   import { isHomebrew, lookupUrl, type LookupCategory } from '$lib/rules/lookup';
+  import { peekCrop } from '$lib/rules/peek';
+  import { peek, themeAt } from '$lib/stores/peek.svelte';
 
   let {
     name,
@@ -18,24 +20,70 @@
 
   const href = $derived(lookupUrl(name, source, category, override, parent));
   const homebrew = $derived(!href && isHomebrew(source));
+  /** 5e.tools pages open in the peek; anything else (a homebrew site) only in a new tab. */
+  const peeks = $derived(Boolean(href && peekCrop(href)));
+
+  let link = $state<HTMLAnchorElement>();
+  let lastPointer = 'mouse';
+
+  function target() {
+    if (!link || !href) return null;
+    const around = link.parentElement ?? link;
+    return { name, url: href, anchor: around.getBoundingClientRect(), ...themeAt(link) };
+  }
+
+  /*
+   * Resting the pointer on the name (the link's parent, not just the small
+   * icon) opens the peek beside it. Only for a mouse or pen: a finger has no
+   * hover, so on touch the icon itself opens it (below).
+   */
+  $effect(() => {
+    const around = link?.parentElement;
+    if (!around || !peeks) return;
+    const enter = (e: PointerEvent) => {
+      if (e.pointerType === 'touch' || e.buttons) return;
+      peek.hoverIn(target);
+    };
+    const leave = (e: PointerEvent) => {
+      if (e.pointerType !== 'touch') peek.hoverOut();
+    };
+    around.addEventListener('pointerenter', enter);
+    around.addEventListener('pointerleave', leave);
+    return () => {
+      around.removeEventListener('pointerenter', enter);
+      around.removeEventListener('pointerleave', leave);
+    };
+  });
+
+  /** A tap opens the peek instead of a new tab; it has its own Open on 5e.tools. */
+  function click(e: MouseEvent) {
+    if (!peeks || lastPointer !== 'touch') return;
+    const t = target();
+    if (!t) return;
+    e.preventDefault();
+    peek.show(t, { tapped: true });
+  }
 </script>
 
 {#if href}
   <a
     class="lookup"
     {href}
+    bind:this={link}
+    onpointerdown={(e) => (lastPointer = e.pointerType)}
+    onclick={click}
     target="_blank"
     rel="noopener noreferrer"
     title="Look up {name} on 5e.tools"
     aria-label="Look up {name} on 5e.tools"
   >
+    <!-- An open book: look it up. -->
     <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
       <path
-        d="M6 3h7v7M13 3 7 9M11 10v3H3V5h3"
+        d="M8 4.2C6.6 3.2 4.6 2.8 2 3v9c2.6-.2 4.6.2 6 1.2 1.4-1 3.4-1.4 6-1.2V3c-2.6-.2-4.6.2-6 1.2Zm0 0v9"
         fill="none"
         stroke="currentColor"
-        stroke-width="1.5"
-        stroke-linecap="round"
+        stroke-width="1.4"
         stroke-linejoin="round"
       />
     </svg>
