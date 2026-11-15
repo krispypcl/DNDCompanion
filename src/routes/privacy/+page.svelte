@@ -11,7 +11,7 @@
 <main class="policy">
   <a class="smallbtn back" href="{base}/">Back</a>
   <h1>Privacy</h1>
-  <p class="dim">Last updated 10 November 2026.</p>
+  <p class="dim">Last updated 16 November 2026.</p>
 
   <p>DND Companion is a free, hobby D&amp;D 5e character sheet. It keeps only what it needs to run your sheets and campaigns, and it never sells, rents or shares it for advertising.</p>
 
@@ -24,6 +24,7 @@
 
   <h2>Who can see it</h2>
   <p>A sheet or campaign page can be opened by anyone who has its link. Private notes on a sheet can be read by you, and by the DM of a campaign the sheet is in. A campaign's board can be changed by the people in that campaign.</p>
+  <p>The rows on your sheets (attacks, spells, items, features and trackers) are shared in a library that other players can pick from while they type, without your name. Only players you share a campaign with can see that you wrote one. You can turn this off on the <a href="{base}/account">Account</a> page, which takes your rows back out of it. A row another player has also put on their own sheet stays, as theirs, without your name.</p>
 
   <h2>Where it is stored</h2>
   <p>Accounts and sheets are stored with <a href="https://supabase.com/privacy" rel="noopener">Supabase</a>, which runs the database and sign-in. The site itself is served by GitHub Pages. Pictures and music you link to stay where they are: the page loads them from those sites (for example YouTube for music), and those sites' own policies apply. Fonts are loaded from Google Fonts.</p>
@@ -33,7 +34,7 @@
   <p><a class="smallbtn" href="https://github.com/krispypcl/DNDCompanion" target="_blank" rel="noopener noreferrer">GitHub repository</a></p>
 
   <h2>Removing it</h2>
-  <p>You can delete any sheet or campaign yourself. Deleting your account on the <a href="{base}/account">Account</a> page removes the account and its sheets for good. You can also remove the site's access to your Google account at <a href="https://myaccount.google.com/connections" rel="noopener">myaccount.google.com/connections</a>.</p>
+  <p>You can delete any sheet or campaign yourself. Deleting your account on the <a href="{base}/account">Account</a> page removes the account and its sheets for good, along with their rows in the shared library. You can also remove the site's access to your Google account at <a href="https://myaccount.google.com/connections" rel="noopener">myaccount.google.com/connections</a>.</p>
 
   <h2>Questions</h2>
   <p>Write to <a href="mailto:krispypcl@gmail.com">krispypcl@gmail.com</a>.</p>
