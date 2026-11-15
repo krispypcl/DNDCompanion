@@ -27,7 +27,7 @@
   <p>The rows on your sheets (attacks, spells, items, features and trackers) are shared in a library that other players can pick from while they type, without your name. Only players you share a campaign with can see that you wrote one. You can turn this off on the <a href="{base}/account">Account</a> page, which takes your rows back out of it. A row another player has also put on their own sheet stays, as theirs, without your name.</p>
 
   <h2>Where it is stored</h2>
-  <p>Accounts and sheets are stored with <a href="https://supabase.com/privacy" rel="noopener">Supabase</a>, which runs the database and sign-in. The site itself is served by GitHub Pages. Pictures and music you link to stay where they are: the page loads them from those sites (for example YouTube for music), and those sites' own policies apply. Fonts are loaded from Google Fonts.</p>
+  <p>Accounts and sheets are stored with <a href="https://supabase.com/privacy" rel="noopener">Supabase</a>, which runs the database and sign-in. The site itself is served by GitHub Pages. Pictures and music you link to stay where they are: the page loads them from those sites (for example YouTube for music), and those sites' own policies apply. Fonts are loaded from Google Fonts. Looking up a spell, item or feature reads 5e.tools' published data from GitHub, which sees only that the file was asked for.</p>
 
   <h2>The code</h2>
   <p>DND Companion’s code is open for anyone to read, so you can see exactly what it does with what you give it.</p>
