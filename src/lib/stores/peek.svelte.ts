@@ -4,7 +4,7 @@
  * (`hoverPeek` on a name, `peek.show` on a tap); LookupPeek, mounted once in
  * the layout, draws it.
  */
-import { peekCrop } from '$lib/rules/peek';
+import { peekTarget } from '$lib/rules/peek';
 
 /** How long the pointer rests on a name before the window opens. */
 export const HOVER_OPEN_MS = 450;
@@ -35,7 +35,7 @@ class Peek {
 
   show(target: PeekTarget, { tapped = false } = {}) {
     this.#clear();
-    if (!peekCrop(target.url)) return;
+    if (!peekTarget(target.url)) return;
     this.target = target;
     this.tapped = tapped;
   }

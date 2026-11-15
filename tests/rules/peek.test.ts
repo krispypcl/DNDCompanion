@@ -1,19 +1,63 @@
 import { describe, expect, it } from 'vitest';
-import { peekCrop, peekPage } from '$lib/rules/peek';
+import { peekTarget } from '$lib/rules/peek';
+import { inline, render } from '$lib/rules/fiveRender';
 
-describe('peek', () => {
-  it('knows the page a link opens', () => {
-    expect(peekPage('https://5e.tools/spells.html#fireball_xphb')).toBe('spells.html');
-    expect(peekPage('https://5e.tools/search.html?q=Alert%20in:feat&lucky')).toBe('feats.html');
-    expect(peekPage('https://5e.tools/search.html?q=Second%20Wind&lucky')).toBeNull();
-    expect(peekPage('https://example.com/spells.html')).toBeNull();
+describe('peekTarget', () => {
+  it('reads an entry page link', () => {
+    expect(peekTarget('https://5e.tools/spells.html#fireball_xphb')).toEqual({ page: 'spells', name: 'fireball', source: 'xphb' });
+    expect(peekTarget('https://5e.tools/items.html#leather%20armor_xphb')).toEqual({ page: 'items', name: 'leather armor', source: 'xphb' });
   });
-  it('cuts the hole over the entry panel', () => {
-    expect(peekCrop('https://5e.tools/spells.html#fireball_xphb')).toEqual({ x: 800, y: 355, width: 463, foot: 190 });
-    expect(peekCrop('https://5e.tools/races.html#tiefling_xphb')?.width).toBe(556);
-    expect(peekCrop('https://5e.tools/classes.html#fighter_xphb')).toEqual({ x: 423, y: 330, width: 830, foot: 90 });
-    // A search lands somewhere unknown: the widest panel, so nothing is cut off.
-    expect(peekCrop('https://5e.tools/search.html?q=Second%20Wind&lucky')?.x).toBe(707);
-    expect(peekCrop('https://www.dndbeyond.com/spells/fireball')).toBeNull();
+  it('reads a class feature and a subclass', () => {
+    expect(peekTarget('https://5e.tools/classes.html#fighter_xphb,state:feature=s0-1')).toEqual({
+      page: 'classes', name: 'fighter', source: 'xphb', feature: { level: 1, index: 1 }
+    });
+    expect(peekTarget('https://5e.tools/classes.html#fighter_xphb,state:feature=s2-0~sub_battle%20master_xphb=b1')).toMatchObject({
+      subclass: { name: 'battle master', source: 'xphb' }, feature: { level: 3, index: 0 }
+    });
+  });
+  it('reads a search', () => {
+    expect(peekTarget('https://5e.tools/search.html?q=Leather%20Armor%20in%3Aitm%20source%3Axphb&lucky')).toEqual({
+      page: 'items', name: 'Leather Armor', source: 'xphb'
+    });
+    expect(peekTarget('https://5e.tools/search.html?q=Second%20Wind&lucky')).toEqual({ page: 'any', name: 'Second Wind', source: '' });
+    expect(peekTarget('https://www.dndbeyond.com/spells/fireball')).toBeNull();
+  });
+});
+
+describe('5e.tools text', () => {
+  it('turns tags into words, safely', () => {
+    expect(inline('Deal {@damage 8d6} {@b fire} damage to {@creature goblin|mm|goblins}.')).toBe('Deal 8d6 <b>fire</b> damage to goblins.');
+    expect(inline('{@atkr m} {@hit 5} {@h}{@dc 15} <script>')).toBe('<i>Melee Attack Roll:</i> +5 <i>Hit:</i> DC 15 &lt;script&gt;');
+    expect(inline('{@note see {@spell shield}}')).toBe('<span class="five-note">see shield</span>');
+  });
+
+  it('shows a spell from its name to its book', () => {
+    const r = render({
+      kind: 'spell',
+      entry: {
+        name: 'Fireball', source: 'XPHB', page: 274, level: 3, school: 'V',
+        time: [{ number: 1, unit: 'action' }], range: { type: 'point', distance: { type: 'feet', amount: 150 } },
+        components: { v: true, s: true, m: 'a ball of bat guano and sulfur' }, duration: [{ type: 'instant' }],
+        entries: ['A bright streak flashes.'], entriesHigherLevel: [{ type: 'entries', name: 'Using a Higher-Level Spell Slot', entries: ['More {@scaledamage 8d6|3-9|1d6}.'] }]
+      }
+    });
+    expect(r.kind).toBe('Level 3 Evocation');
+    expect(r.facts).toEqual([
+      ['Casting Time', 'Action'], ['Range', '150 feet'], ['Components', 'V, S, M (a ball of bat guano and sulfur)'], ['Duration', 'Instantaneous']
+    ]);
+    expect(r.html).toContain('<h4>Using a Higher-Level Spell Slot</h4><p>More 1d6.</p>');
+    expect(r.source).toBe('Player&#39;s Handbook (2024), page 274');
+  });
+
+  it('shows an item with no text of its own', () => {
+    const armor = render({ kind: 'item', entry: { name: 'Leather Armor', source: 'XPHB', page: 219, type: 'LA|XPHB', rarity: 'none', weight: 10, value: 1000, ac: 11 } });
+    expect(armor.kind).toBe('Light Armor');
+    expect(armor.facts).toEqual([['Armor Class', '11 + Dex modifier'], ['Weight', '10 lb.'], ['Cost', '10 GP']]);
+    const sword = render({ kind: 'item', entry: { name: 'Longsword', source: 'XPHB', type: 'M|XPHB', weaponCategory: 'martial', property: ['V|XPHB'], mastery: ['Sap|XPHB'], dmg1: '1d8', dmgType: 'S', dmg2: '1d10', weight: 3, value: 1500 } });
+    expect(sword.kind).toBe('Martial Melee Weapon');
+    expect(sword.facts).toContainEqual(['Damage', '1d8 Slashing']);
+    expect(render({ kind: 'feat', entry: { name: 'A & B', category: 'O', entries: [] } }).name).toBe('A &amp; B');
+    expect(sword.facts).toContainEqual(['Properties', 'Versatile (1d10)']);
+    expect(sword.facts).toContainEqual(['Mastery', 'Sap']);
   });
 });

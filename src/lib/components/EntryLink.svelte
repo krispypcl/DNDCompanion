@@ -1,6 +1,6 @@
 <script lang="ts">
   import { isHomebrew, lookupUrl, type LookupCategory } from '$lib/rules/lookup';
-  import { peekCrop } from '$lib/rules/peek';
+  import { peekTarget } from '$lib/rules/peek';
   import { peek, themeAt } from '$lib/stores/peek.svelte';
 
   let {
@@ -21,7 +21,7 @@
   const href = $derived(lookupUrl(name, source, category, override, parent));
   const homebrew = $derived(!href && isHomebrew(source));
   /** 5e.tools pages open in the peek; anything else (a homebrew site) only in a new tab. */
-  const peeks = $derived(Boolean(href && peekCrop(href)));
+  const peeks = $derived(Boolean(href && peekTarget(href)));
 
   let link = $state<HTMLAnchorElement>();
   let lastPointer = 'mouse';
