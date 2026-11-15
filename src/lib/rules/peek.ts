@@ -12,7 +12,7 @@ const PANEL_RIGHT = 1263;
 /** Its top: under the advert band 5e.tools keeps for frames (250) and its header. */
 const PANEL_TOP = 355;
 /** Room 5e.tools keeps under the panel (a band at the foot of the page). */
-export const PANEL_FOOT = 190;
+const PANEL_FOOT = 190;
 
 /** Where each list page's panel starts (the lists differ in width). */
 const PANEL_LEFT: Record<string, number> = {
@@ -45,8 +45,9 @@ export type Crop = {
   y: number;
   /** Its width in the frame's pixels. */
   width: number;
-  /** A class page scrolls as a whole and keeps its feature at the top of the frame. */
-  wholePage: boolean;
+  /** How much of the frame to keep below the hole, so 5e.tools' foot band
+      (and on a class page, its floating advert) sits out of sight. */
+  foot: number;
 };
 
 /** Which 5e.tools page a link opens (for a search, the page it is narrowed to). */
@@ -69,7 +70,9 @@ export function peekPage(url: string): string | null {
 export function peekCrop(url: string): Crop | null {
   if (!/^https:\/\/([a-z0-9-]+\.)?5e\.tools\//i.test(url)) return null;
   const page = peekPage(url);
-  if (page === 'classes.html') return { x: 423, y: 0, width: 825, wholePage: true };
+  // A class page is one long column (its table, then its features) that
+  // scrolls as a whole, with a floating advert along the bottom edge.
+  if (page === 'classes.html') return { x: 423, y: 330, width: 830, foot: 90 };
   const left = (page ? PANEL_LEFT[page] : undefined) ?? WIDEST;
-  return { x: left, y: PANEL_TOP, width: PANEL_RIGHT - left, wholePage: false };
+  return { x: left, y: PANEL_TOP, width: PANEL_RIGHT - left, foot: PANEL_FOOT };
 }
