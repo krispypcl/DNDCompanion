@@ -17,6 +17,8 @@
   import { resolveImageUrl } from '$lib/rules/imageUrl';
   import { session } from '$lib/stores/session';
   import { friendlyError } from '$lib/errors';
+  import Switch from '$lib/components/Switch.svelte';
+  import { setSharing, sharing } from '$lib/library';
 
   const MIN_PASSWORD = 8;
 
@@ -74,6 +76,19 @@
     } finally {
       savingPw = false;
     }
+  }
+
+  /** The shared library: on unless turned off here. Off takes back what was shared. */
+  let shareBusy = $state(false);
+  let shareMsg = $state<{ ok: boolean; text: string } | null>(null);
+  async function toggleSharing(on: boolean) {
+    shareBusy = true;
+    shareMsg = null;
+    const done = await setSharing(on);
+    shareBusy = false;
+    shareMsg = done.ok
+      ? { ok: true, text: on ? 'Sharing again. Your rows join the library the next time you open a sheet.' : 'Stopped. Your rows are back out of the library.' }
+      : { ok: false, text: friendlyError(done.message, 'The library didn’t listen! Try again in a moment.') };
   }
 
   let confirmEverywhere = $state(false);
@@ -181,6 +196,20 @@
       {:else}
         <div class="google-wrap"><GoogleButton link next="/account" /></div>
       {/if}
+    </section>
+
+    <section class="card" aria-labelledby="lib-h">
+      <h2 id="lib-h">Shared library
+        <InfoTip label="About the shared library">When you type a name in a table (an attack, spell, item, feature or
+          tracker), rows other players have written are offered, ready to use. Your own rows are shared the same way,
+          without your name: only players you share a campaign with can see who wrote them.</InfoTip>
+      </h2>
+      <div class="row lib-row">
+        {#if shareMsg}<span class="msg" class:bad={!shareMsg.ok} role="status">{shareMsg.text}</span>{/if}
+        <Switch checked={sharing($session.user)} label="Share my rows" disabled={shareBusy}
+                title="Turning it off takes back everything you have shared"
+                onchange={toggleSharing} />
+      </div>
     </section>
 
     <section class="card" aria-labelledby="out-h">
