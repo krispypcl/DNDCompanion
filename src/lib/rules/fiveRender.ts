@@ -4,7 +4,7 @@
  * built as HTML from the data's own structure with every piece of text
  * escaped, so it is safe to place in the page.
  */
-import type { Found, Raw } from './fiveData';
+import type { Found, ItemWords, Raw } from './fiveData';
 
 /** Every string here is HTML, built with its text escaped. */
 export type Rendered = {
@@ -276,8 +276,8 @@ function coins(cp: number): string {
   return `${cp} CP`;
 }
 
-function itemFacts(e: Raw): { kind: string; facts: [string, string][] } {
-  const t = ITEM_TYPE[code(e.type)];
+function itemFacts(e: Raw, words: ItemWords = { types: {}, props: {} }): { kind: string; facts: [string, string][] } {
+  const t = ITEM_TYPE[code(e.type)] ?? words.types[code(e.type).toUpperCase()];
   const rarity = e.rarity && !['none', 'unknown', 'unknown (magic)'].includes(e.rarity) ? cap(e.rarity) : '';
   const base = t ?? (e.wondrous ? 'Wondrous Item' : e.weapon ? 'Weapon' : e.armor ? 'Armor' : 'Item');
   const kind = [e.weaponCategory ? `${cap(e.weaponCategory)} ${base}` : base, rarity, e.reqAttune ? `(Requires Attunement${typeof e.reqAttune === 'string' ? ` ${e.reqAttune}` : ''})` : '']
@@ -294,9 +294,10 @@ function itemFacts(e: Raw): { kind: string; facts: [string, string][] } {
   if (e.dmg1) facts.push(['Damage', `${e.dmg1} ${DAMAGE[e.dmgType] ?? ''}`.trim()]);
   const props = (e.property ?? []).map((p: unknown) => {
     const k = code(typeof p === 'object' ? (p as Raw).uid : p);
-    const name = PROPERTY[k] ?? k;
+    const name = PROPERTY[k] ?? words.props[k.toUpperCase()] ?? k;
     if (k === 'V' && e.dmg2) return `${name} (${e.dmg2})`;
     if ((k === 'T' || k === 'A' || k === 'AF') && e.range) return `${name} (Range ${e.range})`;
+    if (/^RLD$|-Re$/i.test(k) && e.reload) return `${name} (${e.reload})`;
     return name;
   });
   if (props.length) facts.push(['Properties', props.join(', ')]);
@@ -373,7 +374,7 @@ export function render(found: Found): Rendered {
       break;
     }
     case 'item': {
-      ({ kind, facts } = itemFacts(e));
+      ({ kind, facts } = itemFacts(e, found.words));
       html = blocks(e.entries);
       break;
     }
@@ -408,7 +409,7 @@ export function render(found: Found): Rendered {
       html = blocks(e.entries);
       break;
     case 'classFeature':
-      kind = `${e.className} Feature, Level ${e.level}`;
+      kind = `${e.subclassShortName ? `${e.subclassShortName} ` : ''}${e.className} Feature, Level ${e.level}`;
       html = blocks(e.entries);
       break;
     case 'subclass': {

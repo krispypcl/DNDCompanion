@@ -355,7 +355,9 @@ export function trackerUrl(
   }
   // A homebrew class (one of theirs, but not on 5e.tools' class list): the
   // tracker's own name, searched in its book.
-  if (ownClass) return own() ?? lookupUrl(tracker.label, tracker.source, 'any');
+  // The search names the class's book, so a homebrew class's own feature
+  // (a Gunslinger's Grit) is looked for where it is written.
+  if (ownClass) return own() ?? lookupUrl(tracker.label, tracker.source || ownClass.source, 'any');
   // From a species, feat, item or background: the tracker's own page if it
   // has one (Invisibility from a Tiefling), else what it comes from.
   return own() ?? entryUrl(from, tracker.source, sheetBooks) ?? lookupUrl(from, tracker.source, 'any');
