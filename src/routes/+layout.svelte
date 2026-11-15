@@ -4,6 +4,7 @@
   import { onNavigate } from '$app/navigation';
   import Splash from '$lib/components/Splash.svelte';
   import ConnectionNotice from '$lib/components/ConnectionNotice.svelte';
+  import LookupPeek from '$lib/components/LookupPeek.svelte';
   import { arrive, prefersReducedMotion } from '$lib/motion';
 
   let { children } = $props();
@@ -30,6 +31,7 @@
 
 <Splash />
 <ConnectionNotice />
+<LookupPeek />
 
 <!--
   Keyed on the path, so every route change — opening a sheet, coming back to
