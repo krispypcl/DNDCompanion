@@ -22,6 +22,7 @@
   import DiceRoller from '$lib/components/DiceRoller.svelte';
   import EditableField from '$lib/components/EditableField.svelte';
   import EntryLink from '$lib/components/EntryLink.svelte';
+  import ClassIcon from '$lib/components/ClassIcon.svelte';
   import HitPoints from '$lib/components/HitPoints.svelte';
   import HurtEdges from '$lib/components/HurtEdges.svelte';
   import RestButtons from '$lib/components/RestButtons.svelte';
@@ -76,7 +77,8 @@
     speedParts,
     spellAttackBonus,
     spellSaveDC,
-    weightCarried
+    weightCarried,
+    mainClass
   } from '$lib/rules/derived';
   import Why from '$lib/components/Why.svelte';
   import EquipDialog from '$lib/components/EquipDialog.svelte';
@@ -689,6 +691,9 @@
     {#if banner}<Banner url={banner} />{/if}
     <header class="identity">
       <div class="portrait" class:has={Boolean(portraitSrc)} class:fallen={dead}>
+        <!-- No portrait yet: the main class, drawn (a bow for a ranger…); a
+             picture covers it, and a picture that fails to load shows it again. -->
+        <ClassIcon cls={mainClass(definition)} />
         {#if portraitSrc}
           <!-- A link that stops working (a Drive file that was unshared) leaves
                the frame as it is for a sheet with no art, not a broken-image icon. -->

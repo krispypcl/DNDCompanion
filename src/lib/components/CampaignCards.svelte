@@ -12,7 +12,8 @@
   import { flip } from 'svelte/animate';
   import { reorder } from '$lib/reorder';
   import { base } from '$app/paths';
-  import { armorClass, characterLevel, classLine, passiveScore } from '$lib/rules/derived';
+  import { armorClass, characterLevel, classLine, mainClass, passiveScore } from '$lib/rules/derived';
+  import ClassIcon from './ClassIcon.svelte';
   import { vitalStatus } from '$lib/rules/hp';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
   import { STANDARD_CONDITIONS, cleanName, defaultLook, isStandard, lookKey, lookOf } from '$lib/rules/conditions';
@@ -194,6 +195,8 @@
              is kept for being hurt), a band for each, all the way round. -->
         <span class="portrait" class:ringed={ring.length > 0}
               title={conds.length ? conds.map(cleanName).join(', ') : undefined}>
+          <!-- No portrait yet: the main class, drawn; a picture covers it. -->
+          {#if def}<ClassIcon cls={mainClass(def)} />{/if}
           {#if portrait}<img src={portrait} alt="" />{/if}
           <ConditionRing bands={ring} />
           <span class="lvl">LV {characterLevel(def)}</span>

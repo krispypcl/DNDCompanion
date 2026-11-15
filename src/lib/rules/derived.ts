@@ -195,6 +195,12 @@ export function classList(def: Definition): ClassEntry[] {
   ];
 }
 
+/** The class a character is mostly: the one with the most levels (the first on a tie). */
+export function mainClass(def: Definition): string | undefined {
+  const list = classList(def);
+  return list.reduce<ClassEntry | undefined>((best, c) => (!best || (Number(c.level) || 0) > (Number(best.level) || 0) ? c : best), undefined)?.name;
+}
+
 /**
  * The proficiency bonus, from total character level (all classes together):
  * +2 at levels 1–4, +3 at 5–8, +4 at 9–12, +5 at 13–16, +6 at 17–20. Not

@@ -11,7 +11,8 @@
   import { flip } from 'svelte/animate';
   import { fade, slide } from 'svelte/transition';
   import { cubicOut, quintOut } from 'svelte/easing';
-  import { armorClass, classLine } from '$lib/rules/derived';
+  import { armorClass, classLine, mainClass } from '$lib/rules/derived';
+  import ClassIcon from '../ClassIcon.svelte';
   import { vitalStatus } from '$lib/rules/hp';
   import { lookOf } from '$lib/rules/conditions';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
@@ -352,6 +353,7 @@
           <li class="char themed {v.vital}" data-key={s.id} style={themeStyle(def?.identity?.theme)} style:--i={i} animate:flip={{ duration: 280, easing: quintOut }}>
             <div class="top">
               <span class="portrait" class:ringed={ring.length > 0}>
+                {#if def}<ClassIcon cls={mainClass(def)} />{/if}
                 {#if portrait}<img src={portrait} alt="" draggable="false" />{/if}
                 <ConditionRing bands={ring} />
               </span>
