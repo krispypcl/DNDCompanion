@@ -98,7 +98,7 @@
   import { campaignRepo, type Campaign } from '$lib/data/campaigns';
   import { slotLevel } from '$lib/rules/print';
   import { themeStyle } from '$lib/theme';
-  import { bump, glow, sparkle } from '$lib/motion';
+  import { bump, glow, parallax, sparkle } from '$lib/motion';
   import { glide } from '$lib/flip';
   import { isDead } from '$lib/rules/hp';
   import ConditionOverlay from '$lib/components/ConditionOverlay.svelte';
@@ -690,15 +690,18 @@
   <div class="sheet themed" class:entering class:bannered={banner} style={themeStyle(themePreview ?? definition.identity.theme)}>
     {#if banner}<Banner url={banner} />{/if}
     <header class="identity">
-      <div class="portrait" class:has={Boolean(portraitSrc)} class:fallen={dead}>
-        <!-- No portrait yet: the main class, drawn (a bow for a ranger…); a
-             picture covers it, and a picture that fails to load shows it again. -->
-        <ClassIcon cls={mainClass(definition)} />
-        {#if portraitSrc}
-          <!-- A link that stops working (a Drive file that was unshared) leaves
-               the frame as it is for a sheet with no art, not a broken-image icon. -->
-          <img src={portraitSrc} alt="" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />
-        {/if}
+      <div class="portrait" class:has={Boolean(portraitSrc)} class:fallen={dead} use:parallax>
+        <!-- The picture leans a little with the pointer, inside its frame. -->
+        <span class="frame">
+          <!-- No portrait yet: the main class, drawn (a bow for a ranger…); a
+               picture covers it, and a picture that fails to load shows it again. -->
+          <ClassIcon cls={mainClass(definition)} />
+          {#if portraitSrc}
+            <!-- A link that stops working (a Drive file that was unshared) leaves
+                 the frame as it is for a sheet with no art, not a broken-image icon. -->
+            <img src={portraitSrc} alt="" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />
+          {/if}
+        </span>
         <span class="lvl" use:glow={totalLevel}>LV {totalLevel}</span>
         {#key levelUp}
           {#if levelUp > 0}
@@ -1366,7 +1369,16 @@
   }
   .portrait img {
     position: absolute; inset: 0; width: 100%; height: 100%;
-    object-fit: cover; border-radius: var(--r);
+    object-fit: cover;
+  }
+  .frame { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; }
+  /* Parallax (motion.ts): the picture grows a touch and drifts away from the
+     pointer; leaving, it eases back to rest. */
+  .frame > :global(*) {
+    transform:
+      translate3d(calc(var(--px, 0) * -5px), calc(var(--py, 0) * -5px), 0)
+      scale(calc(1 + var(--pz, 0) * 0.09));
+    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), filter 0.8s ease;
   }
   /* Sits on the bottom edge, half in and half out. */
   .lvl {
@@ -1376,7 +1388,6 @@
     padding: 0.0625rem 0.5rem; letter-spacing: 0.02em; white-space: nowrap;
   }
   /* Dead: the portrait drains of colour and a skull sits on its top edge. */
-  .portrait img { transition: filter 0.8s ease; }
   .portrait.fallen img { filter: grayscale(1) brightness(0.65); }
   /* Dead: a big skull in front of the greyed portrait, not a badge. */
   .skull {

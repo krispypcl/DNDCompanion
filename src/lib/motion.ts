@@ -138,3 +138,39 @@ export function glideTo(_node: Element, { from, to }: { from: DOMRect; to: DOMRe
     css: (_t: number, u: number) => `transform: translate(${u * dx}px, ${u * dy}px);`
   };
 }
+
+/**
+ * A picture that leans with the pointer: while a mouse or pen is over the
+ * node, its --px and --py run from -1 to 1 with where the pointer is, and
+ * --pz says it is pointed at; CSS turns them into a small shift. Nothing on
+ * touch screens or with reduced motion.
+ */
+export function parallax(node: HTMLElement) {
+  if (typeof matchMedia !== 'function' || !matchMedia('(hover: hover)').matches || prefersReducedMotion()) return {};
+  let frame = 0;
+  const set = (x: number, y: number, on: boolean) => {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => {
+      node.style.setProperty('--px', x.toFixed(3));
+      node.style.setProperty('--py', y.toFixed(3));
+      node.style.setProperty('--pz', on ? '1' : '0');
+    });
+  };
+  const move = (e: PointerEvent) => {
+    if (e.pointerType === 'touch') return;
+    const r = node.getBoundingClientRect();
+    const x = Math.max(-1, Math.min(1, ((e.clientX - r.left) / r.width) * 2 - 1));
+    const y = Math.max(-1, Math.min(1, ((e.clientY - r.top) / r.height) * 2 - 1));
+    set(x, y, true);
+  };
+  const leave = () => set(0, 0, false);
+  node.addEventListener('pointermove', move);
+  node.addEventListener('pointerleave', leave);
+  return {
+    destroy() {
+      cancelAnimationFrame(frame);
+      node.removeEventListener('pointermove', move);
+      node.removeEventListener('pointerleave', leave);
+    }
+  };
+}
