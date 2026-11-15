@@ -31,7 +31,7 @@
             : []),
           { keys: ['1', '–', '9'], what: 'Switch tabs, Combat to Links' },
           { keys: ['M'], what: 'Sound and music on or off' },
-          { keys: ['P'], what: 'Print the sheet' },
+          { keys: ['P'], what: 'Save the sheet as a PDF, to print or keep' },
           { keys: ['?'], what: 'Show these shortcuts' },
           { keys: ['Esc'], what: 'Close a dialog or picture' }
         ]
