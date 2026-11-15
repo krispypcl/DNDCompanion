@@ -25,8 +25,6 @@ import {
   rgb,
   type RGB
 } from 'pdf-lib';
-import { toHex } from '$lib/owlbear/colour';
-import { themeOf } from '$lib/theme';
 import type { Definition, State } from '$lib/types';
 import { sheetContent, type Paragraph, type SheetContent } from './content';
 
@@ -39,9 +37,10 @@ const hexRgb = (hex: string): RGB => {
   const h = hex.replace('#', '');
   return rgb(parseInt(h.slice(0, 2), 16) / 255, parseInt(h.slice(2, 4), 16) / 255, parseInt(h.slice(4, 6), 16) / 255);
 };
-const INK = hexRgb('#2b2b31');
-const VALUE = hexRgb('#121216');
-const MUTED = hexRgb('#6c6c75');
+// Grayscale throughout, and every word black: values and labels alike.
+const INK = rgb(0, 0, 0);
+const VALUE = rgb(0, 0, 0);
+const MUTED = rgb(0, 0, 0);
 const SOFT = hexRgb('#c9c9d0');
 const WELL = hexRgb('#f2f2f5');
 const BAND = hexRgb('#f6f6f8');
@@ -107,14 +106,31 @@ function caps(k: Kit, page: PDFPage, s: string, x: number, y: number, align: 'le
   write(page, s.toUpperCase(), x, y, { font: k.fonts.semibold, size, color: color ?? k.accent, align, spacing: 0.55, maxWidth });
 }
 
+/** How tall a font's capitals stand at a size (from the font itself, so centring is exact). */
+function capHeight(font: PDFFont, size: number): number {
+  const f = (font as unknown as { embedder?: { font?: { capHeight?: number; unitsPerEm?: number } } }).embedder?.font;
+  return f?.capHeight && f.unitsPerEm ? (f.capHeight / f.unitsPerEm) * size : 0.72 * size;
+}
+
+/** Capitals with their middle on a line at y, centred on x. */
+function capsAt(page: PDFPage, s: string, font: PDFFont, size: number, x: number, y: number, spacing = 0, color = INK) {
+  const total = font.widthOfTextAtSize(s, size) + spacing * Math.max(0, s.length - 1);
+  let at = x - total / 2;
+  const baseline = H - y - capHeight(font, size) / 2;
+  for (const ch of spacing ? [...s] : [s]) {
+    page.drawText(ch, { x: at, y: baseline, size, font, color });
+    at += font.widthOfTextAtSize(ch, size) + spacing;
+  }
+}
+
 /** A framed section with its name on a tab across the bottom edge, as on the paper sheet. */
 function section(k: Kit, page: PDFPage, x: number, y: number, w: number, h: number, title?: string) {
   box(page, x, y, w, h, { stroke: INK, fill: WHITE, r: 7 });
   if (!title) return;
   const label = title.toUpperCase();
-  const tw = k.fonts.semibold.widthOfTextAtSize(label, 5.8) + 0.6 * (label.length - 1) + 14;
+  const tw = k.fonts.semibold.widthOfTextAtSize(label, 5.8) + 0.55 * (label.length - 1) + 14;
   box(page, x + w / 2 - tw / 2, y + h - 6, tw, 12, { stroke: INK, fill: WHITE, r: 6, width: 0.8 });
-  caps(k, page, label, x + w / 2, y + h - 3.2, 'center', 5.8);
+  capsAt(page, label, k.fonts.semibold, 5.8, x + w / 2, y + h, 0.55);
 }
 
 /** A rounded grey well that a value sits in. */
@@ -131,8 +147,14 @@ function logo(page: PDFPage, x: number, y: number, size: number, color: RGB) {
 }
 
 function brand(k: Kit, page: PDFPage) {
-  logo(page, 34, 20, 26, INK);
-  write(page, 'DND COMPANION', 66, 26.5, { font: k.fonts.brand, size: 15, color: INK });
+  // The die and the name share one middle line, as in the app's header.
+  const size = 26;
+  const middle = 33;
+  logo(page, 34, middle - size / 2, size, INK);
+  const name = 'DND COMPANION';
+  const font = k.fonts.brand;
+  const at = 34 + size + 7;
+  page.drawText(name, { x: at, y: H - middle - capHeight(font, 15) / 2, size: 15, font, color: INK });
 }
 
 function footer(k: Kit, page: PDFPage) {
@@ -159,6 +181,21 @@ type FieldOpts = {
 /** An editable box holding a value. A name seen before adds the same field again on this page. */
 function field(k: Kit, page: PDFPage, name: string, value: string, x: number, y: number, w: number, h: number, o: FieldOpts = {}) {
   const form = k.doc.getForm();
+  // A one-line box shows what fits its width; the whole value is kept, and a
+  // reader scrolls to the rest. (Its look is not clipped, so it would
+  // otherwise run over the boxes beside it.)
+  if (!o.multiline && o.shown === undefined && value) {
+    const font = k.fonts[o.font ?? 'regular'];
+    const size = o.size ?? 8;
+    const room = w - 4;
+    if (font.widthOfTextAtSize(value, size) > room) {
+      let end = value.length;
+      while (end > 1 && font.widthOfTextAtSize(value.slice(0, end), size) > room) end--;
+      const cut = value.slice(0, end);
+      const space = cut.lastIndexOf(' ');
+      o = { ...o, shown: (space > end / 2 ? cut.slice(0, space) : cut).replace(/[;,\s]+$/, '') };
+    }
+  }
   let f = k.fields.get(name);
   if (!f) {
     f = form.createTextField(name);
@@ -242,13 +279,19 @@ const capacity = (font: PDFFont, size: number, height: number) => Math.max(1, Ma
 
 /**
  * Pours text into a run of boxes: as many lines as fit go in the first, the
- * rest into the next. What is left over after the last is returned, for a
- * page of its own.
+ * rest into the next. The sheet never grows pages: whatever is left after
+ * the last box is kept in that box's field, which shows what fits and
+ * scrolls in a reader to the rest.
  */
-function pour(k: Kit, text: string, boxes: { page: PDFPage; name: string; x: number; y: number; w: number; h: number }[], size: number): string {
+function pour(k: Kit, text: string, boxes: { page: PDFPage; name: string; x: number; y: number; w: number; h: number }[], size: number): void {
   let lines = wrap(text ?? '', k.fonts.regular, size, Math.max(10, (boxes[0]?.w ?? 20) - 8));
-  for (const b of boxes) {
+  boxes.forEach((b, bi) => {
     const room = capacity(k.fonts.regular, size, b.h);
+    if (bi === boxes.length - 1 && lines.length > room) {
+      field(k, b.page, b.name, unwrap(lines), b.x, b.y, b.w, b.h, { multiline: true, size, shown: lines.slice(0, room).map((l) => l.text).join('\n') });
+      lines = [];
+      return;
+    }
     let take = lines.slice(0, room);
     let rest = lines.slice(room);
     // A heading never ends a box: it goes over with what it heads.
@@ -261,8 +304,20 @@ function pour(k: Kit, text: string, boxes: { page: PDFPage; name: string; x: num
     if (take.length) take[take.length - 1] = { ...take[take.length - 1], end: true };
     field(k, b.page, b.name, unwrap(take), b.x, b.y, b.w, b.h, { multiline: true, size, shown: take.map((l) => l.text).join('\n') });
     lines = rest;
-  }
-  return unwrap(lines);
+  });
+}
+
+/**
+ * A list cut to its rows: what does not fit joins the last row, column by
+ * column ("Rope; Torch"), so nothing is lost and no page is added.
+ */
+function fold<T extends Record<string, string>>(list: T[], rows: number): T[] {
+  if (list.length <= rows) return list;
+  const last = list.slice(rows - 1);
+  const merged = Object.fromEntries(
+    Object.keys(last[0]).map((key) => [key, last.map((it) => it[key]).filter((v) => v && v.trim()).join('; ')])
+  ) as T;
+  return [...list.slice(0, rows - 1), merged];
 }
 
 const paragraphs = (list: Paragraph[]) =>
@@ -425,7 +480,7 @@ function pageOne(k: Kit) {
 
   // Actions: what is limited and what is chosen, in two columns.
   section(k, p, 216, 412, 368, 172, 'Actions');
-  const actionsRight = pour(k, [c.actions, c.actionsMore].filter(Boolean).join('\n\n'), [
+  pour(k, [c.actions, c.actionsMore].filter(Boolean).join('\n\n'), [
     { page: p, name: 'Actions1', x: 222, y: 418, w: 174, h: 154 },
     { page: p, name: 'Actions2', x: 404, y: 418, w: 174, h: 154 }
   ], 7);
@@ -435,8 +490,9 @@ function pageOne(k: Kit) {
   const cols: [string, number, number][] = [['Name', 224, 112], ['Hit / DC', 340, 34], ['Damage / type', 378, 70], ['Notes', 452, 124]];
   for (const [label, x] of cols) caps(k, p, label, x + 2, 600, 'left', 5, MUTED);
   const ROWS = 7;
+  const attacks = fold(c.attacks, ROWS);
   for (let i = 0; i < ROWS; i++) {
-    const a = c.attacks[i] ?? { name: '', hit: '', damage: '', notes: '' };
+    const a = attacks[i] ?? { name: '', hit: '', damage: '', notes: '' };
     const y = 609 + i * 18.6;
     const keys = ['name', 'hit', 'damage', 'notes'] as const;
     cols.forEach(([, x, w], j) => {
@@ -446,9 +502,7 @@ function pageOne(k: Kit) {
       });
     });
   }
-  const moreAttacks = c.attacks.slice(ROWS).map((a) => [a.name, a.hit, a.damage, a.notes].filter(Boolean).join('  ·  ')).join('\n');
   footer(k, p);
-  return [actionsRight, moreAttacks].filter(Boolean).join('\n\n');
 }
 
 function pageTwo(k: Kit) {
@@ -457,13 +511,13 @@ function pageTwo(k: Kit) {
   header(k, p, mainHeaderRows(c));
 
   section(k, p, 28, 112, 556, 372, 'Features & traits');
-  const leftover = pour(k, paragraphs(c.features), [0, 1, 2].map((i) => ({ page: p, name: `FeaturesTraits${i + 1}`, x: 34 + i * 183, y: 119, w: 178, h: 352 })), 7);
+  pour(k, paragraphs(c.features), [0, 1, 2].map((i) => ({ page: p, name: `FeaturesTraits${i + 1}`, x: 34 + i * 183, y: 119, w: 178, h: 352 })), 7);
 
   section(k, p, 28, 492, 556, 260, 'Equipment');
   // Coins and what the character can carry, down the left.
   c.coins.forEach((coin, i) => {
     const y = 501 + i * 25;
-    caps(k, p, coin.key, 36, y + 5.5, 'left', 6, INK);
+    capsAt(p, coin.key.toUpperCase(), k.fonts.semibold, 6, 36 + k.fonts.semibold.widthOfTextAtSize(coin.key.toUpperCase(), 6) / 2 + 0.3, y + 9, 0.55);
     well(p, 52, y, 48, 18, 4);
     field(k, p, coin.key.toUpperCase(), coin.value, 52, y, 48, 18, { size: 9, font: 'semibold', align: 'center' });
   });
@@ -476,32 +530,34 @@ function pageTwo(k: Kit) {
   });
   line(p, 110, 500, 110, 738, SOFT, 0.6);
 
-  const table = (x: number, nameW: number, top: number, rows: number, list: { name: string; qty: string; weight: string }[], prefix: string, start: number) => {
+  // Each table is a band [x, x + width]: name, amount and weight side by
+  // side, the two tables a clear gap apart.
+  const QTY = 24;
+  const WEIGHT = 32;
+  const table = (x: number, width: number, top: number, rows: number, list: { name: string; qty: string; weight: string }[], prefix: string, start: number) => {
+    const nameW = width - QTY - WEIGHT - 4;
+    const qx = x + nameW + 2;
+    const wx = qx + QTY + 2;
     caps(k, p, 'Name', x + 2, top, 'left', 5, MUTED);
-    caps(k, p, 'Qty', x + nameW + 15, top, 'center', 5, MUTED);
-    caps(k, p, 'Weight', x + nameW + 48, top, 'center', 5, MUTED);
+    caps(k, p, 'Qty', qx + QTY / 2, top, 'center', 5, MUTED);
+    caps(k, p, 'Weight', wx + WEIGHT / 2, top, 'center', 5, MUTED);
     for (let i = 0; i < rows; i++) {
       const it = list[i] ?? { name: '', qty: '', weight: '' };
       const y = top + 8 + i * 14.6;
-      if (i % 2 === 0) box(p, x - 2, y, nameW + 68, 13.4, { fill: BAND, r: 2.5 });
-      field(k, p, `${prefix}Name${start + i}`, it.name, x, y, nameW, 13.4, { size: 7 });
-      field(k, p, `${prefix}Qty${start + i}`, it.qty, x + nameW + 2, y, 26, 13.4, { size: 7, align: 'center' });
-      field(k, p, `${prefix}Weight${start + i}`, it.weight, x + nameW + 30, y, 34, 13.4, { size: 7, align: 'center' });
+      if (i % 2 === 0) box(p, x, y, width, 13.4, { fill: BAND, r: 2.5 });
+      field(k, p, `${prefix}Name${start + i}`, it.name, x + 2, y, nameW - 2, 13.4, { size: 7 });
+      field(k, p, `${prefix}Qty${start + i}`, it.qty, qx, y, QTY, 13.4, { size: 7, align: 'center' });
+      field(k, p, `${prefix}Weight${start + i}`, it.weight, wx, y, WEIGHT, 13.4, { size: 7, align: 'center' });
     }
   };
   const A = 15;
-  const B = 11;
-  table(118, 172, 500, A, c.items, 'Eq', 0);
-  table(352, 160, 500, B, c.items.slice(A), 'Eq', A);
-  caps(k, p, 'Attuned magic items', 354, 670, 'left', 5.4);
-  table(352, 160, 680, 3, c.attuned, 'Attuned', 0);
+  const B = 10;
+  const items = fold(c.items, A + B);
+  table(116, 226, 500, A, items, 'Eq', 0);
+  table(352, 226, 500, B, items.slice(A), 'Eq', A);
+  caps(k, p, 'Attuned magic items', 354, 664, 'left', 5.4);
+  table(352, 226, 674, 3, fold(c.attuned, 3), 'Attuned', 0);
   footer(k, p);
-
-  const extraItems = [...c.items.slice(A + B), ...c.attuned.slice(3)];
-  return {
-    features: leftover,
-    items: extraItems.map((it) => `${it.name}${it.qty && it.qty !== '1' ? ` × ${it.qty}` : ''}${it.weight ? `  ·  ${it.weight}` : ''}`).join('\n')
-  };
 }
 
 async function portrait(url: string): Promise<{ bytes: Uint8Array; png: boolean } | null> {
@@ -523,7 +579,9 @@ async function portrait(url: string): Promise<{ bytes: Uint8Array; png: boolean 
     const canvas = document.createElement('canvas');
     canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
     canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
-    canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const ctx = canvas.getContext('2d')!;
+    ctx.filter = 'grayscale(1)';
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/png'));
     if (!blob) return null;
     return { bytes: new Uint8Array(await blob.arrayBuffer()), png: true };
@@ -565,10 +623,10 @@ async function pageThree(k: Kit, picture: { bytes: Uint8Array; png: boolean } | 
       /* left empty */
     }
   }
-  const appearanceLeft = pour(k, c.appearance, [{ page: p, name: 'Appearance', x: 34, y: 274, w: 170, h: 74 }], 7);
+  pour(k, c.appearance, [{ page: p, name: 'Appearance', x: 34, y: 274, w: 170, h: 74 }], 7);
 
   section(k, p, 216, 112, 180, 248, 'Allies & organizations');
-  const alliesLeft = pour(k, c.allies, [{ page: p, name: 'AlliesOrganizations', x: 222, y: 118, w: 168, h: 228 }], 7);
+  pour(k, c.allies, [{ page: p, name: 'AlliesOrganizations', x: 222, y: 118, w: 168, h: 228 }], 7);
 
   const persona: [string, string, string][] = [
     ['Personality traits', 'PersonalityTraits', c.personality],
@@ -576,23 +634,15 @@ async function pageThree(k: Kit, picture: { bytes: Uint8Array; png: boolean } | 
     ['Bonds', 'Bonds', c.bonds],
     ['Flaws', 'Flaws', c.flaws]
   ];
-  const personaLeft: string[] = [];
   persona.forEach(([label, name, value], i) => {
     const y = 112 + i * 63;
     section(k, p, 402, y, 182, 57, label);
-    const rest = pour(k, value, [{ page: p, name, x: 408, y: y + 5, w: 170, h: 42 }], 7);
-    if (rest) personaLeft.push(`${label.toUpperCase()} (continued)\n${rest}`);
+    pour(k, value, [{ page: p, name, x: 408, y: y + 5, w: 170, h: 42 }], 7);
   });
 
   section(k, p, 28, 368, 556, 384, 'Additional notes');
-  const notesLeft = pour(k, c.notes, [0, 1].map((i) => ({ page: p, name: `AdditionalNotes${i + 1}`, x: 36 + i * 274, y: 375, w: 266, h: 364 })), 7.4);
+  pour(k, c.notes, [0, 1].map((i) => ({ page: p, name: `AdditionalNotes${i + 1}`, x: 36 + i * 274, y: 375, w: 266, h: 364 })), 7.4);
   footer(k, p);
-  return [
-    appearanceLeft ? `APPEARANCE (continued)\n${appearanceLeft}` : '',
-    alliesLeft ? `ALLIES & ORGANIZATIONS (continued)\n${alliesLeft}` : '',
-    ...personaLeft,
-    notesLeft ? `NOTES (continued)\n${notesLeft}` : ''
-  ].filter(Boolean).join('\n\n');
 }
 
 const SPELL_COLS: [string, number, number, 'left' | 'center'][] = [
@@ -609,7 +659,18 @@ const SPELL_COLS: [string, number, number, 'left' | 'center'][] = [
 ];
 const SPELL_ROWS = 49;
 
-function spellPage(k: Kit, rows: SheetContent['spellRows'], start: number, first: boolean) {
+/** Spells cut to the page: those past the last row join it, column by column. */
+function foldSpells(rows: SheetContent['spellRows'], room: number): SheetContent['spellRows'] {
+  if (rows.length <= room) return rows;
+  const rest = rows.slice(room - 1).filter((r) => r.kind !== 'head');
+  if (!rest.length) return rows.slice(0, room);
+  const cells = rest[0].cells.map((_, j) => rest.map((r) => r.cells[j]).filter((v) => v && v.trim()).join('; '));
+  return [...rows.slice(0, room - 1), { ...rest[0], cells }];
+}
+
+function spellPage(k: Kit, all: SheetContent['spellRows']) {
+  const start = 0;
+  const rows = foldSpells(all, SPELL_ROWS);
   const c = k.content;
   const p = newPage(k);
   well(p, 34, 56, 196, 30, 5);
@@ -623,7 +684,7 @@ function spellPage(k: Kit, rows: SheetContent['spellRows'], start: number, first
     caps(k, p, label, x + 52, 72, 'center', 5.2, undefined, 96);
   });
 
-  section(k, p, 28, 102, 556, 650, first ? 'Spells' : 'Spells (continued)');
+  section(k, p, 28, 102, 556, 650, 'Spells');
   for (const [label, x, w, align] of SPELL_COLS) caps(k, p, label, align === 'center' ? x + w / 2 : x + 1, 111, align, 4.8, MUTED, w + 2);
   for (let i = 0; i < SPELL_ROWS; i++) {
     const r = rows[start + i];
@@ -645,21 +706,6 @@ function spellPage(k: Kit, rows: SheetContent['spellRows'], start: number, first
     }
   }
   footer(k, p);
-}
-
-/** A page for whatever did not fit where it belongs, in three columns. */
-function overflowPage(k: Kit, title: string, text: string, part: number) {
-  let rest = text;
-  let n = 0;
-  while (rest.trim()) {
-    const p = newPage(k);
-    write(p, k.content.name, 584, 34, { font: k.fonts.bold, size: 11, color: VALUE, align: 'right' });
-    section(k, p, 28, 64, 556, 688, `${title}${n ? ' (continued)' : ''}`);
-    rest = pour(k, rest, [0, 1, 2].map((i) => ({ page: p, name: `More${part}_${n}_${i}`, x: 34 + i * 183, y: 72, w: 178, h: 666 })), 7);
-    footer(k, p);
-    n++;
-    if (n > 20) break;
-  }
 }
 
 type FontLoader = (file: string) => Promise<Uint8Array>;
@@ -697,24 +743,19 @@ export async function sheetPdf(
   doc.setProducer('DND Companion');
   doc.setSubject('Dungeons & Dragons 5e character sheet');
 
-  const { hue, chroma } = themeOf(def.identity?.theme);
-  const accent = hexRgb(toHex(`oklch(46% ${(0.16 * Math.min(1, chroma + 0.25)).toFixed(3)} ${hue})`));
-  const wash = hexRgb(toHex(`oklch(95% ${(0.03 * Math.min(1, chroma + 0.25)).toFixed(3)} ${hue})`));
+  // Grayscale, so it prints the same on any printer: the accent is black
+  // and the spell levels' band a light grey.
+  const accent = INK;
+  const wash = hexRgb('#e9e9e9');
   const load: FontLoader = opts.loadFont ?? (async (file) => new Uint8Array(await (await fetch(`${opts.base ?? ''}/pdf/${file}`)).arrayBuffer()));
   const [fonts, picture] = await Promise.all([loadFonts(doc, load), opts.picture !== undefined ? opts.picture : portrait(content.portraitUrl)]);
   const k: Kit = { doc, fonts, accent, wash, content, fields: new Map(), pages: [] };
 
-  const fromOne = pageOne(k);
-  const fromTwo = pageTwo(k);
-  const fromThree = await pageThree(k, picture);
-  if (content.hasSpells) {
-    for (let start = 0, first = true; first || start < content.spellRows.length; start += SPELL_ROWS, first = false) {
-      spellPage(k, content.spellRows, start, first);
-    }
-  }
-  overflowPage(k, 'Features & traits', [fromTwo.features, fromOne].filter(Boolean).join('\n\n'), 1);
-  overflowPage(k, 'Equipment', fromTwo.items, 2);
-  overflowPage(k, 'Notes', fromThree, 3);
+  // The four pages of the paper sheet, never more.
+  pageOne(k);
+  pageTwo(k);
+  await pageThree(k, picture);
+  if (content.hasSpells) spellPage(k, content.spellRows);
 
   // The sheet's type, named for the form, so a reader that redraws a box
   // after an edit uses Inter rather than a stand-in.

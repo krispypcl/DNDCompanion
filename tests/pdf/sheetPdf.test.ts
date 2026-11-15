@@ -52,7 +52,9 @@ describe('sheet PDF', () => {
     const bytes = await sheetPdf(def, state, { loadFont, notes: 'A note.\n'.repeat(400), picture: null });
     if (process.env.PDF_OUT) writeFileSync(process.env.PDF_OUT, bytes);
     const doc = await PDFDocument.load(bytes);
-    expect(doc.getPageCount()).toBeGreaterThanOrEqual(6);
+    // The paper sheet's four pages, however much is written: what does not
+    // fit stays in the field it belongs to.
+    expect(doc.getPageCount()).toBe(4);
     const form = doc.getForm();
     const value = (n: string) => (form.getField(n) as PDFTextField).getText();
     expect(value('CharacterName')).toBe('Loka Sibbs');
