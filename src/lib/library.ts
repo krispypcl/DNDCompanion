@@ -6,7 +6,7 @@
  * the person who first wrote an entry see who that was.
  *
  * The database side is migration 0013 (schema.sql, "The shared library").
- * Until it has run, the functions here quietly do nothing.
+ * If the library can't be reached, typing and saving go on as normal.
  */
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '$lib/supabase';
@@ -143,11 +143,6 @@ export function summary(kind: LibraryKind, data: Record<string, unknown>, only?:
 
 // ── Talking to the database ────────────────────────────────────────────────
 
-/** False once the database says the library isn't there (0013 not yet run). */
-let available = true;
-const missing = (code: string | undefined, message = '') =>
-  code === 'PGRST202' || code === '42883' || /could not find the function/i.test(message);
-
 /** Sharing is on unless the player turned it off on the account page. */
 export function sharing(user: User | null | undefined): boolean {
   return Boolean(user) && user?.user_metadata?.library_share !== false;
@@ -159,15 +154,12 @@ const FRESH_MS = 60_000;
 /** Entries for what is being typed; nothing for under two letters. */
 export async function searchLibrary(kind: LibraryKind, query: string): Promise<Suggestion[]> {
   const q = query.trim().replace(/\s+/g, ' ').toLowerCase();
-  if (!available || q.length < 2) return [];
+  if (q.length < 2) return [];
   const key = `${kind}\u0000${q}`;
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < FRESH_MS) return hit.hits;
   const { data, error } = await supabase.rpc('library_search', { p_kind: kind, p_query: q, p_limit: 12 });
-  if (error) {
-    if (missing(error.code, error.message)) available = false;
-    return [];
-  }
+  if (error) return [];
   const hits = ((data ?? []) as Suggestion[]).map((s) => ({ ...s, data: s.data ?? {} }));
   cache.set(key, { at: Date.now(), hits });
   return hits;
@@ -185,10 +177,10 @@ function stampOf(rows: LibraryRow[]): string {
 
 /**
  * Share a sheet's rows (its owner only). Skipped when nothing changed since
- * the last time from this browser, when sharing is off, or before 0013.
+ * the last time from this browser, or when sharing is off.
  */
 export async function shareSheet(sheetId: string, rows: LibraryRow[], user: User | null | undefined): Promise<void> {
-  if (!available || !sharing(user)) return;
+  if (!sharing(user)) return;
   const stamp = stampOf(rows);
   try {
     if (localStorage.getItem(STAMP + sheetId) === stamp) return;
@@ -196,10 +188,7 @@ export async function shareSheet(sheetId: string, rows: LibraryRow[], user: User
     /* no storage: share anyway */
   }
   const { error } = await supabase.rpc('library_sync', { p_sheet: sheetId, p_rows: rows });
-  if (error) {
-    if (missing(error.code, error.message)) available = false;
-    return;
-  }
+  if (error) return;
   cache.clear();
   try {
     localStorage.setItem(STAMP + sheetId, stamp);
@@ -226,9 +215,9 @@ export async function setSharing(on: boolean): Promise<{ ok: boolean; message?: 
   if (error) return { ok: false, message: error.message };
   clearStamps();
   cache.clear();
-  if (!on && available) {
+  if (!on) {
     const { error: forgetError } = await supabase.rpc('library_forget');
-    if (forgetError && !missing(forgetError.code, forgetError.message)) return { ok: false, message: forgetError.message };
+    if (forgetError) return { ok: false, message: forgetError.message };
   }
   return { ok: true };
 }
