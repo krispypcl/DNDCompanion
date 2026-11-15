@@ -1,4 +1,5 @@
 <script lang="ts">
+  import EntryLink from './EntryLink.svelte';
   import InfoTip from './InfoTip.svelte';
   import { walkingSpeed } from '$lib/rules/derived';
   /**
@@ -78,6 +79,15 @@
           hint={field.placeholder}
           onchange={(v) => patchIdentity(field.key, String(v).trim())}
         />
+        <!-- Editing, the species or background on 5e.tools beside its box. -->
+        {#if editable && (field.key === 'ancestry' || field.key === 'background') && definition.identity[field.key]?.trim()}
+          <EntryLink
+            name={definition.identity[field.key] ?? ''}
+            source={field.key === 'ancestry' ? definition.identity.ancestrySource : definition.identity.backgroundSource}
+            category={field.key === 'ancestry' ? 'races' : 'backgrounds'}
+            hover="self"
+          />
+        {/if}
       </dd>
     </div>
   {/each}
@@ -200,6 +210,7 @@
   }
   dd { margin: 0; font-size: 0.9375rem; display: flex; justify-content: center; align-items: flex-start; text-align: center; }
   dd :global(.field) { width: 100%; field-sizing: fixed; }
+  dd :global(.lookup) { flex: none; align-self: center; margin-left: 0.25rem; }
   /* The URL is long and reads left to right; the writing below is prose. */
   .writing {
     display: grid;

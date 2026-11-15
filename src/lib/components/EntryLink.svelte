@@ -8,7 +8,8 @@
     source,
     category,
     override,
-    parent
+    parent,
+    hover = 'parent'
   }: {
     name: string;
     source?: string;
@@ -16,6 +17,12 @@
     override?: string;
     /** For a subclass: its class. */
     parent?: { name: string; source?: string };
+    /**
+     * What a resting pointer opens the peek from: the name around the link
+     * (reading), or only the link itself (beside a box being typed in, where
+     * a pointer resting on the box should not open anything).
+     */
+    hover?: 'parent' | 'self';
   } = $props();
 
   const href = $derived(lookupUrl(name, source, category, override, parent));
@@ -38,7 +45,7 @@
    * hover, so on touch the icon itself opens it (below).
    */
   $effect(() => {
-    const around = link?.parentElement;
+    const around = hover === 'self' ? link : link?.parentElement;
     if (!around || !peeks) return;
     const enter = (e: PointerEvent) => {
       if (e.pointerType === 'touch' || e.buttons) return;

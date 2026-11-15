@@ -738,6 +738,7 @@
             <td class="name" data-label={nameCol.label}>
               {#if editable}
                 <div class="nameedit">
+                  <span class="namebox" class:linked={links && nameOf(item).trim()}>
                   <input
                     data-flip={fk(row, nameCol.key)}
                     value={nameOf(item)}
@@ -747,6 +748,16 @@
                     oninput={(e) => typed(index, e.currentTarget)}
                     onchange={(e) => patch(index, nameCol.key, e.currentTarget.value)}
                   />
+                  <!-- While editing too: the entry on 5e.tools, to fill the row in
+                       by. It sits inside the box's right end, so the box keeps its width. -->
+                  {#if links && nameOf(item).trim()}<EntryLink
+                      name={nameOf(item)}
+                      source={item.source as string | undefined}
+                      {category}
+                      hover="self"
+                      override={(item.lookupUrl as string | undefined) || linkOf?.(item) || undefined}
+                    />{/if}
+                  </span>
                   {#if library && typing?.index === index}
                     <LibraryMenu kind={library} input={typing.input} query={typing.query}
                                  onpick={pickLibrary} onclose={() => (typing = null)} />
@@ -936,6 +947,19 @@
   }
   .nameedit { display: flex; align-items: center; gap: 0.25rem; }
   .nameedit input { flex: 1 1 auto; min-width: 0; }
+  .namebox { position: relative; flex: 1 1 auto; min-width: 0; display: flex; }
+  .namebox input { width: 100%; }
+  /* The icon floats over the box's right end, shown while the box is
+     pointed at, so a narrow name column keeps all its room for typing. On a
+     touch screen (wide cards, always shown) the box leaves it room instead. */
+  .namebox > :global(.lookup) {
+    position: absolute; right: 0.1875rem; top: 50%; translate: 0 -50%;
+    border-radius: var(--r-sm); background: var(--bg);
+  }
+  @media (hover: none) {
+    .namebox.linked input { padding-right: 1.375rem; }
+    .namebox > :global(.lookup) { background: none; }
+  }
   /* The inline tick: a small sparkle that fills when on. */
   .toggle {
     flex: none; width: 1.75rem; height: 1.75rem; padding: 0; display: grid; place-items: center;
