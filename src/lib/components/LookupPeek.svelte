@@ -31,8 +31,23 @@
   let shown = $state<Shown>({ state: 'loading' });
   let slow = $state(false);
 
-  const target = $derived(peek.target);
-  const open = $derived(Boolean(target));
+  /*
+   * What the window shows. On closing it keeps the last entry, its place and
+   * its colours, so it fades where it stood rather than jumping to a corner
+   * and emptying as it goes.
+   */
+  let last = $state<NonNullable<typeof peek.target> | null>(null);
+  /** Moving between entries while open glides; opening anew starts in place. */
+  let glide = $state(false);
+  let wasOpen = false;
+  $effect.pre(() => {
+    const t = peek.target;
+    glide = Boolean(t) && wasOpen;
+    if (t) last = t;
+    wasOpen = Boolean(t);
+  });
+  const target = $derived(peek.target ?? last);
+  const open = $derived(Boolean(peek.target));
   const narrow = $derived(vw < NARROW);
   const width = $derived(narrow ? vw : Math.min(WIDTH, vw - 2 * EDGE));
   const maxHeight = $derived(narrow ? Math.min(Math.round(vh * 0.75), MAX_HEIGHT) : Math.min(MAX_HEIGHT, vh - 2 * EDGE));
@@ -123,6 +138,7 @@
     bind:offsetHeight={boxHeight}
     class="lookup-peek themed"
     class:open
+    class:glide
     class:narrow
     role="dialog"
     aria-label={target ? `${target.name} on 5e.tools` : '5e.tools'}
@@ -211,10 +227,18 @@
     visibility: hidden;
     transform: translateY(6px) scale(0.985);
     transform-origin: 50% 0;
+    /* Out: a quick fade with a slight drop, then hidden once it is gone. */
+    transition:
+      opacity 0.16s ease-out,
+      transform 0.18s ease-out,
+      visibility 0s linear 0.18s;
+  }
+  /* From one entry to the next while open, the window glides to its new place. */
+  .lookup-peek.open.glide {
     transition:
       opacity 0.16s ease-out,
       transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
-      visibility 0s linear 0.2s,
+      visibility 0s,
       left 0.22s cubic-bezier(0.22, 1, 0.36, 1),
       top 0.22s cubic-bezier(0.22, 1, 0.36, 1);
   }
@@ -222,7 +246,10 @@
     opacity: 1;
     visibility: visible;
     transform: none;
-    transition-delay: 0s;
+    transition:
+      opacity 0.16s ease-out,
+      transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+      visibility 0s;
   }
   /* A phone: a sheet risen from the bottom edge, as wide as the screen. */
   .lookup-peek.narrow {
