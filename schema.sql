@@ -7,8 +7,8 @@
 -- these policies are the only thing standing between a request and the data.
 --
 -- `entries` was for a shared library that was dropped; it is created here
--- as it once was and removed again at the very end (0012). Campaigns are set
--- up in the section at the end.
+-- as it once was and removed again (0012). Campaigns are set up in the
+-- sections after the first, and the shared library (0013) is the last.
 
 create table if not exists campaigns (
   id          uuid primary key default gen_random_uuid(),
@@ -989,5 +989,264 @@ begin
       drop table public.entries;
     end if;
   end if;
+end;
+$$;
+
+-- ===========================================================================
+-- The shared library (0013).
+--
+-- Every row a player writes on a sheet (an attack, spell, item, feature or
+-- tracker) is shared, without its author's name, so anyone typing the same
+-- name on their own sheet can pick it up ready-made. A player turns this off
+-- on the account page, which also takes back everything they had shared.
+--
+-- How it fits together:
+--
+-- - library_entries: one row per distinct version of an entry. Two players
+--   who wrote exactly the same thing share one entry (its fingerprint is the
+--   kind, the name and the content). Versions with the same name sit side by
+--   side, ranked by how many sheets use them.
+-- - library_uses: which sheets have which entries right now. A sheet's set
+--   is replaced each time it is shared, so a row deleted or rewritten on the
+--   sheet stops counting, and an entry no sheet has any longer goes.
+-- - Who wrote an entry is kept (created_by), but only shown to players who
+--   are in a campaign with them; everyone else sees it anonymously.
+--
+-- Nobody reads or writes the tables directly: the three functions below are
+-- the only way in, following the private/public pattern from 0012.
+-- Safe to run more than once.
+-- ===========================================================================
+
+create schema if not exists private;
+grant usage on schema private to anon, authenticated;
+
+create table if not exists public.library_entries (
+  id           uuid primary key default gen_random_uuid(),
+  kind         text not null check (kind in ('attacks', 'spells', 'items', 'features', 'trackers')),
+  name         text not null check (char_length(name) between 1 and 120),
+  -- The name as it is searched and grouped: lower case, single spaces.
+  name_key     text not null,
+  data         jsonb not null check (jsonb_typeof(data) = 'object' and pg_column_size(data) <= 8192),
+  fingerprint  text not null,
+  created_by   uuid references auth.users(id) on delete set null,
+  created_at   timestamptz not null default now(),
+  unique (kind, fingerprint)
+);
+create index if not exists library_entries_name_idx on public.library_entries (kind, name_key text_pattern_ops);
+create index if not exists library_entries_created_by_idx on public.library_entries (created_by);
+
+create table if not exists public.library_uses (
+  entry_id   uuid not null references public.library_entries(id) on delete cascade,
+  sheet_id   uuid not null references public.sheets(id) on delete cascade,
+  owner_id   uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (entry_id, sheet_id)
+);
+create index if not exists library_uses_sheet_idx on public.library_uses (sheet_id);
+create index if not exists library_uses_owner_idx on public.library_uses (owner_id);
+
+-- Locked: no policies, so the API reads and writes nothing here directly.
+alter table public.library_entries enable row level security;
+alter table public.library_uses enable row level security;
+revoke all on public.library_entries from anon, authenticated;
+revoke all on public.library_uses from anon, authenticated;
+
+-- An entry no sheet uses any longer goes (a sheet deleted, a row removed,
+-- a player who stopped sharing).
+create or replace function private.library_tidy()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  delete from public.library_entries e
+  where e.id in (select entry_id from gone)
+    and not exists (select 1 from public.library_uses u where u.entry_id = e.id);
+  return null;
+end;
+$$;
+revoke all on function private.library_tidy() from public, anon, authenticated;
+drop trigger if exists library_tidy on public.library_uses;
+create trigger library_tidy after delete on public.library_uses
+  referencing old table as gone
+  for each statement execute function private.library_tidy();
+
+-- Two players share a campaign: as its DM, or with a sheet in it.
+create or replace function private.library_same_campaign(a uuid, b uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  with mine as (
+    select c.id from public.campaigns c where c.created_by = a
+    union select s.campaign_id from public.sheets s where s.owner_id = a and s.campaign_id is not null
+  ), theirs as (
+    select c.id from public.campaigns c where c.created_by = b
+    union select s.campaign_id from public.sheets s where s.owner_id = b and s.campaign_id is not null
+  )
+  select exists (select 1 from mine join theirs using (id));
+$$;
+revoke all on function private.library_same_campaign(uuid, uuid) from public, anon, authenticated;
+
+-- Has the player turned sharing off (account page)?
+create or replace function private.library_opted_out(p_user uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce((select (u.raw_user_meta_data ->> 'library_share') = 'false' from auth.users u where u.id = p_user), false);
+$$;
+revoke all on function private.library_opted_out(uuid) from public, anon, authenticated;
+
+-- A sheet's rows, shared: p_rows is [{ kind, name, data }, …], everything
+-- the sheet has now. Returns how many entries the sheet shares afterwards.
+create or replace function private.library_sync(p_sheet uuid, p_rows jsonb)
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  me uuid := (select auth.uid());
+  kept uuid[] := '{}';
+  r jsonb;
+  k text;
+  n text;
+  d jsonb;
+  key text;
+  fp text;
+  eid uuid;
+begin
+  if me is null then
+    raise exception 'Sign in to share' using errcode = '42501';
+  end if;
+  if not exists (select 1 from public.sheets s where s.id = p_sheet and s.owner_id = me) then
+    raise exception 'Not your sheet' using errcode = '42501';
+  end if;
+  if private.library_opted_out(me) then
+    delete from public.library_uses where sheet_id = p_sheet;
+    return 0;
+  end if;
+  if jsonb_typeof(p_rows) is distinct from 'array' or jsonb_array_length(p_rows) > 400 then
+    raise exception 'Rows must be a list of at most 400' using errcode = '22023';
+  end if;
+
+  for r in select value from jsonb_array_elements(p_rows) loop
+    k := r ->> 'kind';
+    n := btrim(regexp_replace(coalesce(r ->> 'name', ''), '\s+', ' ', 'g'));
+    d := jsonb_strip_nulls(coalesce(r -> 'data', '{}'::jsonb));
+    -- Rows the library can't hold are skipped, not refused: one odd row
+    -- shouldn't stop the rest of the sheet.
+    continue when k is null or k not in ('attacks', 'spells', 'items', 'features', 'trackers');
+    continue when char_length(n) not between 1 and 120;
+    continue when jsonb_typeof(d) <> 'object' or pg_column_size(d) > 8192;
+    key := lower(n);
+    fp := md5(k || E'\n' || key || E'\n' || d::text);
+
+    insert into public.library_entries (kind, name, name_key, data, fingerprint, created_by)
+    values (k, n, key, d, fp, me)
+    on conflict (kind, fingerprint) do nothing
+    returning id into eid;
+    if eid is null then
+      select e.id into eid from public.library_entries e where e.kind = k and e.fingerprint = fp;
+    end if;
+
+    insert into public.library_uses (entry_id, sheet_id, owner_id)
+    values (eid, p_sheet, me)
+    on conflict do nothing;
+    kept := kept || eid;
+  end loop;
+
+  delete from public.library_uses u where u.sheet_id = p_sheet and not (u.entry_id = any (kept));
+  return (select count(*) from public.library_uses u where u.sheet_id = p_sheet);
+end;
+$$;
+
+-- Entries whose name matches what is being typed, best first: the name
+-- itself, then names starting with it, then names containing it, and within
+-- each the version most sheets use. The author's name only for players in a
+-- campaign with them.
+create or replace function private.library_search(p_kind text, p_query text, p_limit integer default 12)
+returns table (id uuid, name text, data jsonb, uses integer, mine boolean, author text)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  with q as (
+    select lower(btrim(regexp_replace(coalesce(p_query, ''), '\s+', ' ', 'g'))) as key
+  ), hits as (
+    select e.*,
+           case when e.name_key = q.key then 0
+                when starts_with(e.name_key, q.key) then 1
+                else 2 end as rank,
+           (select count(*)::integer from public.library_uses u where u.entry_id = e.id) as uses
+    from public.library_entries e, q
+    where e.kind = p_kind
+      and char_length(q.key) >= 2
+      and strpos(e.name_key, q.key) > 0
+  )
+  select h.id, h.name, h.data, h.uses,
+         coalesce(h.created_by = (select auth.uid()), false) as mine,
+         case when h.created_by is not null
+                   and h.created_by <> (select auth.uid())
+                   and private.library_same_campaign((select auth.uid()), h.created_by)
+              then (select nullif(btrim(coalesce(u.raw_user_meta_data ->> 'display_name', u.raw_user_meta_data ->> 'full_name', '')), '')
+                    from auth.users u where u.id = h.created_by)
+         end as author
+  from hits h
+  where (select auth.uid()) is not null
+  order by h.rank, h.uses desc, h.created_at
+  limit least(greatest(coalesce(p_limit, 12), 1), 30);
+$$;
+
+-- Stop sharing: every sheet's rows come out of the library, and entries the
+-- player first wrote no longer carry their name.
+create or replace function private.library_forget()
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  me uuid := (select auth.uid());
+begin
+  if me is null then
+    raise exception 'Sign in first' using errcode = '42501';
+  end if;
+  delete from public.library_uses where owner_id = me;
+  update public.library_entries set created_by = null where created_by = me;
+end;
+$$;
+
+-- The public faces, running as the caller.
+create or replace function public.library_sync(p_sheet uuid, p_rows jsonb)
+returns integer language sql security invoker set search_path = ''
+as $$ select private.library_sync(p_sheet, p_rows) $$;
+
+create or replace function public.library_search(p_kind text, p_query text, p_limit integer default 12)
+returns table (id uuid, name text, data jsonb, uses integer, mine boolean, author text)
+language sql stable security invoker set search_path = ''
+as $$ select * from private.library_search(p_kind, p_query, p_limit) $$;
+
+create or replace function public.library_forget()
+returns void language sql security invoker set search_path = ''
+as $$ select private.library_forget() $$;
+
+do $$
+declare
+  f text;
+begin
+  foreach f in array array['library_sync(uuid, jsonb)', 'library_search(text, text, integer)', 'library_forget()'] loop
+    execute format('revoke all on function public.%s from public, anon, authenticated', f);
+    execute format('revoke all on function private.%s from public, anon, authenticated', f);
+    execute format('grant execute on function public.%s to authenticated', f);
+    execute format('grant execute on function private.%s to authenticated', f);
+  end loop;
 end;
 $$;
