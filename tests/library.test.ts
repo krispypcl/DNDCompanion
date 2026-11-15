@@ -35,7 +35,7 @@ describe('shared library rows', () => {
     const def = blankDefinition();
     def.spells = [{ name: 'Fireball', level: '3' }];
     def.equipment = [{ name: 'Torch', qty: 5 }];
-    def.features = [{ title: 'Darkvision', body: '60 feet', kind: 'Species' }];
+    def.features = [{ name: '', title: 'Darkvision', body: '60 feet', kind: 'Species' }];
     const kinds = sheetLibraryRows(def).map((r) => `${r.kind}:${r.name}`);
     expect(kinds).toEqual(['spells:Fireball', 'features:Darkvision']);
   });
