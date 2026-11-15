@@ -21,6 +21,8 @@
   import { cubicOut } from 'svelte/easing';
   import { prefersReducedMotion } from '$lib/motion';
   import type { LookupCategory } from '$lib/rules/lookup';
+  import LibraryMenu from './LibraryMenu.svelte';
+  import { fillRow, type LibraryKind, type Suggestion } from '$lib/library';
 
   type Column = {
     key: string;
@@ -79,7 +81,8 @@
     linkOf,
     onpress,
     lit = null,
-    spot = null
+    spot = null,
+    library
   }: {
     items: T[];
     columns: Column[];
@@ -127,6 +130,8 @@
     onpress?: (key: string, item: T) => void;
     /** A group heading to light up for a moment: a spell level just cast at. */
     lit?: string | null;
+    /** Offer ready-made rows from the shared library while a name is typed. */
+    library?: LibraryKind;
   } = $props();
 
   /** Keys for gliding between reading and editing; see $lib/flip. */
@@ -228,6 +233,24 @@
   function patch(index: number, key: string, raw: string, type?: string) {
     const value = type === 'number' ? (raw === '' ? undefined : Number(raw)) : raw;
     onchange(items.map((item, i) => (i === index ? { ...item, [key]: value } : item)));
+  }
+
+  /** The name being typed, while the shared library has rows for it. */
+  let typing = $state<{ index: number; input: HTMLInputElement; query: string } | null>(null);
+
+  function typed(index: number, input: HTMLInputElement) {
+    if (!library) return;
+    const query = input.value;
+    typing = query.trim().length >= 2 ? { index, input, query } : null;
+  }
+
+  /** A ready-made row picked: it fills the row, keeping what is the character's own. */
+  function pickLibrary(s: Suggestion) {
+    if (!typing || !library) return;
+    const { index, input } = typing;
+    typing = null;
+    input.value = s.name;
+    onchange(items.map((item, i) => (i === index ? fillRow(library, item, s.data) : item)));
   }
 
   const ticked = $derived(check ? items.filter((it) => Boolean(it[check.key])).length : 0);
@@ -720,8 +743,14 @@
                     value={nameOf(item)}
                     placeholder={nameCol.placeholder ?? ''}
                     aria-label="{nameCol.label} {index + 1}"
+                    autocomplete="off"
+                    oninput={(e) => typed(index, e.currentTarget)}
                     onchange={(e) => patch(index, nameCol.key, e.currentTarget.value)}
                   />
+                  {#if library && typing?.index === index}
+                    <LibraryMenu kind={library} input={typing.input} query={typing.query}
+                                 onpick={pickLibrary} onclose={() => (typing = null)} />
+                  {/if}
                   {#if check?.inline}
                     {@const on = Boolean(item[check.key])}
                     <button class="toggle" class:on aria-pressed={on}

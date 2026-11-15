@@ -51,6 +51,7 @@
   import UndoToast from '$lib/components/UndoToast.svelte';
   import { sheetRepo } from '$lib/data/sheets';
   import { isConfigured, supabase } from '$lib/supabase';
+  import { shareSheet, sheetLibraryRows } from '$lib/library';
   import {
     ATTACK_COLUMNS, ATTUNE_SLOTS, CLASS_COLUMNS, FEATURE_COLUMNS, FEATURE_KINDS, ITEM_COLUMNS,
     PASSIVES, SPELL_COLUMNS, TABS, TRACKER_COLUMNS, kindOf
@@ -146,6 +147,20 @@
   const sheetState = $derived(sheet?.state as State | undefined);
   const isOwner = $derived(Boolean($session.user && sheet && $session.user.id === sheet.owner_id));
   const editable = $derived(isOwner && editing);
+
+  /*
+   * The owner's rows go to the shared library (lib/library.ts) when the sheet
+   * is open to read: on opening it, and again on finishing an edit. Never
+   * while editing, so half-typed rows are not shared.
+   */
+  $effect(() => {
+    if (!isOwner || editing || !revealed || !sheet || !definition) return;
+    const sheetId = sheet.id;
+    const rows = sheetLibraryRows(definition, classes);
+    const user = $session.user;
+    const t = setTimeout(() => void shareSheet(sheetId, rows, user), 1500);
+    return () => clearTimeout(t);
+  });
 
   const carried = $derived(definition ? weightCarried(definition) : 0);
   const classes = $derived(definition ? classList(definition) : []);
@@ -857,6 +872,7 @@
                 items={definition.attacks ?? []}
                 columns={ATTACK_COLUMNS}
                 {editable}
+                library="attacks"
                 category="items"
                 links={false}
                 onpress={isOwner ? rollAttack : undefined}
@@ -924,6 +940,7 @@
                 items={definition.spells ?? []}
                 lit={litLevel}
                 columns={SPELL_COLUMNS}
+                library="spells"
                 check={{ key: 'prepared', label: 'Prepared', short: 'Prep' }}
                 groupBy={{ key: 'level', rank: (spell) => spellRank(spell.level), title: (spell) => spellGroup(spell.level) }}
                 {editable}
@@ -955,6 +972,7 @@
               <EntryTable
                 items={definition.equipment ?? []}
                 columns={ITEM_COLUMNS}
+                library="items"
                 check={{ key: 'attuned', label: 'Attuned', inline: true, limit: ATTUNE_SLOTS,
                          full: `All ${ATTUNE_SLOTS} attunement slots are in use!` }}
                 groupBy={{ key: 'attuned', rank: (item) => (item.attuned ? 0 : 1),
@@ -979,6 +997,7 @@
               <EntryTable
                 items={definition.features ?? []}
                 columns={FEATURE_COLUMNS}
+                library="features"
                 groupBy={{ key: 'kind', rank: (f) => FEATURE_KINDS.indexOf(kindOf(f as Feature)),
                            title: (f) => kindOf(f as Feature) }}
                 {editable}
@@ -1002,6 +1021,7 @@
               <EntryTable
                 items={trackerRowsShown}
                 columns={TRACKER_COLUMNS}
+                library="trackers"
                 {editable}
                 category="any"
                 emptyText="No trackers yet."
