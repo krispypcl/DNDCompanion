@@ -248,7 +248,10 @@
           {#if isDm && !ended}
             <li class="add">
               <button class="plus" aria-expanded={picking === s.id} aria-label="Give {nameOf(s)} a condition"
-                      title="Give a condition" onclick={() => (picking = picking === s.id ? null : s.id)}>+</button>
+                      title="Give a condition" onclick={() => (picking = picking === s.id ? null : s.id)}>
+                <!-- Drawn, not typed: a "+" in the font sits above the middle. -->
+                <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M6 1.5v9M1.5 6h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+              </button>
             </li>
           {/if}
         </ul>
