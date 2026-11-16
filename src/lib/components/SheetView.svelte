@@ -106,6 +106,7 @@
   import ConditionOverlay from '$lib/components/ConditionOverlay.svelte';
   import DownScreen from '$lib/components/DownScreen.svelte';
   import ShortcutHelp from '$lib/components/ShortcutHelp.svelte';
+  import Spotlight from '$lib/components/Spotlight.svelte';
   import { friendlyError } from '$lib/errors';
   import { session } from '$lib/stores/session';
   import { sheetStore } from '$lib/stores/sheet';
@@ -516,6 +517,8 @@
 
   /** Keyboard shortcuts, for a computer; none while typing in a field. */
   let showKeys = $state(false);
+  /** The search (Ctrl K, / or its button): 5e.tools entries in pop-ups. */
+  let searching = $state(false);
   function onkey(e: KeyboardEvent) {
     if (!definition || showKeys || leaving) return;
     const t = e.target as HTMLElement | null;
@@ -834,6 +837,9 @@
         <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
         <PrintButton onprint={makePdf} busy={makingPdf} />
         {#if isOwner}<DownloadButton ondownload={exportNow} />{/if}
+        <button class="keys searchbtn" onclick={() => (searching = true)} aria-label="Search 5e.tools" title="Search 5e.tools (Ctrl K or /)">
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+        </button>
         <button class="keys" onclick={() => (showKeys = true)} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
             <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -1264,6 +1270,7 @@
        toast's Undo is in the character's accent too. -->
   <div class="themed floats" style={themeStyle(themePreview ?? definition.identity.theme)}>
     {#if showKeys}<ShortcutHelp owner={isOwner} onclose={() => (showKeys = false)} />{/if}
+    <Spotlight bind:open={searching} />
     <Flash message={flash} />
     {#if leaving}
       <LeaveDialog onstay={() => (leaving = null)}
@@ -1748,6 +1755,8 @@
     .entering .panel, .entering .identity, .defbox.inspired::after, .burst, .levelup { animation: none; }
     .burst { display: none; }
   }
+  /* The search is for everyone: its button shows on every screen. */
+  .keys.searchbtn { display: inline-grid; }
   /* Shortcuts are for a keyboard: the button only shows where there is a mouse. */
   .keys {
     display: none; place-items: center; width: 2rem; height: 2rem; flex: none; padding: 0;

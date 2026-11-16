@@ -22,7 +22,11 @@ export type PeekTarget = {
 };
 
 /** A peek moved aside: its own window that stays where it was put until closed. */
-export type KeptPeek = { id: number; target: PeekTarget; left: number; top: number; width: number };
+export type KeptPeek = {
+  id: number; target: PeekTarget; left: number; top: number; width: number;
+  /** Opened from the search, so it fades in (one moved aside is already on screen). */
+  opened?: boolean;
+};
 
 class Peek {
   target = $state<PeekTarget | null>(null);
@@ -85,6 +89,26 @@ class Peek {
     if (!target) return;
     this.kept = [...this.kept.filter((k) => k.target.url !== target.url), { id: this.#next++, target, left: rect.left, top: rect.top, width: rect.width }];
     this.close({ quietly: true });
+  }
+
+  /**
+   * Opened from the search: straight into a window of its own, at the right
+   * of the screen, each next one a step down and left of the last, so
+   * several stay readable. On a phone, the ordinary peek (a sheet from the
+   * bottom) instead.
+   */
+  open(target: PeekTarget) {
+    if (!peekTarget(target.url)) return;
+    if (typeof window === 'undefined' || window.innerWidth < 640) {
+      this.show(target, { tapped: true });
+      return;
+    }
+    const width = Math.min(400, window.innerWidth - 24);
+    const step = (this.kept.length % 6) * 28;
+    this.kept = [
+      ...this.kept.filter((k) => k.target.url !== target.url),
+      { id: this.#next++, target, left: Math.max(12, window.innerWidth - width - 24 - step), top: 72 + step, width, opened: true }
+    ];
   }
 
   /** A kept window to the front. */

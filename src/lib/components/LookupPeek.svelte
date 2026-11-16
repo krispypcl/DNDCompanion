@@ -84,6 +84,8 @@
     size();
     const key = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
+      // A window over the dimmed page (the search, say) is closed first, by its own Esc.
+      if (document.querySelector('[aria-modal="true"]')) return;
       // The open peek first, then the windows moved aside, the top one first.
       if (peek.target) {
         e.stopPropagation();
