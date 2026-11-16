@@ -16,9 +16,10 @@
   import ClassIcon from './ClassIcon.svelte';
   import { vitalStatus } from '$lib/rules/hp';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
-  import { STANDARD_CONDITIONS, cleanName, defaultLook, isStandard, lookKey, lookOf } from '$lib/rules/conditions';
+  import { cleanName, defaultLook, isStandard, lookKey, lookOf } from '$lib/rules/conditions';
   import ConditionLookPicker from './ConditionLookPicker.svelte';
   import DimModal from './DimModal.svelte';
+  import ConditionGiver from './ConditionGiver.svelte';
   import { themeStyle } from '$lib/theme';
   import { followHeight, glideTo, prefersReducedMotion } from '$lib/motion';
   import CardHp from './CardHp.svelte';
@@ -146,16 +147,14 @@
   /** While the DM moves a condition, the order it would land in, by sheet. */
   let previews = $state<Record<string, string[] | null>>({});
   let picking = $state<string | null>(null);
-  let custom = $state('');
   const has = (list: string[], name: string) => list.some((c) => c.toLowerCase() === name.toLowerCase());
   function toggle(s: Sheet, name: string) {
     const list = s.state?.conditions ?? [];
     const next = has(list, name) ? list.filter((c) => c.toLowerCase() !== name.toLowerCase()) : [...list, name];
     void onconditions(s.id, next);
   }
-  function addCustom(s: Sheet) {
-    const name = cleanName(custom);
-    custom = '';
+  function addCustom(s: Sheet, written: string) {
+    const name = cleanName(written);
     if (!name || has(s.state?.conditions ?? [], name)) return;
     void onconditions(s.id, [...(s.state?.conditions ?? []), name]);
     // One of the DM's own, with no look yet: ask what it looks like.
@@ -260,19 +259,8 @@
                keeps its size; a new one's colour and motion are asked in the
                same window. -->
           <DimModal id="give-{s.id}" title="Conditions for {nameOf(s)}" onclose={() => { picking = null; tinting = null; }}>
-            <div class="grid">
-              {#each STANDARD_CONDITIONS as name (name)}
-                {@const look = lookOf(name)}
-                <button class="opt" class:on={has(conds, name)} aria-pressed={has(conds, name)} style:--cc={look?.color}
-                        onclick={() => toggle(s, name)}><span class="dot" aria-hidden="true"></span>{name}</button>
-              {/each}
-            </div>
-            <div class="own">
-              <input bind:value={custom} placeholder="Something else, e.g. Bless" aria-label="Another condition"
-                     onkeydown={(e) => { if (e.key === 'Enter') addCustom(s); }} />
-              <button class="give" onclick={() => addCustom(s)} disabled={!custom.trim()}>Give</button>
-              <button class="done" onclick={() => { picking = null; tinting = null; }}>Done</button>
-            </div>
+            <ConditionGiver given={conds} ontoggle={(name) => toggle(s, name)} onadd={(name) => addCustom(s, name)}
+                            ondone={() => { picking = null; tinting = null; }} />
             {#if tinting?.sheet === s.id && has(s.state?.conditions ?? [], tinting.name)}
               <div class="lookin">
                 <ConditionLookPicker name={tinting.name} look={lookFor(s, tinting.name)} who={nameOf(s)}
@@ -454,36 +442,8 @@
   .plus:hover { color: var(--a); border-color: var(--a-edge); }
   .plus[aria-expanded='true'] { color: var(--a); border-color: var(--a-edge); transform: rotate(45deg); }
 
-  .grid { display: flex; flex-wrap: wrap; gap: 0.375rem; }
-  .opt {
-    --cc: var(--dim);
-    display: inline-flex; align-items: center; gap: 0.375rem; font: inherit; font-size: 0.8125rem; cursor: pointer;
-    padding: 0.3125rem 0.625rem; border-radius: 999px; color: var(--dim);
-    border: 1px solid var(--line-soft); background: var(--surface);
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-  }
-  .opt:hover { color: var(--text); border-color: color-mix(in oklch, var(--cc) 50%, var(--line)); }
-  /* Given: tinted in its colour and ringed, the ring mixed toward the text so
-     a dark colour (Blinded, Dead) still shows on a dark page, as a light one does on a light page. */
-  .opt.on {
-    color: var(--text); border-color: color-mix(in oklch, var(--cc) 65%, var(--text));
-    background: color-mix(in oklch, var(--cc) 22%, var(--raised));
-    box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--cc) 65%, var(--text));
-  }
-  .own { display: flex; gap: 0.375rem; margin-top: 1rem; }
   .lookin { margin-top: 1rem; }
   .lookin :global(.ask) { margin: 0; }
-  .own input {
-    flex: 1; min-width: 0; font: inherit; font-size: 0.8125rem; padding: 0.3125rem 0.5rem; color: var(--text);
-    border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg);
-  }
-  .own input:focus { outline: none; border-color: var(--a-edge); }
-  .own button {
-    font: inherit; font-size: 0.8125rem; cursor: pointer; border-radius: var(--r-sm); padding: 0.3125rem 0.625rem;
-    border: 1px solid var(--a-edge); background: var(--a-wash); color: var(--a);
-  }
-  .own .done { border-color: var(--line); background: var(--surface); color: var(--text); }
-  .own button:disabled { opacity: 0.5; cursor: default; }
 
   .x {
     position: absolute; top: 0.5rem; right: 2.25rem; width: 1.625rem; height: 1.625rem; padding: 0;

@@ -1,0 +1,73 @@
+<!--
+  Giving conditions (in a DimModal): every standard condition as a chip in
+  its own colour, pressed when given, and a field for one of your own. The
+  campaign page uses it for characters and for monsters and NPCs alike.
+-->
+<script lang="ts">
+  import { STANDARD_CONDITIONS, lookOf } from '$lib/rules/conditions';
+
+  let { given, ontoggle, onadd, ondone }: {
+    given: string[];
+    ontoggle: (name: string) => void;
+    onadd: (name: string) => void;
+    ondone: () => void;
+  } = $props();
+
+  let custom = $state('');
+  const has = (name: string) => given.some((c) => c.toLowerCase() === name.toLowerCase());
+  function add() {
+    const name = custom.trim();
+    custom = '';
+    if (name) onadd(name);
+  }
+</script>
+
+<div class="grid">
+  {#each STANDARD_CONDITIONS as name (name)}
+    <button class="opt" class:on={has(name)} aria-pressed={has(name)} style:--cc={lookOf(name)?.color}
+            onclick={() => ontoggle(name)}><span class="dot" aria-hidden="true"></span>{name}</button>
+  {/each}
+</div>
+<div class="own">
+  <input bind:value={custom} placeholder="Something else, e.g. Bless" aria-label="Another condition"
+         onkeydown={(e) => { if (e.key === 'Enter') add(); }} />
+  <button class="give" onclick={add} disabled={!custom.trim()}>Give</button>
+  <button class="done" onclick={ondone}>Done</button>
+</div>
+
+<style>
+  .dot {
+    flex: none; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--cc, var(--dim));
+    box-shadow: 0 0 0 1px color-mix(in oklch, var(--text) 25%, transparent);
+  }
+  :global([data-mode='light']) .dot { box-shadow: 0 0 0 1px color-mix(in oklch, var(--text) 35%, transparent); }
+  .grid { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+  .opt {
+    --cc: var(--dim);
+    display: inline-flex; align-items: center; gap: 0.375rem; font: inherit; font-size: 0.8125rem; cursor: pointer;
+    padding: 0.3125rem 0.625rem; border-radius: 999px; color: var(--dim);
+    border: 1px solid var(--line-soft); background: var(--surface);
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+  .opt:hover { color: var(--text); border-color: color-mix(in oklch, var(--cc) 50%, var(--line)); }
+  /* Given: tinted in its colour and ringed, the ring mixed toward the text so
+     a dark colour (Blinded, Dead) still shows on a dark page, as a light one does on a light page. */
+  .opt.on {
+    color: var(--text); border-color: color-mix(in oklch, var(--cc) 65%, var(--text));
+    background: color-mix(in oklch, var(--cc) 22%, var(--raised));
+    box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--cc) 65%, var(--text));
+  }
+  .own { display: flex; gap: 0.375rem; margin-top: 1rem; }
+  .own input {
+    flex: 1; min-width: 0; font: inherit; font-size: 0.8125rem; padding: 0.3125rem 0.5rem; color: var(--text);
+    border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg);
+  }
+  .own input:focus { outline: none; border-color: var(--a-edge); }
+  .own button {
+    font: inherit; font-size: 0.8125rem; cursor: pointer; border-radius: var(--r-sm); padding: 0.3125rem 0.625rem;
+    border: 1px solid var(--a-edge); background: var(--a-wash); color: var(--a);
+  }
+  .own .done { border-color: var(--line); background: var(--surface); color: var(--text); }
+  .own button:disabled { opacity: 0.5; cursor: default; }
+
+</style>
