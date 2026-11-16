@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { movable } from '$lib/actions';
   import InfoTip from './InfoTip.svelte';
   /** The keyboard shortcuts, opened with ? or the keyboard button on a sheet or a campaign. */
   import { onMount } from 'svelte';
@@ -48,7 +49,7 @@
 
 <div class="scrim" role="presentation" transition:fade={{ duration: still ? 0 : 140 }}
      onclick={(e) => { if (e.target === e.currentTarget) onclose(); }}>
-  <div class="box" role="dialog" data-keys aria-modal="true" aria-labelledby="keys-title"
+  <div class="box" use:movable role="dialog" data-keys aria-modal="true" aria-labelledby="keys-title"
        transition:scale={{ start: 0.96, duration: still ? 0 : 180, easing: cubicOut }}>
     <h2 id="keys-title">Keyboard shortcuts
       <InfoTip label="About shortcuts">They work anywhere on the {place === 'campaign' ? 'page' : 'sheet'} except while typing in a field.</InfoTip>

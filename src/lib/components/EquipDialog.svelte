@@ -12,7 +12,7 @@
   import { untrack } from 'svelte';
   import { fade, scale, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { portal } from '$lib/actions';
+  import { movable, portal } from '$lib/actions';
   import { prefersReducedMotion } from '$lib/motion';
   import { guessEffects } from '$lib/rules/equipment';
   import { ABILITIES, type Ability, type Item, type ItemEffect } from '$lib/types';
@@ -88,7 +88,7 @@
 
 <div class="scrim" use:portal transition:fade={{ duration: prefersReducedMotion() ? 0 : 160 }}
      onclick={onclose} role="presentation"></div>
-<div class="dialog" use:portal use:focusFirst role="dialog" aria-modal="true"
+<div class="dialog" use:portal use:focusFirst use:movable role="dialog" aria-modal="true"
      aria-label={feature ? `What ${item.name || 'this feature'} does` : `Equip ${item.name || 'item'}`}
      transition:scale={{ duration: prefersReducedMotion() ? 0 : 200, start: 0.94, easing: cubicOut }}>
   <h2>{feature ? `What ${item.name || 'This Feature'} Does` : `Equip ${item.name || 'This Item'}`}</h2>

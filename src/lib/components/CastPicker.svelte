@@ -6,7 +6,7 @@
    * attack roll, if the spell has no save, and the damage or healing roll.
    * The slot is spent once, by whichever is rolled first.
    */
-  import { portal } from '$lib/actions';
+  import { movable, portal } from '$lib/actions';
   import { onMount } from 'svelte';
   import { fade, scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
@@ -85,7 +85,7 @@
 
 <div class="scrim themed" style={themeCss} use:portal role="presentation" transition:fade={{ duration: still ? 0 : 140 }}
      onclick={(e) => { if (e.target === e.currentTarget) oncancel(); }}>
-  <div class="box" bind:this={box} role="dialog" aria-modal="true" aria-labelledby="cast-title"
+  <div class="box" bind:this={box} use:movable role="dialog" aria-modal="true" aria-labelledby="cast-title"
        transition:scale={{ start: 0.95, duration: still ? 0 : 180, easing: cubicOut }}>
     <h2 id="cast-title">Cast {spell.name || 'this spell'}</h2>
     {#if save}

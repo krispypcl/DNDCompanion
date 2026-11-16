@@ -6,6 +6,7 @@
   whole app, mounted in the layout; links open it through stores/peek.
 -->
 <script lang="ts">
+  import { movable } from '$lib/actions';
   import { onMount } from 'svelte';
   import { peek } from '$lib/stores/peek.svelte';
   import { peekTarget } from '$lib/rules/peek';
@@ -137,6 +138,7 @@
     bind:this={box}
     bind:offsetHeight={boxHeight}
     class="lookup-peek themed"
+    use:movable={{ handle: 'header', key: open }}
     class:open
     class:glide
     class:narrow
