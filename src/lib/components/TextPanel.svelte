@@ -13,6 +13,7 @@
   import RichPage from './RichPage.svelte';
   import type { Format, MarkKind } from '$lib/rules/richtext';
   import Switch from './Switch.svelte';
+  import PageTurn from './PageTurn.svelte';
   import { cubicOut } from 'svelte/easing';
   import { prefersReducedMotion } from '$lib/motion';
   import { addPage, isBlank, joinPages, removePage, setPage, splitPages } from '$lib/rules/pages';
@@ -198,15 +199,7 @@
       <FormatBar {active} onformat={(f) => editor?.apply(f)} onmark={(k, v) => editor?.mark(k, v)} />
     {/if}
   {/if}
-    <div class="turns">
-      <button class="nav" aria-label="Previous page" disabled={current === 0} onclick={() => go(current - 1)}>
-        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="m14.5 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg>
-      </button>
-      <span class="count" aria-live="polite">Page {current + 1} of {pages.length}</span>
-      <button class="nav" aria-label="Next page" disabled={current >= pages.length - 1} onclick={() => go(current + 1)}>
-        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="m9.5 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg>
-      </button>
-    </div>
+    <PageTurn page={current} count={pages.length} onturn={go} />
     {#if editable}
       <div class="edits">
         <button class="pg drawbtn" class:on={drawing} aria-pressed={drawing} onclick={() => { drawing = !drawing; erasing = false; }}
@@ -292,7 +285,6 @@
     flex-wrap: wrap; margin-top: 0.875rem; padding-top: 0.75rem;
     border-top: 1px solid var(--line-soft);
   }
-  .turns { display: inline-flex; align-items: center; gap: 0.5rem; }
   /* Reading, the arrows are all there is, so they sit in the middle. */
   .pager.reading { justify-content: center; }
   /* Editing, the arrows stay in the middle too: formatting on their left,
@@ -317,7 +309,7 @@
   .pager:not(.reading) :global(.bar), .pager:not(.reading) .inkbar { grid-area: bar; justify-self: start; }
   /* Drawing: the pen's tools get the whole first line; the page controls sit below. */
   .pager.inking:not(.reading) { grid-template-columns: auto 1fr; grid-template-areas: 'bar bar' 'turns edits'; }
-  .pager:not(.reading) .turns { grid-area: turns; justify-self: center; }
+  .pager:not(.reading) :global(.turns) { grid-area: turns; justify-self: center; }
   .pager:not(.reading) .edits { grid-area: edits; justify-self: end; justify-content: flex-end; margin-left: 0; }
   @container (min-width: 700px) {
     .pager:not(.reading) {
@@ -336,16 +328,6 @@
     .pager:not(.reading) :global(.bar),
     .pager:not(.reading) .edits { justify-self: center; justify-content: center; }
   }
-  .count { font-size: 0.78rem; color: var(--dim); font-variant-numeric: tabular-nums; min-width: 5.75rem; text-align: center; white-space: nowrap; }
-  .nav {
-    display: inline-grid; place-items: center; width: 1.875rem; height: 1.875rem;
-    background: var(--raised); border: 1px solid var(--line); color: var(--text);
-    border-radius: var(--r-sm); cursor: pointer; padding: 0;
-    transition: border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease, transform 0.08s ease;
-  }
-  .nav:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
-  .nav:active:not(:disabled) { transform: translateY(1px); }
-  .nav:disabled { opacity: 0.35; cursor: default; }
   .edits { display: inline-flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-left: auto; }
   .edits :global(.switch) { margin-right: 0.25rem; }
   .pg {
@@ -358,7 +340,6 @@
   .pg.remove:hover, .pg.confirming { border-color: var(--danger); color: var(--danger); }
   .pg.confirming { background: var(--danger-wash); }
   @media (max-width: 700px) {
-    .nav { width: 2.25rem; height: 2.25rem; }
     .pg { padding: 0.4375rem 0.875rem; font-size: 0.8125rem; }
   }
 </style>
