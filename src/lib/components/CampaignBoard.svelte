@@ -5,7 +5,7 @@
    * everyone with the page sees change as it happens (campaign_board).
    *
    * A board has pages (database/0009), each an endless sheet: dragged
-   * around, zoomed in and out (buttons, Ctrl + scroll, or two fingers), and
+   * around, zoomed in and out (buttons, the scroll wheel, or two fingers), and
    * on its own paper (plain, dots, grid or lines). Opening a page fits the
    * part that has anything on it, with a little room around it. Units are
    * pixels at 100%.
@@ -316,19 +316,25 @@
     return [k(view.x + (e.clientX - r.left) / view.z), k(view.y + (e.clientY - r.top) / view.z)];
   }
 
-  // ── Wheel: Ctrl + scroll zooms; plain scroll moves the page once the board
-  // has been pressed (until then it scrolls the site, as everywhere else) ──
+  // ── Wheel: once the board has been pressed, the scroll wheel zooms around
+  // the pointer (until then it scrolls the site, as everywhere else); a
+  // pinch on a trackpad or Ctrl + scroll zooms at any time; Shift + scroll
+  // or a sideways swipe moves the page ──
   let active = $state(false);
   function wheel(node: HTMLElement) {
     const on = (e: WheelEvent) => {
       const r = node.getBoundingClientRect();
-      if (e.ctrlKey || e.metaKey) {
+      const k = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1;
+      const sideways = e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY);
+      if (e.ctrlKey || e.metaKey || (active && !sideways)) {
         e.preventDefault();
-        zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * 0.0025 * (e.deltaMode === 1 ? 16 : 1)));
+        // A notch of a mouse wheel (about 100) is a 1.25× step.
+        const dy = Math.max(-200, Math.min(200, e.deltaY * k));
+        zoomAt(e.clientX - r.left, e.clientY - r.top, Math.pow(1.25, -dy / 100));
       } else if (active) {
         e.preventDefault();
-        const k = e.deltaMode === 1 ? 16 : 1;
-        view = { ...view, x: view.x + (e.shiftKey ? e.deltaY : e.deltaX) * k / view.z, y: view.y + (e.shiftKey ? 0 : e.deltaY) * k / view.z };
+        const dx = e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX;
+        view = { ...view, x: view.x + (dx * k) / view.z };
       }
     };
     const outside = (e: PointerEvent) => {
@@ -586,7 +592,7 @@
     <span class="cap">Table board
       <InfoTip label="How the board works">Everyone in the campaign can add to it, and sees changes as they happen: drop sticky notes,
         write, or draw with the tools. Drag the page to look
-        around (or scroll, once you have clicked the board); Ctrl + scroll or two fingers zoom. Double-click a page's name to rename it.
+        around; once you have clicked the board, the scroll wheel zooms (two fingers on a phone). Double-click a page's name to rename it.
         Each page opens fitted to what is on it.</InfoTip>
     </span>
     {#if !missing}
@@ -730,9 +736,9 @@
       {/if}
       <!-- Zoom, in the corner. -->
       <div class="zoom" role="group" aria-label="Zoom" onpointerdown={(e) => e.stopPropagation()}>
-        <button aria-label="Zoom out" title="Zoom out (Ctrl + scroll)" onclick={() => zoomBy(1 / 1.25)} disabled={view.z <= MIN_Z}>−</button>
+        <button aria-label="Zoom out" title="Zoom out (scroll down)" onclick={() => zoomBy(1 / 1.25)} disabled={view.z <= MIN_Z}>−</button>
         <button class="pct" title="Back to 100%" onclick={() => zoomBy(1 / view.z)}>{Math.round(view.z * 100)}%</button>
-        <button aria-label="Zoom in" title="Zoom in (Ctrl + scroll)" onclick={() => zoomBy(1.25)} disabled={view.z >= MAX_Z}>+</button>
+        <button aria-label="Zoom in" title="Zoom in (scroll up)" onclick={() => zoomBy(1.25)} disabled={view.z >= MAX_Z}>+</button>
         <button aria-label="Fit everything on this page" title="Fit everything" onclick={fit}>
           <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
         </button>
