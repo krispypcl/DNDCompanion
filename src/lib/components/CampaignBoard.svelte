@@ -881,11 +881,14 @@
   .zoom button:hover:not(:disabled) { background: var(--a-wash); color: var(--a); }
   .zoom button:disabled { opacity: 0.35; cursor: default; }
   .zoom .pct { font-size: 0.75rem; min-width: 2.75rem; font-variant-numeric: tabular-nums; color: var(--dim); }
+  /* A touch screen (an iPad, a phone): no frosted glass, which is heavy there. */
   @media (max-width: 720px), (pointer: coarse) {
     .board {
-      /* A phone's 16:9 would be a strip: taller there. */
-      aspect-ratio: auto; height: min(28rem, 65vh);
       backdrop-filter: none; -webkit-backdrop-filter: none; background-color: color-mix(in oklch, var(--surface) 92%, transparent);
     }
+  }
+  /* A phone's 16:9 would be a strip: taller there. A tablet keeps 16:9. */
+  @media (max-width: 720px) {
+    .board { aspect-ratio: auto; height: min(34rem, 70vh); }
   }
 </style>
