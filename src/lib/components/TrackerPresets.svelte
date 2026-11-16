@@ -52,13 +52,19 @@
   const mine = $derived(new Set(groups.yours.map((p) => p.id)));
   /** The first heading shown carries the note on how the trackers count. */
   const firstGroup = $derived(groups.yours.length ? 'For Your Classes' : groups.others.length ? 'Other Classes' : 'Feats and Species');
+  const allGroups = $derived([
+    { title: 'For Everyone', list: groups.general },
+    { title: 'For Your Classes', list: groups.yours },
+    { title: 'Other Classes', list: groups.others },
+    { title: 'Feats and Species', list: groups.extras }
+  ]);
   const still = prefersReducedMotion();
 </script>
 
 {#if open}
     <!-- Global: it folds away even when edit mode ends and takes it with it. -->
     <div class="panel" transition:slide={{ duration: still ? 0 : 260, easing: cubicOut }}>
-      {#each [{ title: 'For Your Classes', list: groups.yours }, { title: 'Other Classes', list: groups.others }, { title: 'Feats and Species', list: groups.extras }] as g (g.title)}
+      {#each allGroups as g (g.title)}
         {#if g.list.length}
           <h4>{g.title}{#if g.title === firstGroup}
             <InfoTip label="How ready-made trackers count">Each tracker counts the level of the class in its From column, taken from

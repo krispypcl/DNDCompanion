@@ -109,14 +109,16 @@ export function walkingSpeed(def: Definition): { feet: number; from: 'species' |
 }
 
 /** Speed: the walking speed (see above), plus anything that changes it. */
-export function speedParts(def: Definition): { total: number; parts: Part[] } {
+export function speedParts(def: Definition, exhaustion = 0): { total: number; parts: Part[] } {
   const walk = walkingSpeed(def);
   const parts: Part[] = [{
     label: 'Walking speed', value: walk.feet,
     note: walk.from === 'species' ? (def.identity.ancestry || 'species') : walk.from === 'written' ? 'as written' : 'the usual'
   }];
   for (const { item, effect } of equippedEffects(def)) if (effect.kind === 'speed') parts.push({ label: item, value: effect.bonus });
-  return { total: parts.reduce((s, p) => s + p.value, 0), parts };
+  // Exhaustion takes 5 feet a level (rules/exhaustion.ts); Speed never goes below 0.
+  if (exhaustion > 0) parts.push({ label: `Exhaustion ${exhaustion}`, value: -5 * exhaustion });
+  return { total: Math.max(0, parts.reduce((s, p) => s + p.value, 0)), parts };
 }
 
 /** Initiative: the Dexterity modifier, plus what items and features add. Never typed. */

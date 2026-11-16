@@ -16,8 +16,9 @@ export type Preset = {
   /** The class it belongs to (its trackers are scoped to that class's
       level), or the feat or species it comes from. */
   className: string;
-  /** Not a class: a feat or species, listed apart and counting total level. */
-  kind?: 'feat' | 'species';
+  /** Not a class: a feat or species, listed apart and counting total level;
+      or something any character can have (exhaustion). */
+  kind?: 'feat' | 'species' | 'general';
   /** One line on what it adds. */
   blurb: string;
   build: (classLevel: number) => Omit<Tracker, 'id'>[];
@@ -54,6 +55,16 @@ const dieAt = (level: number, steps: [number, string][]) =>
   steps.reduce((die, [from, d]) => (level >= from ? d : die), steps[0][1]);
 
 export const PRESETS: Preset[] = [
+  // For every character: exhaustion's six levels, counted up. The sheet
+  // takes its penalties itself (rules/exhaustion.ts).
+  {
+    id: 'exhaustion',
+    label: 'Exhaustion',
+    className: 'Any character',
+    kind: 'general',
+    blurb: '6 levels: each −2 to d20 tests and −5 ft Speed; level 6 is death; a long rest removes one',
+    build: () => [{ label: 'Exhaustion', max: 6, type: 'pips', direction: 'accrue', reset: { on: 'long', amount: 1 } }]
+  },
   // Spell slots
   ...(['Bard', 'Cleric', 'Druid', 'Sorcerer', 'Wizard'] as const).map((c) => ({
     id: `slots-${c.toLowerCase()}`,
@@ -241,12 +252,17 @@ export const PRESETS: Preset[] = [
  * Presets for the classes the character has first, then the rest. A preset is
  * "theirs" when its class is one they have levels in.
  */
-export function presetsFor(classNames: string[]): { yours: Preset[]; others: Preset[]; extras: Preset[] } {
+export function presetsFor(classNames: string[]): { general: Preset[]; yours: Preset[]; others: Preset[]; extras: Preset[] } {
   const have = new Set(classNames.map((c) => c.trim().toLowerCase()).filter(Boolean));
   const classed = PRESETS.filter((p) => !p.kind);
   const yours = classed.filter((p) => have.has(p.className.toLowerCase()));
   const others = classed.filter((p) => !have.has(p.className.toLowerCase()));
-  return { yours, others, extras: PRESETS.filter((p) => p.kind) };
+  return {
+    general: PRESETS.filter((p) => p.kind === 'general'),
+    yours,
+    others,
+    extras: PRESETS.filter((p) => p.kind === 'feat' || p.kind === 'species')
+  };
 }
 
 /** The trackers a preset adds, ready to append, with fresh ids. */

@@ -18,7 +18,8 @@ describe('ready-made trackers', () => {
         for (const t of p.build(lvl)) {
           const ctx = { level: lvl, classlevel: lvl, prof: 2, str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 2 };
           expect(() => evaluateFormula(t.max, ctx), `${p.id} at ${lvl}`).not.toThrow();
-          expect(t.class).toBe(p.className);
+          // Exhaustion is any character's, not a class's.
+          expect(t.class).toBe(p.kind === 'general' ? undefined : p.className);
         }
       }
     }

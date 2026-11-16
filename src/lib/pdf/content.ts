@@ -3,6 +3,7 @@
  * same way the screen works it out (rules/derived and friends). Pure: no
  * drawing here, so every value can be tested; sheetPdf.ts lays it out.
  */
+import { exhaustionLevel } from '$lib/rules/exhaustion';
 import { spellAttack, spellDc } from '$lib/rules/casting';
 import {
   armorClass,
@@ -127,7 +128,7 @@ export function sheetContent(def: Definition, state: State, opts: { notes?: stri
     .map((p) => (p.note === 'armor' ? `${p.label} (${p.value} + DEX)` : `${p.label} (${signed(p.value)} AC)`))
     .join('\n');
 
-  const speed = speedParts(def);
+  const speed = speedParts(def, exhaustionLevel(def, state));
   const initAdv = advantageFrom(def, 'init');
 
   const counted = countedForPrint(def, state);

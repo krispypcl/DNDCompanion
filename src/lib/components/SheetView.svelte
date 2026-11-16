@@ -87,7 +87,8 @@
   import { shareRoll } from '$lib/owlbear/channel';
   import { downloadBlob, downloadText } from '$lib/download';
   import { parseRoll, type Pool, type Roll } from '$lib/rules/dice';
-  import { requestRoll } from '$lib/stores/dice';
+  import { d20Penalty, requestRoll } from '$lib/stores/dice';
+  import { conditionsFor, d20Penalty as d20PenaltyOf, exhaustionLevel, exhaustionTracker } from '$lib/rules/exhaustion';
   import { friendlyDate, latest } from '$lib/rules/dates';
   import { exportFileName, exportSheet } from '$lib/exchange';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
@@ -235,7 +236,22 @@
     ? [{ label: `${castAb.toUpperCase()} modifier`, value: modifierOf(definition, castAb) }, { label: 'Proficiency', value: proficiencyBonus(definition) }]
     : []);
   const ac = $derived(definition ? armorClass(definition) : { total: 10, parts: [], computed: false });
-  const speed = $derived(definition ? speedParts(definition) : { total: 30, parts: [] });
+  /** Exhaustion's level, from its tracker or its chip (rules/exhaustion.ts). */
+  const exhaustion = $derived(exhaustionLevel(definition, sheetState));
+  const speed = $derived(definition ? speedParts(definition, exhaustion) : { total: 30, parts: [] });
+  // Every d20 test this sheet rolls loses 2 a level while it lasts.
+  $effect(() => {
+    d20Penalty.set(exhaustion > 0 ? { amount: d20PenaltyOf(exhaustion), why: `Exhaustion ${exhaustion}` } : null);
+    return () => d20Penalty.set(null);
+  });
+  // The Exhaustion tracker keeps its chip in step ("Exhaustion 3"), and its
+  // sixth level marks the character Dead. The owner's sheet does this.
+  $effect(() => {
+    if (!isOwner || !sheetState || !exhaustionTracker(definition)) return;
+    const now = sheetState.conditions ?? [];
+    const next = conditionsFor(now, exhaustion);
+    if (next.join('\u0000') !== now.join('\u0000')) setState({ ...sheetState, conditions: next });
+  });
 
   $effect(() => {
     if (!id) {
