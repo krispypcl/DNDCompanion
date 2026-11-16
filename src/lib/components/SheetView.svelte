@@ -236,32 +236,6 @@
     ? [{ label: `${castAb.toUpperCase()} modifier`, value: modifierOf(definition, castAb) }, { label: 'Proficiency', value: proficiencyBonus(definition) }]
     : []);
   const ac = $derived(definition ? armorClass(definition) : { total: 10, parts: [], computed: false });
-  /*
-   * On a phone the campaign sits beside the portrait, over the name, while it
-   * fits on one line there; a name long enough to wrap goes under the
-   * portrait instead, across the header. Measured on one line, against the
-   * room beside the portrait, so moving it doesn't change the answer.
-   */
-  let campaignBelow = $state(false);
-  function fitsBeside(node: HTMLElement) {
-    const header = node.closest('.identity') as HTMLElement | null;
-    const measure = () => {
-      if (!header || !matchMedia('(max-width: 700px)').matches) return (campaignBelow = false);
-      const probe = node.cloneNode(true) as HTMLElement;
-      probe.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;width:auto;max-width:none;left:-9999px;top:0';
-      header.appendChild(probe);
-      const need = probe.getBoundingClientRect().width;
-      probe.remove();
-      const portrait = header.querySelector('.portrait') as HTMLElement | null;
-      const room = header.clientWidth - (portrait?.offsetWidth ?? 0) - 14;
-      campaignBelow = need > room;
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    if (header) ro.observe(header);
-    return { destroy: () => ro.disconnect() };
-  }
-
   /** Exhaustion's level, from its tracker or its chip (rules/exhaustion.ts). */
   const exhaustion = $derived(exhaustionLevel(definition, sheetState));
   const speed = $derived(definition ? speedParts(definition, exhaustion) : { total: 30, parts: [] });
@@ -731,7 +705,7 @@
        several characters in their own colours at once. -->
   <div class="sheet themed" class:entering class:bannered={banner} style={themeStyle(themePreview ?? definition.identity.theme)}>
     {#if banner}<Banner url={banner} />{/if}
-    <header class="identity" class:campaign-below={campaignBelow}>
+    <header class="identity">
       <div class="portrait" class:has={Boolean(portraitSrc)} class:fallen={dead} use:parallax>
         <!-- The picture turns toward the pointer, inside its still frame. -->
         <span class="frame">
@@ -771,13 +745,13 @@
              its title: a link to its page once the sheet is in one. While
              editing it opens the campaign dialog (join, start, leave, retire). -->
         {#if editable}
-          <button class="campaign pick" data-flip="identity:campaign-at" use:fitsBeside onclick={() => (campaignOpen = true)}
+          <button class="campaign pick" data-flip="identity:campaign-at" onclick={() => (campaignOpen = true)}
                   title="Join, start or leave a campaign">
             {@render flag()}
             <span>{campaign?.name ?? definition.identity.campaign?.trim() ?? 'Add to a campaign'}</span>
           </button>
         {:else if campaign || definition.identity.campaign?.trim()}
-          <div class="campaign" data-flip-ghost="identity:campaign" data-flip="identity:campaign-at" use:fitsBeside>
+          <div class="campaign" data-flip-ghost="identity:campaign" data-flip="identity:campaign-at">
             {@render flag()}
             {#if campaign}
               <a href="{base}/c/{campaign.id}" title="Open the campaign">{campaign.name}</a>
@@ -1805,29 +1779,23 @@
     .undo, .back { padding: 0.375rem 0.5rem; }
   }
   /*
-   * A phone: the portrait at the left of the campaign and the name, the class,
-   * species and background in a line under both, then the music and the
-   * controls. (Wrapped as a row, the portrait sat alone above the name.)
+   * A phone: the portrait at the left, the name and the class, species and
+   * background beside it, together in the middle of its height; the
+   * campaign under them across the header, so a long name has the room; then
+   * the music and the controls across. (Wrapped as a row, the portrait sat
+   * alone above the name.)
    */
   @media (max-width: 700px) {
-    /* The portrait at least as tall as the campaign and the name beside it,
-       which sit together in the middle of its height. */
-    .identity { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); column-gap: 0.875rem; row-gap: 0.375rem; align-items: center; }
-    .identity .portrait { width: 5.5rem; }
+    .identity { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); column-gap: 0.875rem; row-gap: 0.25rem; align-items: center; }
+    .identity .portrait { width: 5.5rem; grid-column: 1; grid-row: 1 / 3; align-self: center; }
     .identity .who { display: contents; }
-    .identity .portrait { grid-column: 1; grid-row: 1 / 3; align-self: center; }
-    .identity .who > .campaign { grid-column: 2; grid-row: 1; align-self: end; justify-self: start; margin: 0; max-width: 100%; }
+    .identity .who > h1 { grid-column: 2; grid-row: 1; align-self: end; min-width: 0; }
+    .identity .who > .sub { grid-column: 2; grid-row: 2; align-self: start; margin-top: 0.125rem; }
+    .identity .who > .campaign { grid-column: 1 / -1; grid-row: 3; align-self: start; justify-self: start; margin: 0.875rem 0 0; max-width: 100%; }
     /* A long campaign name wraps inside its pill: a rounded box, not a
        stretched capsule, with a little less spacing between the letters. */
     .identity .campaign { letter-spacing: 0.08em; line-height: 1.35; }
     .identity .campaign a, .identity button.campaign { border-radius: var(--r-sm); padding: 0.1875rem 0.5rem; }
-    .identity .who > h1 { grid-column: 2; grid-row: 2; align-self: start; min-width: 0; }
-    .identity .who:not(:has(> .campaign)) > h1 { grid-row: 1 / 3; align-self: center; }
-    .identity .who > .sub { grid-column: 1 / -1; margin-top: 0.875rem; }
-    /* A campaign too long for one line beside the portrait: under it, across. */
-    .identity.campaign-below .who > .campaign { grid-column: 1 / -1; grid-row: 3; align-self: start; margin-top: 0.875rem; }
-    .identity.campaign-below .who > h1 { grid-row: 1 / 3; align-self: center; }
-    .identity.campaign-below .who > .sub { margin-top: 0.5rem; }
-    .identity .musicslot, .identity .controls { grid-column: 1 / -1; margin-top: 0.25rem; }
+    .identity .musicslot, .identity .controls { grid-column: 1 / -1; margin-top: 0.75rem; }
   }
 </style>
