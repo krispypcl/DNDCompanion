@@ -16,6 +16,11 @@
   import { friendlyDate } from '$lib/rules/dates';
   import { faceFamily, fontFace } from '$lib/rules/fonts';
   import D20Loader from '$lib/components/D20Loader.svelte';
+  import Tabs from '$lib/components/Tabs.svelte';
+  import ClassIcon from '$lib/components/ClassIcon.svelte';
+  import { characterLevel, classLine, mainClass } from '$lib/rules/derived';
+  import { resolveImageUrl } from '$lib/rules/imageUrl';
+  import { themeStyle } from '$lib/theme';
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
   import { arrive, prefersReducedMotion, rise } from '$lib/motion';
@@ -47,6 +52,16 @@
   function dismissPictureNudge() {
     pictureNudgeGone = true;
     try { localStorage.setItem(NUDGE_KEY, 'gone'); } catch { /* private window */ }
+  }
+
+  /** A new page of cards slides in from the side of the button pressed. */
+  function pageSlide(_node: Element) {
+    const dx = 18 * pageDirection;
+    return {
+      duration: prefersReducedMotion() ? 0 : 260,
+      easing: cubicOut,
+      css: (t: number, u: number) => `opacity: ${t}; transform: translate3d(${u * dx}px, 0, 0);`
+    };
   }
 
   /** A deleted sheet folds away: fades, slides aside and closes its gap. */
@@ -86,6 +101,10 @@
   let joined = $state<Campaign[]>([]);
   /** The fonts the DMs chose for their campaigns' names, each loaded once. */
   const campaignFaces = $derived([...new Set([...running, ...joined].map((c) => fontFace(c.details?.nameFont)?.href).filter(Boolean) as string[])]);
+  /** Each campaign's name font by id, for the sheets' cards. */
+  const campaignFont = $derived(new Map([...running, ...joined].map((c) => [c.id, faceFamily(fontFace(c.details?.nameFont))])));
+  /** The fonts the players chose for their characters' names, each loaded once. */
+  const sheetFaces = $derived([...new Set(sheets.map((s) => fontFace(s.definition?.identity?.nameFont)?.href).filter(Boolean) as string[])]);
   let naming = $state(false);
   let newCampaign = $state('');
   let starting = $state(false);
@@ -189,30 +208,40 @@
     }
   }
 
-  // Dragging a pinned card by its grip, the same way table rows move.
+  // Dragging a pinned card by its grip. The cards may sit in a grid (a wide
+  // screen), so a card goes to the place whose middle is nearest its own,
+  // and the others slide to their new places, across as well as down.
   let rowEls = $state<Record<string, HTMLElement>>({});
-  let drag = $state<{ kind: Kind; id: string; from: number; to: number; dy: number; height: number; middles: number[]; startY: number; pointerId: number } | null>(null);
+  type Point = { x: number; y: number };
+  let drag = $state<{ kind: Kind; id: string; from: number; to: number; dx: number; dy: number; centres: Point[]; start: Point; pointerId: number } | null>(null);
   let landing = $state(false);
   const pinnedIds = (kind: Kind) => (kind === 'sheets' ? pinnedSheets : kind === 'campaigns' ? pinnedCampaigns : pinnedJoined).map((x) => x.id);
   function grab(event: PointerEvent, id: string, kind: Kind = 'sheets') {
     const ids = pinnedIds(kind);
     if (event.button !== 0 || ids.length < 2) return;
-    event.preventDefault();
-    const middles = ids.map((k) => {
+    const centres = ids.map((k) => {
       const r = rowEls[k]?.getBoundingClientRect();
-      return r ? r.top + window.scrollY + r.height / 2 : 0;
+      return r ? { x: r.left + window.scrollX + r.width / 2, y: r.top + window.scrollY + r.height / 2 } : null;
     });
+    // A pinned card on another page cannot be dragged past.
+    if (centres.some((c) => !c)) return;
+    event.preventDefault();
     const from = ids.indexOf(id);
-    const gap = middles.length > 1 ? Math.abs(middles[1] - middles[0]) : (rowEls[id]?.offsetHeight ?? 0);
     (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
-    drag = { kind, id, from, to: from, dy: 0, height: gap, middles, startY: event.clientY + window.scrollY, pointerId: event.pointerId };
+    drag = { kind, id, from, to: from, dx: 0, dy: 0, centres: centres as Point[], start: { x: event.clientX + window.scrollX, y: event.clientY + window.scrollY }, pointerId: event.pointerId };
   }
   function moveDrag(event: PointerEvent) {
     if (!drag || event.pointerId !== drag.pointerId) return;
-    const dy = event.clientY + window.scrollY - drag.startY;
-    const centre = drag.middles[drag.from] + dy;
-    let to = 0;
-    drag.middles.forEach((m, i) => { if (i !== drag!.from && m < centre) to += 1; });
+    const dx = event.clientX + window.scrollX - drag.start.x;
+    const dy = event.clientY + window.scrollY - drag.start.y;
+    const at = { x: drag.centres[drag.from].x + dx, y: drag.centres[drag.from].y + dy };
+    let to = drag.from;
+    let best = Infinity;
+    drag.centres.forEach((c, i) => {
+      const d = Math.hypot(c.x - at.x, c.y - at.y);
+      if (d < best) { best = d; to = i; }
+    });
+    drag.dx = dx;
     drag.dy = dy;
     drag.to = to;
   }
@@ -230,14 +259,121 @@
     await tick();
     requestAnimationFrame(() => (landing = false));
   }
-  function shift(id: string): number {
-    if (!drag) return 0;
-    if (id === drag.id) return drag.dy;
-    const i = pinnedIds(drag.kind).indexOf(id);
-    if (i < 0) return 0;
-    if (drag.from < drag.to && i > drag.from && i <= drag.to) return -drag.height;
-    if (drag.to < drag.from && i >= drag.to && i < drag.from) return drag.height;
-    return 0;
+  /** Where a pinned card is drawn while another is dragged: at the place it will take. */
+  function shift(id: string): string | undefined {
+    if (!drag) return undefined;
+    if (id === drag.id) return `translate(${drag.dx}px, ${drag.dy}px)`;
+    const ids = pinnedIds(drag.kind);
+    const i = ids.indexOf(id);
+    if (i < 0) return undefined;
+    const order = ids.filter((_, k) => k !== drag!.from);
+    order.splice(drag.to, 0, drag.id);
+    const j = order.indexOf(id);
+    const a = drag.centres[i];
+    const b = drag.centres[j];
+    return `translate(${b.x - a.x}px, ${b.y - a.y}px)`;
+  }
+
+  /*
+   * The page has three areas, one shown at a time: the player's characters,
+   * the campaigns they play in, and the campaigns they run. Each is cut into
+   * pages that fit the screen, so nothing is scrolled through.
+   */
+  const AREA_SHEETS = 'Characters';
+  const AREA_JOINED = 'Joined campaigns';
+  const AREA_RUN = 'Own campaigns';
+  const areaTabs = $derived(joined.length ? [AREA_SHEETS, AREA_JOINED, AREA_RUN] : [AREA_SHEETS, AREA_RUN]);
+  let area = $state(AREA_SHEETS);
+  /* The area in the address (#characters) is opened once the lists are in. */
+  let areaRead = false;
+  $effect(() => {
+    if (!ready || areaRead || typeof location === 'undefined') return;
+    areaRead = true;
+    const wanted = decodeURIComponent(location.hash.slice(1)).toLowerCase();
+    const hit = areaTabs.find((t) => t.toLowerCase() === wanted);
+    if (hit) area = hit;
+  });
+  $effect(() => {
+    if (!areaTabs.includes(area)) area = AREA_SHEETS;
+  });
+
+  type Group<T> = { key: string; label: string; items: T[]; pinned?: boolean; faded?: boolean };
+  /** How many cards a page holds: as many rows as fit below the list, times its columns. */
+  let perPage = $state(10);
+  /** The height a full page takes, so a short last page does not pull the pager up. */
+  let pageHeight = $state(0);
+  let pages = $state<Record<string, number>>({});
+  /** Which way a new page slides in: from the side of the button pressed. */
+  let pageDirection = $state(1);
+
+  function groupsOf<T>(pinnedList: T[], rest: T[], faded: T[], fadedLabel: string): Group<T>[] {
+    const labelled = pinnedList.length > 0 || faded.length > 0;
+    return [
+      { key: 'pinned', label: 'Pinned', items: pinnedList, pinned: true },
+      { key: 'rest', label: labelled ? 'Everything else' : '', items: rest },
+      { key: 'faded', label: fadedLabel, items: faded, faded: true }
+    ];
+  }
+  /** One page's worth of the groups, in order. */
+  function pageOfGroups<T>(groups: Group<T>[], page: number, size: number): Group<T>[] {
+    let skip = page * size;
+    let room = size;
+    const out: Group<T>[] = [];
+    for (const g of groups) {
+      const take = g.items.slice(Math.min(skip, g.items.length));
+      skip = Math.max(0, skip - g.items.length);
+      const shown = take.slice(0, room);
+      room -= shown.length;
+      if (shown.length) out.push({ ...g, items: shown });
+    }
+    return out;
+  }
+  const pageCount = (groups: Group<unknown>[]) =>
+    Math.max(1, Math.ceil(groups.reduce((n, g) => n + g.items.length, 0) / Math.max(1, perPage)));
+  const pageIn = (key: string, groups: Group<unknown>[]) => Math.min(pages[key] ?? 0, pageCount(groups) - 1);
+  function turn(key: string, to: number) {
+    pageDirection = to > (pages[key] ?? 0) ? 1 : -1;
+    pages = { ...pages, [key]: to };
+    confirming = null;
+  }
+
+  const sheetGroups = $derived(groupsOf(pinnedSheets, otherSheets, retiredSheets, 'Retired'));
+  const joinedGroups = $derived(groupsOf(pinnedJoined, otherJoined, endedJoined, 'Archived'));
+  const runGroups = $derived(groupsOf(pinnedCampaigns, otherCampaigns, endedCampaigns, 'Archived'));
+
+  /**
+   * Measures how many cards fit: the rows left between the top of the list
+   * and the foot of the screen (less the pager and group names), times the
+   * columns the grid has at this width. Again on every resize.
+   */
+  function fit(node: HTMLElement) {
+    let frame = 0;
+    const measure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const list = node.querySelector('ul');
+        const cols = list ? getComputedStyle(list).gridTemplateColumns.split(' ').filter(Boolean).length || 1 : 1;
+        const gap = list ? parseFloat(getComputedStyle(list).rowGap) || 8 : 8;
+        // A card of the usual height (one whose campaign runs to a second
+        // line is the exception, not the measure).
+        const heights = [...node.querySelectorAll('li')].map((li) => li.getBoundingClientRect().height).filter(Boolean);
+        const rowH = (heights.length ? Math.min(...heights) : 66) + gap;
+        const top = node.getBoundingClientRect().top + window.scrollY;
+        // The pager, a group name or two and some air at the bottom.
+        const room = window.innerHeight - top - 60 - 2 * 32 - 12;
+        const rows = Math.max(3, Math.floor(room / rowH));
+        perPage = rows * cols;
+        pageHeight = rows * rowH + 32;
+      });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return {
+      destroy() {
+        cancelAnimationFrame(frame);
+        window.removeEventListener('resize', measure);
+      }
+    };
   }
 
   /* By id, not by user: saving a pin or a profile updates the user, and
@@ -411,20 +547,96 @@
   {/if}
 {/snippet}
 
+{#snippet face(sheet: Sheet)}
+  <!-- The character's portrait in its sheet's frame, or its main class drawn. -->
+  {@const src = resolveImageUrl(sheet.definition?.identity?.portraitUrl).url}
+  <span class="face">
+    <ClassIcon cls={sheet.definition ? mainClass(sheet.definition) : undefined} />
+    {#if src}<img {src} alt="" loading="lazy" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />{/if}
+  </span>
+{/snippet}
+
 {#snippet card(sheet: Sheet)}
-  <a href="{base}/s/{sheet.id}">
-    <strong>{nameOf(sheet)}{#if campaignOf(sheet)}
-      <span class="campaign">· {campaignOf(sheet)}</span>{/if}</strong>
-    <span class="meta">
-      {[sheet.definition?.identity?.subclass, sheet.definition?.identity?.class]
-        .filter(Boolean)
-        .join(' ') || 'No class'}
-      {#if sheet.definition?.identity?.level}· level {sheet.definition.identity.level}{/if}
-      <span class="dates">
-        · created {friendlyDate(sheet.created_at)} · updated {friendlyDate(sheet.updated_at)}
+  <a href="{base}/s/{sheet.id}" class="withface">
+    {@render face(sheet)}
+    <!-- Three short lines: the name; the class, level and campaign; when it
+         was last changed (and when made, on hover). -->
+    <span class="cardtext" title="Created {friendlyDate(sheet.created_at)}">
+      <strong style:font-family={faceFamily(fontFace(sheet.definition?.identity?.nameFont))}>{nameOf(sheet)}</strong>
+      <span class="meta">
+        {(sheet.definition && classLine(sheet.definition)) || 'No class'}{#if sheet.definition}{' · '}level {characterLevel(sheet.definition)}{/if}{#if campaignOf(sheet)}{' · '}<span class="campaign" style:font-family={sheet.campaign_id ? campaignFont.get(sheet.campaign_id) : undefined}>{campaignOf(sheet)}</span>{/if}
       </span>
+      <span class="meta dates">Updated {friendlyDate(sheet.updated_at)}</span>
     </span>
   </a>
+{/snippet}
+
+{#snippet sheetItem(sheet: Sheet, g: Group<Sheet>)}
+  {#if g.pinned}
+    {@render pin(sheet, true)}
+    {@render card(sheet)}
+    {@render grip(sheet.id, nameOf(sheet), pinnedSheets.length, 'sheets')}
+  {:else}
+    {@render row(sheet)}
+  {/if}
+{/snippet}
+
+{#snippet joinedItem(c: Campaign, g: Group<Campaign>)}
+  {#if g.pinned}
+    {@render star(c.id, c.name, true, 'joined')}
+    {@render joinedcard(c)}
+    {@render grip(c.id, c.name, pinnedJoined.length, 'joined')}
+  {:else}
+    {@render joinedrow(c)}
+  {/if}
+{/snippet}
+
+{#snippet runItem(c: Campaign, g: Group<Campaign>)}
+  {#if g.pinned}
+    {@render star(c.id, c.name, true, 'campaigns')}
+    {@render campcard(c)}
+    {@render grip(c.id, c.name, pinnedCampaigns.length, 'campaigns')}
+  {:else}
+    {#if !g.faded}{@render star(c.id, c.name, false, 'campaigns')}{/if}
+    {@render campcard(c)}
+  {/if}
+{/snippet}
+
+<!--
+  One area's cards, a page at a time: its groups (Pinned, the rest, Retired
+  or Archived) each named where they start, and a pager under them when there
+  is more than one page.
+-->
+{#snippet paged<T extends { id: string }>(key: Kind, groups: Group<T>[], item: import('svelte').Snippet<[T, Group<T>]>, themeOf: (x: T) => string | undefined)}
+  {@const count = pageCount(groups)}
+  {@const page = pageIn(key, groups)}
+  <div class="pagearea" use:fit style:min-height={count > 1 ? `${pageHeight}px` : undefined}>
+    {#key `${key}:${page}`}
+      <div class="pageset" in:pageSlide>
+        {#each pageOfGroups(groups, page, perPage) as g (g.key)}
+          {#if g.label}<h3 class="group">{g.label}</h3>{/if}
+          <ul class="cascade" class:pinned={g.pinned} class:dragging={g.pinned && drag?.kind === key} class:landing={g.pinned && landing}>
+            {#each g.items as x, i (x.id)}
+              <li style:--i={i} class:retired={g.faded} class:lifted={drag?.id === x.id}
+                  class="themed" style={themeOf(x)}
+                  bind:this={rowEls[x.id]}
+                  style:transform={g.pinned && drag?.kind === key ? shift(x.id) : undefined}
+                  animate:flip={{ duration: drag || landing ? 0 : 260, easing: cubicOut }} out:fold>
+                {@render item(x, g)}
+              </li>
+            {/each}
+          </ul>
+        {/each}
+      </div>
+    {/key}
+  </div>
+  {#if count > 1}
+    <nav class="pager" aria-label="Pages">
+      <button class="smallbtn" disabled={page === 0} onclick={() => turn(key, page - 1)} aria-label="Previous page">‹ Previous</button>
+      <span class="pagenum" aria-live="polite">Page {page + 1} of {count}</span>
+      <button class="smallbtn" disabled={page >= count - 1} onclick={() => turn(key, page + 1)} aria-label="Next page">Next ›</button>
+    </nav>
+  {/if}
 {/snippet}
 
 {#snippet row(sheet: Sheet)}
@@ -447,7 +659,7 @@
 
 <svelte:head>
   <title>DND Companion</title>
-  {#each campaignFaces as href (href)}<link rel="stylesheet" {href} />{/each}
+  {#each [...new Set([...campaignFaces, ...sheetFaces])] as href (href)}<link rel="stylesheet" {href} />{/each}
 </svelte:head>
 
 {#key view}
@@ -493,28 +705,6 @@
   {:else if $session.loading}
     <div class="dieload screen-center"><D20Loader size={56} label="Signing in" /></div>
   {:else}
-    <div class="bar">
-      <h2>Your characters</h2>
-      <div class="actions">
-        <!-- Visually hidden, not display: none: some phones will not open the
-             file picker for an input that is not rendered. -->
-        <input
-          bind:this={picker}
-          class="file"
-          type="file"
-          accept=".txt,text/plain"
-          aria-label="Import a sheet file"
-          tabindex="-1"
-          onchange={importFile}
-        />
-        <button class="ghost" onclick={() => picker?.click()} disabled={importing}
-                title="Bring back a sheet saved with Export">
-          {importing ? 'Importing…' : 'Import'}
-        </button>
-        <button onclick={create} disabled={creating}>{creating ? 'Creating…' : 'New sheet'}</button>
-      </div>
-    </div>
-
     {#if $session.user}
       {@const me = profileOf($session.user)}
       {#if !me.displayName}
@@ -541,6 +731,18 @@
     {#if error}<p class="warn" role="alert">{error}</p>{/if}
     {#if notice}<p class="note" role="status">{notice}</p>{/if}
 
+    <!-- Visually hidden, not display: none: some phones will not open the
+         file picker for an input that is not rendered. -->
+    <input
+      bind:this={picker}
+      class="file"
+      type="file"
+      accept=".txt,text/plain"
+      aria-label="Import a sheet file"
+      tabindex="-1"
+      onchange={importFile}
+    />
+
     {#if loading || !listShown}
       <div class="dieload screen-center">
         <D20Loader size={56} label="Loading your characters" result={loading ? null : error ? 1 : 20}
@@ -548,130 +750,60 @@
       </div>
     {/if}
     <!-- Not an {:else}: that would wait for the die to finish leaving while
-         the sections below it arrived, and the page would jump. -->
-    {#if !ready}
-      <!-- the die above says what is happening -->
-    {:else if sheets.length === 0}
-      <p class="dim">No characters yet. Make one and start filling it in.</p>
-    {:else}
-      {#if pinnedSheets.length}
-        <h3 class="group">Pinned</h3>
-        <ul class="pinned cascade" class:dragging={drag?.kind === 'sheets'} class:landing>
-          {#each pinnedSheets as sheet, i (sheet.id)}
-            <li style:--i={i} bind:this={rowEls[sheet.id]} class:lifted={drag?.id === sheet.id}
-                style:transform={drag ? `translateY(${shift(sheet.id)}px)` : undefined}
-                animate:flip={{ duration: drag || landing ? 0 : 260, easing: cubicOut }} out:fold>
-              {@render pin(sheet, true)}
-              {@render card(sheet)}
-              {@render grip(sheet.id, nameOf(sheet), pinnedSheets.length, 'sheets')}
-            </li>
-          {/each}
-        </ul>
-      {/if}
-      {#if otherSheets.length && (pinnedSheets.length || retiredSheets.length)}<h3 class="group">Everything else</h3>{/if}
-      <ul class="cascade">
-        {#each otherSheets as sheet, i (sheet.id)}
-          <li style:--i={i} animate:flip={{ duration: 260, easing: cubicOut }} out:fold>{@render row(sheet)}</li>
-        {/each}
-      </ul>
-      {#if retiredSheets.length}
-        <h3 class="group">Retired</h3>
-        <ul class="cascade">
-          {#each retiredSheets as sheet, i (sheet.id)}
-            <li style:--i={i} class="retired" animate:flip={{ duration: 260, easing: cubicOut }} out:fold>{@render row(sheet)}</li>
-          {/each}
-        </ul>
-      {/if}
-    {/if}
-
-    <!-- The campaigns this player's characters are in, run by someone else:
-         one card each, however many of their characters are in it. -->
-    {#if ready && joined.length}
-      <div class="bar campaigns">
-        <h2>Campaigns you’re in</h2>
-      </div>
-      {#if pinnedJoined.length}
-        <h3 class="group">Pinned</h3>
-        <ul class="pinned cascade" class:dragging={drag?.kind === 'joined'} class:landing>
-          {#each pinnedJoined as c, i (c.id)}
-            <li style:--i={i} bind:this={rowEls[c.id]} class:lifted={drag?.id === c.id}
-                style:transform={drag?.kind === 'joined' ? `translateY(${shift(c.id)}px)` : undefined}
-                animate:flip={{ duration: drag || landing ? 0 : 260, easing: cubicOut }} out:fold>
-              {@render star(c.id, c.name, true, 'joined')}
-              {@render joinedcard(c)}
-              {@render grip(c.id, c.name, pinnedJoined.length, 'joined')}
-            </li>
-          {/each}
-        </ul>
-      {/if}
-      {#if otherJoined.length && (pinnedJoined.length || endedJoined.length)}<h3 class="group">Everything else</h3>{/if}
-      <ul class="cascade">
-        {#each otherJoined as c, i (c.id)}
-          <li style:--i={i} animate:flip={{ duration: 260, easing: cubicOut }} out:fold>{@render joinedrow(c)}</li>
-        {/each}
-      </ul>
-      {#if endedJoined.length}
-        <h3 class="group">Archived</h3>
-        <ul class="cascade">
-          {#each endedJoined as c, i (c.id)}
-            <li style:--i={i} class="retired" animate:flip={{ duration: 260, easing: cubicOut }} out:fold>{@render joinedrow(c)}</li>
-          {/each}
-        </ul>
-      {/if}
-    {/if}
-
-    <!-- The campaigns this player runs as DM, and starting a new one. -->
+         the areas below it arrived, and the page would jump. -->
     {#if ready}
-      <div class="bar campaigns">
-        <h2>Campaigns you run</h2>
-        <div class="actions">
-          {#if !naming}<button class="ghost" onclick={() => (naming = true)}>New campaign</button>{/if}
-        </div>
+      <div class="areas">
+        <Tabs tabs={areaTabs} bind:active={area}>
+          {#snippet children(tab)}
+            {#if tab === AREA_SHEETS}
+              <div class="bar">
+                <span class="tally">{sheets.length} {sheets.length === 1 ? 'character' : 'characters'}</span>
+                <div class="actions">
+                  <button class="ghost" onclick={() => picker?.click()} disabled={importing}
+                          title="Bring back a sheet saved with Export">
+                    {importing ? 'Importing…' : 'Import'}
+                  </button>
+                  <button onclick={create} disabled={creating}>{creating ? 'Creating…' : 'New sheet'}</button>
+                </div>
+              </div>
+              {#if sheets.length === 0}
+                <p class="dim">No characters yet. Make one and start filling it in.</p>
+              {:else}
+                {@render paged('sheets', sheetGroups, sheetItem, (x) => themeStyle(x.definition?.identity?.theme))}
+              {/if}
+            {:else if tab === AREA_JOINED}
+              <!-- The campaigns this player's characters are in, run by someone
+                   else: one card each, however many of their characters are in it. -->
+              <div class="bar">
+                <span class="tally">{joined.length} {joined.length === 1 ? 'campaign' : 'campaigns'}</span>
+              </div>
+              {@render paged('joined', joinedGroups, joinedItem, () => undefined)}
+            {:else}
+              <!-- The campaigns this player runs as DM, and starting a new one. -->
+              <div class="bar">
+                <span class="tally">{running.length} {running.length === 1 ? 'campaign' : 'campaigns'}</span>
+                <div class="actions">
+                  {#if !naming}<button class="ghost" onclick={() => (naming = true)}>New campaign</button>{/if}
+                </div>
+              </div>
+              {#if naming}
+                <div class="newcamp" in:rise>
+                  <!-- svelte-ignore a11y_autofocus -->
+                  <input bind:value={newCampaign} placeholder="Campaign name" aria-label="Campaign name" autofocus
+                         onkeydown={(e) => { if (e.key === 'Enter') startCampaign(); if (e.key === 'Escape') naming = false; }} />
+                  <button onclick={startCampaign} disabled={starting || !newCampaign.trim()}>{starting ? 'Starting…' : 'Start'}</button>
+                  <button class="ghost" onclick={() => (naming = false)}>Cancel</button>
+                </div>
+              {/if}
+              {#if running.length}
+                {@render paged('campaigns', runGroups, runItem, () => undefined)}
+              {:else if !naming}
+                <p class="dim">None yet. Start one to get an invite link for your players.</p>
+              {/if}
+            {/if}
+          {/snippet}
+        </Tabs>
       </div>
-      {#if naming}
-        <div class="newcamp" in:rise>
-          <!-- svelte-ignore a11y_autofocus -->
-          <input bind:value={newCampaign} placeholder="Campaign name" aria-label="Campaign name" autofocus
-                 onkeydown={(e) => { if (e.key === 'Enter') startCampaign(); if (e.key === 'Escape') naming = false; }} />
-          <button onclick={startCampaign} disabled={starting || !newCampaign.trim()}>{starting ? 'Starting…' : 'Start'}</button>
-          <button class="ghost" onclick={() => (naming = false)}>Cancel</button>
-        </div>
-      {/if}
-      {#if running.length}
-        {#if pinnedCampaigns.length}
-          <h3 class="group">Pinned</h3>
-          <ul class="pinned cascade" class:dragging={drag?.kind === 'campaigns'} class:landing>
-            {#each pinnedCampaigns as c, i (c.id)}
-              <li style:--i={i} bind:this={rowEls[c.id]} class:lifted={drag?.id === c.id}
-                  style:transform={drag?.kind === 'campaigns' ? `translateY(${shift(c.id)}px)` : undefined}
-                  animate:flip={{ duration: drag || landing ? 0 : 260, easing: cubicOut }}>
-                {@render star(c.id, c.name, true, 'campaigns')}
-                {@render campcard(c)}
-                {@render grip(c.id, c.name, pinnedCampaigns.length, 'campaigns')}
-              </li>
-            {/each}
-          </ul>
-        {/if}
-        {#if otherCampaigns.length && (pinnedCampaigns.length || endedCampaigns.length)}<h3 class="group">Everything else</h3>{/if}
-        <ul class="cascade">
-          {#each otherCampaigns as c, i (c.id)}
-            <li style:--i={i} animate:flip={{ duration: 260, easing: cubicOut }}>
-              {@render star(c.id, c.name, false, 'campaigns')}
-              {@render campcard(c)}
-            </li>
-          {/each}
-        </ul>
-        {#if endedCampaigns.length}
-          <h3 class="group">Archived</h3>
-          <ul class="cascade">
-            {#each endedCampaigns as c, i (c.id)}
-              <li style:--i={i} class="retired" animate:flip={{ duration: 260, easing: cubicOut }}>{@render campcard(c)}</li>
-            {/each}
-          </ul>
-        {/if}
-      {:else if !naming}
-        <p class="dim">None yet. Start one to get an invite link for your players.</p>
-      {/if}
     {/if}
   {/if}
 </main>
@@ -696,6 +828,28 @@
   }
   .hellorow input:focus { outline: none; border-color: var(--a-edge); }
   main { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
+  /* A wide screen: the page widens and the cards sit in a grid. */
+  @media (min-width: 900px) {
+    main { max-width: 72rem; padding-left: 2rem; padding-right: 2rem; }
+    .pageset ul { grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr)); }
+  }
+  .areas { margin-top: 1.75rem; }
+  .tally { font-size: 0.8125rem; color: var(--dim); }
+  .pagearea { position: relative; }
+  .pager {
+    display: flex; align-items: center; justify-content: center; gap: 0.75rem;
+    margin-top: 1rem; font-size: 0.8125rem; color: var(--dim);
+  }
+  .pagenum { min-width: 7.5rem; text-align: center; font-variant-numeric: tabular-nums; }
+  /* The portrait (or the class drawn) at the card's left, in the sheet's frame. */
+  .withface { display: flex; align-items: center; gap: 0.75rem; }
+  .cardtext { display: block; min-width: 0; flex: 1; }
+  .face {
+    position: relative; flex: none; width: 2.75rem; height: 2.75rem; overflow: hidden;
+    border-radius: var(--r-sm); border: 1px solid var(--a-edge);
+    background: linear-gradient(150deg, var(--portrait-from), var(--portrait-to));
+  }
+  .face img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
   .tools { display: flex; align-items: center; gap: 0.5rem; flex: none; }
   /* The title takes the room the buttons leave and its name is sized to fit
@@ -707,8 +861,7 @@
   }
   h1 .brandname { font-size: max(0.875rem, min(1em, calc((100cqi - 2.5rem) / 10.2))); }
   h1 :global(.logo) { flex: none; }
-  h2 { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin: 0; }
-  .bar { display: flex; align-items: center; justify-content: space-between; margin: 2rem 0 0.75rem; }
+  .bar { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin: 0.25rem 0 0.875rem; min-height: 2.125rem; }
   .actions { display: flex; gap: 0.5rem; }
   .file {
     position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0;
@@ -762,10 +915,10 @@
   .confirm span { color: var(--dim); }
   .danger { border-color: var(--bad); color: var(--bad); padding: 0.25rem 0.6rem; font-size: 0.82rem; }
   .danger:hover:not(:disabled) { background: var(--bad); color: var(--bg); border-color: var(--bad); }
-  .retired a { opacity: 0.6; padding-left: 0.9rem; }
-  .meta { display: block; font-size: 0.8rem; color: var(--dim); margin-top: 0.15rem; }
-  .campaign { font-weight: 400; color: var(--dim); margin-left: 0.25rem; }
-  .bar.campaigns { margin-top: 2.5rem; }
+  .retired a { opacity: 0.6; padding-left: 0.75rem; }
+  .meta { display: block; font-size: 0.8rem; color: var(--dim); margin-top: 0.125rem; overflow-wrap: anywhere; }
+  .meta.dates { margin-top: 0.0625rem; font-size: 0.75rem; }
+  .campaign { color: var(--text); }
   .newcamp { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
   .newcamp input {
     flex: 1; min-width: 0; font: inherit; padding: 0.5rem 0.75rem; border: 1px solid var(--line);
