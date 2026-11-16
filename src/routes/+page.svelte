@@ -779,10 +779,8 @@
         <a class="smallbtn accent greetcamp" href="{base}/c/{nextUp.c.id}" style:font-family={faceFamily(fontFace(nextUp.c.details?.nameFont))}>{nextUp.c.name}</a>
         <span class="greetcount" class:now={nextUp.count === 'now'}>{nextUp.count === 'now' ? 'is on now' : `starts ${nextUp.count}`}</span>
         <span class="greetwhen">{nextUp.when}</span>
-      {:else if running.some((c) => !c.archived)}
-        No session on the calendar. Set the next one on your campaign's page.
-      {:else if joined.some((c) => !c.archived)}
-        No session on the calendar yet. Your DM sets the next one.
+      {:else if running.some((c) => !c.archived) || joined.some((c) => !c.archived)}
+        No session on the calendar yet.
       {:else}
         Ready when you are: make a character, or start a campaign for your table.
       {/if}
