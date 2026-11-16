@@ -267,6 +267,9 @@ body {
 @keyframes skeleton-shimmer { from { background-position: 100% 0; } to { background-position: -50% 0; } }
 @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
 
+/* Held still while something animates, so it shows no passing scrollbar (lib/settle.ts). */
+[data-settling] { overflow: hidden !important; }
+
 .app-alert {
   margin: 1.5rem 0 0; padding: 0.75rem 1rem; border: 1px solid var(--line-soft); border-radius: var(--r);
   background: var(--surface); color: var(--dim); font-size: 0.875rem; line-height: 1.45;

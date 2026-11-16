@@ -9,8 +9,12 @@
   import { arrive, prefersReducedMotion } from '$lib/motion';
   import { profile } from '$lib/stores/profile';
   import { adoptAccountPrefs } from '$lib/prefs';
+  import { installSettle } from '$lib/settle';
 
   let { children } = $props();
+
+  // Nothing that moves makes a scrollbar flash (lib/settle.ts).
+  $effect(() => installSettle());
 
   /*
    * A new version was deployed: everyone's page reloads into it, but never
