@@ -17,12 +17,14 @@
 --   campaigns         a DM's campaign; characters join it by invite
 --   campaign_state    what is happening in a campaign now (music, invite)
 --   board_items       the campaign's table board
+--   campaign_creatures monsters and NPCs the DM keeps on the campaign page
 --   shared_rows       rows players wrote, offered to others as they type
 --   shared_row_uses   which characters use which shared rows
 --
 -- Functions the app calls live in the `private` schema (not served by the
 -- API) with a thin public face running as the caller. An existing database
--- from before 16 Nov 2026 is brought up to this by database/0015 and 0016.
+-- from before 16 Nov 2026 is brought up to this by database/0015, 0016 and
+-- 0017.
 
 create extension if not exists pgcrypto;
 
@@ -92,6 +94,26 @@ create index if not exists board_items_campaign_idx on public.board_items (campa
 create index if not exists board_items_created_by_idx on public.board_items (created_by);
 -- Deletes announce the whole row, so open boards know which item went.
 alter table public.board_items replica identity full;
+
+create table if not exists public.campaign_creatures (
+  id           uuid primary key default gen_random_uuid(),
+  campaign_id  uuid not null references public.campaigns(id) on delete cascade,
+  kind         text not null default 'monster'
+               constraint campaign_creatures_kind_check check (kind in ('monster', 'npc')),
+  name         text not null constraint campaign_creatures_name_check check (char_length(name) between 1 and 80),
+  hp_max       integer constraint campaign_creatures_hp_max_check check (hp_max is null or hp_max between 0 and 100000),
+  hp_current   integer constraint campaign_creatures_hp_current_check check (hp_current is null or hp_current between -100000 and 100000),
+  hp_temp      integer not null default 0 constraint campaign_creatures_hp_temp_check check (hp_temp between 0 and 100000),
+  ac           integer constraint campaign_creatures_ac_check check (ac is null or ac between 0 and 100),
+  conditions   text[] not null default '{}'
+               constraint campaign_creatures_conditions_check check (cardinality(conditions) <= 40),
+  notes        text not null default '' constraint campaign_creatures_notes_check check (char_length(notes) <= 4000),
+  link         text not null default '' constraint campaign_creatures_link_check check (char_length(link) <= 500),
+  position     integer not null default 0,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+create index if not exists campaign_creatures_campaign_idx on public.campaign_creatures (campaign_id);
 
 create table if not exists public.shared_rows (
   id           uuid primary key default gen_random_uuid(),
@@ -181,6 +203,9 @@ create trigger campaign_state_touch before update on public.campaign_state
 drop trigger if exists board_items_touch on public.board_items;
 create trigger board_items_touch before update on public.board_items
   for each row execute function private.touch_updated_at();
+drop trigger if exists campaign_creatures_touch on public.campaign_creatures;
+create trigger campaign_creatures_touch before update on public.campaign_creatures
+  for each row execute function private.touch_updated_at();
 drop trigger if exists profiles_touch on public.profiles;
 create trigger profiles_touch before update on public.profiles
   for each row execute function private.touch_updated_at();
@@ -224,6 +249,24 @@ revoke all on function private.cap_board_items() from public, anon, authenticate
 drop trigger if exists board_items_cap on public.board_items;
 create trigger board_items_cap before insert on public.board_items
   for each row execute function private.cap_board_items();
+
+-- A table of foes, not a bestiary.
+create or replace function private.cap_campaign_creatures()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if (select count(*) from public.campaign_creatures c where c.campaign_id = new.campaign_id) >= 300 then
+    raise exception 'That is a whole army already';
+  end if;
+  return new;
+end;
+$$;
+revoke all on function private.cap_campaign_creatures() from public, anon, authenticated;
+drop trigger if exists campaign_creatures_cap on public.campaign_creatures;
+create trigger campaign_creatures_cap before insert on public.campaign_creatures
+  for each row execute function private.cap_campaign_creatures();
 
 -- Every campaign has its live state, made with it.
 create or replace function private.create_campaign_state()
@@ -319,6 +362,7 @@ alter table public.character_pages enable row level security;
 alter table public.campaigns enable row level security;
 alter table public.campaign_state enable row level security;
 alter table public.board_items enable row level security;
+alter table public.campaign_creatures enable row level security;
 alter table public.shared_rows enable row level security;
 alter table public.shared_row_uses enable row level security;
 alter table public.profiles enable row level security;
@@ -330,7 +374,7 @@ begin
   for p in
     select schemaname, tablename, policyname from pg_policies
     where schemaname = 'public'
-      and tablename in ('characters', 'character_pages', 'campaigns', 'campaign_state', 'board_items', 'profiles')
+      and tablename in ('characters', 'character_pages', 'campaigns', 'campaign_state', 'board_items', 'campaign_creatures', 'profiles')
   loop
     execute format('drop policy %I on %I.%I', p.policyname, p.schemaname, p.tablename);
   end loop;
@@ -391,6 +435,17 @@ create policy "Members add" on public.board_items for insert
   with check (created_by = (select auth.uid()) and private.is_campaign_member(campaign_id));
 create policy "Members change" on public.board_items for update using (private.is_campaign_member(campaign_id));
 create policy "Members remove" on public.board_items for delete using (private.is_campaign_member(campaign_id));
+
+-- campaign_creatures: only the campaign's DM, for everything.
+create policy "The DM reads them" on public.campaign_creatures for select
+  using (exists (select 1 from public.campaigns c where c.id = campaign_id and c.created_by = (select auth.uid())));
+create policy "The DM adds them" on public.campaign_creatures for insert
+  with check (exists (select 1 from public.campaigns c where c.id = campaign_id and c.created_by = (select auth.uid())));
+create policy "The DM changes them" on public.campaign_creatures for update
+  using (exists (select 1 from public.campaigns c where c.id = campaign_id and c.created_by = (select auth.uid())))
+  with check (exists (select 1 from public.campaigns c where c.id = campaign_id and c.created_by = (select auth.uid())));
+create policy "The DM removes them" on public.campaign_creatures for delete
+  using (exists (select 1 from public.campaigns c where c.id = campaign_id and c.created_by = (select auth.uid())));
 
 -- profiles: each player reads and changes only their own.
 create policy "The player reads their own" on public.profiles for select using (id = (select auth.uid()));
@@ -831,6 +886,12 @@ grant update (playback) on public.campaign_state to authenticated;
 revoke all on public.board_items from anon, authenticated;
 grant select on public.board_items to anon, authenticated;
 grant insert (campaign_id, kind, data, created_by), update (data), delete on public.board_items to authenticated;
+revoke all on public.campaign_creatures from anon, authenticated;
+grant select, delete on public.campaign_creatures to authenticated;
+grant insert (campaign_id, kind, name, hp_max, hp_current, hp_temp, ac, conditions, notes, link, position)
+  on public.campaign_creatures to authenticated;
+grant update (kind, name, hp_max, hp_current, hp_temp, ac, conditions, notes, link, position)
+  on public.campaign_creatures to authenticated;
 revoke all on public.shared_rows from anon, authenticated;
 revoke all on public.shared_row_uses from anon, authenticated;
 
