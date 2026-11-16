@@ -1067,6 +1067,11 @@
   /* The lists are paged to fit, so the panel never scrolls: no gutter kept
      for a scrollbar, and the cards line up with the buttons above. */
   .areas :global(.panels) { scrollbar-gutter: auto; }
+  /* Nor can anything moving in it (a card gliding to a new place, an area
+     sliding in) give it a scrollbar for a moment: it grows with its cards,
+     and what passes its edges is clipped, with room left for a lifted
+     card's shadow. */
+  .areas :global(div.panels) { overflow: clip; overflow-clip-margin: 1rem; }
   /*
    * The greeting: hello, then when the table next meets, counted down (or
    * what to do first).
