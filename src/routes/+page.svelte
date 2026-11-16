@@ -24,6 +24,8 @@
   import D20Loader from '$lib/components/D20Loader.svelte';
   import MenuSkeleton from '$lib/components/MenuSkeleton.svelte';
   import PageTurn from '$lib/components/PageTurn.svelte';
+  import MenuGreeting from '$lib/components/MenuGreeting.svelte';
+  import AreaSwitch from '$lib/components/AreaSwitch.svelte';
   import Tabs from '$lib/components/Tabs.svelte';
   import ClassIcon from '$lib/components/ClassIcon.svelte';
   import { armorClass, characterLevel, classLine, mainClass } from '$lib/rules/derived';
@@ -776,48 +778,6 @@
   {/if}
 {/snippet}
 
-{#snippet greeting(name: string)}
-  <!-- Hello, and when the table next meets (or what to do first). -->
-  <section class="greet" aria-label="Welcome">
-    <p class="greethi">Hello, {name}!</p>
-    <p class="greetnext">
-      {#if nextUp}
-        <a class="smallbtn accent greetcamp" href="{base}/c/{nextUp.c.id}" style:font-family={faceFamily(fontFace(nextUp.c.details?.nameFont))}>{nextUp.c.name}</a>
-        <span class="greetcount" class:now={nextUp.count === 'now'}>{nextUp.count === 'now' ? 'is on now' : `starts ${nextUp.count}`}</span>
-        <span class="greetwhen">{nextUp.when}</span>
-      {:else if running.some((c) => !c.archived) || joined.some((c) => !c.archived)}
-        No session on the calendar yet.
-      {:else}
-        Ready when you are: make a character, or start a campaign for your table.
-      {/if}
-    </p>
-  </section>
-{/snippet}
-
-{#snippet areaswitch()}
-  <!-- Characters or Campaigns: one switch, its thumb sliding to the side
-       chosen; each side with its sign, how many, and (campaigns) a dot while
-       anyone is at one of the tables. -->
-  {@const at = areaTabs.indexOf(area)}
-  <div class="areaswitch" role="tablist" aria-label="Show" style:--at={at}>
-    <i class="switchthumb" aria-hidden="true"></i>
-    {#each areaTabs as tab (tab)}
-      {@const isSheets = tab === AREA_SHEETS}
-      <button role="tab" aria-selected={area === tab} class:on={area === tab} onclick={() => chooseArea(tab)}>
-        <svg class="switchicon" viewBox="0 0 24 24" aria-hidden="true">
-          {#if isSheets}<circle cx="12" cy="8" r="3.75" /><path d="M4.75 20c.6-3.9 3.6-6.25 7.25-6.25s6.65 2.35 7.25 6.25" />
-          {:else}<path d="M5 21V3.75M5 4.5h12.5l-2.6 4 2.6 4H5" />{/if}
-        </svg>
-        <span>{tab}</span>
-        <span class="areacount">{isSheets ? sheets.length : running.length + joined.length}</span>
-        {#if !isSheets && atTables > 0}
-          <i class="here-dot" title="{atTables === 1 ? 'Someone is' : `${atTables} people are`} at one of your tables now"></i>
-        {/if}
-      </button>
-    {/each}
-  </div>
-{/snippet}
-
 <!--
   One area's cards, a page at a time: its groups (Pinned, the rest, Retired
   or Archived) each named where they start, and a pager under them when there
@@ -976,7 +936,9 @@
       <!-- Hello and the next session at the left; at the right, what this
            area can make and the switch between the two areas. -->
       <div class="menuhead">
-        {#if myName}{@render greeting(myName)}{/if}
+        {#if myName}
+          <MenuGreeting name={myName} next={nextUp} hasCampaigns={running.some((c) => !c.archived) || joined.some((c) => !c.archived)} />
+        {/if}
         <div class="menucontrols">
           <div class="actions">
             {#if area === AREA_SHEETS}
@@ -989,7 +951,10 @@
               <button onclick={() => (naming = true)} disabled={naming}>New campaign</button>
             {/if}
           </div>
-          {@render areaswitch()}
+          <AreaSwitch active={area} onchoose={chooseArea} sides={[
+            { key: AREA_SHEETS, icon: 'person', count: sheets.length },
+            { key: AREA_CAMPAIGNS, icon: 'flag', count: running.length + joined.length, live: atTables }
+          ]} />
         </div>
       </div>
       <div class="areas">
@@ -1072,54 +1037,7 @@
      and what passes its edges is clipped, with room left for a lifted
      card's shadow. */
   .areas :global(div.panels) { overflow: clip; overflow-clip-margin: 1rem; }
-  /*
-   * The greeting: hello, then when the table next meets, counted down (or
-   * what to do first).
-   */
-  .greet { display: grid; gap: 0.375rem; flex: 1 1 20rem; min-width: 0; }
-  .greethi { margin: 0; font-family: var(--font-display, inherit); font-size: 1.5rem; font-weight: 650; line-height: 1.2; overflow-wrap: anywhere; }
-  .greetnext {
-    margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 0.25rem 0.5rem;
-    min-height: 1.875rem; font-size: 0.9375rem; color: var(--dim);
-  }
-  .greetcamp { font-size: 0.875rem; }
-  .greetcount { color: var(--text); }
-  .greetcount.now { color: var(--a); font-weight: 600; }
-  .greetwhen { color: var(--faint); font-size: 0.8125rem; }
-  .greetwhen::before { content: '·'; margin-right: 0.5rem; color: var(--faint); }
-  /* A phone: the countdown says enough; the date would wrap onto a line of its own. */
-  @media (max-width: 480px) { .greetwhen { display: none; } }
-  /*
-   * Characters or Campaigns, as one switch: a pill with a thumb that slides
-   * to the side chosen. Each side: its sign, its name, how many, and
-   * (campaigns) a dot while anyone is at one of the tables.
-   */
-  .areaswitch {
-    position: relative; display: grid; grid-template-columns: 1fr 1fr; padding: 3px; flex: none;
-    border-radius: 999px; border: 1px solid var(--line); background: var(--raised);
-  }
-  .switchthumb {
-    position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px); border-radius: 999px;
-    border: 1px solid var(--a-edge); background: var(--a-wash);
-    transform: translateX(calc(var(--at) * 100%)); transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  .areaswitch button {
-    position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 0.4375rem;
-    border: 0; background: none; border-radius: 999px; padding: 0.375rem 0.875rem; font-size: 0.875rem; color: var(--dim);
-    white-space: nowrap; transition: color 0.2s ease, transform 0.08s ease;
-  }
-  .areaswitch button.on { color: var(--text); }
-  .areaswitch button:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
-  .switchicon { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
-  .areaswitch button.on .switchicon { color: var(--a); }
-  .areacount {
-    font-size: 0.6875rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1;
-    padding: 0.1875rem 0.4375rem; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--dim);
-    transition: color 0.2s ease, border-color 0.2s ease;
-  }
-  .areaswitch button.on .areacount { border-color: var(--a-edge); color: var(--a); }
   @media (max-width: 700px) {
-    .greethi { font-size: 1.375rem; }
     .menucontrols { width: 100%; flex-direction: column-reverse; align-items: stretch; gap: 0.75rem; }
     .menucontrols .actions { justify-content: flex-end; }
   }
