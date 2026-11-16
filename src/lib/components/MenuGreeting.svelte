@@ -1,12 +1,11 @@
 <script lang="ts">
   /**
    * The main menu's hello, and under it when the table next meets, counted
-   * down, with the campaign as a button (or one plain line when nothing is
-   * set).
+   * down, with the campaign as a button in the page's own type (or one
+   * plain line when nothing is set).
    */
   import { base } from '$app/paths';
   import type { Campaign } from '$lib/data/campaigns';
-  import { faceFamily, fontFace } from '$lib/rules/fonts';
 
   let {
     name,
@@ -24,7 +23,7 @@
   <p class="greethi">Hello, {name}!</p>
   <p class="greetnext">
     {#if next}
-      <a class="smallbtn accent greetcamp" href="{base}/c/{next.c.id}" style:font-family={faceFamily(fontFace(next.c.details?.nameFont))}>{next.c.name}</a>
+      <a class="smallbtn accent greetcamp" href="{base}/c/{next.c.id}">{next.c.name}</a>
       <span class="greetcount" class:now={next.count === 'now'}>{next.count === 'now' ? 'is on now' : `starts ${next.count}`}</span>
       <span class="greetwhen">{next.when}</span>
     {:else if hasCampaigns}
