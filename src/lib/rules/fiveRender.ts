@@ -33,7 +33,9 @@ const ATTACK: Record<string, string> = {
   ms: 'Melee Spell Attack:', rs: 'Ranged Spell Attack:'
 };
 /** Which part of a tag is the words shown, where it is not the third. */
-const SHOWN_AT: Record<string, number> = { classFeature: 4, subclassFeature: 6, quickref: 4, filter: 0, link: 0, '5etools': 0, area: 0 };
+// {@classFeature name|class|classSource|level|source|shown},
+// {@subclassFeature name|class|classSource|subclass|subclassSource|level|source|shown}.
+const SHOWN_AT: Record<string, number> = { classFeature: 5, subclassFeature: 7, quickref: 4, filter: 0, link: 0, '5etools': 0, area: 0 };
 
 function tag(name: string, body: string): string {
   const parts = body.split('|');

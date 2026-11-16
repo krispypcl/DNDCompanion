@@ -31,6 +31,13 @@ describe('5e.tools text', () => {
     expect(inline('{@note see {@spell shield}}')).toBe('<span class="five-note">see shield</span>');
   });
 
+  it('shows a class feature tag by its words, not its book', () => {
+    expect(inline('expend one {@classFeature Risk|Gunslinger|ValdaGunslinger|2|ValdaGunslinger|Risk Die}')).toBe('expend one Risk Die');
+    expect(inline('{@classFeature Rage|Barbarian|XPHB|1|XPHB}')).toBe('Rage');
+    expect(inline('{@subclassFeature Path of the Berserker|Barbarian|XPHB|Berserker|XPHB|3|XPHB}')).toBe('Path of the Berserker');
+    expect(inline('{@subclassFeature Frenzy|Barbarian|XPHB|Berserker|XPHB|3|XPHB|a frenzy}')).toBe('a frenzy');
+  });
+
   it('shows a spell from its name to its book', () => {
     const r = render({
       kind: 'spell',
