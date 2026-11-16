@@ -35,6 +35,7 @@
   import ModeToggle from './ModeToggle.svelte';
   import Logo from './Logo.svelte';
   import NotFound from './NotFound.svelte';
+  import { pageTitle } from '$lib/title';
   import ShareButton from './ShareButton.svelte';
   import ShortcutHelp from './ShortcutHelp.svelte';
   import ThemePicker from './ThemePicker.svelte';
@@ -316,7 +317,7 @@
 </script>
 
 <svelte:head>
-  <title>{campaign?.name ?? 'Campaign'}</title>
+  {#if !missing && !(error && !campaign)}<title>{pageTitle(campaign?.name ?? 'Campaign')}</title>{/if}
   {#if face}<link rel="stylesheet" href={face.href} />{/if}
 </svelte:head>
 <svelte:window onkeydown={onKey} />
@@ -327,9 +328,9 @@
                onlanded={() => (landed = true)} />
   </div>
 {:else if missing}
-  <NotFound title="No campaign here!" message="This campaign has wandered off the map. It may have ended, or the link is off by a letter, so check it with your DM." />
+  <NotFound tab="Campaign not found" title="No campaign here!" message="This campaign has wandered off the map. It may have ended, or the link is off by a letter, so check it with your DM." />
 {:else if error && !campaign}
-  <NotFound title="That’s a critical fail!" message={error} />
+  <NotFound tab="Campaign didn’t load" title="That’s a critical fail!" message={error} />
 {:else if campaign}
   <main class="themed" style={themeCss} in:fade={{ duration: prefersReducedMotion() ? 0 : 200 }}>
     {#if bannerLink.url}<Banner url={bannerLink.url} />{/if}

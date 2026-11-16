@@ -20,4 +20,4 @@
   });
 </script>
 
-<svelte:head><title>DND Companion · Owlbear</title></svelte:head>
+<svelte:head><title>Owlbear | DND Companion</title></svelte:head>

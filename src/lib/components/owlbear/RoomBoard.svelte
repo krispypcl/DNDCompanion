@@ -43,7 +43,7 @@
   });
 </script>
 
-<svelte:head><title>Board · DND Companion</title></svelte:head>
+<svelte:head><title>Board | DND Companion</title></svelte:head>
 
 <main>
   <header>

@@ -14,6 +14,7 @@
   import Logo from '$lib/components/Logo.svelte';
   import { friendlyError } from '$lib/errors';
   import { friendlyDate, numericDate } from '$lib/rules/dates';
+  import { pageTitle } from '$lib/title';
   import { faceFamily, fontFace } from '$lib/rules/fonts';
   import D20Loader from '$lib/components/D20Loader.svelte';
   import Tabs from '$lib/components/Tabs.svelte';
@@ -694,7 +695,8 @@
 {/snippet}
 
 <svelte:head>
-  <title>DND Companion</title>
+  <!-- Signed in, the tab names the area open ("Characters | DND Companion"). -->
+  <title>{pageTitle(view === 'list' && $session.user ? area : null)}</title>
   {#each [...new Set([...campaignFaces, ...sheetFaces])] as href (href)}<link rel="stylesheet" {href} />{/each}
 </svelte:head>
 

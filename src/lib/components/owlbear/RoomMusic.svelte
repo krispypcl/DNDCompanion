@@ -70,7 +70,7 @@
   });
 </script>
 
-<svelte:head><title>Table music · DND Companion</title></svelte:head>
+<svelte:head><title>Table music | DND Companion</title></svelte:head>
 
 <main bind:this={box}>
   <header>

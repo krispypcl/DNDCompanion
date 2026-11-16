@@ -33,6 +33,7 @@
   import DownloadButton from '$lib/components/DownloadButton.svelte';
   import LeaveDialog from '$lib/components/LeaveDialog.svelte';
   import NotFound from '$lib/components/NotFound.svelte';
+  import { pageTitle } from '$lib/title';
   import SheetSkeleton from '$lib/components/SheetSkeleton.svelte';
   import D20Loader from '$lib/components/D20Loader.svelte';
   import PrintButton from '$lib/components/PrintButton.svelte';
@@ -682,7 +683,7 @@
 <svelte:head>
   <!-- The definition is the character's name as typed; the row's name is a
        projection of it, so prefer the definition and fall back. -->
-  <title>{definition?.identity?.name?.trim() || sheet?.name || 'Character sheet'}</title>
+  {#if !loadError}<title>{pageTitle(definition?.identity?.name?.trim() || sheet?.name || 'Character sheet')}</title>{/if}
   <!-- The name's own font, if the player chose one (Appearance tab). -->
   {#if nameFace}<link rel="stylesheet" href={nameFace.href} />{/if}
 </svelte:head>
@@ -697,9 +698,9 @@
     </div>
   </div>
 {:else if loadError === 'notfound'}
-  <NotFound title="No sheet here!" message="This sheet has vanished like a rogue in the night. It may have been deleted, kept private by its player, or the link is off by a letter, so check it with whoever sent it." />
+  <NotFound tab="Sheet not found" title="No sheet here!" message="This sheet has vanished like a rogue in the night. It may have been deleted, kept private by its player, or the link is off by a letter, so check it with whoever sent it." />
 {:else if loadError}
-  <NotFound title="That’s a critical fail!" message={loadError} />
+  <NotFound tab="Sheet didn’t load" title="That’s a critical fail!" message={loadError} />
 {:else if sheet && definition && sheetState}
   <!-- The theme is scoped here, not to :root, so a campaign view can later show
        several characters in their own colours at once. -->

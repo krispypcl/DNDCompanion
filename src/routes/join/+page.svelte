@@ -15,6 +15,7 @@
   import D20Loader from '$lib/components/D20Loader.svelte';
   import Logo from '$lib/components/Logo.svelte';
   import NotFound from '$lib/components/NotFound.svelte';
+  import { pageTitle } from '$lib/title';
   import type { Sheet } from '$lib/types';
 
   const code = $derived(inviteCode(page.url.searchParams.get('code') ?? ''));
@@ -59,7 +60,7 @@
   const back = $derived(`/join?code=${code}`);
 </script>
 
-<svelte:head><title>{target ? `Join ${target.name}` : 'Join a campaign'}</title></svelte:head>
+<svelte:head>{#if target || !looked || $session.loading}<title>{pageTitle(target ? `Join ${target.name}` : 'Join a campaign')}</title>{/if}</svelte:head>
 
 {#if !looked || $session.loading || !landed}
   <div class="loading screen-center">
@@ -67,7 +68,7 @@
                onlanded={() => (landed = true)} />
   </div>
 {:else if !target}
-  <NotFound title="That invite doesn’t open any door!"
+  <NotFound tab="Invite not found" title="That invite doesn’t open any door!"
             message={error ?? 'It may have been replaced with a new one. Ask your DM for the current link.'} />
 {:else}
   <main in:fade={{ duration: 200 }}>

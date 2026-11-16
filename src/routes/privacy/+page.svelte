@@ -6,7 +6,7 @@
   import { base } from '$app/paths';
 </script>
 
-<svelte:head><title>Privacy · DND Companion</title></svelte:head>
+<svelte:head><title>Privacy | DND Companion</title></svelte:head>
 
 <main class="policy">
   <a class="smallbtn back" href="{base}/">Back</a>

@@ -17,6 +17,8 @@
   }
 </script>
 
+<svelte:head><title>Sign in | DND Companion</title></svelte:head>
+
 <AuthForm
   google googleNext={nextPath()}
   name="Sign in"

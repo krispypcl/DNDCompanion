@@ -4,6 +4,8 @@
   import { requestReset } from '$lib/data/session';
 </script>
 
+<svelte:head><title>Reset your password | DND Companion</title></svelte:head>
+
 <AuthForm
   title="Reset your password"
   name="Reset your password"

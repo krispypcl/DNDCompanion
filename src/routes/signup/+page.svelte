@@ -8,6 +8,8 @@
   const MIN_PASSWORD = 8;
 </script>
 
+<svelte:head><title>Create an account | DND Companion</title></svelte:head>
+
 <AuthForm
   google
   title="Create an account"
