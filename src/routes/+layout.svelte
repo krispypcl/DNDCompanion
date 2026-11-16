@@ -6,8 +6,19 @@
   import ConnectionNotice from '$lib/components/ConnectionNotice.svelte';
   import LookupPeek from '$lib/components/LookupPeek.svelte';
   import { arrive, prefersReducedMotion } from '$lib/motion';
+  import { session } from '$lib/stores/session';
+  import { adoptAccountPrefs } from '$lib/prefs';
 
   let { children } = $props();
+
+  /* A device that has never chosen a look takes the account's on signing in. */
+  let adopted: string | null = null;
+  $effect(() => {
+    const user = $session.user;
+    if (!user || adopted === user.id) return;
+    adopted = user.id;
+    adoptAccountPrefs(user);
+  });
 
   /**
    * Where the browser can, the page being left fades and lifts away while the

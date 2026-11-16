@@ -10,6 +10,8 @@
 import { cubicOut } from 'svelte/easing';
 
 export function prefersReducedMotion(): boolean {
+  // Chosen on the account page (html[data-motion]), or asked for by the device.
+  if (typeof document !== 'undefined' && document.documentElement.dataset.motion === 'reduce') return true;
   return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 

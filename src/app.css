@@ -318,6 +318,12 @@ p[role='alert'], p[role='status'] { animation: message-in 0.28s cubic-bezier(0.3
     transition-duration: 0.01ms !important;
   }
 }
+/* The same, when it was chosen on the account page rather than the device. */
+html[data-motion='reduce'] *, html[data-motion='reduce'] *::before, html[data-motion='reduce'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
 
 /*
  * Ink: the colours for writing and drawing (notes, backstory, the table's

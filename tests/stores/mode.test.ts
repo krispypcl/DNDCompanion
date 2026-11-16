@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { get } from 'svelte/store';
 import { readFileSync } from 'node:fs';
-import { MODE_KEY, applyMode, mode, storedMode, toggleMode } from '$lib/stores/mode';
+import { MODE_KEY, applyMode, chooseMode, mode, modeChoice, storedChoice, storedMode, toggleMode } from '$lib/stores/mode';
 
 describe('mode', () => {
   beforeEach(() => {
@@ -58,6 +58,17 @@ describe('mode', () => {
     toggleMode();
     expect(get(mode)).toBe('dark');
     expect(localStorage.getItem(MODE_KEY)).toBe('dark');
+  });
+
+  it('can follow the device instead (System)', () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('light'), addEventListener() {} }));
+    chooseMode('system');
+    expect(localStorage.getItem(MODE_KEY)).toBe('system');
+    expect(storedChoice()).toBe('system');
+    expect(get(modeChoice)).toBe('system');
+    expect(storedMode()).toBe('light');
+    expect(document.documentElement.getAttribute('data-mode')).toBe('light');
+    vi.unstubAllGlobals();
   });
 
   it('is decided by the shell before the first paint', () => {

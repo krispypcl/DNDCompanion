@@ -13,6 +13,7 @@
   import { DIE_SIDES, addDie, diceCount, formula, hasD20, roll, type Mode, type Pool, type Roll, type Sides } from '$lib/rules/dice';
   import { prefersReducedMotion } from '$lib/motion';
   import { clatter, land, nat1, nat20 } from '$lib/sound';
+  import { storedDice } from '$lib/prefs';
   import { trayMemory } from '$lib/stores/tray';
   import { get } from 'svelte/store';
 
@@ -78,7 +79,7 @@
       else if (isFumble(result)) nat1();
       else land();
     };
-    if (!prefersReducedMotion()) {
+    if (!prefersReducedMotion() && storedDice() === 'tumble') {
       tumbling = true;
       clearInterval(spinner);
       spinner = setInterval(() => (spin += 1), 55);

@@ -124,8 +124,13 @@
       /* Dark is the default, so only an explicit choice of light marks the
          document. Before the body paints, so light mode never flashes dark. */
       try {
-        if (localStorage.getItem('dndcompanion:mode') === 'light') {
+        var kept = localStorage.getItem('dndcompanion:mode');
+        if (kept === 'light' || (kept === 'system' && matchMedia('(prefers-color-scheme: light)').matches)) {
           document.documentElement.setAttribute('data-mode', 'light');
+        }
+        /* Reduced motion chosen on the account page (Preferences). */
+        if (localStorage.getItem('dndcompanion:motion') === 'reduce') {
+          document.documentElement.setAttribute('data-motion', 'reduce');
         }
       } catch (e) {}
     </script>
