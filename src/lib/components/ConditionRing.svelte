@@ -4,7 +4,8 @@
    * card: a band in each condition's colour, together all the way round.
    * Each band is a stretch of one rounded square, so when a condition comes
    * its band draws itself in while the others slide along to make room, and
-   * when one goes it shrinks away and the rest close the gap.
+   * when one goes it shrinks away and the rest close the gap. At rest the
+   * bands flow slowly round, together, and glow a little brighter and back.
    */
   import { cubicOut } from 'svelte/easing';
   import { prefersReducedMotion } from '$lib/motion';
@@ -46,10 +47,10 @@
   }
 </script>
 
-<svg class="ring" viewBox="0 0 {S} {S}" aria-hidden="true">
+<svg class="ring" viewBox="0 0 {S} {S}" aria-hidden="true" style:--p={P / 100}>
   {#each bands as b, i (b.key)}
     <path d={PATH} stroke={b.color} stroke-width={W}
-          style:stroke-dasharray="{u(len)} {u(100 - len)}" style:stroke-dashoffset={-u(i * share + (bands.length > 1 ? GAP / 2 : 0))}
+          style:stroke-dasharray="{u(len)} {u(100 - len)}" style:--off={i * share + (bands.length > 1 ? GAP / 2 : 0)}
           transition:draw={{ length: len }} />
   {/each}
 </svg>
@@ -59,11 +60,19 @@
     position: absolute; inset: -4px; width: calc(100% + 8px); height: calc(100% + 8px);
     overflow: visible; pointer-events: none; fill: none;
   }
+  /* Where a band starts (--off, in hundredths of the way round) eases when
+     bands come and go; the whole ring's turn (--spin) runs on beneath it. */
+  @property --off { syntax: '<number>'; inherits: false; initial-value: 0; }
+  @property --spin { syntax: '<number>'; inherits: true; initial-value: 0; }
+  .ring { animation: flow 28s linear infinite, glow 3.6s ease-in-out infinite; }
+  @keyframes flow { to { --spin: 100; } }
+  @keyframes glow { 0%, 100% { opacity: 0.85; } 50% { opacity: 1; } }
   path {
-    transition: stroke-dasharray 0.5s cubic-bezier(0.2, 0.8, 0.25, 1), stroke-dashoffset 0.5s cubic-bezier(0.2, 0.8, 0.25, 1),
+    stroke-dashoffset: calc((var(--off) + var(--spin)) * var(--p) * -1px);
+    transition: stroke-dasharray 0.5s cubic-bezier(0.2, 0.8, 0.25, 1), --off 0.5s cubic-bezier(0.2, 0.8, 0.25, 1),
       stroke 0.4s ease;
   }
   /* On a light page a pale band (Invisible, White) needs an edge to be seen. */
   :global([data-mode='light']) .ring { filter: drop-shadow(0 0 0.6px rgb(0 0 0 / 0.55)); }
-  @media (prefers-reduced-motion: reduce) { path { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { path { transition: none; } .ring { animation: none; } }
 </style>

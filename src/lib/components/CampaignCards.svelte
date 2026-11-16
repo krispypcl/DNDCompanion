@@ -298,7 +298,8 @@
 <style>
   .cards {
     list-style: none; padding: 0; margin: 1.5rem 0 0;
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: 0.875rem;
+    /* Wide enough for each stat's whole name (Passive Perception). */
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(min(25rem, 100%), 1fr)); gap: 0.875rem;
   }
   /* A fixed red for hurt, as on the sheet's hit points: the theme's own
      danger colour follows its hue, and a blue "Critical" reads as nothing. */
@@ -317,6 +318,14 @@
     box-shadow: 0 0 0 1px color-mix(in oklch, var(--hurt-red) 25%, transparent);
   }
   .card.dead { opacity: 0.7; border-color: color-mix(in oklch, var(--hurt-red) 60%, var(--line-soft)); }
+  /* The hurt edge beats like a pulse: slow when bloodied, quicker when it's bad. */
+  .card.bloodied { animation: hurtBeat 3.2s ease-in-out infinite; }
+  .card.critical, .card.down { animation: hurtBeat 1.8s ease-in-out infinite; }
+  @keyframes hurtBeat {
+    0%, 100% { box-shadow: 0 0 0 1px color-mix(in oklch, var(--hurt-red) 12%, transparent); }
+    50% { box-shadow: 0 0 0 1px color-mix(in oklch, var(--hurt-red) 40%, transparent), 0 0 18px -4px color-mix(in oklch, var(--hurt-red) 45%, transparent); }
+  }
+  @media (prefers-reduced-motion: reduce) { .card.bloodied, .card.critical, .card.down { animation: none; } }
 
   /* Dragging: the others slide to make room; the lifted one rides above. */
   .dragging .card { transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.3, 1), border-color 0.3s ease; }

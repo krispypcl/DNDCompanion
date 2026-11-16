@@ -57,9 +57,16 @@
     );
   }
   .right i { transform: scaleX(-1); }
-  .edge i.critical { animation: breathe 2.6s ease-in-out infinite; }
+  /* The edges pulse while hurt, a slow beat that quickens and deepens when
+     it's critical. */
+  .edge i { animation: breathe 3.2s ease-in-out infinite; }
+  .edge i.critical { animation: breatheHard 1.8s ease-in-out infinite; }
   @keyframes breathe {
-    0%, 100% { opacity: 0.78; }
+    0%, 100% { opacity: 0.82; }
+    50% { opacity: 1; }
+  }
+  @keyframes breatheHard {
+    0%, 100% { opacity: 0.68; }
     50% { opacity: 1; }
   }
   /*
@@ -74,6 +81,6 @@
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .edge i.critical { animation: none; }
+    .edge i, .edge i.critical { animation: none; }
   }
 </style>

@@ -813,7 +813,8 @@
   /* The window onto the page. Frosted over the banner; the paper is drawn on
      it and moves with the page. */
   .board {
-    position: relative; height: min(36rem, 70vh); overflow: hidden; border-radius: var(--r);
+    /* A 16:9 table, as tall as the page's width makes it. */
+    position: relative; aspect-ratio: 16 / 9; height: auto; overflow: hidden; border-radius: var(--r);
     border: 1px solid var(--line-soft); touch-action: none; cursor: grab; user-select: none;
     -webkit-user-select: none; -webkit-touch-callout: none;
     background-color: color-mix(in oklch, var(--surface) 70%, transparent);
@@ -878,7 +879,8 @@
   .zoom .pct { font-size: 0.75rem; min-width: 2.75rem; font-variant-numeric: tabular-nums; color: var(--dim); }
   @media (max-width: 720px), (pointer: coarse) {
     .board {
-      height: min(28rem, 65vh);
+      /* A phone's 16:9 would be a strip: taller there. */
+      aspect-ratio: auto; height: min(28rem, 65vh);
       backdrop-filter: none; -webkit-backdrop-filter: none; background-color: color-mix(in oklch, var(--surface) 92%, transparent);
     }
   }
