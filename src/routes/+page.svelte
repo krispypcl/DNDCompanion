@@ -13,7 +13,7 @@
   import Avatar from '$lib/components/Avatar.svelte';
   import Logo from '$lib/components/Logo.svelte';
   import { friendlyError } from '$lib/errors';
-  import { friendlyDate } from '$lib/rules/dates';
+  import { friendlyDate, numericDate } from '$lib/rules/dates';
   import { faceFamily, fontFace } from '$lib/rules/fonts';
   import D20Loader from '$lib/components/D20Loader.svelte';
   import Tabs from '$lib/components/Tabs.svelte';
@@ -124,6 +124,13 @@
   /** What a sheet's card is called: its character's name, or the sheet's. */
   const nameOf = (sheet: Sheet) => sheet.definition?.identity?.name || sheet.name;
   /** The campaign a sheet's card names: its campaign's, or what was typed before campaigns. */
+  /** "White Hat Gunslinger 5"; a multiclass already names each level ("Ranger 3 / Rogue 1"). */
+  function classWithLevel(sheet: Sheet): string {
+    const def = sheet.definition;
+    const line = def ? classLine(def) : '';
+    if (!def || !line) return 'No class';
+    return /\d/.test(line) ? line : `${line} ${characterLevel(def)}`;
+  }
   const campaignOf = (sheet: Sheet) =>
     (sheet.campaign_id && campaignNames.get(sheet.campaign_id)) || sheet.definition?.identity?.campaign?.trim() || '';
   /** What the last import had to leave out, shown beside the new sheet. */
@@ -373,14 +380,14 @@
         const list = node.querySelector('ul');
         const cols = list ? getComputedStyle(list).gridTemplateColumns.split(' ').filter(Boolean).length || 1 : 1;
         const gap = list ? parseFloat(getComputedStyle(list).rowGap) || 8 : 8;
-        // A card of the usual height (one whose campaign runs to a second
-        // line is the exception, not the measure).
+        // The tallest card on the page, so a page of them never runs past
+        // the screen (cards are mostly one height, the portrait square sets it).
         const heights = [...node.querySelectorAll('li')].map((li) => li.getBoundingClientRect().height).filter(Boolean);
-        const rowH = (heights.length ? Math.min(...heights) : 66) + gap;
+        const rowH = (heights.length ? Math.max(...heights) : 66) + gap;
         const top = node.getBoundingClientRect().top + window.scrollY;
         // The pager, a group name or two and some air at the bottom.
         const room = window.innerHeight - top - 60 - 2 * 32 - 12;
-        const rows = Math.max(3, Math.floor(room / rowH));
+        const rows = Math.max(2, Math.floor(room / rowH));
         perPage = rows * cols;
         pageHeight = rows * rowH + 32;
       });
@@ -578,14 +585,20 @@
 {#snippet card(sheet: Sheet)}
   <a href="{base}/s/{sheet.id}" class="withface">
     {@render face(sheet)}
-    <!-- Three short lines: the name; the class, level and campaign; when it
-         was last changed (and when made, on hover). -->
-    <span class="cardtext" title="Created {friendlyDate(sheet.created_at)}">
-      <strong style:font-family={faceFamily(fontFace(sheet.definition?.identity?.nameFont))}>{nameOf(sheet)}</strong>
-      <span class="meta">
-        {(sheet.definition && classLine(sheet.definition)) || 'No class'}{#if sheet.definition}{' · '}level {characterLevel(sheet.definition)}{/if}{#if campaignOf(sheet)}{' · '}<span class="campaign" style:font-family={sheet.campaign_id ? campaignFont.get(sheet.campaign_id) : undefined}>{campaignOf(sheet)}</span>{/if}
+    <!-- Short lines: the name; the class with its level; the campaign, if
+         any; when it was made and when last changed. -->
+    <span class="cardtext">
+      <span class="lines">
+        <strong style:font-family={faceFamily(fontFace(sheet.definition?.identity?.nameFont))}>{nameOf(sheet)}</strong>
+        <span class="meta">{classWithLevel(sheet)}</span>
+        {#if campaignOf(sheet)}
+          <span class="meta campaign" style:font-family={sheet.campaign_id ? campaignFont.get(sheet.campaign_id) : undefined}>{campaignOf(sheet)}</span>
+        {/if}
       </span>
-      <span class="meta dates">Updated {friendlyDate(sheet.updated_at)}</span>
+      <span class="meta dates">
+        {#if numericDate(sheet.created_at)}<span>Created {numericDate(sheet.created_at)}</span>{/if}
+        <span>Updated {friendlyDate(sheet.updated_at)}</span>
+      </span>
     </span>
   </a>
 {/snippet}
@@ -865,12 +878,16 @@
     margin-top: 1rem; font-size: 0.8125rem; color: var(--dim);
   }
   .pagenum { min-width: 7.5rem; text-align: center; font-variant-numeric: tabular-nums; }
-  /* The portrait (or the class drawn) at the card's left, in the sheet's
-     frame: a square as tall as the card, within its padding. */
-  .withface { display: flex; align-items: stretch; align-self: stretch; gap: 0.75rem; }
-  .cardtext { display: flex; flex-direction: column; justify-content: center; min-width: 0; flex: 1; }
+  /*
+   * The portrait (or the class drawn) at the card's left, in the sheet's
+   * frame: a square as tall as the card's lines. Sized outright rather than
+   * stretched to the card: Safari would not keep a stretched one square and
+   * squeezed it into a strip on a phone. The lines are centred beside it.
+   */
+  .withface { --face: 4.75rem; display: flex; align-items: center; gap: 0.75rem; }
+  .cardtext { display: flex; flex-direction: column; justify-content: center; min-width: 0; flex: 1; min-height: var(--face); }
   .face {
-    position: relative; flex: none; align-self: stretch; aspect-ratio: 1; min-height: 2.75rem; overflow: hidden;
+    position: relative; flex: none; width: var(--face); height: var(--face); overflow: hidden;
     border-radius: var(--r-sm); border: 1px solid var(--a-edge);
     background: linear-gradient(150deg, var(--portrait-from), var(--portrait-to));
   }
@@ -941,8 +958,23 @@
   .danger:hover:not(:disabled) { background: var(--bad); color: var(--bg); border-color: var(--bad); }
   .retired a { opacity: 0.6; padding-left: 0.75rem; }
   .meta { display: block; font-size: 0.8rem; color: var(--dim); margin-top: 0.125rem; overflow-wrap: anywhere; }
-  .meta.dates { margin-top: 0.0625rem; font-size: 0.75rem; }
-  .campaign { color: var(--text); }
+  .meta.campaign { color: var(--text); }
+  /* Made, then last changed, side by side with a rule between them. */
+  .meta.dates { display: flex; flex-wrap: wrap; column-gap: 0.5rem; font-size: 0.75rem; }
+  .meta.dates span { white-space: nowrap; }
+  .meta.dates span + span { padding-left: 0.5rem; border-left: 1px solid var(--line); }
+  .lines { display: block; }
+  /*
+   * A phone is too narrow for the dates beside the square: the square stays
+   * as tall as the name, class and campaign, and the dates run under it all,
+   * across the card.
+   */
+  @media (max-width: 520px) {
+    .withface { --face: 4.25rem; display: grid; grid-template-columns: var(--face) minmax(0, 1fr); column-gap: 0.75rem; align-items: center; }
+    .cardtext { display: contents; }
+    .lines { grid-column: 2; }
+    .meta.dates { grid-column: 1 / -1; margin-top: 0.5rem; }
+  }
   .newcamp { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
   .newcamp input {
     flex: 1; min-width: 0; font: inherit; padding: 0.5rem 0.75rem; border: 1px solid var(--line);

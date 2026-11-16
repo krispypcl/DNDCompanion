@@ -22,6 +22,15 @@ export function friendlyDate(iso: string | null | undefined, now: Date = new Dat
   });
 }
 
+/** A day written out in full, month first: 11/16/2026. */
+export function numericDate(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const two = (n: number) => String(n).padStart(2, '0');
+  return `${two(d.getMonth() + 1)}/${two(d.getDate())}/${d.getFullYear()}`;
+}
+
 /** The later of several timestamps, ignoring blanks. */
 export function latest(...stamps: (string | null | undefined)[]): string | null {
   let best: string | null = null;
