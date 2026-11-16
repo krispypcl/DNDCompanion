@@ -610,10 +610,14 @@
           <span class="meta campaign" style:font-family={sheet.campaign_id ? campaignFont.get(sheet.campaign_id) : undefined}>{campaignOf(sheet)}</span>
         {/if}
       </span>
-      <span class="meta dates">
-        {#if numericDate(sheet.created_at)}<span>Created {numericDate(sheet.created_at)}</span>{/if}
+      <!-- Made, then last changed, on one line. Where both don't fit, the
+           made part drops out of sight (it wraps under, out of the clipped
+           line), leaving the last change: drawn in reverse, so Updated comes
+           first in the markup and is the one that stays. -->
+      <span class="meta dates"><span class="datesrow">
         <span>Updated {friendlyDate(sheet.updated_at)}</span>
-      </span>
+        {#if numericDate(sheet.created_at)}<span class="made">Created {numericDate(sheet.created_at)}</span>{/if}
+      </span></span>
     </span>
     {@render facts(sheet)}
   </a>
@@ -963,13 +967,13 @@
   @keyframes bannerIn { from { opacity: 0; } }
   .withface {
     --face: 4.75rem;
-    display: grid; grid-template-columns: var(--face) minmax(0, 1fr) minmax(11rem, 14rem);
-    grid-template-areas: 'face text facts'; align-items: center; column-gap: 1rem;
+    display: grid; grid-template-columns: var(--face) minmax(0, 1fr);
+    grid-template-areas: 'face text'; align-items: center; column-gap: 1rem;
   }
   .withface > .face { grid-area: face; }
   .cardtext { grid-area: text; display: flex; flex-direction: column; justify-content: center; min-width: 0; min-height: var(--face); }
   .cardfacts {
-    grid-area: facts; display: grid; gap: 0.375rem; min-width: 0; align-self: center;
+    grid-area: facts; gap: 0.375rem; min-width: 0; align-self: center;
     padding-left: 1rem; border-left: 1px solid var(--line-soft);
   }
   .hpline { display: flex; align-items: baseline; gap: 0.25rem; font-size: 0.8125rem; color: var(--dim); flex-wrap: wrap; }
@@ -1015,10 +1019,9 @@
     }
     .cardtext { display: contents; }
     .lines { grid-area: text; }
-    /* No room for the character's state here: the sheet itself has it. */
-    .cardfacts { display: none; }
     /* The dates are the card's foot, under a hairline, centred on one line. */
-    .meta.dates { grid-area: dates; margin-top: 0; padding-top: 0.5rem; border-top: 1px solid var(--line-soft); justify-content: center; }
+    .meta.dates { grid-area: dates; margin-top: 0; padding-top: 0.5rem; border-top: 1px solid var(--line-soft); }
+    .meta.dates .datesrow { justify-content: center; }
   }
   .face {
     position: relative; flex: none; width: var(--face); height: var(--face); overflow: hidden;
@@ -1094,9 +1097,13 @@
   .meta { display: block; font-size: 0.8rem; color: var(--dim); margin-top: 0.125rem; overflow-wrap: anywhere; }
   .meta.campaign { color: var(--text); }
   /* Made, then last changed, side by side with a rule between them. */
-  .meta.dates { display: flex; flex-wrap: wrap; column-gap: 0.5rem; font-size: 0.75rem; }
-  .meta.dates span { white-space: nowrap; }
-  .meta.dates span + span { padding-left: 0.5rem; border-left: 1px solid var(--line); }
+  .meta.dates { font-size: 0.75rem; }
+  .datesrow {
+    display: flex; flex-direction: row-reverse; flex-wrap: wrap; justify-content: flex-end; column-gap: 0.5rem;
+    line-height: 1.5; height: 1.5em; overflow: hidden;
+  }
+  .datesrow span { white-space: nowrap; }
+  .datesrow .made { padding-right: 0.5rem; border-right: 1px solid var(--line); }
   .lines { display: block; }
   .newcamp { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
   .newcamp input {
@@ -1110,6 +1117,18 @@
     font-size: 0.875rem; padding: 0.1875rem 0.75rem 0.1875rem 0.1875rem; border-radius: 999px;
     border: 1px solid var(--line); background: var(--raised);
     transition: border-color 0.15s ease, color 0.15s ease;
+  /*
+   * How the character stands shows only on a card wide enough to keep its
+   * lines whole beside it. One threshold, the card's own width, so it never
+   * comes back at a narrower window after leaving at a wider one: a single
+   * column's card (under 40rem inside) stays under it, and two to a row
+   * pass it from a window about 1390px wide.
+   */
+  .cardfacts { display: none; }
+  @container (min-width: 41rem) {
+    .withface { grid-template-columns: var(--face) minmax(0, 1fr) minmax(11rem, 13rem); grid-template-areas: 'face text facts'; }
+    .cardfacts { display: grid; }
+  }
   }
   .me:hover { border-color: var(--a-edge); color: var(--a); }
   .dieload { min-height: 40vh; }
