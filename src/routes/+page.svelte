@@ -5,7 +5,7 @@
   import ModeToggle from '$lib/components/ModeToggle.svelte';
   import SoundToggle from '$lib/components/SoundToggle.svelte';
   import { sheetName, sheetRepo, type PartyMember } from '$lib/data/sheets';
-  import { campaignMessage, campaignRepo, type Campaign } from '$lib/data/campaigns';
+  import { campaignMessage, campaignRepo, lastSessionOf, type Campaign } from '$lib/data/campaigns';
   import { MAX_BYTES, importSheet } from '$lib/exchange';
   import { pinnedCampaignsOf, pinnedJoinedOf, pinnedOf, profileOf, savePinned, savePinnedCampaigns, savePinnedJoined, signIn, updateProfile } from '$lib/data/session';
   import { fade, slide } from 'svelte/transition';
@@ -605,6 +605,7 @@
   {@const hereText = here && (here.dm || players) ? [here.dm ? 'DM' : '', players ? (players === 1 ? '1 player' : `${players} players`) : ''].filter(Boolean).join(' and ') + ' here' : ''}
   {@const next = c.archived ? null : sessionWhen(c.details?.nextSession)}
   {@const upcoming = next && !next.past ? next : null}
+  {@const last = lastSessionOf(c.details, now)}
   <a href="{base}/c/{c.id}" class="withface campcard">
     <span class="face campface">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V3.75M6 4.5h12l-2.5 4 2.5 4H6" /></svg>
@@ -626,13 +627,15 @@
           {:else if party}
             <span>No characters yet</span>
           {/if}
-          {#if hereText}<span class="camphere inhere" transition:fade={{ duration: 200 }}><i class="here-dot"></i>{hereText}</span>{/if}
         </span>
       </span>
-      <!-- When it next meets stays; when it started drops out if both won't fit. -->
+      <!-- When it started, then when it last met (where a character's card
+           says when it was last updated), then, on a narrower card, when it
+           next meets. The later ones stay when they don't all fit. -->
       <span class="meta dates"><span class="datesrow">
         {#if upcoming}<span class="nextshort" class:soon={upcoming.until === 'today' || upcoming.until === 'now'}>{upcoming.until === 'now' ? 'Session on now' : `Next session ${upcoming.until}`}</span>{/if}
-        <span class:made={Boolean(upcoming)}>Started {numericDate(c.created_at)}{#if c.archived}{' '}· ended{/if}</span>
+        {#if last}<span class="nowide" class:made={Boolean(upcoming)}>Last session {friendlyDate(last)}</span>{/if}
+        <span class:made={Boolean(upcoming || last)} class:nowide={!last}>Started {numericDate(c.created_at)}{#if c.archived}{' '}· ended{/if}</span>
       </span></span>
     </span>
     <span class="cardfacts campfacts">
@@ -1012,7 +1015,7 @@
                 </div>
               {/if}
               {#if running.length || joined.length}
-                {@render paged('campaigns', campaignGroups, campaignItem, () => undefined, (c) => resolveImageUrl(c.details?.bannerUrl).url || undefined)}
+                {@render paged('campaigns', campaignGroups, campaignItem, (c) => themeStyle(c.details?.theme), (c) => resolveImageUrl(c.details?.bannerUrl).url || undefined)}
               {:else if !naming}
                 <p class="dim">None yet. Start one to get an invite link for your players, or join one from your DM's link.</p>
               {/if}
@@ -1216,8 +1219,9 @@
   .campfacts .campnext { display: grid; gap: 0.125rem; justify-content: start; }
   .campfacts .campnext.quiet { color: var(--faint); }
   @container (min-width: 41rem) {
-    .inhere, .nextshort { display: none; }
-    .campcard .datesrow .made { padding-right: 0; border-right: 0; }
+    .nextshort { display: none; }
+    /* The next session is at the right here: no rule after what is now last on the line. */
+    .campcard .datesrow .nowide { padding-right: 0; border-right: 0; }
   }
   .camphere { display: inline-flex; align-items: center; gap: 0.375rem; color: var(--text); }
   .here-dot {
