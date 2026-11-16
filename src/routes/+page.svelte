@@ -816,7 +816,7 @@
               <div class="bar">
                 <span class="tally">{campaignTally}</span>
                 <div class="actions">
-                  {#if !naming}<button class="ghost" onclick={() => (naming = true)}>New campaign</button>{/if}
+                  {#if !naming}<button onclick={() => (naming = true)}>New campaign</button>{/if}
                 </div>
               </div>
               {#if naming}
