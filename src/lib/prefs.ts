@@ -4,11 +4,11 @@
  * - Light, dark or the device's own (stores/mode.ts), reduced motion and the
  *   dice style apply to this device at once and are kept on it, so they
  *   work signed out and before the page has loaded (src/app.html reads them).
- * - They are also saved on the account (user metadata "prefs"), so a
+ * - They are also saved on the account (profiles.preferences), so a
  *   device that has never chosen starts with them.
  */
-import { supabase } from '$lib/supabase';
 import { chooseMode, choiceKept, storedChoice, type ModeChoice } from '$lib/stores/mode';
+import { savePreferences, type ProfileRow } from '$lib/stores/profile';
 
 export const MOTION_KEY = 'dndcompanion:motion';
 export const DICE_KEY = 'dndcompanion:dice';
@@ -22,11 +22,14 @@ export type Prefs = {
   dice?: DiceStyle;
 };
 
-type Meta = { user_metadata?: Record<string, unknown> } | null | undefined;
-
-export function prefsOf(user: Meta): Prefs {
-  const raw = user?.user_metadata?.prefs;
-  return raw && typeof raw === 'object' ? (raw as Prefs) : {};
+/** The look, motion and dice kept in the player's profile (preferences). */
+export function prefsOf(row: ProfileRow | null | undefined): Prefs {
+  const p = row?.preferences ?? {};
+  return {
+    ...(p.mode === 'light' || p.mode === 'dark' || p.mode === 'system' ? { mode: p.mode as ModeChoice } : {}),
+    ...(typeof p.reduceMotion === 'boolean' ? { reduceMotion: p.reduceMotion } : {}),
+    ...(p.dice === 'tumble' || p.dice === 'quick' ? { dice: p.dice as DiceStyle } : {})
+  };
 }
 
 function read(key: string): string | null {
@@ -68,17 +71,16 @@ export function devicePrefs(): Prefs {
 }
 
 /** Keeps a change on the account (merged into what is there). */
-export async function savePrefs(user: Meta, patch: Prefs) {
-  const { error } = await supabase.auth.updateUser({ data: { prefs: { ...prefsOf(user), ...patch } } });
-  if (error) throw new Error(error.message);
+export async function savePrefs(patch: Prefs) {
+  await savePreferences(patch);
 }
 
 /**
  * A device that has never chosen takes the account's preferences on signing
  * in; one that has keeps its own.
  */
-export function adoptAccountPrefs(user: Meta) {
-  const p = prefsOf(user);
+export function adoptAccountPrefs(row: ProfileRow | null | undefined) {
+  const p = prefsOf(row);
   if (p.mode && !choiceKept()) chooseMode(p.mode);
   if (p.reduceMotion !== undefined && read(MOTION_KEY) === null) setReduceMotion(p.reduceMotion);
   if (p.dice && read(DICE_KEY) === null) setDiceStyle(p.dice);

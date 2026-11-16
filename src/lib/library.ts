@@ -8,7 +8,8 @@
  * The database side is migration 0013 (schema.sql, "The shared library").
  * If the library can't be reached, typing and saving go on as normal.
  */
-import type { User } from '@supabase/supabase-js';
+import { get } from 'svelte/store';
+import { profile, saveProfile, type ProfileRow } from '$lib/stores/profile';
 import { supabase } from '$lib/supabase';
 import { trackerRows, type TrackerRow } from '$lib/sheet/edits';
 import type { Definition } from '$lib/types';
@@ -144,8 +145,8 @@ export function summary(kind: LibraryKind, data: Record<string, unknown>, only?:
 // ── Talking to the database ────────────────────────────────────────────────
 
 /** Sharing is on unless the player turned it off on the account page. */
-export function sharing(user: User | null | undefined): boolean {
-  return Boolean(user) && user?.user_metadata?.library_share !== false;
+export function sharing(row: ProfileRow | null | undefined): boolean {
+  return Boolean(row) && row?.share_rows !== false;
 }
 
 const cache = new Map<string, { at: number; hits: Suggestion[] }>();
@@ -158,7 +159,7 @@ export async function searchLibrary(kind: LibraryKind, query: string): Promise<S
   const key = `${kind}\u0000${q}`;
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < FRESH_MS) return hit.hits;
-  const { data, error } = await supabase.rpc('library_search', { p_kind: kind, p_query: q, p_limit: 12 });
+  const { data, error } = await supabase.rpc('search_shared_rows', { p_kind: kind, p_query: q, p_limit: 12 });
   if (error) return [];
   const hits = ((data ?? []) as Suggestion[]).map((s) => ({ ...s, data: s.data ?? {} }));
   cache.set(key, { at: Date.now(), hits });
@@ -179,15 +180,15 @@ function stampOf(rows: LibraryRow[]): string {
  * Share a sheet's rows (its owner only). Skipped when nothing changed since
  * the last time from this browser, or when sharing is off.
  */
-export async function shareSheet(sheetId: string, rows: LibraryRow[], user: User | null | undefined): Promise<void> {
-  if (!sharing(user)) return;
+export async function shareSheet(sheetId: string, rows: LibraryRow[]): Promise<void> {
+  if (!sharing(get(profile))) return;
   const stamp = stampOf(rows);
   try {
     if (localStorage.getItem(STAMP + sheetId) === stamp) return;
   } catch {
     /* no storage: share anyway */
   }
-  const { error } = await supabase.rpc('library_sync', { p_sheet: sheetId, p_rows: rows });
+  const { error } = await supabase.rpc('sync_shared_rows', { p_character: sheetId, p_rows: rows });
   if (error) return;
   cache.clear();
   try {
@@ -211,12 +212,15 @@ function clearStamps() {
  * player's name from the entries they wrote first.
  */
 export async function setSharing(on: boolean): Promise<{ ok: boolean; message?: string }> {
-  const { error } = await supabase.auth.updateUser({ data: { library_share: on } });
-  if (error) return { ok: false, message: error.message };
+  try {
+    await saveProfile({ share_rows: on });
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : String(err) };
+  }
   clearStamps();
   cache.clear();
   if (!on) {
-    const { error: forgetError } = await supabase.rpc('library_forget');
+    const { error: forgetError } = await supabase.rpc('forget_shared_rows');
     if (forgetError) return { ok: false, message: forgetError.message };
   }
   return { ok: true };

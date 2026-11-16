@@ -22,6 +22,7 @@
   } from '$lib/music';
   import { session } from '$lib/stores/session';
   import { loopOf, saveLoop, saveShuffle, shuffleOf, type MusicPlace } from '$lib/data/session';
+  import { profile } from '$lib/stores/profile';
 
   let {
     url,
@@ -129,9 +130,9 @@
   let shuffle = $state(false);
   /** What the player wants, read when it is needed rather than when the page
       happened to render: the account's choice, or this device's. */
-  const wantShuffle = () => shuffleOf(get(session).user) ?? (typeof localStorage === 'undefined' ? false : storedShuffle());
+  const wantShuffle = () => shuffleOf(get(profile)) ?? (typeof localStorage === 'undefined' ? false : storedShuffle());
   $effect(() => {
-    const fromAccount = shuffleOf($session.user);
+    const fromAccount = shuffleOf($profile);
     shuffle = fromAccount ?? (typeof localStorage === 'undefined' ? false : storedShuffle());
     // The device follows the account, so the next visit knows before sign-in finishes.
     if (fromAccount !== null) storeShuffle(fromAccount);
@@ -143,7 +144,7 @@
    */
   let looping = $state(false);
   $effect(() => {
-    const fromAccount = loopOf($session.user, place);
+    const fromAccount = loopOf($profile, place);
     looping = fromAccount ?? (typeof localStorage === 'undefined' ? place === 'campaign' : storedLoop(place));
     if (fromAccount !== null) storeLoop(place, fromAccount);
   });

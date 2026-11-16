@@ -161,8 +161,7 @@
     if (!isOwner || editing || !revealed || !sheet || !definition) return;
     const sheetId = sheet.id;
     const rows = sheetLibraryRows(definition, classes);
-    const user = $session.user;
-    const t = setTimeout(() => void shareSheet(sheetId, rows, user), 1500);
+    const t = setTimeout(() => void shareSheet(sheetId, rows), 1500);
     return () => clearTimeout(t);
   });
 
@@ -290,7 +289,7 @@
     if (!id || !isConfigured) return;
     const channel = supabase
       .channel(`sheet-${id}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sheets', filter: `id=eq.${id}` }, (payload) => {
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'characters', filter: `id=eq.${id}` }, (payload) => {
         const row = payload.new as Partial<Sheet>;
         if (row.definition && row.state && row.updated_at) {
           sheetStore.adoptRemote({ definition: row.definition, state: row.state, updated_at: row.updated_at });

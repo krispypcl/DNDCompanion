@@ -36,8 +36,8 @@ export type Follow = { sheets: string[]; campaigns: string[] };
 export async function readSheets(follow: Follow): Promise<Sheet[]> {
   if (!isConfigured) return [];
   const reads: PromiseLike<{ data: unknown; error: { message: string } | null }>[] = [];
-  if (follow.sheets.length) reads.push(supabase.from('sheets').select(COLUMNS).in('id', follow.sheets));
-  if (follow.campaigns.length) reads.push(supabase.from('sheets').select(COLUMNS).in('campaign_id', follow.campaigns).eq('retired', false));
+  if (follow.sheets.length) reads.push(supabase.from('characters').select(COLUMNS).in('id', follow.sheets));
+  if (follow.campaigns.length) reads.push(supabase.from('characters').select(COLUMNS).in('campaign_id', follow.campaigns).eq('retired', false));
   const results = await Promise.all(reads);
   const byId = new Map<string, Sheet>();
   for (const r of results) {
@@ -62,7 +62,7 @@ export function followSheets(follow: Follow, onsheets: (sheets: Sheet[]) => void
   const read = () => readSheets(follow).then(show).catch((e) => !stopped && onerror?.(e));
   /** One sheet changed: read just it, rather than the whole room's. */
   const readOne = async (id: string) => {
-    const { data, error } = await supabase.from('sheets').select(COLUMNS).eq('id', id).maybeSingle();
+    const { data, error } = await supabase.from('characters').select(COLUMNS).eq('id', id).maybeSingle();
     if (error) throw new Error(error.message);
     const row = data as Sheet | null;
     const keep = row && (follow.sheets.includes(row.id) || (row.campaign_id && follow.campaigns.includes(row.campaign_id) && !row.retired));
@@ -86,9 +86,9 @@ export function followSheets(follow: Follow, onsheets: (sheets: Sheet[]) => void
   if (!isConfigured || (!follow.sheets.length && !follow.campaigns.length)) return () => (stopped = true);
   let ch = supabase.channel(`dndc-room-${Math.random().toString(36).slice(2)}`);
   if (follow.sheets.length)
-    ch = ch.on('postgres_changes', { event: '*', schema: 'public', table: 'sheets', filter: `id=in.(${follow.sheets.join(',')})` }, soon);
+    ch = ch.on('postgres_changes', { event: '*', schema: 'public', table: 'characters', filter: `id=in.(${follow.sheets.join(',')})` }, soon);
   if (follow.campaigns.length)
-    ch = ch.on('postgres_changes', { event: '*', schema: 'public', table: 'sheets', filter: `campaign_id=in.(${follow.campaigns.join(',')})` }, soon);
+    ch = ch.on('postgres_changes', { event: '*', schema: 'public', table: 'characters', filter: `campaign_id=in.(${follow.campaigns.join(',')})` }, soon);
   // Back from sleep or a lost connection: read again rather than trust what is shown.
   const wake = () => document.visibilityState === 'visible' && soon();
   // Joined (or back after a drop): read again in case anything was missed.

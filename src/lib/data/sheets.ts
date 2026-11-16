@@ -34,7 +34,7 @@ export function isMissingTable(error: { code?: string; message?: string } | null
   if (!error) return false;
   // 42P01: Postgres, undefined_table. PGRST205: PostgREST, not in its schema cache.
   if (error.code === '42P01' || error.code === 'PGRST205') return true;
-  return /sheet_text/.test(error.message ?? '') && /(does not exist|schema cache|not found)/i.test(error.message ?? '');
+  return /character_pages/.test(error.message ?? '') && /(does not exist|schema cache|not found)/i.test(error.message ?? '');
 }
 
 /** The list needs something readable even before a name has been typed. */
@@ -49,7 +49,7 @@ export function makeSheetRepo(client: SupabaseClient) {
     expectedUpdatedAt: string
   ): Promise<string> {
     const { data, error } = await client
-      .from('sheets')
+      .from('characters')
       .update(patch)
       .eq('id', id)
       .eq('updated_at', expectedUpdatedAt)
@@ -68,9 +68,9 @@ export function makeSheetRepo(client: SupabaseClient) {
    */
   async function loadTexts(sheet: Pick<Sheet, 'id' | 'definition'>): Promise<SheetTexts | null> {
     const { data, error } = await client
-      .from('sheet_text')
+      .from('character_pages')
       .select('field, body, is_public, updated_at')
-      .eq('sheet_id', sheet.id);
+      .eq('character_id', sheet.id);
     if (error) {
       if (isMissingTable(error)) return null;
       throw new Error(error.message);
@@ -98,7 +98,7 @@ export function makeSheetRepo(client: SupabaseClient) {
     loadTexts,
 
     async loadSheet(id: string): Promise<Sheet | null> {
-      const { data, error } = await client.from('sheets').select(COLUMNS).eq('id', id).maybeSingle();
+      const { data, error } = await client.from('characters').select(COLUMNS).eq('id', id).maybeSingle();
       if (error) throw new Error(error.message);
       const sheet = (data as Sheet | null) ?? null;
       if (!sheet) return null;
@@ -107,21 +107,21 @@ export function makeSheetRepo(client: SupabaseClient) {
 
     /** The sheet's row as stored now (no notes or backstory): for settling a refused save. */
     async loadRow(id: string): Promise<Pick<Sheet, 'definition' | 'state' | 'updated_at'> | null> {
-      const { data, error } = await client.from('sheets').select('definition, state, updated_at').eq('id', id).maybeSingle();
+      const { data, error } = await client.from('characters').select('definition, state, updated_at').eq('id', id).maybeSingle();
       if (error) throw new Error(error.message);
       return (data as Pick<Sheet, 'definition' | 'state' | 'updated_at'> | null) ?? null;
     },
 
     /** Only the row's stamp: cheap enough to ask now and then. */
     async rowStamp(id: string): Promise<string | null> {
-      const { data, error } = await client.from('sheets').select('updated_at').eq('id', id).maybeSingle();
+      const { data, error } = await client.from('characters').select('updated_at').eq('id', id).maybeSingle();
       if (error) throw new Error(error.message);
       return (data as { updated_at: string } | null)?.updated_at ?? null;
     },
 
     /** Is the table there? Asked before an import, which has to choose where text goes. */
     async textsAvailable(): Promise<boolean> {
-      const { error } = await client.from('sheet_text').select('field').limit(0);
+      const { error } = await client.from('character_pages').select('field').limit(0);
       if (error && !isMissingTable(error)) throw new Error(error.message);
       return !error;
     },
@@ -141,8 +141,8 @@ export function makeSheetRepo(client: SupabaseClient) {
     ): Promise<string> {
       if (expectedUpdatedAt === null) {
         const { data, error } = await client
-          .from('sheet_text')
-          .insert({ sheet_id: sheetId, owner_id: ownerId, field, body, is_public: isPublic })
+          .from('character_pages')
+          .insert({ character_id: sheetId, owner_id: ownerId, field, body, is_public: isPublic })
           .select('updated_at');
         // 23505: the row appeared since this copy loaded, written elsewhere.
         if (error?.code === '23505') throw new StaleWriteError();
@@ -152,9 +152,9 @@ export function makeSheetRepo(client: SupabaseClient) {
         return rows[0].updated_at;
       }
       const { data, error } = await client
-        .from('sheet_text')
+        .from('character_pages')
         .update({ body, is_public: isPublic })
-        .eq('sheet_id', sheetId)
+        .eq('character_id', sheetId)
         .eq('field', field)
         .eq('updated_at', expectedUpdatedAt)
         .select('updated_at');
@@ -166,7 +166,7 @@ export function makeSheetRepo(client: SupabaseClient) {
 
     async listMySheets(ownerId: string): Promise<Sheet[]> {
       const { data, error } = await client
-        .from('sheets')
+        .from('characters')
         .select(COLUMNS)
         .eq('owner_id', ownerId);
       if (error) throw new Error(error.message);
@@ -180,7 +180,7 @@ export function makeSheetRepo(client: SupabaseClient) {
       state: State = emptyState()
     ): Promise<Sheet> {
       const { data, error } = await client
-        .from('sheets')
+        .from('characters')
         .insert({ owner_id: ownerId, name, definition, state })
         .select(COLUMNS)
         .maybeSingle();
@@ -208,20 +208,20 @@ export function makeSheetRepo(client: SupabaseClient) {
     /** Just which sheets a campaign has and when each last changed: what the
         campaign page polls, so it reads whole sheets only when one moved. */
     async campaignStamps(campaignId: string): Promise<{ id: string; updated_at: string }[]> {
-      const { data, error } = await client.from('sheets').select('id, updated_at').eq('campaign_id', campaignId);
+      const { data, error } = await client.from('characters').select('id, updated_at').eq('campaign_id', campaignId);
       if (error) throw new Error(error.message);
       return (data ?? []) as { id: string; updated_at: string }[];
     },
 
     /** One sheet's row, without its notes and backstory. */
     async loadPlain(id: string): Promise<Sheet | null> {
-      const { data, error } = await client.from('sheets').select(COLUMNS).eq('id', id).maybeSingle();
+      const { data, error } = await client.from('characters').select(COLUMNS).eq('id', id).maybeSingle();
       if (error) throw new Error(error.message);
       return (data as Sheet | null) ?? null;
     },
 
     async listCampaignSheets(campaignId: string): Promise<Sheet[]> {
-      const { data, error } = await client.from('sheets').select(COLUMNS).eq('campaign_id', campaignId);
+      const { data, error } = await client.from('characters').select(COLUMNS).eq('campaign_id', campaignId);
       if (error) throw new Error(error.message);
       return (data ?? []) as Sheet[];
     },
@@ -232,7 +232,7 @@ export function makeSheetRepo(client: SupabaseClient) {
      * reported as a success.
      */
     async deleteSheet(id: string): Promise<void> {
-      const { error } = await client.from('sheets').delete().eq('id', id);
+      const { error } = await client.from('characters').delete().eq('id', id);
       if (error) throw new Error(error.message);
     }
   };

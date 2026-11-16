@@ -21,15 +21,15 @@ export function changed(state: State, hpMax: number, how: HpChange, amount: numb
 export async function changeHp(sheetId: string, how: HpChange, amount: number): Promise<Sheet> {
   const { data: who } = await supabase.auth.getUser();
   if (!who.user) throw new Error('Sign in from the DND Companion panel first, then try again!');
-  const { data, error } = await supabase.from('sheets').select('id, owner_id, campaign_id, name, retired, definition, state, created_at, updated_at').eq('id', sheetId).maybeSingle();
+  const { data, error } = await supabase.from('characters').select('id, owner_id, campaign_id, name, retired, definition, state, created_at, updated_at').eq('id', sheetId).maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) throw new Error('That character has wandered off! The sheet isn’t there any more.');
   const sheet = data as Sheet;
   const state: State = { ...emptyState(), ...(sheet.state ?? {}) };
   const max = Number(sheet.definition?.combat?.hpMax) || 0;
   const next = changed(state, max, how, amount);
-  const rpc = await supabase.rpc('set_sheet_hp', {
-    p_sheet: sheetId,
+  const rpc = await supabase.rpc('set_character_hp', {
+    p_character: sheetId,
     p_current: Math.max(0, Math.round(next.hpCurrent)),
     p_temp: Math.max(0, Math.round(next.hpTemp ?? 0)),
     p_conditions: next.conditions ?? [],

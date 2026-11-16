@@ -15,6 +15,7 @@
   import { friendlyError } from '$lib/errors';
   import { friendlyDate, numericDate, sessionWhen } from '$lib/rules/dates';
   import { pageTitle } from '$lib/title';
+  import { profile } from '$lib/stores/profile';
   import { watchTable, type Here } from '$lib/presence';
   import { faceFamily, fontFace } from '$lib/rules/fonts';
   import D20Loader from '$lib/components/D20Loader.svelte';
@@ -142,9 +143,9 @@
   let pinnedCamps = $state<string[]>([]);
   let pinnedJoinedIds = $state<string[]>([]);
   $effect(() => {
-    pinned = pinnedOf($session.user);
-    pinnedCamps = pinnedCampaignsOf($session.user);
-    pinnedJoinedIds = pinnedJoinedOf($session.user);
+    pinned = pinnedOf($profile);
+    pinnedCamps = pinnedCampaignsOf($profile);
+    pinnedJoinedIds = pinnedJoinedOf($profile);
   });
   const pinsOf = (kind: Kind) => (kind === 'sheets' ? pinned : kind === 'campaigns' ? pinnedCamps : pinnedJoinedIds);
   function setPins(kind: Kind, ids: string[]) {
@@ -780,7 +781,7 @@
       <SoundToggle />
       <ModeToggle />
       {#if $session.user}
-        {@const me = profileOf($session.user)}
+        {@const me = profileOf($session.user, $profile)}
         <a class="me" href="{base}/account" title="Your account">
           <Avatar url={me.avatarUrl} name={me.displayName || $session.user.email || '?'} size={30} />
           <span>{me.displayName || 'Account'}</span>
@@ -798,7 +799,7 @@
     <div class="dieload screen-center"><D20Loader size={56} label="Signing in" /></div>
   {:else}
     {#if $session.user}
-      {@const me = profileOf($session.user)}
+      {@const me = profileOf($session.user, $profile)}
       {#if !me.displayName}
         <!-- No name yet: the table needs something to call them. -->
         <form class="hello" transition:slide={{ duration: 260 }} onsubmit={(e) => { e.preventDefault(); void saveName(); }}>

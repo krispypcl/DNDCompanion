@@ -197,7 +197,7 @@
     const channel = isConfigured
       ? supabase
           .channel(`campaign-${id}`)
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'sheets', filter: `campaign_id=eq.${id}` }, refreshSoon)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'characters', filter: `campaign_id=eq.${id}` }, refreshSoon)
           .subscribe()
       : null;
     return () => {

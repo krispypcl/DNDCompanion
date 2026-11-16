@@ -150,10 +150,10 @@ export function makeCampaignRepo(client: SupabaseClient) {
 
     /** A new campaign run by the caller, with one of their sheets in it if given. */
     async create(name: string, sheetId: string | null = null): Promise<{ id: string; invite: string; sheetUpdatedAt: string | null }> {
-      const { data, error } = await client.rpc('create_campaign', { p_name: name, p_sheet: sheetId });
+      const { data, error } = await client.rpc('create_campaign', { p_name: name, p_character: sheetId });
       if (error) throw refusal(error);
-      const row = (data as { id: string; invite_code: string; sheet_updated_at: string | null }[])[0];
-      return { id: row.id, invite: row.invite_code, sheetUpdatedAt: row.sheet_updated_at };
+      const row = (data as { id: string; invite_code: string; character_updated_at: string | null }[])[0];
+      return { id: row.id, invite: row.invite_code, sheetUpdatedAt: row.character_updated_at };
     },
 
     /** The invite, for its DM; null for anyone else. */
@@ -177,15 +177,15 @@ export function makeCampaignRepo(client: SupabaseClient) {
     },
 
     async join(code: string, sheetId: string): Promise<{ campaignId: string; sheetUpdatedAt: string }> {
-      const { data, error } = await client.rpc('join_campaign', { p_code: code, p_sheet: sheetId });
+      const { data, error } = await client.rpc('join_campaign', { p_code: code, p_character: sheetId });
       if (error) throw refusal(error);
-      const row = (data as { campaign_id: string; sheet_updated_at: string }[])[0];
-      return { campaignId: row.campaign_id, sheetUpdatedAt: row.sheet_updated_at };
+      const row = (data as { campaign_id: string; character_updated_at: string }[])[0];
+      return { campaignId: row.campaign_id, sheetUpdatedAt: row.character_updated_at };
     },
 
     /** The DM takes a sheet out of their campaign. */
     async remove(sheetId: string): Promise<void> {
-      const { error } = await client.rpc('remove_from_campaign', { p_sheet: sheetId });
+      const { error } = await client.rpc('remove_from_campaign', { p_character: sheetId });
       if (error) throw refusal(error);
     },
 
@@ -211,20 +211,20 @@ export function makeCampaignRepo(client: SupabaseClient) {
     /** The DM sets a player's conditions (only those). */
     /** The DM sets (or, with null, clears) how a condition of a player's own looks (database/0012). */
     async setConditionLook(sheetId: string, key: string, look: ConditionLook | null): Promise<string> {
-      const { data, error } = await client.rpc('set_sheet_condition_look', { p_sheet: sheetId, p_key: key, p_look: look });
+      const { data, error } = await client.rpc('set_character_condition_look', { p_character: sheetId, p_key: key, p_look: look });
       if (error) throw new Error(error.message);
       return data as string;
     },
 
     async setConditions(sheetId: string, conditions: string[]): Promise<string> {
-      const { data, error } = await client.rpc('set_sheet_conditions', { p_sheet: sheetId, p_conditions: conditions });
+      const { data, error } = await client.rpc('set_character_conditions', { p_character: sheetId, p_conditions: conditions });
       if (error) throw refusal(error);
       return data as string;
     },
 
     /** What is happening right now; null if it can't be read. */
     async live(campaignId: string): Promise<CampaignLive | null> {
-      const { data, error } = await client.from('campaign_live').select('playback, invite_rev, updated_at').eq('campaign_id', campaignId).maybeSingle();
+      const { data, error } = await client.from('campaign_state').select('playback, invite_rev, updated_at').eq('campaign_id', campaignId).maybeSingle();
       if (error) return null;
       if (!data) return null;
       const pb = data.playback as Playback | Record<string, never>;
@@ -233,12 +233,12 @@ export function makeCampaignRepo(client: SupabaseClient) {
 
     /** The DM's music, for everyone to follow. */
     async savePlayback(campaignId: string, playback: Playback | null): Promise<void> {
-      const { error } = await client.from('campaign_live').update({ playback: playback ?? {} }).eq('campaign_id', campaignId);
+      const { error } = await client.from('campaign_state').update({ playback: playback ?? {} }).eq('campaign_id', campaignId);
       if (error) throw new Error(error.message);
     },
 
     async board(campaignId: string): Promise<BoardItem[] | null> {
-      const { data, error } = await client.from('campaign_board')
+      const { data, error } = await client.from('board_items')
         .select('id, campaign_id, kind, data, created_by, updated_at').eq('campaign_id', campaignId)
         .order('created_at', { ascending: true });
       if (error) return null;
@@ -247,7 +247,7 @@ export function makeCampaignRepo(client: SupabaseClient) {
 
     /** The database names it (the insert grant leaves `id` out on purpose). */
     async addToBoard(campaignId: string, userId: string, kind: BoardItem['kind'], data: BoardData): Promise<BoardItem> {
-      const { data: row, error } = await client.from('campaign_board')
+      const { data: row, error } = await client.from('board_items')
         .insert({ campaign_id: campaignId, created_by: userId, kind, data })
         .select('id, campaign_id, kind, data, created_by, updated_at').single();
       if (error && /board is full/i.test(error.message)) throw new CampaignError('The board is full! Clear a few things away first.');
@@ -256,13 +256,13 @@ export function makeCampaignRepo(client: SupabaseClient) {
     },
 
     async updateBoard(id: string, data: BoardData): Promise<void> {
-      const { error } = await client.from('campaign_board').update({ data }).eq('id', id);
+      const { error } = await client.from('board_items').update({ data }).eq('id', id);
       if (error) throw new Error(error.message);
     },
 
     async removeFromBoard(ids: string[]): Promise<void> {
       if (!ids.length) return;
-      const { error } = await client.from('campaign_board').delete().in('id', ids);
+      const { error } = await client.from('board_items').delete().in('id', ids);
       if (error) throw new Error(error.message);
     },
 

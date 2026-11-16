@@ -1,4 +1,6 @@
+import { get } from 'svelte/store';
 import { supabase, supabaseKey, supabaseUrl } from '$lib/supabase';
+import { profile, saveProfile, savePreferences, type ProfileRow } from '$lib/stores/profile';
 
 /** Thin wrappers over Supabase Auth. Errors are thrown with Supabase's own
  *  message so the UI can show something specific rather than "failed". */
@@ -81,6 +83,11 @@ export async function signOut() {
   await unwrap(supabase.auth.signOut());
 }
 
+/** Signs this account out on every device, this one included. */
+export async function signOutEverywhere() {
+  await unwrap(supabase.auth.signOut({ scope: 'global' }));
+}
+
 export async function requestReset(email: string, redirectTo?: string) {
   await unwrap(supabase.auth.resetPasswordForEmail(email, { redirectTo }));
 }
@@ -92,108 +99,90 @@ export async function updatePassword(password: string) {
 /** What a player shows of themselves: kept on their account, no table needed. */
 export type Profile = { displayName: string; avatarUrl: string };
 
-export function profileOf(user: { user_metadata?: Record<string, unknown> } | null | undefined): Profile {
+type Meta = { user_metadata?: Record<string, unknown> } | null | undefined;
+
+/**
+ * How the player appears: their profile's name and picture (database:
+ * profiles), falling back to what their Google or Discord account brought.
+ * A picture left empty on purpose stays empty.
+ */
+export function profileOf(user: Meta, row?: ProfileRow | null): Profile {
   const meta = user?.user_metadata ?? {};
+  const str = (v: unknown) => (typeof v === 'string' ? v : '');
+  const brought = str(meta.avatar_url) || str(meta.picture);
   return {
-    // A Google account brings its own name and picture; one typed here wins.
-    displayName:
-      typeof meta.display_name === 'string' && meta.display_name
-        ? meta.display_name
-        : typeof meta.full_name === 'string' ? meta.full_name : typeof meta.name === 'string' ? meta.name : '',
-    // The picture chosen here is kept under its own name: Google writes
-    // avatar_url and picture afresh at every sign-in, which undid a picture
-    // typed here and brought Google's back when the box was emptied. Empty
-    // here means none, on purpose.
-    avatarUrl:
-      typeof meta.profile_picture === 'string'
-        ? meta.profile_picture
-        : typeof meta.avatar_url === 'string' && meta.avatar_url ? meta.avatar_url : typeof meta.picture === 'string' ? meta.picture : ''
+    displayName: row?.display_name || str(meta.display_name) || str(meta.full_name) || str(meta.name),
+    avatarUrl: row ? (row.picture_url ?? brought) : brought
   };
 }
 
 /** Saves the name, the picture, or both (empty is a choice too: no picture). */
-export async function updateProfile(profile: Partial<Profile>) {
-  const data: Record<string, string> = {};
-  if (profile.displayName !== undefined) data.display_name = profile.displayName.trim();
-  if (profile.avatarUrl !== undefined) data.profile_picture = profile.avatarUrl.trim();
-  await unwrap(supabase.auth.updateUser({ data }));
+export async function updateProfile(p: Partial<Profile>) {
+  const patch: Partial<ProfileRow> = {};
+  if (p.displayName !== undefined) patch.display_name = p.displayName.trim().slice(0, 60);
+  if (p.avatarUrl !== undefined) patch.picture_url = p.avatarUrl.trim();
+  await saveProfile(patch);
 }
 
 /**
- * Private sheets (database/0014): when on, every sheet of the account can be
- * opened only by its owner and the DM of its campaign. Kept on the account,
- * like the library's sharing, so it covers new sheets too.
+ * Private sheets (database: profiles.private_sheets): when on, every sheet of
+ * the player can be opened only by them and the DM of its campaign.
  */
-export function sheetsPrivate(user: { user_metadata?: Record<string, unknown> } | null | undefined): boolean {
-  return user?.user_metadata?.sheets_private === true;
+export function sheetsPrivate(row: ProfileRow | null | undefined): boolean {
+  return row?.private_sheets === true;
 }
 export async function setSheetsPrivate(on: boolean) {
-  await unwrap(supabase.auth.updateUser({ data: { sheets_private: on } }));
+  await saveProfile({ private_sheets: on });
 }
 
+const ids = (list: unknown): string[] => (Array.isArray(list) ? list.filter((x): x is string => typeof x === 'string') : []);
 
-
-/** Signs this account out on every device, this one included. */
-export async function signOutEverywhere() {
-  await unwrap(supabase.auth.signOut({ scope: 'global' }));
+/** The characters a player has pinned, in their order. */
+export function pinnedOf(row: ProfileRow | null | undefined): string[] {
+  return ids(row?.pinned_characters);
+}
+export async function savePinned(list: string[]) {
+  await saveProfile({ pinned_characters: [...new Set(list)] });
 }
 
-/**
- * The sheets a player has pinned, in the order they put them. Kept on the
- * account itself (Supabase Auth's user metadata), so it follows them to every
- * device and needs nothing new in the database.
- */
-export function pinnedOf(user: { user_metadata?: Record<string, unknown> } | null | undefined): string[] {
-  const raw = user?.user_metadata?.pinned_sheets;
-  return Array.isArray(raw) ? raw.filter((id): id is string => typeof id === 'string') : [];
+/** Pinned campaigns they run, in their order. */
+export function pinnedCampaignsOf(row: ProfileRow | null | undefined): string[] {
+  return ids(row?.pinned_campaigns);
+}
+export async function savePinnedCampaigns(list: string[]) {
+  await saveProfile({ pinned_campaigns: [...new Set(list)] });
 }
 
-export async function savePinned(ids: string[]) {
-  await unwrap(supabase.auth.updateUser({ data: { pinned_sheets: [...new Set(ids)] } }));
+/** Pinned campaigns they play in, in their order. */
+export function pinnedJoinedOf(row: ProfileRow | null | undefined): string[] {
+  return ids(row?.pinned_joined_campaigns);
+}
+export async function savePinnedJoined(list: string[]) {
+  await saveProfile({ pinned_joined_campaigns: [...new Set(list)] });
 }
 
-/** Pinned campaigns, in the player's own order, as for sheets. */
-export function pinnedCampaignsOf(user: { user_metadata?: Record<string, unknown> } | null | undefined): string[] {
-  const raw = user?.user_metadata?.pinned_campaigns;
-  return Array.isArray(raw) ? raw.filter((id): id is string => typeof id === 'string') : [];
-}
-
-export async function savePinnedCampaigns(ids: string[]) {
-  await unwrap(supabase.auth.updateUser({ data: { pinned_campaigns: [...new Set(ids)] } }));
-}
-
-/** The campaigns this player is in (as a player) pinned to the top, in their order. */
-export function pinnedJoinedOf(user: { user_metadata?: Record<string, unknown> } | null | undefined): string[] {
-  const raw = user?.user_metadata?.pinned_joined;
-  return Array.isArray(raw) ? raw.filter((id): id is string => typeof id === 'string') : [];
-}
-
-export async function savePinnedJoined(ids: string[]) {
-  await unwrap(supabase.auth.updateUser({ data: { pinned_joined: [...new Set(ids)] } }));
-}
-
-/** Whether this player wants the sheets' music shuffled; kept with their account. */
-export function shuffleOf(user: { user_metadata?: Record<string, unknown> } | null | undefined): boolean | null {
-  const raw = user?.user_metadata?.music_shuffle;
+/** Whether this player wants music shuffled (preferences.musicShuffle). */
+export function shuffleOf(row: ProfileRow | null | undefined): boolean | null {
+  const raw = row?.preferences?.musicShuffle;
   return typeof raw === 'boolean' ? raw : null;
 }
-
 export async function saveShuffle(on: boolean) {
-  await unwrap(supabase.auth.updateUser({ data: { music_shuffle: on } }));
+  await savePreferences({ musicShuffle: on });
 }
 
 /** Where a music player is: a sheet's, or a campaign's jukebox. Each keeps its own loop. */
 export type MusicPlace = 'sheet' | 'campaign';
-const LOOP_FIELD: Record<MusicPlace, string> = { sheet: 'music_loop', campaign: 'jukebox_loop' };
 
-/** Whether this player wants that music to loop; kept with their account. */
-export function loopOf(user: { user_metadata?: Record<string, unknown> } | null | undefined, place: MusicPlace): boolean | null {
-  const raw = user?.user_metadata?.[LOOP_FIELD[place]];
+/** Whether this player wants that music to loop (preferences.musicLoop). */
+export function loopOf(row: ProfileRow | null | undefined, place: MusicPlace): boolean | null {
+  const loops = row?.preferences?.musicLoop as Record<string, unknown> | undefined;
+  const raw = loops?.[place];
   return typeof raw === 'boolean' ? raw : null;
 }
-
 export async function saveLoop(place: MusicPlace, on: boolean) {
-  await unwrap(supabase.auth.updateUser({ data: { [LOOP_FIELD[place]]: on } }));
+  const now = get(profile);
+  const loops = { ...((now?.preferences?.musicLoop as Record<string, unknown>) ?? {}), [place]: on };
+  await savePreferences({ musicLoop: loops });
 }
 
 /**

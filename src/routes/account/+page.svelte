@@ -2,6 +2,7 @@
   import InfoTip from '$lib/components/InfoTip.svelte';
   import NotFound from '$lib/components/NotFound.svelte';
   import { pageTitle } from '$lib/title';
+  import { profile } from '$lib/stores/profile';
   /**
    * The player's own account: how they appear (a name and a picture, the
    * picture by link like a portrait) and signing out, their password, the
@@ -41,10 +42,11 @@
   let name = $state('');
   let picture = $state('');
   let filled = false;
+  // Filled once, when the profile has loaded (typing isn't overwritten after).
   $effect(() => {
     const user = $session.user;
-    if (!user || filled) return;
-    const p = profileOf(user);
+    if (!user || !$profile || filled) return;
+    const p = profileOf(user, $profile);
     name = p.displayName;
     picture = p.avatarUrl;
     filled = true;
@@ -158,7 +160,7 @@
   async function keep(patch: Prefs) {
     prefMsg = null;
     try {
-      await savePrefs($session.user, patch);
+      await savePrefs(patch);
     } catch (err) {
       prefMsg = { ok: false, text: friendlyError(err, 'Your preferences didn’t stick to your account! They still apply here.') };
     }
@@ -386,11 +388,11 @@
           Turning it off opens them again.</InfoTip>
       </h3>
       <div class="switches">
-        <Switch checked={sharing($session.user)} label="Share my rows" disabled={shareBusy}
+        <Switch checked={sharing($profile)} label="Share my rows" disabled={shareBusy}
                 title="Turning it off takes back everything you have shared"
                 onchange={toggleSharing} />
         {#if shareMsg}<span class="msg" class:bad={!shareMsg.ok} role="status">{shareMsg.text}</span>{/if}
-        <Switch checked={sheetsPrivate($session.user)} label="Keep my sheets private" disabled={privateBusy}
+        <Switch checked={sheetsPrivate($profile)} label="Keep my sheets private" disabled={privateBusy}
                 title="Only you and your DMs can open your sheets"
                 onchange={togglePrivate} />
         {#if privateMsg}<span class="msg" class:bad={!privateMsg.ok} role="status">{privateMsg.text}</span>{/if}

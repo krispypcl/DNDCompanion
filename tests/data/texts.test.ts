@@ -36,10 +36,10 @@ describe('isMissingTable', () => {
   it('recognises the two ways a missing table is reported', () => {
     expect(isMissingTable({ code: '42P01', message: 'x' })).toBe(true);
     expect(isMissingTable({ code: 'PGRST205', message: 'x' })).toBe(true);
-    expect(isMissingTable({ message: "Could not find the table 'public.sheet_text' in the schema cache" })).toBe(true);
+    expect(isMissingTable({ message: "Could not find the table 'public.character_pages' in the schema cache" })).toBe(true);
   });
   it('does not mistake any other failure for it', () => {
-    expect(isMissingTable({ code: '42501', message: 'permission denied for table sheet_text' })).toBe(false);
+    expect(isMissingTable({ code: '42501', message: 'permission denied for table character_pages' })).toBe(false);
     expect(isMissingTable({ message: 'Failed to fetch' })).toBe(false);
     expect(isMissingTable(null)).toBe(false);
   });
@@ -48,7 +48,7 @@ describe('isMissingTable', () => {
 describe('loadTexts', () => {
   it('reads what the database returned', async () => {
     const repo = makeSheetRepo(client({
-      sheet_text: { data: [
+      character_pages: { data: [
         { field: 'notes', body: 'N', is_public: false, updated_at: 'T1' },
         { field: 'backstory', body: 'B', is_public: true, updated_at: 'T2' }
       ] }
@@ -60,7 +60,7 @@ describe('loadTexts', () => {
   });
 
   it('treats a missing row as unwritten, and public', async () => {
-    const repo = makeSheetRepo(client({ sheet_text: { data: [] } }));
+    const repo = makeSheetRepo(client({ character_pages: { data: [] } }));
     const t = await repo.loadTexts({ id: 's', definition: legacy() });
     expect(t).toEqual({
       notes: { body: '', isPublic: true, updatedAt: null },
@@ -69,7 +69,7 @@ describe('loadTexts', () => {
   });
 
   it('shows writing that is still in the sheet, until it has been moved', async () => {
-    const repo = makeSheetRepo(client({ sheet_text: { data: [] } }));
+    const repo = makeSheetRepo(client({ character_pages: { data: [] } }));
     const t = await repo.loadTexts({ id: 's', definition: legacy({ notes: 'old notes', backstory: 'old story' }) });
     expect(t!.notes).toEqual({ body: 'old notes', isPublic: true, updatedAt: null });
     expect(t!.backstory.body).toBe('old story');
@@ -77,33 +77,33 @@ describe('loadTexts', () => {
 
   it('lets a saved row win over what is left in the sheet', async () => {
     const repo = makeSheetRepo(client({
-      sheet_text: { data: [{ field: 'notes', body: 'new', is_public: false, updated_at: 'T9' }] }
+      character_pages: { data: [{ field: 'notes', body: 'new', is_public: false, updated_at: 'T9' }] }
     }));
     const t = await repo.loadTexts({ id: 's', definition: legacy({ notes: 'stale' }) });
     expect(t!.notes).toEqual({ body: 'new', isPublic: false, updatedAt: 'T9' });
   });
 
   it('ignores a row for a field it does not know', async () => {
-    const repo = makeSheetRepo(client({ sheet_text: { data: [{ field: 'secrets', body: 'x', is_public: true, updated_at: 'T' }] } }));
+    const repo = makeSheetRepo(client({ character_pages: { data: [{ field: 'secrets', body: 'x', is_public: true, updated_at: 'T' }] } }));
     const t = await repo.loadTexts({ id: 's', definition: legacy() });
     expect(Object.keys(t!)).toEqual(['notes', 'backstory']);
   });
 
   it('is null, not an error, when the table has not been created', async () => {
-    const repo = makeSheetRepo(client({ sheet_text: { error: { code: 'PGRST205', message: 'schema cache' } } }));
+    const repo = makeSheetRepo(client({ character_pages: { error: { code: 'PGRST205', message: 'schema cache' } } }));
     expect(await repo.loadTexts({ id: 's', definition: legacy() })).toBeNull();
   });
 
   it('is an error when it fails for any other reason', async () => {
-    const repo = makeSheetRepo(client({ sheet_text: { error: { code: '500', message: 'boom' } } }));
+    const repo = makeSheetRepo(client({ character_pages: { error: { code: '500', message: 'boom' } } }));
     await expect(repo.loadTexts({ id: 's', definition: legacy() })).rejects.toThrow('boom');
   });
 
   it('is part of loading a sheet', async () => {
     const row = { id: 's', owner_id: 'u', definition: legacy(), state: {} };
     const repo = makeSheetRepo(client({
-      'sheets.select': { data: row },
-      sheet_text: { data: [{ field: 'notes', body: 'N', is_public: true, updated_at: 'T1' }] }
+      'characters.select': { data: row },
+      character_pages: { data: [{ field: 'notes', body: 'N', is_public: true, updated_at: 'T1' }] }
     }));
     const sheet = await repo.loadSheet('s');
     expect(sheet!.texts!.notes.body).toBe('N');
@@ -113,26 +113,26 @@ describe('loadTexts', () => {
 describe('saveText', () => {
   it('inserts the first time, and says who owns it', async () => {
     const seen: Record<string, unknown>[] = [];
-    const repo = makeSheetRepo(client({ sheet_text: { data: [{ updated_at: 'T1' }] } }, seen));
+    const repo = makeSheetRepo(client({ character_pages: { data: [{ updated_at: 'T1' }] } }, seen));
     expect(await repo.saveText('s', 'u', 'notes', 'hi', false, null)).toBe('T1');
-    expect(seen[0]).toMatchObject({ op: 'insert', payload: { sheet_id: 's', owner_id: 'u', field: 'notes', body: 'hi', is_public: false } });
+    expect(seen[0]).toMatchObject({ op: 'insert', payload: { character_id: 's', owner_id: 'u', field: 'notes', body: 'hi', is_public: false } });
   });
 
   it('is stale if the row turned up in the meantime', async () => {
-    const repo = makeSheetRepo(client({ sheet_text: { error: { code: '23505', message: 'duplicate' } } }));
+    const repo = makeSheetRepo(client({ character_pages: { error: { code: '23505', message: 'duplicate' } } }));
     await expect(repo.saveText('s', 'u', 'notes', 'x', true, null)).rejects.toBeInstanceOf(StaleWriteError);
   });
 
   it('updates only the row it last saw', async () => {
     const seen: Record<string, unknown>[] = [];
-    const repo = makeSheetRepo(client({ sheet_text: { data: [{ updated_at: 'T2' }] } }, seen));
+    const repo = makeSheetRepo(client({ character_pages: { data: [{ updated_at: 'T2' }] } }, seen));
     expect(await repo.saveText('s', 'u', 'notes', 'x', true, 'T1')).toBe('T2');
-    expect(seen[0].filters).toEqual([['sheet_id', 's'], ['field', 'notes'], ['updated_at', 'T1']]);
+    expect(seen[0].filters).toEqual([['character_id', 's'], ['field', 'notes'], ['updated_at', 'T1']]);
     expect(seen[0].payload).toEqual({ body: 'x', is_public: true });
   });
 
   it('is stale if nothing matched: someone else saved', async () => {
-    const repo = makeSheetRepo(client({ sheet_text: { data: [] } }));
+    const repo = makeSheetRepo(client({ character_pages: { data: [] } }));
     await expect(repo.saveText('s', 'u', 'notes', 'x', true, 'T1')).rejects.toBeInstanceOf(StaleWriteError);
   });
 });

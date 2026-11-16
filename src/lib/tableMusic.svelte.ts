@@ -140,7 +140,7 @@ export class TableMusic {
       ? supabase
           .channel(`table-${id}`, { config: { presence: { key: this.#key } } })
           .on('presence', { event: 'sync' }, () => this.#readPresence())
-          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'campaign_live', filter: `campaign_id=eq.${id}` }, (payload) => {
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'campaign_state', filter: `campaign_id=eq.${id}` }, (payload) => {
             const row = payload.new as { playback?: Playback | Record<string, never>; invite_rev?: number };
             const pb = row.playback && 'index' in row.playback ? (row.playback as Playback) : null;
             // The DM's own page already shows what it just did.

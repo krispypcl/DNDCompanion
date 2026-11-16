@@ -102,12 +102,12 @@
     if (!isConfigured) return;
     const channel = supabase
       .channel(`board-${campaignId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'campaign_board', filter: `campaign_id=eq.${campaignId}` },
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'board_items', filter: `campaign_id=eq.${campaignId}` },
         (p) => takeRemote(p.new as BoardItem))
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'campaign_board', filter: `campaign_id=eq.${campaignId}` },
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'board_items', filter: `campaign_id=eq.${campaignId}` },
         (p) => takeRemote(p.new as BoardItem))
       // Deletes cannot be filtered: anything gone that is on this board goes.
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'campaign_board' },
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'board_items' },
         (p) => {
           const gone = (p.old as { id?: string }).id;
           if (gone) items = items.filter((x) => x.id !== gone);
