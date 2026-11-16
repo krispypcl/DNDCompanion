@@ -22,7 +22,36 @@ export type CampaignDetails = {
   nameFont?: string;
   /** When the table next meets (ISO, set by the DM); shown on the page and the main menu. */
   nextSession?: string;
+  /** When it last met: the session set before, kept once it had started. */
+  lastSession?: string;
 };
+
+const startedBy = (iso: string | undefined, now: Date) => {
+  const t = iso ? new Date(iso).getTime() : NaN;
+  return Number.isFinite(t) && t <= now.getTime() ? t : null;
+};
+
+/**
+ * The DM sets (or clears) the next session: a session that has already
+ * started is kept as the last one, so the main menu can say when the table
+ * last met.
+ */
+export function setNextSession(details: CampaignDetails, next: string, now: Date = new Date()): Partial<CampaignDetails> {
+  const was = startedBy(details.nextSession, now);
+  const last = startedBy(details.lastSession, now);
+  const patch: Partial<CampaignDetails> = { nextSession: next };
+  if (was !== null && (last === null || was > last)) patch.lastSession = details.nextSession;
+  return patch;
+}
+
+/** When the table last met: the last session kept, or the next one if it has already started. */
+export function lastSessionOf(details: CampaignDetails | undefined, now: Date = new Date()): string | null {
+  if (!details) return null;
+  const was = startedBy(details.nextSession, now);
+  const last = startedBy(details.lastSession, now);
+  if (was === null && last === null) return null;
+  return (was ?? -Infinity) >= (last ?? -Infinity) ? (details.nextSession as string) : (details.lastSession as string);
+}
 
 /**
  * What the DM's music is doing, for everyone's page to follow: which song

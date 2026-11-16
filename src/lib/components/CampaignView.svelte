@@ -14,7 +14,7 @@
   import { cubicOut } from 'svelte/easing';
   import { base } from '$app/paths';
   import { goto } from '$app/navigation';
-  import { campaignMessage, campaignRepo, type Campaign, type CampaignDetails } from '$lib/data/campaigns';
+  import { campaignMessage, campaignRepo, setNextSession, type Campaign, type CampaignDetails } from '$lib/data/campaigns';
   import { TableMusic } from '$lib/tableMusic.svelte';
   import { sheetRepo } from '$lib/data/sheets';
   import { isConfigured, supabase } from '$lib/supabase';
@@ -404,10 +404,10 @@
             <label class="nextedit">
               <span>Next session</span>
               <input type="datetime-local" value={localInput(campaign.details.nextSession)}
-                     onchange={(e) => saveDetails({ nextSession: e.currentTarget.value ? new Date(e.currentTarget.value).toISOString() : '' })} />
+                     onchange={(e) => campaign && saveDetails(setNextSession(campaign.details, e.currentTarget.value ? new Date(e.currentTarget.value).toISOString() : ''))} />
             </label>
             {#if campaign.details.nextSession}
-              <button class="smallbtn" onclick={() => saveDetails({ nextSession: '' })}>Clear</button>
+              <button class="smallbtn" onclick={() => campaign && saveDetails(setNextSession(campaign.details, ''))}>Clear</button>
             {/if}
           {:else if next && !next.past}
             <span class="nextlabel">Next session</span>

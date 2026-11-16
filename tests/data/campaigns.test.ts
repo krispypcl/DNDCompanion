@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CampaignError, campaignMessage, inviteCode } from '$lib/data/campaigns';
+import { CampaignError, campaignMessage, inviteCode, lastSessionOf, setNextSession } from '$lib/data/campaigns';
 
 describe('campaign helpers', () => {
   it('reads an invite pasted as a code or as the whole link', () => {
@@ -10,5 +10,22 @@ describe('campaign helpers', () => {
   it('shows its own refusals as they are, and anything else kindly', () => {
     expect(campaignMessage(new CampaignError('Only the DM can do that!'), 'x')).toBe('Only the DM can do that!');
     expect(campaignMessage(new Error('weird'), 'Fallback!')).toBe('Fallback!');
+  });
+});
+
+describe('last session', () => {
+  const now = new Date('2026-11-16T12:00:00Z');
+  it('keeps a session that has started when the next is set', () => {
+    expect(setNextSession({ nextSession: '2026-11-14T12:00:00Z' }, '2026-11-21T12:00:00Z', now))
+      .toEqual({ nextSession: '2026-11-21T12:00:00Z', lastSession: '2026-11-14T12:00:00Z' });
+    // Moving a session that hasn't happened keeps the last one as it was.
+    expect(setNextSession({ nextSession: '2026-11-20T12:00:00Z', lastSession: '2026-11-14T12:00:00Z' }, '2026-11-21T12:00:00Z', now))
+      .toEqual({ nextSession: '2026-11-21T12:00:00Z' });
+  });
+  it('is the next session once it has started, else the one kept', () => {
+    expect(lastSessionOf({ nextSession: '2026-11-15T12:00:00Z', lastSession: '2026-11-08T12:00:00Z' }, now)).toBe('2026-11-15T12:00:00Z');
+    expect(lastSessionOf({ nextSession: '2026-11-21T12:00:00Z', lastSession: '2026-11-14T12:00:00Z' }, now)).toBe('2026-11-14T12:00:00Z');
+    expect(lastSessionOf({ nextSession: '2026-11-21T12:00:00Z' }, now)).toBeNull();
+    expect(lastSessionOf(undefined, now)).toBeNull();
   });
 });
