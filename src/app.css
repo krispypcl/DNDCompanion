@@ -267,6 +267,11 @@ body {
 @keyframes skeleton-shimmer { from { background-position: 100% 0; } to { background-position: -50% 0; } }
 @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
 
+/* A pop-up that can be moved (lib/actions.ts `movable`): its title is what you take hold of. */
+[data-movable] :is(header, h2) { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+[data-movable][data-moving] :is(header, h2) { cursor: grabbing; }
+[data-movable] :is(header, h2) :is(button, a, input) { cursor: pointer; }
+
 /* Held still while something animates, so it shows no passing scrollbar (lib/settle.ts). */
 [data-settling] { overflow: hidden !important; }
 
