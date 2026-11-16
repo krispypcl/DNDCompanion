@@ -190,7 +190,7 @@
     {@const portrait = resolveImageUrl(def?.identity?.portraitUrl).url}
     {@const conds = previews[s.id] ?? s.state?.conditions ?? []}
     {@const ring = ringOf(conds, def?.conditionLooks ?? {})}
-    <li class="card themed {v.vital}" class:lifted={drag?.id === s.id} class:present={here.has(s.owner_id)} bind:this={els[s.id]}
+    <li class="card themed {v.vital}" class:lifted={drag?.id === s.id} class:present={here.has(s.owner_id)} class:sortable={isDm && cards.length > 1} bind:this={els[s.id]}
         style={themeStyle(def?.identity?.theme)} style:transform={shift(s.id)} style:--i={i}
         animate:glideTo>
       {#if here.has(s.owner_id)}
@@ -325,6 +325,8 @@
     box-shadow: 0 0 0 1px color-mix(in oklch, var(--hurt-red) 25%, transparent);
   }
   .card.dead { opacity: 0.7; border-color: color-mix(in oklch, var(--hurt-red) 60%, var(--line-soft)); }
+  /* Pointed at, a hurt card still shows its own colour round it. */
+  .card:is(.bloodied, .critical, .down, .dead):hover { border-color: var(--a-edge); }
   /* The hurt edge beats like a pulse: slow when bloodied, quicker when it's bad. */
   .card.bloodied { animation: hurtBeat 3.2s ease-in-out infinite; }
   .card.critical, .card.down { animation: hurtBeat 1.8s ease-in-out infinite; }
@@ -346,15 +348,16 @@
     color: var(--faint); cursor: grab; touch-action: none; opacity: 0; transition: opacity 0.15s ease, color 0.15s ease;
   }
   .card:hover .grip, .grip:focus-visible, .lifted .grip { opacity: 1; }
-  /* Here: a small tag sitting on the card's top edge at the right, over
-     the border, so nothing in the card moves for it. */
+  /* Here: a small green light in the card's top right corner, placed over
+     it so nothing in the card moves when it comes and goes (the name's
+     line always leaves it room). Beside the grip where there is one. */
   .herebadge {
-    position: absolute; top: 0; right: 0.875rem; transform: translateY(-50%); z-index: 2;
-    display: inline-flex; align-items: center; gap: 0.3125rem; padding: 0.125rem 0.5rem; border-radius: 999px;
-    background: var(--surface); border: 1px solid var(--line-soft);
+    position: absolute; top: 0.75rem; right: 0.75rem; z-index: 2;
+    display: inline-flex; align-items: center; gap: 0.3125rem;
     font-size: 0.5625rem; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim);
     pointer-events: none;
   }
+  .card.sortable .herebadge { right: 2.5rem; }
   .herebadge i, :global(.here-dot) {
     width: 0.4375rem; height: 0.4375rem; border-radius: 50%; background: oklch(74% 0.17 150); flex: none;
     box-shadow: 0 0 0 0 oklch(74% 0.17 150 / 0.5); animation: hereGlow 2.4s ease-out infinite;
@@ -364,7 +367,8 @@
   .grip:hover { color: var(--a); }
   @media (hover: none) { .grip { opacity: 0.8; } }
 
-  .open { display: flex; gap: 0.75rem; align-items: center; color: inherit; text-decoration: none; min-width: 0; padding-right: 3.25rem; }
+  .open { display: flex; gap: 0.75rem; align-items: center; color: inherit; text-decoration: none; min-width: 0; padding-right: 4.25rem; }
+  .card.sortable .open { padding-right: 5.75rem; }
   .portrait {
     position: relative; flex: none; width: 3.25rem; height: 3.25rem; border-radius: var(--r-sm);
     border: 1px solid var(--a-edge); background: linear-gradient(150deg, var(--portrait-from), var(--portrait-to));
