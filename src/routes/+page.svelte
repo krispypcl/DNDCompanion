@@ -863,7 +863,7 @@
   main { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
   /* A wide screen: the page widens and the cards sit in a grid. */
   @media (min-width: 900px) {
-    main { max-width: 72rem; padding-left: 2rem; padding-right: 2rem; }
+    main { max-width: var(--page-width); padding-left: var(--page-pad); padding-right: var(--page-pad); }
     /* Two to a row, each as wide as an area's button above (the same gap). */
     .pageset ul { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.375rem; }
   }

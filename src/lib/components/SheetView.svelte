@@ -1329,7 +1329,7 @@
   .loading > :global(.skel) { opacity: 0.45; }
     /* Not positioned: the banner inside it is meant to escape this column and
      run the width of the page. */
-  .sheet { padding: 1.5rem; max-width: 110rem; margin: 0 auto; }
+  .sheet { padding: var(--page-pad); max-width: var(--page-width); margin: 0 auto; }
   .panel {
     background: var(--surface); border: 1px solid var(--line-soft);
     border-radius: var(--r); padding: 1rem; min-width: 0;

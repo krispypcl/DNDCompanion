@@ -160,6 +160,10 @@
 /* Lets a height animate to and from `auto`, which the disclosure panels use. */
 :root { interpolate-size: allow-keywords; }
 
+/* The usable width of a page on a wide screen, the same everywhere: the
+   sheet, a campaign and the main menu. */
+:root { --page-width: 110rem; --page-pad: 1.5rem; }
+
 * { box-sizing: border-box; }
 /* The type, in one place. */
 :root {

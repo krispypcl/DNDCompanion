@@ -481,7 +481,9 @@
 {/if}
 
 <style>
-  main { max-width: 72rem; margin: 0 auto; padding: 2rem 1rem 4rem; }
+  /* As wide as a sheet (app.css --page-width); its own padding on a phone. */
+  main { max-width: var(--page-width); margin: 0 auto; padding: 2rem var(--page-pad) 4rem; }
+  @media (max-width: 600px) { main { padding-left: 1rem; padding-right: 1rem; } }
   /* Above the banner, which lies behind the top of the page. */
   main > :global(*) { position: relative; z-index: 1; }
   .loading { min-height: 60vh; }
