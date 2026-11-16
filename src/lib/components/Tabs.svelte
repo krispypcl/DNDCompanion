@@ -7,6 +7,7 @@
     active = $bindable(),
     lit = null,
     label,
+    bare = false,
     children
   }: {
     tabs: string[];
@@ -15,6 +16,8 @@
     lit?: string | null;
     /** What a tab's button shows, when more than its name (the main menu's areas). */
     label?: import('svelte').Snippet<[string]>;
+    /** No buttons here: the page switches `active` with its own control (the main menu). */
+    bare?: boolean;
     children: import('svelte').Snippet<[string]>;
   } = $props();
 
@@ -58,8 +61,11 @@
    */
   let panels: HTMLDivElement | undefined = $state();
   let before = 0;
+  let was: string | undefined;
   $effect.pre(() => {
-    active;
+    // Switched from outside too: slide in from the side of the tab left.
+    if (was !== undefined && active !== was) direction = tabs.indexOf(active) >= tabs.indexOf(was) ? 1 : -1;
+    was = active;
     before = panels?.offsetHeight ?? 0;
   });
   $effect(() => {
@@ -93,6 +99,7 @@
   }
 </script>
 
+{#if !bare}
 <div class="tabwrap">
 <div class="tablist" role="tablist" bind:this={list}>
   {#each tabs as tab, i (tab)}
@@ -111,6 +118,7 @@
      style:width="{bar.width}px" aria-hidden="true"></i>
 </div>
 </div>
+{/if}
 
 <div class="panels" bind:this={panels} data-scrollbox>
   {#key active}
