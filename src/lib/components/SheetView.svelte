@@ -84,7 +84,7 @@
   import Why from '$lib/components/Why.svelte';
   import EquipDialog from '$lib/components/EquipDialog.svelte';
   import { advantageFrom } from '$lib/rules/equipment';
-  import { nameFont } from '$lib/rules/fonts';
+  import { faceFamily, fontFace, nameFont } from '$lib/rules/fonts';
   import { shareRoll } from '$lib/owlbear/channel';
   import { downloadBlob, downloadText } from '$lib/download';
   import { parseRoll, type Pool, type Roll } from '$lib/rules/dice';
@@ -392,6 +392,8 @@
   let casting = $state<Spell | null>(null);
   /** The campaign the sheet is in, read by its id; null when in none. */
   let campaign = $state<Campaign | null>(null);
+  /** The campaign name's own font, as on its page and the main menu. */
+  const campaignFace = $derived(fontFace(campaign?.details?.nameFont));
   let campaignOpen = $state(false);
   const campaignId = $derived(sheet?.campaign_id ?? null);
   const campaignIsMine = $derived(Boolean(campaign && $session.user && campaign.created_by === $session.user.id));
@@ -685,6 +687,7 @@
   {#if !loadError}<title>{pageTitle(definition?.identity?.name?.trim() || sheet?.name || 'Character sheet')}</title>{/if}
   <!-- The name's own font, if the player chose one (Appearance tab). -->
   {#if nameFace}<link rel="stylesheet" href={nameFace.href} />{/if}
+  {#if campaignFace && campaignFace.href !== nameFace?.href}<link rel="stylesheet" href={campaignFace.href} />{/if}
 </svelte:head>
 
 {#if loading || !revealed}
@@ -748,13 +751,13 @@
           <button class="campaign pick" data-flip="identity:campaign-at" onclick={() => (campaignOpen = true)}
                   title="Join, start or leave a campaign">
             {@render flag()}
-            <span>{campaign?.name ?? definition.identity.campaign?.trim() ?? 'Add to a campaign'}</span>
+            <span style:font-family={campaign ? faceFamily(campaignFace) : undefined}>{campaign?.name ?? definition.identity.campaign?.trim() ?? 'Add to a campaign'}</span>
           </button>
         {:else if campaign || definition.identity.campaign?.trim()}
           <div class="campaign" data-flip-ghost="identity:campaign" data-flip="identity:campaign-at">
             {@render flag()}
             {#if campaign}
-              <a href="{base}/c/{campaign.id}" title="Open the campaign">{campaign.name}</a>
+              <a href="{base}/c/{campaign.id}" title="Open the campaign" style:font-family={faceFamily(campaignFace)}>{campaign.name}</a>
             {:else}
               <span title="Campaign">{definition.identity.campaign?.trim()}</span>
             {/if}
