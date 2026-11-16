@@ -26,11 +26,9 @@
   import { friendlyError } from '$lib/errors';
   import Switch from '$lib/components/Switch.svelte';
   import Choice from '$lib/components/Choice.svelte';
-  import ThemePicker from '$lib/components/ThemePicker.svelte';
   import { fade } from 'svelte/transition';
   import { chooseMode, modeChoice, type ModeChoice } from '$lib/stores/mode';
-  import { prefsOf, savePrefs, setDiceStyle, setReduceMotion, storedDice, storedReduceMotion, type DiceStyle, type Prefs } from '$lib/prefs';
-  import { DEFAULT_THEME } from '$lib/theme';
+  import { savePrefs, setDiceStyle, setReduceMotion, storedDice, storedReduceMotion, type DiceStyle, type Prefs } from '$lib/prefs';
   import { sheetRepo } from '$lib/data/sheets';
   import { campaignRepo } from '$lib/data/campaigns';
   import { characterLevel, mainClass } from '$lib/rules/derived';
@@ -149,13 +147,12 @@
 
   /*
    * Preferences: the look, dice and motion apply to this device at once and
-   * are kept on the account; the colour for new sheets only on the account.
+   * are kept on the account.
    */
   /** Follows the header's own switch too. */
   const look = $derived($modeChoice);
   let dice = $state<DiceStyle>(storedDice());
   let calm = $state(storedReduceMotion());
-  const defaultTheme = $derived(prefsOf($session.user).defaultTheme ?? DEFAULT_THEME);
   let prefMsg = $state<{ ok: boolean; text: string } | null>(null);
   async function keep(patch: Prefs) {
     prefMsg = null;
@@ -178,9 +175,6 @@
     calm = on;
     setReduceMotion(on);
     void keep({ reduceMotion: on });
-  }
-  function setDefaultTheme(next: string) {
-    void keep({ defaultTheme: next });
   }
 
   /** Statistics: counted from the account's sheets and campaigns. */
@@ -363,8 +357,7 @@
     <section class="card" aria-labelledby="pref-h">
       <h2 id="pref-h">Preferences
         <InfoTip label="About preferences">The look, motion and dice apply to this device straight away and are
-          saved to your account, so a device you sign in on for the first time starts the same way. The colour is
-          the one each new sheet starts in; a sheet's own colour is still changed on its Appearance tab.</InfoTip>
+          saved to your account, so a device you sign in on for the first time starts the same way.</InfoTip>
       </h2>
       <div class="prefs">
         <span class="pref-name">Look</span>
@@ -379,8 +372,6 @@
         <span class="pref-name">Motion</span>
         <Switch checked={calm} label="Reduce motion" onchange={setCalm}
                 title="Fewer and shorter animations, whatever your device is set to" />
-        <span class="pref-name top">New sheets</span>
-        <div class="pref-theme"><ThemePicker value={defaultTheme} label="Colour for new sheets" onchange={setDefaultTheme} /></div>
       </div>
       {#if prefMsg}<p class="msg" class:bad={!prefMsg.ok} role="status">{prefMsg.text}</p>{/if}
 
@@ -468,9 +459,7 @@
   /* Preferences: a name at the left, its control beside it. */
   .prefs { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 0.625rem 1rem; margin-top: 0.25rem; }
   .pref-name { font-size: 0.8125rem; color: var(--dim); display: inline-flex; align-items: center; gap: 0.125rem; }
-  .pref-name.top { align-self: start; padding-top: 0.375rem; }
   .prefs > :global(*) { justify-self: start; }
-  .pref-theme { width: 100%; }
   .sub-h {
     font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600;
     margin: 1rem 0 0; padding-top: 1rem; border-top: 1px solid var(--line-soft); display: flex; align-items: center; gap: 0.125rem;
@@ -495,7 +484,6 @@
     /* Preferences: each name above its control. */
     .prefs { grid-template-columns: minmax(0, 1fr); gap: 0.375rem; }
     .prefs > .pref-name:not(:first-child) { margin-top: 0.5rem; }
-    .pref-name.top { padding-top: 0; }
   }
   /* A Connect button keeps to the right, also when it wraps under its line. */
   .conns li > :global(.oauth) { margin-left: auto; }

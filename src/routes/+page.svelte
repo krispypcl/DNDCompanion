@@ -16,7 +16,6 @@
   import { friendlyDate, numericDate, sessionWhen } from '$lib/rules/dates';
   import { pageTitle } from '$lib/title';
   import { watchTable, type Here } from '$lib/presence';
-  import { prefsOf } from '$lib/prefs';
   import { faceFamily, fontFace } from '$lib/rules/fonts';
   import D20Loader from '$lib/components/D20Loader.svelte';
   import Tabs from '$lib/components/Tabs.svelte';
@@ -512,11 +511,7 @@
     if (!user) return;
     creating = true;
     try {
-      // In the colour chosen for new sheets (account page, Preferences), if any.
-      const def = blankDefinition();
-      const theme = prefsOf(user).defaultTheme;
-      if (theme) def.identity.theme = theme;
-      const sheet = await sheetRepo.createSheet(user.id, 'New character', def, blankState());
+      const sheet = await sheetRepo.createSheet(user.id, 'New character', blankDefinition(), blankState());
       await goto(`${base}/s/${sheet.id}`);
     } catch (e) {
       error = friendlyError(e, 'The new sheet fizzled! Try again in a moment.');

@@ -4,9 +4,8 @@
  * - Light, dark or the device's own (stores/mode.ts), reduced motion and the
  *   dice style apply to this device at once and are kept on it, so they
  *   work signed out and before the page has loaded (src/app.html reads them).
- * - All of them, and the colour new sheets start in, are also saved on the
- *   account (user metadata "prefs"), so a device that has never chosen
- *   starts with them.
+ * - They are also saved on the account (user metadata "prefs"), so a
+ *   device that has never chosen starts with them.
  */
 import { supabase } from '$lib/supabase';
 import { chooseMode, choiceKept, storedChoice, type ModeChoice } from '$lib/stores/mode';
@@ -21,8 +20,6 @@ export type Prefs = {
   mode?: ModeChoice;
   reduceMotion?: boolean;
   dice?: DiceStyle;
-  /** A theme name or a hex colour (lib/theme.ts) for sheets made from now on. */
-  defaultTheme?: string;
 };
 
 type Meta = { user_metadata?: Record<string, unknown> } | null | undefined;
