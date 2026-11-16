@@ -7,7 +7,7 @@
   import { sheetName, sheetRepo } from '$lib/data/sheets';
   import { campaignMessage, campaignRepo, type Campaign } from '$lib/data/campaigns';
   import { MAX_BYTES, importSheet } from '$lib/exchange';
-  import { pinnedCampaignsOf, pinnedJoinedOf, pinnedOf, profileOf, savePinned, savePinnedCampaigns, savePinnedJoined, signIn, updateProfile } from '$lib/data/session';
+  import { pinnedCampaignsOf, pinnedJoinedOf, pinnedOf, profileOf, savePinned, savePinnedCampaigns, savePinnedJoined, signIn, updateProfile, PICTURE_NUDGE_KEY } from '$lib/data/session';
   import { slide } from 'svelte/transition';
   import { tick } from 'svelte';
   import Avatar from '$lib/components/Avatar.svelte';
@@ -37,14 +37,14 @@
     if (!name || !$session.user) return;
     savingName = true;
     try {
-      await updateProfile({ displayName: name, avatarUrl: profileOf($session.user).avatarUrl });
+      await updateProfile({ displayName: name });
     } catch (e) {
       error = friendlyError(e, 'Your name didn’t stick! Try again.');
     } finally {
       savingName = false;
     }
   }
-  const NUDGE_KEY = 'dndcompanion:picture-nudge';
+  const NUDGE_KEY = PICTURE_NUDGE_KEY;
   let pictureNudgeGone = $state(true);
   $effect(() => {
     try { pictureNudgeGone = localStorage.getItem(NUDGE_KEY) === 'gone'; } catch { pictureNudgeGone = false; }

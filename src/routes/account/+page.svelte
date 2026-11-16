@@ -10,7 +10,7 @@
   import Lightbox from '$lib/components/Lightbox.svelte';
   import ModeToggle from '$lib/components/ModeToggle.svelte';
   import D20Loader from '$lib/components/D20Loader.svelte';
-  import { deleteAccount, profileOf, providersOf, signOut, signOutEverywhere, updatePassword, updateProfile } from '$lib/data/session';
+  import { deleteAccount, PICTURE_NUDGE_KEY, profileOf, providersOf, signOut, signOutEverywhere, updatePassword, updateProfile } from '$lib/data/session';
   import GoogleButton from '$lib/components/GoogleButton.svelte';
   import { slide } from 'svelte/transition';
   import { passwordStrength } from '$lib/rules/password';
@@ -47,6 +47,10 @@
     profileMsg = null;
     try {
       await updateProfile({ displayName: name, avatarUrl: picture });
+      // No picture: the main menu asks for one again.
+      if (!picture.trim()) {
+        try { localStorage.removeItem(PICTURE_NUDGE_KEY); } catch { /* private window */ }
+      }
       profileMsg = { ok: true, text: 'Saved.' };
     } catch (err) {
       profileMsg = { ok: false, text: friendlyError(err, 'Your profile didn’t save! Try again in a moment.') };

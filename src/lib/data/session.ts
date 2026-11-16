@@ -69,18 +69,27 @@ export function profileOf(user: { user_metadata?: Record<string, unknown> } | nu
       typeof meta.display_name === 'string' && meta.display_name
         ? meta.display_name
         : typeof meta.full_name === 'string' ? meta.full_name : typeof meta.name === 'string' ? meta.name : '',
+    // The picture chosen here is kept under its own name: Google writes
+    // avatar_url and picture afresh at every sign-in, which undid a picture
+    // typed here and brought Google's back when the box was emptied. Empty
+    // here means none, on purpose.
     avatarUrl:
-      typeof meta.avatar_url === 'string' && meta.avatar_url ? meta.avatar_url : typeof meta.picture === 'string' ? meta.picture : ''
+      typeof meta.profile_picture === 'string'
+        ? meta.profile_picture
+        : typeof meta.avatar_url === 'string' && meta.avatar_url ? meta.avatar_url : typeof meta.picture === 'string' ? meta.picture : ''
   };
 }
 
-export async function updateProfile(profile: Profile) {
-  await unwrap(
-    supabase.auth.updateUser({
-      data: { display_name: profile.displayName.trim(), avatar_url: profile.avatarUrl.trim() }
-    })
-  );
+/** Saves the name, the picture, or both (empty is a choice too: no picture). */
+export async function updateProfile(profile: Partial<Profile>) {
+  const data: Record<string, string> = {};
+  if (profile.displayName !== undefined) data.display_name = profile.displayName.trim();
+  if (profile.avatarUrl !== undefined) data.profile_picture = profile.avatarUrl.trim();
+  await unwrap(supabase.auth.updateUser({ data }));
 }
+
+/** The main menu's "Add a profile picture?" nudge, put away with Not now. */
+export const PICTURE_NUDGE_KEY = 'dndcompanion:picture-nudge';
 
 /** Signs this account out on every device, this one included. */
 export async function signOutEverywhere() {

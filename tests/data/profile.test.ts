@@ -15,9 +15,20 @@ describe('profile', () => {
     expect(profileOf(null)).toEqual({ displayName: '', avatarUrl: '' });
   });
 
-  it('saves both, trimmed', async () => {
+  it('keeps a picture chosen here, even none, over the one Google brings', () => {
+    const google = { avatar_url: 'https://lh3/g.png', picture: 'https://lh3/g.png' };
+    expect(profileOf({ user_metadata: { ...google } }).avatarUrl).toBe('https://lh3/g.png');
+    expect(profileOf({ user_metadata: { ...google, profile_picture: 'https://i.imgur.com/me.png' } }).avatarUrl).toBe('https://i.imgur.com/me.png');
+    expect(profileOf({ user_metadata: { ...google, profile_picture: '' } }).avatarUrl).toBe('');
+  });
+
+  it('saves both, trimmed, or just the name', async () => {
     await updateProfile({ displayName: '  Chris ', avatarUrl: ' https://x/y.png ' });
-    expect(updateUser).toHaveBeenCalledWith({ data: { display_name: 'Chris', avatar_url: 'https://x/y.png' } });
+    expect(updateUser).toHaveBeenCalledWith({ data: { display_name: 'Chris', profile_picture: 'https://x/y.png' } });
+    await updateProfile({ displayName: 'Chris', avatarUrl: '' });
+    expect(updateUser).toHaveBeenLastCalledWith({ data: { display_name: 'Chris', profile_picture: '' } });
+    await updateProfile({ displayName: 'Chris' });
+    expect(updateUser).toHaveBeenLastCalledWith({ data: { display_name: 'Chris' } });
   });
 
   it('signs out of every device', async () => {
