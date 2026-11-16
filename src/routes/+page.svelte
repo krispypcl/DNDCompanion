@@ -1228,11 +1228,6 @@
     .campcard .datesrow .nowide { padding-right: 0; border-right: 0; }
   }
   .camphere { display: inline-flex; align-items: center; gap: 0.375rem; color: var(--text); }
-  .here-dot {
-    width: 0.4375rem; height: 0.4375rem; border-radius: 50%; background: oklch(74% 0.17 150); flex: none;
-    animation: hereGlow 2.4s ease-out infinite;
-  }
-  @keyframes hereGlow { 0% { box-shadow: 0 0 0 0 oklch(74% 0.17 150 / 0.5); } 70%, 100% { box-shadow: 0 0 0 6px oklch(74% 0.17 150 / 0); } }
   .campnext { display: inline-flex; align-items: baseline; gap: 0.375rem; flex-wrap: wrap; justify-content: flex-end; }
   .campnext .k { font-size: 0.625rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--label); font-weight: 600; }
   .campnext .soon { color: var(--a); font-weight: 600; }

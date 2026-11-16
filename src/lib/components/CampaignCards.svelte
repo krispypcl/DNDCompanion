@@ -195,7 +195,7 @@
         animate:glideTo>
       {#if here.has(s.owner_id)}
         <!-- Their player has the campaign open right now. -->
-        <span class="herebadge" role="img" aria-label="{nameOf(s)}’s player is here" title="{nameOf(s)}’s player is here" transition:fade={{ duration: 200 }}><i></i></span>
+        <span class="herebadge" role="img" aria-label="{nameOf(s)}’s player is here" title="{nameOf(s)}’s player is here" transition:fade={{ duration: 200 }}><i class="here-dot"></i></span>
       {/if}
       <a class="open" href="{base}/s/{s.id}{s.campaign_id ? `?from=${s.campaign_id}` : ''}">
         <!-- Conditions ring the portrait in their colours (the card's own edge
@@ -362,12 +362,6 @@
   }
   /* The light keeps its corner; the grip moves aside for it. */
   .card.present .grip { right: 1.625rem; }
-  .herebadge i, :global(.here-dot) {
-    width: 0.4375rem; height: 0.4375rem; border-radius: 50%; background: oklch(74% 0.17 150); flex: none;
-    box-shadow: 0 0 0 0 oklch(74% 0.17 150 / 0.5); animation: hereGlow 2.4s ease-out infinite;
-  }
-  @keyframes hereGlow { 0% { box-shadow: 0 0 0 0 oklch(74% 0.17 150 / 0.5); } 70%, 100% { box-shadow: 0 0 0 6px oklch(74% 0.17 150 / 0); } }
-  @media (prefers-reduced-motion: reduce) { .herebadge i { animation: none; } }
   .grip:hover { color: var(--a); }
   @media (hover: none) { .grip { opacity: 0.8; } }
 

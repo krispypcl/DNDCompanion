@@ -267,6 +267,15 @@ body {
 @keyframes skeleton-shimmer { from { background-position: 100% 0; } to { background-position: -50% 0; } }
 @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
 
+/* Someone is here: a small green light with a slow pulse (the menu's cards
+   and switch, the campaign page's cards and its header). */
+.here-dot {
+  display: inline-block; width: 0.4375rem; height: 0.4375rem; border-radius: 50%; flex: none;
+  background: oklch(74% 0.17 150); animation: here-glow 2.4s ease-out infinite;
+}
+@keyframes here-glow { 0% { box-shadow: 0 0 0 0 oklch(74% 0.17 150 / 0.5); } 70%, 100% { box-shadow: 0 0 0 6px oklch(74% 0.17 150 / 0); } }
+@media (prefers-reduced-motion: reduce) { .here-dot { animation: none; } }
+
 /* A pop-up that can be moved (lib/actions.ts `movable`): its title is what you take hold of. */
 [data-movable] :is(header, h2) { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
 [data-movable][data-moving] :is(header, h2) { cursor: grabbing; }

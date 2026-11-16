@@ -608,11 +608,6 @@
   }
   .herenote { display: inline-flex; align-items: center; gap: 0.375rem; color: oklch(74% 0.17 150); }
   :global([data-mode='light']) .herenote { color: oklch(52% 0.15 150); }
-  .here-dot {
-    width: 0.4375rem; height: 0.4375rem; border-radius: 50%; background: oklch(74% 0.17 150); flex: none;
-    animation: hereGlow 2.4s ease-out infinite;
-  }
-  @keyframes hereGlow { 0% { box-shadow: 0 0 0 0 oklch(74% 0.17 150 / 0.5); } 70%, 100% { box-shadow: 0 0 0 6px oklch(74% 0.17 150 / 0); } }
   .nextsession { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-left: auto; }
   .nextlabel { font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600; }
   .nextwhen { color: var(--text); }
