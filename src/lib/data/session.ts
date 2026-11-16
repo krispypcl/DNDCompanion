@@ -88,6 +88,23 @@ export async function updateProfile(profile: Partial<Profile>) {
   await unwrap(supabase.auth.updateUser({ data }));
 }
 
+/**
+ * Private sheets (database/0014): when on, every sheet of the account can be
+ * opened only by its owner and the DM of its campaign. Kept on the account,
+ * like the library's sharing, so it covers new sheets too.
+ */
+export function sheetsPrivate(user: { user_metadata?: Record<string, unknown> } | null | undefined): boolean {
+  return user?.user_metadata?.sheets_private === true;
+}
+export async function setSheetsPrivate(on: boolean) {
+  await unwrap(supabase.auth.updateUser({ data: { sheets_private: on } }));
+}
+/** Whether the database keeps sheets private yet (0014 run); false until then. */
+export async function sheetPrivacyReady(): Promise<boolean> {
+  const { data, error } = await supabase.rpc('sheet_privacy_ready');
+  return !error && data === true;
+}
+
 /** The main menu's "Add a profile picture?" nudge, put away with Not now. */
 export const PICTURE_NUDGE_KEY = 'dndcompanion:picture-nudge';
 

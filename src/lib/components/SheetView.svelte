@@ -697,7 +697,7 @@
     </div>
   </div>
 {:else if loadError === 'notfound'}
-  <NotFound title="No sheet here!" message="This sheet has vanished like a rogue in the night. It may have been deleted, or the link is off by a letter, so check it with whoever sent it." />
+  <NotFound title="No sheet here!" message="This sheet has vanished like a rogue in the night. It may have been deleted, kept private by its player, or the link is off by a letter, so check it with whoever sent it." />
 {:else if loadError}
   <NotFound title="That’s a critical fail!" message={loadError} />
 {:else if sheet && definition && sheetState}

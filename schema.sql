@@ -8,7 +8,9 @@
 --
 -- `entries` was for a shared library that was dropped; it is created here
 -- as it once was and removed again (0012). Campaigns are set up in the
--- sections after the first, and the shared library (0013) is the last.
+-- sections after the first, then the shared library (0013), and private
+-- sheets (0014) are the last: they replace the "sheets read" and
+-- "sheet_text read" policies made earlier.
 
 create table if not exists campaigns (
   id          uuid primary key default gen_random_uuid(),
@@ -1250,3 +1252,62 @@ begin
   end loop;
 end;
 $$;
+
+-- ===========================================================================
+-- Private sheets (0014).
+--
+-- A player can make all of their sheets private (account page, Privacy).
+-- A private sheet, and its notes and backstory, can then be read only by its
+-- owner and by the DM of the campaign it is in: not by other players, not by
+-- its share link, not by anyone signed out. The choice lives on the account
+-- (user metadata "sheets_private", like "library_share"), so it covers every
+-- sheet at once, new ones included.
+--
+-- Safe to run again.
+
+-- Has the player made their sheets private?
+create or replace function private.sheets_hidden(p_user uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce((select (u.raw_user_meta_data ->> 'sheets_private') = 'true' from auth.users u where u.id = p_user), false);
+$$;
+revoke all on function private.sheets_hidden(uuid) from public;
+-- The read policies below call it as the reader.
+grant execute on function private.sheets_hidden(uuid) to anon, authenticated;
+
+-- Sheets: the owner, the DM of the sheet's campaign, or anyone when the
+-- owner has not made their sheets private.
+drop policy if exists "sheets read" on public.sheets;
+create policy "sheets read" on public.sheets for select
+  using (
+    owner_id = (select auth.uid())
+    or not private.sheets_hidden(owner_id)
+    or exists (
+      select 1 from public.campaigns c
+      where c.id = sheets.campaign_id and c.created_by = (select auth.uid())
+    )
+  );
+
+-- Notes and backstory: public text follows the sheet's privacy; private text
+-- stays the owner's (and their DM's) as before.
+drop policy if exists "sheet_text read" on public.sheet_text;
+create policy "sheet_text read" on public.sheet_text for select
+  using (
+    owner_id = (select auth.uid())
+    or (is_public and not private.sheets_hidden(owner_id))
+    or exists (
+      select 1 from public.sheets s join public.campaigns c on c.id = s.campaign_id
+      where s.id = sheet_text.sheet_id and c.created_by = (select auth.uid())
+    )
+  );
+
+-- Lets the account page know this is in place before it offers the switch.
+create or replace function public.sheet_privacy_ready()
+returns boolean language sql stable security invoker set search_path = ''
+as $$ select true $$;
+revoke all on function public.sheet_privacy_ready() from public, anon;
+grant execute on function public.sheet_privacy_ready() to authenticated;

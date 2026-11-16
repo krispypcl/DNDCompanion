@@ -5,7 +5,7 @@ const signOut = vi.fn(async () => ({ error: null }));
 const rpc = vi.fn(async () => ({ error: null as null | { code?: string; message: string } }));
 vi.mock('$lib/supabase', () => ({ supabase: { auth: { updateUser, signOut }, rpc } }));
 
-const { profileOf, updateProfile, signOutEverywhere } = await import('$lib/data/session');
+const { profileOf, updateProfile, signOutEverywhere, sheetsPrivate, setSheetsPrivate } = await import('$lib/data/session');
 
 describe('profile', () => {
   it('reads the name and picture from the account, and nothing when unset', () => {
@@ -29,6 +29,15 @@ describe('profile', () => {
     expect(updateUser).toHaveBeenLastCalledWith({ data: { display_name: 'Chris', profile_picture: '' } });
     await updateProfile({ displayName: 'Chris' });
     expect(updateUser).toHaveBeenLastCalledWith({ data: { display_name: 'Chris' } });
+  });
+
+  it('keeps sheets private only when switched on', async () => {
+    expect(sheetsPrivate({ user_metadata: { sheets_private: true } })).toBe(true);
+    expect(sheetsPrivate({ user_metadata: { sheets_private: 'true' } })).toBe(false);
+    expect(sheetsPrivate({ user_metadata: {} })).toBe(false);
+    expect(sheetsPrivate(null)).toBe(false);
+    await setSheetsPrivate(true);
+    expect(updateUser).toHaveBeenLastCalledWith({ data: { sheets_private: true } });
   });
 
   it('signs out of every device', async () => {
