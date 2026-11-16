@@ -293,20 +293,30 @@
      the page and privacy controls on their right. Where the card is too
      narrow for all three on one line, the arrows take a line of their own,
      still centred, and on a phone everything stacks. */
-  /* The page controls stay in sight at the module's foot while a long page
-     scrolls under them. The bar has no colour of its own: it is the
-     module's, whatever that is (solid, or frosted over a banner and the
-     hurt and condition edges), and only blurs the writing passing under it,
-     so it never shows as a slab of another shade. */
+  /*
+   * The page controls stay in sight at the module's foot. On a wide screen
+   * the writing scrolls inside the book above them, so nothing ever passes
+   * beneath the bar and it needs no colour of its own: it is simply the
+   * module's. On a phone the page itself scrolls and the bar rides its foot,
+   * solid, so writing stops at its rule.
+   */
   .pagerwrap {
     container-type: inline-size;
     position: sticky; bottom: 0; z-index: 3;
     margin-top: auto; padding-bottom: 0.5rem;
-    background: transparent;
-    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    background: var(--surface);
   }
-  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .pagerwrap { background: var(--surface); }
+  @media (min-width: 861px) {
+    .book {
+      flex: 1 1 auto; min-height: 0; overflow-y: auto;
+      scrollbar-width: thin; scrollbar-color: color-mix(in oklch, var(--text) 22%, transparent) transparent;
+    }
+    .book:hover { scrollbar-color: color-mix(in oklch, var(--a) 55%, transparent) transparent; }
+    .book::-webkit-scrollbar { width: 6px; }
+    .book::-webkit-scrollbar-track { background: transparent; }
+    .book::-webkit-scrollbar-thumb { background: color-mix(in oklch, var(--text) 22%, transparent); border-radius: 6px; }
+    .book:hover::-webkit-scrollbar-thumb { background: color-mix(in oklch, var(--a) 55%, transparent); }
+    .pagerwrap { position: static; margin-top: 0; background: none; }
   }
   .pager:not(.reading) {
     display: grid; align-items: center; column-gap: 0.75rem; row-gap: 0.625rem;

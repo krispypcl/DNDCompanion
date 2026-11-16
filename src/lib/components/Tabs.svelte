@@ -209,4 +209,9 @@
      (the card then scrolls it), so the page controls can stick to the
      card's foot: held to a box shorter than the page, they could not. */
   section:has(:global(.book)) { flex: 1 0 auto; display: flex; flex-direction: column; min-height: 0; }
+  /* A wide screen: held to the card instead, the writing scrolls inside the
+     book and the page controls sit under it, so nothing passes beneath them. */
+  @media (min-width: 861px) {
+    section:has(:global(.book)) { flex: 1 1 0; }
+  }
 </style>
