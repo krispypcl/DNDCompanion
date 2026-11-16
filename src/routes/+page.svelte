@@ -23,6 +23,7 @@
   import { faceFamily, fontFace } from '$lib/rules/fonts';
   import D20Loader from '$lib/components/D20Loader.svelte';
   import MenuSkeleton from '$lib/components/MenuSkeleton.svelte';
+  import PageTurn from '$lib/components/PageTurn.svelte';
   import Tabs from '$lib/components/Tabs.svelte';
   import ClassIcon from '$lib/components/ClassIcon.svelte';
   import { armorClass, characterLevel, classLine, mainClass } from '$lib/rules/derived';
@@ -845,11 +846,7 @@
     {/key}
   </div>
   {#if count > 1}
-    <nav class="pager" aria-label="Pages">
-      <button class="smallbtn" disabled={page === 0} onclick={() => turn(key, page - 1)} aria-label="Previous page">‹ Previous</button>
-      <span class="pagenum" aria-live="polite">Page {page + 1} of {count}</span>
-      <button class="smallbtn" disabled={page >= count - 1} onclick={() => turn(key, page + 1)} aria-label="Next page">Next ›</button>
-    </nav>
+    <nav class="pager" aria-label="Pages"><PageTurn {page} {count} onturn={(to) => turn(key, to)} /></nav>
   {/if}
 {/snippet}
 
@@ -1126,7 +1123,6 @@
     display: flex; align-items: center; justify-content: center; gap: 0.75rem;
     margin-top: 1rem; font-size: 0.8125rem; color: var(--dim);
   }
-  .pagenum { min-width: 7.5rem; text-align: center; font-variant-numeric: tabular-nums; }
   /*
    * The portrait (or the class drawn) at the card's left, in the sheet's
    * frame: a square as tall as the card's lines. Sized outright rather than
