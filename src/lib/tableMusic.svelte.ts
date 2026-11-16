@@ -15,7 +15,7 @@
 import { supabase, isConfigured } from '$lib/supabase';
 import { campaignRepo, type CampaignLive, type Playback } from '$lib/data/campaigns';
 
-type Presence = Record<string, { dm?: boolean }[]>;
+type Presence = Record<string, { dm?: boolean; user?: string }[]>;
 
 export class TableMusic {
   /** The DM's music as it stands (null: nothing chosen yet). */
@@ -28,10 +28,13 @@ export class TableMusic {
   presenceKnown = $state(false);
   /** For a DM's page: whether their return has been settled. */
   settled = $state(false);
+  /** Who has the page open right now (account ids), this page included. */
+  present = $state<Set<string>>(new Set());
 
   readonly #id: string;
   readonly #key = Math.random().toString(36).slice(2);
   #dm = $state(false);
+  #user: string | null = null;
   #channel: ReturnType<typeof supabase.channel> | null = null;
   #subscribed = false;
   #trackedAs: boolean | null = null;
@@ -66,6 +69,14 @@ export class TableMusic {
     this.#settle();
   }
 
+  /** Who this page is (shown to the others as being here). */
+  setUser(id: string | null) {
+    if (this.#user === id) return;
+    this.#user = id;
+    this.#trackedAs = null;
+    this.#track();
+  }
+
   /** The DM's music, told to the table (and shown here at once). */
   send(p: Playback) {
     this.playback = p;
@@ -90,7 +101,7 @@ export class TableMusic {
   #track() {
     if (!this.#subscribed || !this.#channel || this.#trackedAs === this.#dm) return;
     this.#trackedAs = this.#dm;
-    void this.#channel.track({ dm: this.#dm });
+    void this.#channel.track({ dm: this.#dm, ...(this.#user ? { user: this.#user } : {}) });
   }
 
   #readPresence() {
@@ -99,6 +110,7 @@ export class TableMusic {
     this.#otherDm = all.some(([k, list]) => k !== this.#key && list.some((p) => p.dm));
     this.#mineSeen = all.some(([k, list]) => k === this.#key && list.some((p) => p.dm));
     this.dmHere = this.#otherDm || this.#mineSeen;
+    this.present = new Set(all.flatMap(([, list]) => list.map((p) => p.user).filter((u): u is string => Boolean(u))));
     if (!this.#dm || this.#mineSeen) this.presenceKnown = true;
     this.#settle();
   }

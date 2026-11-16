@@ -20,6 +20,8 @@ export type CampaignDetails = {
   order?: string[];
   /** The campaign name's font: a Google Fonts link or name (rules/fonts.ts). */
   nameFont?: string;
+  /** When the table next meets (ISO, set by the DM); shown on the page and the main menu. */
+  nextSession?: string;
 };
 
 /**

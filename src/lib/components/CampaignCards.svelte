@@ -33,8 +33,11 @@
     onorder,
     onremove,
     onconditions,
-    onlook
+    onlook,
+    here = new Set<string>()
   }: {
+    /** Who has the campaign's page open (account ids): their cards say so. */
+    here?: Set<string>;
     sheets: Sheet[];
     order?: string[];
     isDm: boolean;
@@ -187,9 +190,13 @@
     {@const portrait = resolveImageUrl(def?.identity?.portraitUrl).url}
     {@const conds = previews[s.id] ?? s.state?.conditions ?? []}
     {@const ring = ringOf(conds, def?.conditionLooks ?? {})}
-    <li class="card themed {v.vital}" class:lifted={drag?.id === s.id} bind:this={els[s.id]}
+    <li class="card themed {v.vital}" class:lifted={drag?.id === s.id} class:present={here.has(s.owner_id)} bind:this={els[s.id]}
         style={themeStyle(def?.identity?.theme)} style:transform={shift(s.id)} style:--i={i}
         animate:glideTo>
+      {#if here.has(s.owner_id)}
+        <!-- Their player has the campaign open right now. -->
+        <span class="herebadge" title="{nameOf(s)}’s player is here" transition:fade={{ duration: 200 }}><i></i>Here</span>
+      {/if}
       <a class="open" href="{base}/s/{s.id}{s.campaign_id ? `?from=${s.campaign_id}` : ''}">
         <!-- Conditions ring the portrait in their colours (the card's own edge
              is kept for being hurt), a band for each, all the way round. -->
@@ -339,6 +346,19 @@
     color: var(--faint); cursor: grab; touch-action: none; opacity: 0; transition: opacity 0.15s ease, color 0.15s ease;
   }
   .card:hover .grip, .grip:focus-visible, .lifted .grip { opacity: 1; }
+  /* Here: a small green light at the top right; the grip steps left of it. */
+  .herebadge {
+    position: absolute; top: 0.625rem; right: 0.625rem; display: inline-flex; align-items: center; gap: 0.3125rem;
+    font-size: 0.625rem; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim);
+  }
+  .herebadge i, :global(.here-dot) {
+    width: 0.4375rem; height: 0.4375rem; border-radius: 50%; background: oklch(74% 0.17 150); flex: none;
+    box-shadow: 0 0 0 0 oklch(74% 0.17 150 / 0.5); animation: hereGlow 2.4s ease-out infinite;
+  }
+  @keyframes hereGlow { 0% { box-shadow: 0 0 0 0 oklch(74% 0.17 150 / 0.5); } 70%, 100% { box-shadow: 0 0 0 6px oklch(74% 0.17 150 / 0); } }
+  .card.present .grip { right: 4.25rem; }
+  .card.present .open { padding-right: 5.5rem; }
+  @media (prefers-reduced-motion: reduce) { .herebadge i { animation: none; } }
   .grip:hover { color: var(--a); }
   @media (hover: none) { .grip { opacity: 0.8; } }
 

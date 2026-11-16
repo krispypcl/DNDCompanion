@@ -36,6 +36,7 @@
   import Logo from './Logo.svelte';
   import NotFound from './NotFound.svelte';
   import { pageTitle } from '$lib/title';
+  import { sessionWhen } from '$lib/rules/dates';
   import ShareButton from './ShareButton.svelte';
   import ShortcutHelp from './ShortcutHelp.svelte';
   import ThemePicker from './ThemePicker.svelte';
@@ -79,6 +80,7 @@
   /** The table's music and who is here to lead it (lib/tableMusic). */
   const music = $derived(new TableMusic(id));
   $effect(() => music.setDm(isDm));
+  $effect(() => music.setUser($session.user?.id ?? null));
   $effect(() => music.start());
   const ended = $derived(Boolean(campaign?.archived));
   const bannerLink = $derived(resolveImageUrl(campaign?.details.bannerUrl));
@@ -262,6 +264,20 @@
   }, 'The campaign refused to vanish! Try again.');
 
   /** The banner and songs are saved together; the page shows the change at once. */
+  /** The players here besides this page and the DM. */
+  const others = $derived([...music.present].filter((u) => u !== $session.user?.id && u !== campaign?.created_by));
+  /** When the table next meets (set by the DM). */
+  const next = $derived(sessionWhen(campaign?.details.nextSession));
+
+  /** An ISO time as a datetime-local input shows it, in this device's time. */
+  function localInput(iso: string | undefined): string {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    const two = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}T${two(d.getHours())}:${two(d.getMinutes())}`;
+  }
+
   async function saveDetails(patch: Partial<CampaignDetails>) {
     if (!campaign) return;
     const before = campaign.details;
@@ -375,6 +391,34 @@
       </div>
     </header>
 
+    <!-- Who is at the table right now, and when it next meets. -->
+    {#if (music.presenceKnown && (others.length || (!isDm && music.dmHere))) || next || (isDm && editing)}
+      <div class="tablebar" transition:slide={unfold()}>
+        <div class="who-here">
+          {#if !isDm && music.dmHere}<span class="herepill"><i class="here-dot"></i>DM is here</span>{/if}
+          {#if others.length}
+            <span class="herepill"><i class="here-dot"></i>{others.length === 1 ? '1 player' : `${others.length} players`} here</span>
+          {/if}
+        </div>
+        <div class="nextsession">
+          {#if isDm && editing}
+            <label class="nextedit">
+              <span>Next session</span>
+              <input type="datetime-local" value={localInput(campaign.details.nextSession)}
+                     onchange={(e) => saveDetails({ nextSession: e.currentTarget.value ? new Date(e.currentTarget.value).toISOString() : '' })} />
+            </label>
+            {#if campaign.details.nextSession}
+              <button class="smallbtn" onclick={() => saveDetails({ nextSession: '' })}>Clear</button>
+            {/if}
+          {:else if next && !next.past}
+            <span class="nextlabel">Next session</span>
+            <span class="nextwhen">{next.when}</span>
+            <span class="nextuntil" class:soon={next.until === 'today' || next.until === 'now'}>{next.until === 'now' ? 'happening now' : next.until}</span>
+          {/if}
+        </div>
+      </div>
+    {/if}
+
     {#if ended}
       <p class="ended">This campaign has ended. Its characters stay here as the story left them{#if isDm}, and nobody new can join{/if}.</p>
     {/if}
@@ -393,7 +437,7 @@
     {#if active.length === 0}
       <p class="empty">No characters yet.{#if isDm}{' '}Send your players the invite link.{/if}</p>
     {:else}
-      <CampaignCards sheets={active} order={campaign.details.order ?? []} {isDm} {editing} {ended}
+      <CampaignCards here={music.present} sheets={active} order={campaign.details.order ?? []} {isDm} {editing} {ended}
                      onorder={(order) => saveDetails({ order })} onremove={remove} onconditions={giveConditions} onlook={giveLook} />
     {/if}
 
@@ -557,6 +601,33 @@
   @keyframes edIn { from { opacity: 0; transform: translateY(4px); } }
   .edit[aria-pressed='true'] { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
   .edit[aria-pressed='true']:hover { border-color: var(--a); background: var(--a-edge); color: var(--text); }
+  /* Who is here, and the next session, in a line under the header. */
+  .tablebar {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; flex-wrap: wrap;
+    margin-top: 1.25rem; font-size: 0.8125rem; color: var(--dim);
+  }
+  .who-here { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .herepill {
+    display: inline-flex; align-items: center; gap: 0.4375rem; padding: 0.25rem 0.625rem; border-radius: 999px;
+    background: var(--surface); border: 1px solid var(--line-soft); color: var(--text); font-size: 0.75rem;
+  }
+  .here-dot {
+    width: 0.4375rem; height: 0.4375rem; border-radius: 50%; background: oklch(74% 0.17 150); flex: none;
+    animation: hereGlow 2.4s ease-out infinite;
+  }
+  @keyframes hereGlow { 0% { box-shadow: 0 0 0 0 oklch(74% 0.17 150 / 0.5); } 70%, 100% { box-shadow: 0 0 0 6px oklch(74% 0.17 150 / 0); } }
+  .nextsession { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-left: auto; }
+  .nextlabel { font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600; }
+  .nextwhen { color: var(--text); }
+  .nextuntil { color: var(--dim); }
+  .nextuntil.soon { color: var(--a); font-weight: 600; }
+  .nextedit { display: inline-flex; align-items: center; gap: 0.5rem; }
+  .nextedit span { font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600; }
+  .nextedit input {
+    font: inherit; font-size: 0.8125rem; color: var(--text); background: var(--bg); border: 1px solid var(--line);
+    border-radius: var(--r-sm); padding: 0.3125rem 0.5rem; color-scheme: inherit;
+  }
+  .nextedit input:focus { outline: none; border-color: var(--a-edge); }
   .ended {
     margin: 1.5rem 0 0; padding: 0.75rem 1rem; border: 1px solid var(--line-soft); border-radius: var(--r);
     background: var(--surface); color: var(--dim); font-size: 0.875rem; line-height: 1.45;

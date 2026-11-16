@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { friendlyDate, latest, numericDate } from '$lib/rules/dates';
+import { friendlyDate, latest, numericDate, sessionWhen } from '$lib/rules/dates';
 
 const now = new Date(2026, 10, 2, 9, 0);
 
@@ -31,5 +31,20 @@ describe('numericDate', () => {
     expect(numericDate('2026-11-16T09:30:00')).toBe('11/16/2026');
     expect(numericDate('')).toBe('');
     expect(numericDate('nonsense')).toBe('');
+  });
+});
+
+describe('sessionWhen', () => {
+  const now = new Date('2026-11-16T15:00:00');
+  it('says how far off the next session is', () => {
+    expect(sessionWhen('2026-11-16T19:00:00', now)?.until).toBe('today');
+    expect(sessionWhen('2026-11-17T19:00:00', now)?.until).toBe('tomorrow');
+    expect(sessionWhen('2026-11-21T19:00:00', now)?.until).toBe('in 5 days');
+  });
+  it('is on now for its first hours, then past', () => {
+    expect(sessionWhen('2026-11-16T13:00:00', now)).toMatchObject({ until: 'now', past: false });
+    expect(sessionWhen('2026-11-15T19:00:00', now)).toMatchObject({ past: true });
+    expect(sessionWhen('', now)).toBeNull();
+    expect(sessionWhen('soon', now)).toBeNull();
   });
 });

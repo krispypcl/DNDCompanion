@@ -31,6 +31,24 @@ export function numericDate(iso: string | null | undefined): string {
   return `${two(d.getMonth() + 1)}/${two(d.getDate())}/${d.getFullYear()}`;
 }
 
+/**
+ * When the next session is, for a campaign: the day and time ("Sat, Nov 22,
+ * 7:00 PM") and how far off it is ("today", "tomorrow", "in 5 days"; "now"
+ * within its first hours, and nothing once it is well past).
+ */
+export function sessionWhen(iso: string | null | undefined, now: Date = new Date()): { when: string; until: string; past: boolean } | null {
+  if (!iso) return null;
+  const at = new Date(iso);
+  if (Number.isNaN(at.getTime())) return null;
+  const when = at.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const ms = at.getTime() - now.getTime();
+  // A session runs a few hours: it is "now" from its start until then.
+  if (ms < 0) return ms > -4 * 3_600_000 ? { when, until: 'now', past: false } : { when, until: 'past', past: true };
+  const days = Math.round((startOfDay(at) - startOfDay(now)) / DAY);
+  const until = days === 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`;
+  return { when, until, past: false };
+}
+
 /** The later of several timestamps, ignoring blanks. */
 export function latest(...stamps: (string | null | undefined)[]): string | null {
   let best: string | null = null;
