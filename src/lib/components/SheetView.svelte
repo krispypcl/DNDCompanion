@@ -1362,24 +1362,45 @@
 
   .identity { display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
   .portrait {
-    width: 6rem; aspect-ratio: 1; border-radius: var(--r); border: 1px solid var(--a-edge);
+    width: 6rem; aspect-ratio: 1; border-radius: var(--r);
     flex: none; display: flex; align-items: flex-end; justify-content: center;
     position: relative; overflow: visible;
-    background: linear-gradient(150deg, var(--portrait-from), var(--portrait-to));
+    perspective: 420px;
   }
   .portrait img {
     position: absolute; inset: 0; width: 100%; height: 100%;
     object-fit: cover;
   }
-  .frame { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; }
-  /* Parallax (motion.ts): the picture grows a touch and drifts away from the
-     pointer; leaving, it eases back to rest. */
-  .frame > :global(*) {
+  /*
+   * The portrait is a coin: its face turns toward the pointer (motion.ts
+   * parallax sets --px/--py from -1 to 1 and --pz while pointed at), with a
+   * soft shine where the light catches it, and eases flat again on leaving.
+   * The level badge stays put below it.
+   */
+  .frame {
+    position: absolute; inset: 0; overflow: hidden; border-radius: inherit;
+    border: 1px solid var(--a-edge);
+    background: linear-gradient(150deg, var(--portrait-from), var(--portrait-to));
     transform:
-      translate3d(calc(var(--px, 0) * -5px), calc(var(--py, 0) * -5px), 0)
-      scale(calc(1 + var(--pz, 0) * 0.09));
-    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), filter 0.8s ease;
+      rotateY(calc(var(--px, 0) * 16deg))
+      rotateX(calc(var(--py, 0) * -16deg))
+      scale(calc(1 + var(--pz, 0) * 0.04));
+    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.55s ease;
+    box-shadow: 0 calc(var(--pz, 0) * 10px) calc(var(--pz, 0) * 22px) rgb(0 0 0 / calc(var(--pz, 0) * 0.35));
   }
+  .frame::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(
+      circle at calc(50% + var(--px, 0) * 45%) calc(50% + var(--py, 0) * 45%),
+      rgb(255 255 255 / 0.28), transparent 60%
+    );
+    opacity: var(--pz, 0);
+    transition: opacity 0.45s ease;
+    mix-blend-mode: soft-light;
+  }
+  /* Quick to follow the pointer; slow to settle back once it leaves. */
+  .portrait:hover .frame { transition-duration: 0.18s, 0.3s; }
+  .portrait img, .portrait :global(.class-icon) { transition: filter 0.8s ease; }
   /* Sits on the bottom edge, half in and half out. */
   .lvl {
     position: absolute; left: 50%; bottom: 0; transform: translate(-50%, 50%); z-index: 2;

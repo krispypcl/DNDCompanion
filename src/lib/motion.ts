@@ -140,10 +140,11 @@ export function glideTo(_node: Element, { from, to }: { from: DOMRect; to: DOMRe
 }
 
 /**
- * A picture that leans with the pointer: while a mouse or pen is over the
+ * A picture that follows the pointer: while a mouse or pen is over the
  * node, its --px and --py run from -1 to 1 with where the pointer is, and
- * --pz says it is pointed at; CSS turns them into a small shift. Nothing on
- * touch screens or with reduced motion.
+ * --pz says it is pointed at; CSS turns them into a tilt toward the pointer,
+ * like a coin turned in the light. Nothing on touch screens or with reduced
+ * motion.
  */
 export function parallax(node: HTMLElement) {
   if (typeof matchMedia !== 'function' || !matchMedia('(hover: hover)').matches || prefersReducedMotion()) return {};
