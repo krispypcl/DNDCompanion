@@ -5,13 +5,13 @@
   </picture>
 </p>
 
-## Overview
-
 <p align="center">
-  <a href="https://dndcompanion.krispypcl.workers.dev/DNDCompanion/"><b>Open the app</b></a>
+  <a href="https://dndcompanion.krispypcl.workers.dev/DNDCompanion/"><b>Try the app</b></a>
   &nbsp;·&nbsp;
   <a href="https://dndcompanion.krispypcl.workers.dev/DNDCompanion/owlbear/manifest.json"><b>Owlbear Rodeo manifest</b></a>
 </p>
+
+## Overview
 
 An online D&D 5e character sheet for a group of friends. Each player has an
 account and their own characters; anyone with a sheet's link can read it
