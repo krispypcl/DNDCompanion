@@ -13,7 +13,7 @@
   import Avatar from '$lib/components/Avatar.svelte';
   import Logo from '$lib/components/Logo.svelte';
   import { friendlyError } from '$lib/errors';
-  import { friendlyDate, numericDate, sessionWhen } from '$lib/rules/dates';
+  import { countdown, friendlyDate, numericDate, sessionWhen } from '$lib/rules/dates';
   import { pageTitle } from '$lib/title';
   import { profile } from '$lib/stores/profile';
   import { watchTable, type Here } from '$lib/presence';
@@ -356,6 +356,40 @@
     return () => stops.forEach((stop) => stop());
   });
 
+  /** How many are at this player's tables right now (the DM and players), across them all. */
+  const atTables = $derived(
+    [...running, ...joined].filter((c) => !c.archived).reduce((n, c) => {
+      const here = tables[c.id];
+      return here ? n + (here.dm ? 1 : 0) + here.users.filter((u) => u !== c.created_by).length : n;
+    }, 0)
+  );
+
+  /*
+   * The greeting's second line: the next session among this player's
+   * campaigns (owned or joined), counted down to the minute, if one is within
+   * a fortnight. The clock ticks every half minute.
+   */
+  let now = $state(new Date());
+  $effect(() => {
+    const t = setInterval(() => (now = new Date()), 30_000);
+    return () => clearInterval(t);
+  });
+  const nextUp = $derived.by(() => {
+    const soon = now.getTime() + 14 * 86_400_000;
+    let best: { c: Campaign; at: number; count: string; when: string } | null = null;
+    for (const c of [...running, ...joined]) {
+      if (c.archived) continue;
+      const iso = c.details?.nextSession;
+      const count = countdown(iso, now);
+      const w = sessionWhen(iso, now);
+      if (!count || !w) continue;
+      const at = new Date(iso as string).getTime();
+      if (at > soon || (best && best.at <= at)) continue;
+      best = { c, at, count, when: w.when };
+    }
+    return best;
+  });
+
   /** Run here (not joined): its DM is this player. */
   const isMine = (c: Campaign) => running.some((r) => r.id === c.id);
   const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`;
@@ -690,6 +724,57 @@
   {/if}
 {/snippet}
 
+{#snippet greeting(name: string)}
+  <!-- Hello, and when the table next meets (or what to do first). -->
+  <section class="greet" aria-label="Welcome">
+    <p class="greethi">Hello, {name}!</p>
+    <p class="greetnext">
+      {#if nextUp}
+        <a class="smallbtn accent greetcamp" href="{base}/c/{nextUp.c.id}" style:font-family={faceFamily(fontFace(nextUp.c.details?.nameFont))}>{nextUp.c.name}</a>
+        <span class="greetcount" class:now={nextUp.count === 'now'}>{nextUp.count === 'now' ? 'is on now' : `starts ${nextUp.count}`}</span>
+        <span class="greetwhen">{nextUp.when}</span>
+      {:else if running.some((c) => !c.archived)}
+        No session on the calendar. Set the next one on your campaign's page.
+      {:else if joined.some((c) => !c.archived)}
+        No session on the calendar yet. Your DM sets the next one.
+      {:else}
+        Ready when you are: make a character, or start a campaign for your table.
+      {/if}
+    </p>
+  </section>
+{/snippet}
+
+{#snippet arealabel(tab: string)}
+  <!-- An area's button: its sign, its name, what is in it, and (campaigns)
+       whether anyone is at one of the tables now. -->
+  {@const isSheets = tab === AREA_SHEETS}
+  {@const live = !isSheets && atTables > 0}
+  <span class="arealabel">
+    <span class="areaicon" aria-hidden="true">
+      {#if isSheets}
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.75" /><path d="M4.75 20c.6-3.9 3.6-6.25 7.25-6.25s6.65 2.35 7.25 6.25" /></svg>
+      {:else}
+        <svg viewBox="0 0 24 24"><path d="M5 21V3.75M5 4.5h12.5l-2.6 4 2.6 4H5" /></svg>
+      {/if}
+    </span>
+    <span class="areatext">
+      <span class="areaname">{tab}<span class="areacount">{isSheets ? sheets.length : running.length + joined.length}</span></span>
+      <span class="areasub">
+        {#if isSheets}
+          {sheets.length - retiredSheets.length} active{#if retiredSheets.length}{' · '}{retiredSheets.length} retired{/if}
+        {:else}
+          {campaignTally}
+        {/if}
+      </span>
+    </span>
+    {#if live}
+      <span class="arealive" title="{atTables === 1 ? 'Someone is' : `${atTables} people are`} at one of your tables now">
+        <i class="here-dot"></i><span class="livetext">{atTables} here</span>
+      </span>
+    {/if}
+  </span>
+{/snippet}
+
 <!--
   One area's cards, a page at a time: its groups (Pinned, the rest, Retired
   or Archived) each named where they start, and a pager under them when there
@@ -848,8 +933,10 @@
     <!-- Not an {:else}: that would wait for the die to finish leaving while
          the areas below it arrived, and the page would jump. -->
     {#if ready}
+      {@const myName = profileOf($session.user, $profile).displayName.trim().split(/\s+/)[0]}
+      {#if myName}{@render greeting(myName)}{/if}
       <div class="areas">
-        <Tabs tabs={areaTabs} bind:active={area}>
+        <Tabs tabs={areaTabs} bind:active={area} label={arealabel}>
           {#snippet children(tab)}
             {#if tab === AREA_SHEETS}
               <div class="bar">
@@ -933,6 +1020,56 @@
      for a scrollbar, and the cards line up with the buttons above. */
   .areas :global(.panels) { scrollbar-gutter: auto; }
   .tally { font-size: 0.8125rem; color: var(--dim); }
+  /*
+   * The greeting: hello, then when the table next meets, counted down (or
+   * what to do first). The same distance under the header as everything.
+   */
+  .greet { margin-top: 1.75rem; display: grid; gap: 0.375rem; }
+  .greethi { margin: 0; font-family: var(--font-display, inherit); font-size: 1.5rem; font-weight: 650; line-height: 1.2; overflow-wrap: anywhere; }
+  .greetnext {
+    margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 0.25rem 0.5rem;
+    min-height: 1.875rem; font-size: 0.9375rem; color: var(--dim);
+  }
+  .greetcamp { font-size: 0.875rem; }
+  .greetcount { color: var(--text); }
+  .greetcount.now { color: var(--a); font-weight: 600; }
+  .greetwhen { color: var(--faint); font-size: 0.8125rem; }
+  .greetwhen::before { content: '·'; margin-right: 0.5rem; color: var(--faint); }
+  /* A phone: the countdown says enough; the date would wrap onto a line of its own. */
+  @media (max-width: 480px) { .greetwhen { display: none; } }
+  /*
+   * The two areas' buttons, filled out: a sign in a tile, the name with how
+   * many, what's in it under that, and (campaigns) a dot while someone is at
+   * one of the tables.
+   */
+  .areas :global(.tablist > button) { padding: 0.5rem 0.875rem; text-align: left; }
+  .arealabel { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+  .areaicon {
+    flex: none; width: 2.25rem; height: 2.25rem; display: grid; place-items: center; border-radius: var(--r-sm);
+    border: 1px solid var(--line-soft); background: var(--surface); color: var(--dim);
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .areaicon svg { width: 1.125rem; height: 1.125rem; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  :global(.tablist > button.active) .areaicon, :global(.tablist > button:hover) .areaicon { color: var(--a); border-color: var(--a-edge); }
+  .areatext { display: grid; gap: 0.125rem; min-width: 0; flex: 1; }
+  .areaname { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.9375rem; font-weight: 600; color: var(--text); }
+  .areacount {
+    font-size: 0.6875rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1;
+    padding: 0.1875rem 0.4375rem; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--dim);
+  }
+  :global(.tablist > button.active) .areacount { border-color: var(--a-edge); color: var(--a); }
+  .areasub { font-size: 0.75rem; color: var(--dim); font-weight: 400; overflow-wrap: anywhere; }
+  .arealive { flex: none; display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; color: var(--text); }
+  /* The count is in the button above on a wide screen; a phone keeps it here. */
+  @media (min-width: 701px) { .bar .tally { visibility: hidden; } }
+  @media (max-width: 700px) {
+    .areas :global(.tablist > button) { padding: 0.5rem 0.625rem; }
+    .arealabel { gap: 0.5rem; justify-content: center; }
+    .areaicon { width: auto; height: auto; border: 0; background: none; }
+    .areatext { flex: none; }
+    .areasub, .livetext { display: none; }
+    .greethi { font-size: 1.375rem; }
+  }
   .pagearea { position: relative; }
   .pager {
     display: flex; align-items: center; justify-content: center; gap: 0.75rem;
@@ -977,6 +1114,18 @@
   }
   .withface > .face { grid-area: face; }
   .cardtext { grid-area: text; display: flex; flex-direction: column; justify-content: center; min-width: 0; min-height: var(--face); }
+  /*
+   * How the character stands shows only on a card wide enough to keep its
+   * lines whole beside it. One threshold, the card's own width, so it never
+   * comes back at a narrower window after leaving at a wider one: a single
+   * column's card (under 40rem inside) stays under it, and two to a row
+   * pass it from a window about 1390px wide.
+   */
+  .cardfacts { display: none; }
+  @container (min-width: 41rem) {
+    .withface { grid-template-columns: var(--face) minmax(0, 1fr) minmax(11rem, 13rem); grid-template-areas: 'face text facts'; }
+    .cardfacts { display: grid; }
+  }
   .cardfacts {
     grid-area: facts; gap: 0.375rem; min-width: 0; align-self: center;
     padding-left: 1rem; border-left: 1px solid var(--line-soft);
@@ -1122,18 +1271,6 @@
     font-size: 0.875rem; padding: 0.1875rem 0.75rem 0.1875rem 0.1875rem; border-radius: 999px;
     border: 1px solid var(--line); background: var(--raised);
     transition: border-color 0.15s ease, color 0.15s ease;
-  /*
-   * How the character stands shows only on a card wide enough to keep its
-   * lines whole beside it. One threshold, the card's own width, so it never
-   * comes back at a narrower window after leaving at a wider one: a single
-   * column's card (under 40rem inside) stays under it, and two to a row
-   * pass it from a window about 1390px wide.
-   */
-  .cardfacts { display: none; }
-  @container (min-width: 41rem) {
-    .withface { grid-template-columns: var(--face) minmax(0, 1fr) minmax(11rem, 13rem); grid-template-areas: 'face text facts'; }
-    .cardfacts { display: grid; }
-  }
   }
   .me:hover { border-color: var(--a-edge); color: var(--a); }
   .menuloading > :global(.mskel) { opacity: 0.45; }
@@ -1188,7 +1325,7 @@
     header { gap: 0.625rem; }
     .tools { gap: 0.375rem; }
     /* Tighter on a phone, the same above and below the nudge. */
-    .hello, .top { margin-top: 1rem; }
+    .hello, .top, .greet { margin-top: 1rem; }
     .areas { margin-top: 1rem; }
     /* The picture alone says whose account it is: a round button, no pill. */
     .me span { display: none; }
