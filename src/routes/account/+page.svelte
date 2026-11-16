@@ -265,7 +265,7 @@
   {#if $session.loading || !$session.user}
     <div class="screen-center"><D20Loader size={56} label="Loading your account" /></div>
   {:else}
-    <h1 class="title">Your account</h1>
+    <h1 class="title">Account</h1>
 
     <!-- On a wide screen the cards flow down columns, like a board of notes. -->
     <div class="cards">
