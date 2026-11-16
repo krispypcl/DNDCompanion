@@ -992,7 +992,7 @@
    */
   @container (max-width: 36rem) {
     .withface {
-      --face: 3.75rem; grid-template-columns: var(--face) minmax(0, 1fr);
+      --face: 4.75rem; grid-template-columns: var(--face) minmax(0, 1fr);
       grid-template-areas: 'face text' 'dates dates'; row-gap: 0.625rem; align-items: center;
     }
     .cardtext { display: contents; }
