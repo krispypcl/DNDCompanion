@@ -35,24 +35,37 @@ export const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
  * opening animation. A new `key` (the pop-up opening on something else)
  * puts it back where it would be when it next opens.
  */
-export function movable(node: HTMLElement, opts: { handle?: string; key?: unknown } = {}) {
+type MovableOptions = {
+  handle?: string;
+  key?: unknown;
+  /** Off (a phone's bottom sheet): it stays where it is put. */
+  enabled?: boolean;
+  /** After a drag that moved it: where it now stands. */
+  ondrop?: (rect: DOMRect) => void;
+};
+export function movable(node: HTMLElement, opts: MovableOptions = {}) {
   let handle = opts.handle ?? 'header, h2';
   let key = opts.key;
+  let enabled = opts.enabled ?? true;
+  let ondrop = opts.ondrop;
+  let moved = false;
   let dx = 0;
   let dy = 0;
   let from: { x: number; y: number; dx: number; dy: number; id: number } | null = null;
-  node.dataset.movable = '';
+  const mark = () => (enabled ? (node.dataset.movable = '') : delete node.dataset.movable);
+  mark();
   const apply = () => (node.style.translate = dx || dy ? `${dx}px ${dy}px` : '');
   const reset = () => {
     dx = dy = 0;
     apply();
   };
   const down = (e: PointerEvent) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || !enabled) return;
     const t = e.target as Element | null;
     const grip = t?.closest(handle);
     if (!grip || !node.contains(grip) || t?.closest('button, a, input, select, textarea, label, [contenteditable="true"]')) return;
     from = { x: e.clientX, y: e.clientY, dx, dy, id: e.pointerId };
+    moved = false;
     node.setPointerCapture?.(e.pointerId);
     node.dataset.moving = '';
     e.preventDefault();
@@ -66,20 +79,25 @@ export function movable(node: HTMLElement, opts: { handle?: string; key?: unknow
     const m = 8;
     dx = Math.min(Math.max(from.dx + e.clientX - from.x, m - left), window.innerWidth - m - r.width - left);
     dy = Math.min(Math.max(from.dy + e.clientY - from.y, m - top), window.innerHeight - m - Math.min(r.height, 48) - top);
+    moved ||= Math.abs(e.clientX - from.x) + Math.abs(e.clientY - from.y) > 3;
     apply();
   };
   const up = (e: PointerEvent) => {
     if (!from || e.pointerId !== from.id) return;
     from = null;
     delete node.dataset.moving;
+    if (moved) ondrop?.(node.getBoundingClientRect());
   };
   node.addEventListener('pointerdown', down);
   node.addEventListener('pointermove', move);
   node.addEventListener('pointerup', up);
   node.addEventListener('pointercancel', up);
   return {
-    update(next: { handle?: string; key?: unknown } = {}) {
+    update(next: MovableOptions = {}) {
       handle = next.handle ?? 'header, h2';
+      enabled = next.enabled ?? true;
+      ondrop = next.ondrop;
+      mark();
       // Back in place when it opens again (a new truthy key), not as it closes.
       if (next.key !== key) {
         key = next.key;
