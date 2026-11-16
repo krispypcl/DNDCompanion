@@ -634,8 +634,8 @@
     main { padding-top: 1.25rem; }
     h1 { font-size: 1.375rem; }
     header { flex-wrap: wrap; }
-    /* As on a sheet: the controls in one row under the name, side by side. */
-    .tools { width: 100%; justify-content: flex-start; gap: 0.375rem; flex-wrap: wrap; }
+    /* The controls in one row under the name, together at the right. */
+    .tools { width: 100%; justify-content: flex-end; gap: 0.375rem; flex-wrap: wrap; }
     .edit { min-width: 3.25rem; padding: 0.375rem 0.5rem; }
     .back { padding: 0.375rem 0.5rem; }
   }
