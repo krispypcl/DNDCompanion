@@ -1336,13 +1336,21 @@
      frosted: the band's colour carries through, the detail does not, and the
      text keeps the surface it needs. Only with a banner — an ordinary sheet
      pays none of this. */
+  /* The frost is a layer under the module's content rather than the module
+     itself: an element with a backdrop filter hides what is behind it from
+     anything frosted inside it, so the notes' page bar (frosted, to blur the
+     writing under it) came out a darker patch. */
   .bannered .panel {
     position: relative;
     z-index: 1;
+    background: transparent;
+    border-color: color-mix(in oklch, var(--line) 70%, transparent);
+  }
+  .bannered .panel::before {
+    content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
     background: color-mix(in oklch, var(--surface) 76%, transparent);
     backdrop-filter: blur(16px) saturate(1.1);
     -webkit-backdrop-filter: blur(16px) saturate(1.1);
-    border-color: color-mix(in oklch, var(--line) 70%, transparent);
   }
   /* Every section sits above the hurt edges (z-index 0), so the red only
      ever colours the background between and around them. */
@@ -1360,14 +1368,14 @@
      banner behind every module again on each animated frame (a gauge, a pip,
      a condition's tint) is what made changes stutter there. */
   @media (max-width: 720px), (pointer: coarse) {
-    .bannered .panel {
+    .bannered .panel::before {
       backdrop-filter: none; -webkit-backdrop-filter: none;
       background: color-mix(in oklch, var(--surface) 93%, transparent);
     }
   }
   /* No backdrop-filter, no frost: the module stays readable by being solid. */
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .bannered .panel { background: var(--surface); }
+    .bannered .panel::before { background: var(--surface); }
   }
   .cap {
     display: block; font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
