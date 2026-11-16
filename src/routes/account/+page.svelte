@@ -1,5 +1,7 @@
 <script lang="ts">
   import InfoTip from '$lib/components/InfoTip.svelte';
+  import NotFound from '$lib/components/NotFound.svelte';
+  import { pageTitle } from '$lib/title';
   /**
    * The player's own account: how they appear (a name and a picture, the
    * picture by link like a portrait) and signing out, their password, the
@@ -13,7 +15,7 @@
   import D20Loader from '$lib/components/D20Loader.svelte';
   import {
     deleteAccount, enabledProviders, PICTURE_NUDGE_KEY, profileOf, PROVIDER_NAMES, providersOf, sheetsPrivate,
-    setSheetsPrivate, signOut, signOutEverywhere, sheetPrivacyReady, unlinkProvider, updatePassword, updateProfile,
+    setSheetsPrivate, signOut, signOutEverywhere, unlinkProvider, updatePassword, updateProfile,
     type OAuthProvider
   } from '$lib/data/session';
   import OAuthButton from '$lib/components/OAuthButton.svelte';
@@ -100,14 +102,8 @@
       : { ok: false, text: friendlyError(done.message, 'The library didn’t listen! Try again in a moment.') };
   }
 
-  /*
-   * Private sheets: every sheet of this account seen only by its owner and
-   * the DM of its campaign (database/0014). Offered once the database has it.
-   */
-  let privacyReady = $state<boolean | null>(null);
-  $effect(() => {
-    sheetPrivacyReady().then((ok) => (privacyReady = ok));
-  });
+  /* Private sheets: every sheet of this account seen only by its owner and
+     the DM of its campaign (database/0014). */
   let privateBusy = $state(false);
   let privateMsg = $state<{ ok: boolean; text: string } | null>(null);
   async function togglePrivate(on: boolean) {
@@ -174,21 +170,27 @@
   }
 </script>
 
-<svelte:head><title>Your account · DND Companion</title></svelte:head>
+<svelte:head>{#if $session.loading || $session.user}<title>{pageTitle('Account')}</title>{/if}</svelte:head>
 
+{#if !$session.loading && !$session.user}
+  <!-- Signed out: the same page as a link that leads nowhere, with the way in. -->
+  <NotFound tab="Sign in needed" title="Who goes there?"
+            message="This door only opens for its owner. Sign in to see your account, your connections and your privacy settings."
+            action={{ href: `${base}/login?next=${encodeURIComponent('/account')}`, label: 'Sign in' }} />
+{:else}
 <main>
   <header>
     <a class="back" href="{base}/">Back</a>
     <ModeToggle />
   </header>
 
-  {#if $session.loading}
+  {#if $session.loading || !$session.user}
     <div class="screen-center"><D20Loader size={56} label="Loading your account" /></div>
-  {:else if !$session.user}
-    <section class="card"><h1>Who goes there?</h1><p class="dim">Sign in to see your account!</p>
-      <a class="btn" href="{base}/login">Sign in</a></section>
   {:else}
     <h1 class="title">Your account</h1>
+
+    <!-- On a wide screen the cards flow down columns, like a board of notes. -->
+    <div class="cards">
 
     <form class="card" onsubmit={saveProfile} aria-labelledby="profile-h">
       <h2 id="profile-h">Profile</h2>
@@ -213,12 +215,9 @@
         <p class="note" class:bad={link.source === 'invalid'}>{link.note}</p>
       {/if}
       <p class="email">Signed in as <b>{$session.user.email}</b></p>
-      <div class="row">
-        {#if profileMsg}<span class="msg" class:bad={!profileMsg.ok} role="status">{profileMsg.text}</span>{/if}
-        <button class="btn primary" disabled={savingProfile}>{savingProfile ? 'Saving…' : 'Save profile'}</button>
-      </div>
-      <!-- Signing out, here with who is signed in. -->
-      <div class="out">
+      {#if profileMsg}<p class="msg" class:bad={!profileMsg.ok} role="status">{profileMsg.text}</p>{/if}
+      <!-- Signing out at the left, saving at the right, on one line. -->
+      <div class="row split">
         <button type="button" class="btn" onclick={() => leave(false)}>Sign out</button>
         {#if confirmEverywhere}
           <button type="button" class="btn danger" onclick={() => leave(true)}>Yes, sign out everywhere</button>
@@ -227,6 +226,7 @@
         {/if}
         <InfoTip label="About signing out everywhere">Signing out everywhere ends every session on every device, this one included,
           which helps after signing in on someone else's phone.</InfoTip>
+        <button class="btn primary save" disabled={savingProfile}>{savingProfile ? 'Saving…' : 'Save profile'}</button>
       </div>
     </form>
 
@@ -289,10 +289,9 @@
                 title="Turning it off takes back everything you have shared"
                 onchange={toggleSharing} />
         {#if shareMsg}<span class="msg" class:bad={!shareMsg.ok} role="status">{shareMsg.text}</span>{/if}
-        <Switch checked={sheetsPrivate($session.user)} label="Keep my sheets private" disabled={privateBusy || !privacyReady}
-                title={privacyReady === false ? 'Waiting on a database update (0014)' : 'Only you and your DMs can open your sheets'}
+        <Switch checked={sheetsPrivate($session.user)} label="Keep my sheets private" disabled={privateBusy}
+                title="Only you and your DMs can open your sheets"
                 onchange={togglePrivate} />
-        {#if privacyReady === false}<span class="msg wait">This needs a database update before it can be turned on.</span>{/if}
         {#if privateMsg}<span class="msg" class:bad={!privateMsg.ok} role="status">{privateMsg.text}</span>{/if}
       </div>
     </section>
@@ -320,8 +319,10 @@
         </form>
       {/if}
     </section>
+    </div>
   {/if}
 </main>
+{/if}
 
 {#if viewing && link.url}
   <Lightbox src={link.url} alt="Profile picture" from={viewFrom} onclose={() => (viewing = false)} />
@@ -336,12 +337,19 @@
   /* The switches sit at the left, each with its message under it. */
   .switches { display: grid; justify-items: start; gap: 0.375rem; margin-top: 0.5rem; }
   .switches .msg { margin: 0 0 0.25rem; }
-  .switches .msg.wait { color: var(--dim); }
   /* The tracks line up under each other, whatever the label's length. */
   .switches :global(.switch .label) { min-width: 10rem; text-align: left; }
-  .out { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--line-soft); }
+  /* Sign out and Sign out everywhere at the left, Save at the right. */
+  .row.split { justify-content: flex-start; }
+  .row.split .save { margin-left: auto; }
+  p.msg { margin: 0.25rem 0 0; }
   h2 { display: flex; align-items: center; gap: 0.125rem; }
-  main { max-width: 36rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+  /* As wide as every other page (app.css --page-width); the cards flow into
+     columns as the width allows, one on a phone. */
+  main { max-width: var(--page-width); margin: 0 auto; padding: 1.5rem var(--page-pad) 3rem; }
+  .cards { columns: 3 30rem; column-gap: 1rem; }
+  .cards > :global(*) { break-inside: avoid; }
+  @media (max-width: 600px) { main { padding-left: 1rem; padding-right: 1rem; } }
   header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
   /* The same Back as on a sheet. */
   .back {
