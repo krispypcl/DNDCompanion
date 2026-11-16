@@ -1779,4 +1779,19 @@
     .edit { min-width: 3.25rem; padding: 0.375rem 0.5rem; }
     .undo, .back { padding: 0.375rem 0.5rem; }
   }
+  /*
+   * A phone: the portrait at the left of the campaign and the name, the class,
+   * species and background in a line under both, then the music and the
+   * controls. (Wrapped as a row, the portrait sat alone above the name.)
+   */
+  @media (max-width: 700px) {
+    .identity { display: grid; grid-template-columns: 4rem minmax(0, 1fr); column-gap: 0.875rem; row-gap: 0.625rem; align-items: center; }
+    .identity .who { display: contents; }
+    .identity .portrait { grid-column: 1; grid-row: 1 / 3; align-self: center; }
+    .identity .who > .campaign { grid-column: 2; grid-row: 1; align-self: end; justify-self: start; }
+    .identity .who > h1 { grid-column: 2; grid-row: 2; align-self: start; min-width: 0; }
+    .identity .who:not(:has(> .campaign)) > h1 { grid-row: 1 / 3; align-self: center; }
+    .identity .who > .sub { grid-column: 1 / -1; margin-top: 0.375rem; }
+    .identity .musicslot, .identity .controls { grid-column: 1 / -1; }
+  }
 </style>
