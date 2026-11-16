@@ -8,7 +8,9 @@
    * phone column or a scrolling table cannot cut it off.
    */
   import { portal } from '$lib/actions';
+  import { prefersReducedMotion } from '$lib/motion';
   import { onMount, tick } from 'svelte';
+  import { fade } from 'svelte/transition';
 
   let { label = 'More information', children }: { label?: string; children: import('svelte').Snippet } = $props();
 
@@ -82,7 +84,7 @@
 
 {#if open}
   <div bind:this={note} use:portal {id} role="tooltip" class="note" class:above={place.above}
-       style:left="{place.left}px" style:top="{place.top}px">
+       style:left="{place.left}px" style:top="{place.top}px" out:fade={{ duration: prefersReducedMotion() ? 0 : 120 }}>
     {@render children()}
   </div>
 {/if}

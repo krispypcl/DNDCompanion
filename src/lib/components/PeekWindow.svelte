@@ -1,15 +1,18 @@
 <!--
   A 5e.tools peek moved aside (stores/peek `keep`): a window of its own that
   stays where it was put, can be dragged again and comes to the front when
-  pressed, until its × (or Esc) closes it.
+  pressed, until its × (or Esc) closes it, and it fades as it goes.
 -->
 <script lang="ts">
+  import { fade } from 'svelte/transition';
   import { movable } from '$lib/actions';
+  import { prefersReducedMotion } from '$lib/motion';
   import { peek, type KeptPeek } from '$lib/stores/peek.svelte';
   import PeekContent from './PeekContent.svelte';
 
   let { kept }: { kept: KeptPeek } = $props();
   const MAX_HEIGHT = 560;
+  const still = prefersReducedMotion();
 </script>
 
 <div
@@ -25,6 +28,8 @@
   style:width="{kept.width}px"
   style:max-height="min({MAX_HEIGHT}px, calc(100vh - 24px))"
   onpointerdown={() => peek.front(kept.id)}
+  in:fade={{ duration: still || !kept.opened ? 0 : 160 }}
+  out:fade={{ duration: still ? 0 : 160 }}
 >
   <PeekContent name={kept.target.name} url={kept.target.url}>
     {#snippet tools()}
