@@ -301,6 +301,20 @@
     background: var(--surface);
     box-shadow: 0 -10px 12px -8px color-mix(in oklch, var(--bg) 85%, transparent);
   }
+  /* On a sheet with a banner the module is frosted glass, so the bar is too
+     (solid, it showed as a dark slab over the hurt and condition edges). A
+     phone has the nearly solid module, without the blur, as the module does. */
+  :global(.bannered) .pagerwrap {
+    background: color-mix(in oklch, var(--surface) 76%, transparent);
+    backdrop-filter: blur(16px) saturate(1.1); -webkit-backdrop-filter: blur(16px) saturate(1.1);
+    box-shadow: none;
+  }
+  @media (max-width: 720px), (pointer: coarse) {
+    :global(.bannered) .pagerwrap {
+      backdrop-filter: none; -webkit-backdrop-filter: none;
+      background: color-mix(in oklch, var(--surface) 93%, transparent);
+    }
+  }
   .pager:not(.reading) {
     display: grid; align-items: center; column-gap: 0.75rem; row-gap: 0.625rem;
     grid-template-columns: auto 1fr;
