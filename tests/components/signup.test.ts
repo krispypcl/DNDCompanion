@@ -3,7 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
 const { signUp } = vi.hoisted(() => ({ signUp: vi.fn(async (..._args: unknown[]) => {}) }));
-vi.mock('$lib/data/session', () => ({ signUp }));
+vi.mock('$lib/data/session', () => ({
+  signUp,
+  PROVIDER_NAMES: { google: 'Google', discord: 'Discord' },
+  enabledProviders: async () => ({}),
+  signInWithProvider: vi.fn(),
+  linkProvider: vi.fn()
+}));
 
 import Signup from '../../src/routes/signup/+page.svelte';
 

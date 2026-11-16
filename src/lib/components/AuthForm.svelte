@@ -1,6 +1,8 @@
 <script lang="ts">
   import { base } from '$app/paths';
-  import GoogleButton from './GoogleButton.svelte';
+  import OAuthButton from './OAuthButton.svelte';
+  import { slide } from 'svelte/transition';
+  import { enabledProviders } from '$lib/data/session';
   import Logo from './Logo.svelte';
   import { friendlyError } from '$lib/errors';
   import type { FullAutoFill } from 'svelte/elements';
@@ -127,7 +129,13 @@
 
       {#if google}
         <div class="or" aria-hidden="true"><span>or</span></div>
-        <GoogleButton next={googleNext} />
+        <div class="oauths">
+          <OAuthButton provider="google" next={googleNext} />
+          <!-- Discord only once it is switched on in Supabase. -->
+          {#await enabledProviders() then on}
+            {#if on.discord}<div transition:slide={{ duration: 200 }}><OAuthButton provider="discord" next={googleNext} /></div>{/if}
+          {/await}
+        </div>
       {/if}
 
       <nav>{@render children?.()}</nav>
@@ -234,4 +242,5 @@
     margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--line-soft);
     display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap;
   }
+  .oauths { display: grid; gap: 0.5rem; }
 </style>

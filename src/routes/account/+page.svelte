@@ -2,7 +2,8 @@
   import InfoTip from '$lib/components/InfoTip.svelte';
   /**
    * The player's own account: how they appear (a name and a picture, the
-   * picture by link like a portrait), their password, and signing out.
+   * picture by link like a portrait) and signing out, their password, the
+   * services they sign in with, and who can see what they make.
    */
   import { base } from '$app/paths';
   import { goto } from '$app/navigation';
@@ -10,8 +11,12 @@
   import Lightbox from '$lib/components/Lightbox.svelte';
   import ModeToggle from '$lib/components/ModeToggle.svelte';
   import D20Loader from '$lib/components/D20Loader.svelte';
-  import { deleteAccount, PICTURE_NUDGE_KEY, profileOf, providersOf, signOut, signOutEverywhere, updatePassword, updateProfile } from '$lib/data/session';
-  import GoogleButton from '$lib/components/GoogleButton.svelte';
+  import {
+    deleteAccount, enabledProviders, PICTURE_NUDGE_KEY, profileOf, PROVIDER_NAMES, providersOf, sheetsPrivate,
+    setSheetsPrivate, signOut, signOutEverywhere, sheetPrivacyReady, unlinkProvider, updatePassword, updateProfile,
+    type OAuthProvider
+  } from '$lib/data/session';
+  import OAuthButton from '$lib/components/OAuthButton.svelte';
   import { slide } from 'svelte/transition';
   import { passwordStrength } from '$lib/rules/password';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
@@ -95,6 +100,51 @@
       : { ok: false, text: friendlyError(done.message, 'The library didn’t listen! Try again in a moment.') };
   }
 
+  /*
+   * Private sheets: every sheet of this account seen only by its owner and
+   * the DM of its campaign (database/0014). Offered once the database has it.
+   */
+  let privacyReady = $state<boolean | null>(null);
+  $effect(() => {
+    sheetPrivacyReady().then((ok) => (privacyReady = ok));
+  });
+  let privateBusy = $state(false);
+  let privateMsg = $state<{ ok: boolean; text: string } | null>(null);
+  async function togglePrivate(on: boolean) {
+    privateBusy = true;
+    privateMsg = null;
+    try {
+      await setSheetsPrivate(on);
+      privateMsg = { ok: true, text: on ? 'Private. Only you and your DMs can open your sheets now.' : 'Open again. Anyone with a link can read your sheets.' };
+    } catch (err) {
+      privateMsg = { ok: false, text: friendlyError(err, 'Your sheets didn’t listen! Try again in a moment.') };
+    } finally {
+      privateBusy = false;
+    }
+  }
+
+  /** Connections: Google, and Discord once it is switched on in Supabase. */
+  const SERVICES: OAuthProvider[] = ['google', 'discord'];
+  let switchedOn = $state<Partial<Record<string, boolean>>>({ google: true });
+  $effect(() => {
+    enabledProviders().then((on) => (switchedOn = { google: true, ...on }));
+  });
+  const linked = $derived(providersOf($session.user));
+  let unlinking = $state<OAuthProvider | null>(null);
+  let connMsg = $state<{ ok: boolean; text: string } | null>(null);
+  async function unlink(p: OAuthProvider) {
+    unlinking = p;
+    connMsg = null;
+    try {
+      await unlinkProvider(p);
+      connMsg = { ok: true, text: `${PROVIDER_NAMES[p]} is off your account.` };
+    } catch (err) {
+      connMsg = { ok: false, text: friendlyError(err, `${PROVIDER_NAMES[p]} wouldn’t let go! Try again in a moment.`) };
+    } finally {
+      unlinking = null;
+    }
+  }
+
   let confirmEverywhere = $state(false);
 
   /** Deleting the account: a button, then the phrase typed out, then gone. */
@@ -167,6 +217,17 @@
         {#if profileMsg}<span class="msg" class:bad={!profileMsg.ok} role="status">{profileMsg.text}</span>{/if}
         <button class="btn primary" disabled={savingProfile}>{savingProfile ? 'Saving…' : 'Save profile'}</button>
       </div>
+      <!-- Signing out, here with who is signed in. -->
+      <div class="out">
+        <button type="button" class="btn" onclick={() => leave(false)}>Sign out</button>
+        {#if confirmEverywhere}
+          <button type="button" class="btn danger" onclick={() => leave(true)}>Yes, sign out everywhere</button>
+        {:else}
+          <button type="button" class="btn" onclick={() => (confirmEverywhere = true)}>Sign out everywhere</button>
+        {/if}
+        <InfoTip label="About signing out everywhere">Signing out everywhere ends every session on every device, this one included,
+          which helps after signing in on someone else's phone.</InfoTip>
+      </div>
     </form>
 
     <form class="card" onsubmit={savePassword} aria-labelledby="pw-h">
@@ -187,47 +248,52 @@
       </div>
     </form>
 
-    <!-- Ways in: email and password, and Google once connected. -->
-    <section class="card" aria-labelledby="ways-h">
-      <h2 id="ways-h">Ways to sign in
-        <InfoTip label="About ways to sign in">Connect your Google account to sign in with one press next time, as well as with your email.</InfoTip>
+    <!-- Connections: the services this account signs in with, besides its email. -->
+    <section class="card" aria-labelledby="conn-h">
+      <h2 id="conn-h">Connections
+        <InfoTip label="About connections">Connect another account to sign in with one press next time, as well as with
+          your email. Taking one off leaves your sheets and campaigns as they are; your last way in can't be taken off.</InfoTip>
       </h2>
-      {#if providersOf($session.user).includes('google')}
-        <p class="linked" transition:slide={{ duration: 200 }}>
-          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-          Google is connected. You can sign in with it as well as with your email.
-        </p>
-      {:else}
-        <div class="google-wrap"><GoogleButton link next="/account" /></div>
-      {/if}
+      <ul class="conns">
+        {#each SERVICES.filter((p) => switchedOn[p] || linked.includes(p)) as p (p)}
+          <li transition:slide={{ duration: 200 }}>
+            {#if linked.includes(p)}
+              <span class="linked">
+                <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                {PROVIDER_NAMES[p]} is connected.
+              </span>
+              {#if linked.length > 1}
+                <button class="btn" disabled={unlinking === p} onclick={() => unlink(p)}>{unlinking === p ? 'Disconnecting…' : 'Disconnect'}</button>
+              {/if}
+            {:else}
+              <div class="conn-btn"><OAuthButton provider={p} link next="/account" /></div>
+            {/if}
+          </li>
+        {/each}
+      </ul>
+      {#if connMsg}<p class="msg" class:bad={!connMsg.ok} role="status">{connMsg.text}</p>{/if}
     </section>
 
-    <section class="card" aria-labelledby="lib-h">
-      <h2 id="lib-h">Shared library
-        <InfoTip label="About the shared library">When you type a name in a table (an attack, spell, item, feature or
-          tracker), rows other players have written are offered, ready to use. Your own rows are shared the same way,
-          without your name: only players you share a campaign with can see who wrote them.</InfoTip>
+    <section class="card" aria-labelledby="priv-h">
+      <h2 id="priv-h">Privacy
+        <InfoTip label="About privacy"><b>Share my rows.</b> When you type a name in a table (an attack, spell, item,
+          feature or tracker), rows other players have written are offered, ready to use. Your own rows are shared the
+          same way, without your name: only players you share a campaign with can see who wrote them. Turning it off
+          takes back everything you have shared.<br /><br /><b>Keep my sheets private.</b> Every sheet you have, and every
+          one you make, can then be opened only by you and by the DM of the campaign it is in. Other players, your
+          campaign mates included, no longer see it or its card, and its share link stops working for anyone else.
+          Turning it off opens them again.</InfoTip>
       </h2>
-      <div class="row lib-row">
-        {#if shareMsg}<span class="msg" class:bad={!shareMsg.ok} role="status">{shareMsg.text}</span>{/if}
+      <div class="switches">
         <Switch checked={sharing($session.user)} label="Share my rows" disabled={shareBusy}
                 title="Turning it off takes back everything you have shared"
                 onchange={toggleSharing} />
-      </div>
-    </section>
-
-    <section class="card" aria-labelledby="out-h">
-      <h2 id="out-h">Signing out
-        <InfoTip label="About signing out everywhere">Signing out everywhere ends every session on every device, this one included —
-          useful after signing in on someone else's phone.</InfoTip>
-      </h2>
-      <div class="row">
-        <button class="btn" onclick={() => leave(false)}>Sign out</button>
-        {#if confirmEverywhere}
-          <button class="btn danger" onclick={() => leave(true)}>Yes, sign out everywhere</button>
-        {:else}
-          <button class="btn" onclick={() => (confirmEverywhere = true)}>Sign out everywhere</button>
-        {/if}
+        {#if shareMsg}<span class="msg" class:bad={!shareMsg.ok} role="status">{shareMsg.text}</span>{/if}
+        <Switch checked={sheetsPrivate($session.user)} label="Keep my sheets private" disabled={privateBusy || !privacyReady}
+                title={privacyReady === false ? 'Waiting on a database update (0014)' : 'Only you and your DMs can open your sheets'}
+                onchange={togglePrivate} />
+        {#if privacyReady === false}<span class="msg wait">This needs a database update before it can be turned on.</span>{/if}
+        {#if privateMsg}<span class="msg" class:bad={!privateMsg.ok} role="status">{privateMsg.text}</span>{/if}
       </div>
     </section>
 
@@ -263,9 +329,17 @@
 
 <style>
   .linked { display: flex; align-items: center; gap: 0.5rem; color: var(--a); margin: 0.5rem 0 0; }
-  .google-wrap { max-width: 18rem; margin: 0 auto; }
-  /* Straight under the heading, as in the other cards. */
-  .card > h2 + .row { margin-top: 0; }
+  .conns { list-style: none; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.5rem; }
+  .conns li { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; min-height: 2.5rem; }
+  .conns .linked { margin: 0; }
+  .conn-btn { width: min(18rem, 100%); }
+  /* The switches sit at the left, each with its message under it. */
+  .switches { display: grid; justify-items: start; gap: 0.375rem; margin-top: 0.5rem; }
+  .switches .msg { margin: 0 0 0.25rem; }
+  .switches .msg.wait { color: var(--dim); }
+  /* The tracks line up under each other, whatever the label's length. */
+  .switches :global(.switch .label) { min-width: 10rem; text-align: left; }
+  .out { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--line-soft); }
   h2 { display: flex; align-items: center; gap: 0.125rem; }
   main { max-width: 36rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
   header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }

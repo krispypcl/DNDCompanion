@@ -8,6 +8,9 @@ const anonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string | undefined;
  * level security decides what each request may do — so it ships in the bundle.
  */
 export const isConfigured = Boolean(url && anonKey);
+/** For the few calls supabase-js has no method for (the auth settings). */
+export const supabaseUrl = url ?? 'http://localhost:54321';
+export const supabaseKey = anonKey ?? 'missing-anon-key';
 
 export const supabase: SupabaseClient = createClient(
   url ?? 'http://localhost:54321',
