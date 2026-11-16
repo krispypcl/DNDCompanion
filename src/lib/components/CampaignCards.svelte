@@ -348,7 +348,8 @@
   .grip {
     position: absolute; top: 0.5rem; right: 0.5rem; width: 1.625rem; height: 1.625rem; padding: 0;
     display: grid; place-items: center; border: 0; border-radius: var(--r-sm); background: none;
-    color: var(--faint); cursor: grab; touch-action: none; opacity: 0; transition: opacity 0.15s ease, color 0.15s ease;
+    color: var(--faint); cursor: grab; touch-action: none; opacity: 0;
+    transition: opacity 0.15s ease, color 0.15s ease, right 0.2s cubic-bezier(0.33, 1, 0.68, 1);
   }
   .card:hover .grip, .grip:focus-visible, .lifted .grip { opacity: 1; }
   /* Here: a small green light alone in the card's top right corner, placed over
@@ -359,7 +360,8 @@
     display: inline-flex; align-items: center; gap: 0.3125rem;
     font-size: 0.5625rem; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim);
   }
-  .card.sortable .herebadge { right: 2.75rem; }
+  /* The light keeps its corner; the grip moves aside for it. */
+  .card.present .grip { right: 1.625rem; }
   .herebadge i, :global(.here-dot) {
     width: 0.4375rem; height: 0.4375rem; border-radius: 50%; background: oklch(74% 0.17 150); flex: none;
     box-shadow: 0 0 0 0 oklch(74% 0.17 150 / 0.5); animation: hereGlow 2.4s ease-out infinite;
