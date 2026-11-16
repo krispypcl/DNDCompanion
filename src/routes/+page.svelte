@@ -851,9 +851,13 @@
   /* A wide screen: the page widens and the cards sit in a grid. */
   @media (min-width: 900px) {
     main { max-width: 72rem; padding-left: 2rem; padding-right: 2rem; }
-    .pageset ul { grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr)); }
+    /* Two to a row, each as wide as an area's button above (the same gap). */
+    .pageset ul { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.375rem; }
   }
   .areas { margin-top: 1.75rem; }
+  /* The lists are paged to fit, so the panel never scrolls: no gutter kept
+     for a scrollbar, and the cards line up with the buttons above. */
+  .areas :global(.panels) { scrollbar-gutter: auto; }
   .tally { font-size: 0.8125rem; color: var(--dim); }
   .pagearea { position: relative; }
   .pager {
@@ -861,11 +865,12 @@
     margin-top: 1rem; font-size: 0.8125rem; color: var(--dim);
   }
   .pagenum { min-width: 7.5rem; text-align: center; font-variant-numeric: tabular-nums; }
-  /* The portrait (or the class drawn) at the card's left, in the sheet's frame. */
-  .withface { display: flex; align-items: center; gap: 0.75rem; }
-  .cardtext { display: block; min-width: 0; flex: 1; }
+  /* The portrait (or the class drawn) at the card's left, in the sheet's
+     frame: a square as tall as the card, within its padding. */
+  .withface { display: flex; align-items: stretch; align-self: stretch; gap: 0.75rem; }
+  .cardtext { display: flex; flex-direction: column; justify-content: center; min-width: 0; flex: 1; }
   .face {
-    position: relative; flex: none; width: 2.75rem; height: 2.75rem; overflow: hidden;
+    position: relative; flex: none; align-self: stretch; aspect-ratio: 1; min-height: 2.75rem; overflow: hidden;
     border-radius: var(--r-sm); border: 1px solid var(--a-edge);
     background: linear-gradient(150deg, var(--portrait-from), var(--portrait-to));
   }
