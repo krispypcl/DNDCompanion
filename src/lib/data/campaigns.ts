@@ -24,6 +24,12 @@ export type CampaignDetails = {
   nextSession?: string;
   /** When it last met: the session set before, kept once it had started. */
   lastSession?: string;
+  /**
+   * The initiative order the DM runs (rules/initiative): the characters'
+   * initiatives by sheet id (the creatures keep their own), whose turn it is
+   * ("pc:<sheet id>" or "cr:<creature id>") and the round. Players read it.
+   */
+  initiative?: { pcs?: Record<string, number>; turn?: string | null; round?: number };
 };
 
 const startedBy = (iso: string | undefined, now: Date) => {

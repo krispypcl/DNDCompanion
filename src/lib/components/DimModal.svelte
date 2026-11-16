@@ -11,7 +11,7 @@
   import { focusFirst, movable, portal } from '$lib/actions';
   import { prefersReducedMotion } from '$lib/motion';
 
-  let { id, title, onclose, children }: { id: string; title: string; onclose: () => void; children: Snippet } = $props();
+  let { id, title, wide = false, onclose, children }: { id: string; title: string; wide?: boolean; onclose: () => void; children: Snippet } = $props();
 
   /** In: grows from just under its size and rises into place. Out: a quick fade, shrinking a touch. */
   function rise(_node: Element, { out = false } = {}) {
@@ -29,7 +29,7 @@
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 <div class="dimscrim" use:portal transition:fade={{ duration: prefersReducedMotion() ? 0 : 200, easing: cubicOut }}
      onclick={(e) => { if (e.target === e.currentTarget) onclose(); }}>
-  <div class="dimwindow themed-scroll" role="dialog" aria-modal="true" aria-labelledby={id} use:movable use:focusFirst
+  <div class="dimwindow themed-scroll" class:wide role="dialog" aria-modal="true" aria-labelledby={id} use:movable use:focusFirst
        in:rise out:rise={{ out: true }}>
     <h2 {id}>{title}</h2>
     {@render children()}
@@ -46,5 +46,6 @@
     padding: 1.125rem 1.25rem 1.25rem; border-radius: var(--r);
     background: var(--surface); border: 1px solid var(--line); box-shadow: 0 24px 60px rgb(0 0 0 / 0.5);
   }
+  .dimwindow.wide { width: min(46rem, 100%); }
   h2 { margin: 0 0 0.875rem; font-size: 1rem; font-weight: 650; color: var(--a); overflow-wrap: anywhere; }
 </style>

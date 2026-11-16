@@ -19,7 +19,11 @@
   import { sheetRepo } from '$lib/data/sheets';
   import { isConfigured, supabase } from '$lib/supabase';
   import { session } from '$lib/stores/session';
-  import { classLine } from '$lib/rules/derived';
+  import { classLine, initiativeParts } from '$lib/rules/derived';
+  import { creatureRepo, type Revealed } from '$lib/data/creatures';
+  import { CreatureTable } from '$lib/creatureTable.svelte';
+  import { next as nextTurn, previous as previousTurn, rollInitiative, start as startTurns } from '$lib/rules/initiative';
+  import { initiativeBonus } from '$lib/rules/statblock';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
   import { faceFamily, nameFont } from '$lib/rules/fonts';
   import { themeStyle } from '$lib/theme';
@@ -42,6 +46,9 @@
   import { sessionWhen } from '$lib/rules/dates';
   import ShareButton from './ShareButton.svelte';
   import ShortcutHelp from './ShortcutHelp.svelte';
+  import Spotlight from './Spotlight.svelte';
+  import InitiativeTracker from './InitiativeTracker.svelte';
+  import RevealedCreatures from './RevealedCreatures.svelte';
   import ThemePicker from './ThemePicker.svelte';
   import { setSound, soundOn } from '$lib/sound';
   import { get } from 'svelte/store';
@@ -87,7 +94,26 @@
   const SIDE_PLAYERS = 'Players';
   const SIDE_CREATURES = 'Monsters & NPCs';
   let side = $state(SIDE_PLAYERS);
-  let creatureCount = $state(0);
+  /** The DM's monsters and NPCs (lib/creatureTable), made once per campaign. */
+  const dmCampaign = $derived(isDm && campaign ? campaign.id : null);
+  const table = $derived(dmCampaign ? new CreatureTable(dmCampaign) : null);
+  $effect(() => {
+    void table?.load();
+  });
+  const creatureCount = $derived(table?.list.length ?? 0);
+  /** What the players see of them: only the revealed ones (database/0018). */
+  let revealed = $state<Revealed[]>([]);
+  async function lookAtRevealed() {
+    if (isDm || !isMember || !campaign) return;
+    try {
+      revealed = await creatureRepo.revealed(campaign.id);
+    } catch {
+      // Offline for a moment: the next look tries again.
+    }
+  }
+  $effect(() => {
+    if (isMember && !isDm && campaign?.id) void lookAtRevealed();
+  });
   /** A side slides in from the side it sits on in the switch. */
   function sideIn(_node: Element, { dir = 1 }: { dir?: number } = {}) {
     return {
@@ -114,6 +140,8 @@
 
   /** The keys, as on a sheet: E edits, M plays or pauses the music, ? lists them. */
   let showKeys = $state(false);
+  /** The search (Ctrl K, / or its button): 5e.tools entries in pop-ups, and monsters for the DM to add. */
+  let searching = $state(false);
   function onKey(e: KeyboardEvent) {
     if (!campaign || showKeys || e.metaKey || e.ctrlKey || e.altKey) return;
     const t = e.target as HTMLElement | null;
@@ -195,7 +223,10 @@
     const timer = setInterval(() => {
       if (document.visibilityState !== 'visible') return;
       ticks += 1;
-      void lookAgain(ticks % 4 === 0);
+      // While a fight runs, the players follow the turn every look.
+      const fighting = !isDm && Boolean(campaign?.details.initiative?.turn);
+      void lookAgain(fighting || ticks % 4 === 0);
+      void lookAtRevealed();
     }, 15000);
     const back = () => document.visibilityState === 'visible' && load();
     document.addEventListener('visibilitychange', back);
@@ -312,6 +343,50 @@
     }
   }
 
+  /*
+   * Initiative (rules/initiative): the characters' numbers and whose turn it
+   * is live in the campaign's details, the creatures' on each creature. The
+   * DM writes, rolls and moves the turn on; the players follow it.
+   */
+  const init = $derived(campaign?.details.initiative ?? {});
+  const combatants = $derived([
+    ...active.map((s) => ({
+      key: `pc:${s.id}`, name: s.definition?.identity?.name || s.name, value: init.pcs?.[s.id] ?? null,
+      dex: s.definition ? initiativeParts(s.definition).total : 0, side: 'pc' as const
+    })),
+    ...(table
+      ? table.before0018 ? [] : table.list.map((c) => ({
+          key: `cr:${c.id}`, name: c.name, value: c.initiative, dex: initiativeBonus(c.statblock), side: 'creature' as const, hidden: !c.visible
+        }))
+      : revealed.map((c) => ({ key: `cr:${c.id}`, name: c.name, value: c.initiative, side: 'creature' as const })))
+  ]);
+  const fighting = $derived(Boolean(init.turn));
+  const turnNow = () => ({ turn: init.turn ?? null, round: init.round ?? 0 });
+  function setInitiative(key: string, value: number | null) {
+    const [kind, ref] = [key.slice(0, 2), key.slice(3)];
+    if (kind === 'pc') {
+      const pcs = { ...(init.pcs ?? {}) };
+      if (value === null) delete pcs[ref];
+      else pcs[ref] = value;
+      void saveDetails({ initiative: { ...init, pcs } });
+    } else {
+      const c = table?.list.find((x) => x.id === ref);
+      if (c) void table!.change(c, { initiative: value });
+    }
+  }
+  function rollForCreatures() {
+    if (!table) return;
+    for (const c of table.list.filter((x) => x.initiative === null)) {
+      void table.change(c, { initiative: rollInitiative(initiativeBonus(c.statblock)) });
+    }
+  }
+  const moveTurn = (t: { turn: string | null; round: number }) => saveDetails({ initiative: { ...init, ...t } });
+  /** The fight is over: the order is cleared for the next one. */
+  function endFight() {
+    void saveDetails({ initiative: { pcs: {}, turn: null, round: 0 } });
+    for (const c of table?.list.filter((x) => x.initiative !== null) ?? []) void table!.change(c, { initiative: null });
+  }
+
   /**
    * The DM chooses how a condition of a player's own looks: shown at once,
    * saved a moment after the last change (a colour dragged across the
@@ -402,6 +477,9 @@
         {/if}
         <ShareButton link={pageLink} label="Copy link to this page (to watch, not join)"
                      oncopied={(ok) => { if (!ok) error = 'The clipboard said no! Copy the address from the bar above instead.'; }} />
+        <button class="keys searchbtn" onclick={() => (searching = true)} aria-label="Search 5e.tools" title="Search 5e.tools (Ctrl K or /)">
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+        </button>
         <button class="keys" onclick={() => (showKeys = true)} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
             <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -464,6 +542,16 @@
     <!-- The players' cards, or (the DM's other side) the monsters and NPCs.
          The creatures stay mounted once opened, so their count and what was
          typed survive a switch back and forth. -->
+    <!-- The initiative order: the DM sets it up beside the monsters and runs it from either side; the players see it while a fight runs. -->
+    {#if !ended && combatants.length && (fighting || (isDm && side === SIDE_CREATURES))}
+      <div transition:slide={unfold()}>
+        <InitiativeTracker {combatants} turn={init.turn ?? null} round={init.round ?? 0} {isDm}
+                           onvalue={setInitiative} onroll={table && !table.before0018 ? rollForCreatures : undefined}
+                           onstart={() => moveTurn(startTurns(combatants))} onnext={() => moveTurn(nextTurn(combatants, turnNow()))}
+                           onprevious={() => moveTurn(previousTurn(combatants, turnNow()))} onend={endFight} />
+      </div>
+    {/if}
+
     {#if side === SIDE_PLAYERS}
       <div class="sidepane" in:sideIn={{ dir: -1 }}>
         {#if active.length === 0}
@@ -474,10 +562,12 @@
         {/if}
       </div>
     {/if}
-    {#if isDm}
+    {#if isDm && table}
       <div class="sidepane creaturespane" hidden={side !== SIDE_CREATURES}>
-        <CampaignCreatures campaignId={campaign.id} {ended} bind:count={creatureCount} />
+        <CampaignCreatures {table} {ended} />
       </div>
+    {:else if revealed.length}
+      <RevealedCreatures list={revealed} />
     {/if}
 
     {#if retired.length}
@@ -561,6 +651,9 @@
       </div>
     {/if}
     {#if showKeys}<ShortcutHelp owner={isDm} place="campaign" onclose={() => (showKeys = false)} />{/if}
+    <Spotlight bind:open={searching} homebrew={table && !ended ? table.homebrew : []}
+               onadd={table && !ended ? (hit) => { side = SIDE_CREATURES; void table.addFromFive(hit.name, hit.source); } : undefined}
+               onaddhomebrew={table && !ended ? (hid) => { side = SIDE_CREATURES; void table.addHomebrew(hid); } : undefined} />
   </main>
 {/if}
 
@@ -606,6 +699,7 @@
   .keys:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
   .keys:active { transform: translateY(1px); }
   @media (hover: hover) and (pointer: fine) { .keys { display: inline-grid; } }
+  .keys.searchbtn { display: inline-grid; }
   .danger { border-color: var(--bad); background: none; color: var(--bad); }
   .dangerish:hover { color: var(--bad); border-color: var(--bad); }
 

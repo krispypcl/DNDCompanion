@@ -1,0 +1,62 @@
+<!--
+  A creature's stat block in a window of its own over the campaign page, as
+  a 5e.tools pop-up is on a sheet: moved by its title, brought to the front
+  when pressed, and fading as × or Esc closes it.
+-->
+<script lang="ts">
+  import { fade } from 'svelte/transition';
+  import { movable, portal } from '$lib/actions';
+  import { prefersReducedMotion } from '$lib/motion';
+  import { isEmpty, kindLine, statBlockHtml, type StatBlock } from '$lib/rules/statblock';
+
+  let {
+    name,
+    statblock,
+    left,
+    top,
+    z = 0,
+    onclose,
+    onfront
+  }: { name: string; statblock: StatBlock; left: number; top: number; z?: number; onclose: () => void; onfront: () => void } = $props();
+</script>
+
+<div class="statwindow" role="dialog" tabindex="-1" aria-label="{name}’s stat block" use:portal use:movable={{ handle: 'header' }}
+     style:left="{left}px" style:top="{top}px" style:z-index={70 + z} onpointerdown={onfront} onkeydown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onclose(); } }}
+     in:fade={{ duration: prefersReducedMotion() ? 0 : 160 }} out:fade={{ duration: prefersReducedMotion() ? 0 : 160 }}>
+  <header>
+    <div class="statname">
+      <h3>{name}</h3>
+      {#if kindLine(statblock)}<p>{kindLine(statblock)}</p>{/if}
+    </div>
+    <button type="button" class="closex" aria-label="Close" onclick={onclose}>×</button>
+  </header>
+  <div class="statbody themed-scroll">
+    {#if isEmpty(statblock)}
+      <p class="statnone">No stat block yet. Change it to write one.</p>
+    {:else}
+      {@html statBlockHtml(statblock)}
+      {#if statblock.source}<p class="statsource">{statblock.source === 'Homebrew' ? 'Homebrew' : `From ${statblock.source}`}</p>{/if}
+    {/if}
+  </div>
+</div>
+
+<style>
+  .statwindow {
+    position: fixed; z-index: 70; width: min(26rem, calc(100vw - 24px)); max-height: min(36rem, calc(100vh - 24px));
+    display: flex; flex-direction: column; overflow: hidden;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+    box-shadow: 0 18px 48px rgb(0 0 0 / 0.45), 0 2px 6px rgb(0 0 0 / 0.3);
+  }
+  .statwindow:focus { outline: none; }
+  :global([data-mode='light']) .statwindow { box-shadow: 0 18px 44px rgb(20 20 40 / 0.16), 0 2px 6px rgb(20 20 40 / 0.08); }
+  header {
+    display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.75rem 0.625rem 0.625rem 0.875rem;
+    border-bottom: 1px solid var(--line-soft); --x-size: 1.75rem;
+  }
+  .statname { flex: 1; min-width: 0; }
+  h3 { margin: 0.125rem 0 0; font-size: 1.0625rem; font-weight: 650; color: var(--a); overflow-wrap: anywhere; }
+  .statname p { margin: 0.125rem 0 0; font-size: 0.75rem; font-style: italic; color: var(--dim); }
+  .statbody { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0.75rem 0.875rem 0.875rem; }
+  .statnone { margin: 0; color: var(--dim); font-size: 0.8125rem; }
+  .statsource { margin: 0.75rem 0 0; padding-top: 0.5rem; border-top: 1px solid var(--line-soft); font-size: 0.75rem; color: var(--dim); }
+</style>
