@@ -387,7 +387,7 @@
       </div>
     {/if}
 
-    {#if error}<p class="err" role="alert">{error}</p>{/if}
+    {#if error}<p class="app-alert bad" role="alert">{error}</p>{/if}
 
     {#if active.length === 0}
       <p class="empty">No characters yet.{#if isDm}{' '}Send your players the invite link.{/if}</p>
@@ -554,7 +554,6 @@
   @keyframes edIn { from { opacity: 0; transform: translateY(4px); } }
   .edit[aria-pressed='true'] { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
   .edit[aria-pressed='true']:hover { border-color: var(--a); background: var(--a-edge); color: var(--text); }
-  .err { color: var(--bad); font-size: 0.875rem; }
   .ended {
     margin: 1.5rem 0 0; padding: 0.75rem 1rem; border: 1px solid var(--line-soft); border-radius: var(--r);
     background: var(--surface); color: var(--dim); font-size: 0.875rem; line-height: 1.45;

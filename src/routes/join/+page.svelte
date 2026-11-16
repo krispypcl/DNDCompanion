@@ -99,7 +99,7 @@
         {/each}
       </ul>
     {/if}
-    {#if error}<p class="err" role="alert">{error}</p>{/if}
+    {#if error}<p class="app-alert bad" role="alert">{error}</p>{/if}
   </main>
 {/if}
 
@@ -127,5 +127,4 @@
   li button:disabled { cursor: default; opacity: 0.7; }
   .sub { grid-column: 1; font-size: 0.8125rem; color: var(--dim); }
   .tag { grid-column: 2; grid-row: 1 / 3; align-self: center; font-size: 0.8125rem; color: var(--a); }
-  .err { color: var(--bad); }
 </style>

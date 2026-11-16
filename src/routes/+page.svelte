@@ -698,7 +698,7 @@
   </header>
 
   {#if !isConfigured}
-    <p class="warn">
+    <p class="app-alert bad">
       This copy has no Supabase credentials. Set <code>PUBLIC_SUPABASE_URL</code> and
       <code>PUBLIC_SUPABASE_ANON_KEY</code> and rebuild.
     </p>
@@ -728,8 +728,8 @@
       {/if}
     {/if}
 
-    {#if error}<p class="warn" role="alert">{error}</p>{/if}
-    {#if notice}<p class="note" role="status">{notice}</p>{/if}
+    {#if error}<p class="app-alert bad top" role="alert">{error}</p>{/if}
+    {#if notice}<p class="app-alert top" role="status">{notice}</p>{/if}
 
     <!-- Visually hidden, not display: none: some phones will not open the
          file picker for an input that is not rendered. -->
@@ -814,9 +814,11 @@
 <style>
   .swap { position: relative; }
   .hello {
-    display: flex; align-items: center; gap: 0.75rem 1rem; flex-wrap: wrap; margin: 1.75rem 0 0; padding: 0.875rem 1rem;
+    display: flex; align-items: center; gap: 0.75rem 1rem; flex-wrap: wrap; margin: 0; padding: 0.875rem 1rem;
     border: 1px solid var(--a-edge); border-radius: var(--r); background: var(--a-wash);
   }
+  /* Under the header, everything sits the same distance apart. */
+  .hello, .top { margin-top: 1.75rem; }
   .hello.slim { border-color: var(--line-soft); background: var(--surface); font-size: 0.875rem; color: var(--dim); }
   .hello.slim span { flex: 1; min-width: 12rem; }
   .hellotext { flex: 1 1 16rem; display: grid; gap: 0.125rem; }
@@ -867,7 +869,6 @@
     position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0;
     clip-path: inset(50%); pointer-events: none;
   }
-  .note { color: var(--dim); font-size: 0.875rem; }
   button {
     background: var(--surface); border: 1px solid var(--line); color: var(--text);
     border-radius: 6px; padding: 0.4rem 0.9rem; font: inherit; font-size: 0.875rem; cursor: pointer;
@@ -935,7 +936,6 @@
   .me:hover { border-color: var(--a-edge); color: var(--a); }
   .dieload { min-height: 40vh; }
   .dim { color: var(--dim); }
-  .warn { color: var(--accent); font-size: 0.9rem; }
   code { font-size: 0.85em; }
   li a { padding-left: 0.25rem; }
   .group {
@@ -986,7 +986,7 @@
     header { gap: 0.625rem; }
     .tools { gap: 0.375rem; }
     /* Tighter on a phone, the same above and below the nudge. */
-    .hello { margin-top: 1rem; }
+    .hello, .top { margin-top: 1rem; }
     .areas { margin-top: 1rem; }
     /* The picture alone says whose account it is: a round button, no pill. */
     .me span { display: none; }
