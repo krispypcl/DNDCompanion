@@ -247,8 +247,10 @@
      exactly that and widen it to match. */
   /* Grows with the writing and never shrinks under it: a long page makes the
      module scroll, rather than spilling over the page controls below. */
+  /* The space above the page bar belongs to the page, so the bar (and its
+     blur) starts at its own rule, with nothing over the writing above it. */
   .book {
-    margin: calc(-0.15rem - 1px) calc(-0.3rem - 1px) 0;
+    margin: calc(-0.15rem - 1px) calc(-0.3rem - 1px) 0.875rem;
     flex: 1 0 auto; display: flex; flex-direction: column;
   }
   .page { flex: 1 0 auto; display: flex; flex-direction: column; position: relative; }
@@ -282,7 +284,7 @@
   .drawbtn.on { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
   .pager {
     display: flex; align-items: center; gap: 0.75rem;
-    flex-wrap: wrap; margin-top: 0.875rem; padding-top: 0.75rem;
+    flex-wrap: wrap; padding-top: 0.75rem;
     border-top: 1px solid var(--line-soft);
   }
   /* Reading, the arrows are all there is, so they sit in the middle. */
