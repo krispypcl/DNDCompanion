@@ -699,7 +699,7 @@
   or Archived) each named where they start, and a pager under them when there
   is more than one page.
 -->
-{#snippet paged<T extends { id: string }>(key: Kind, groups: Group<T>[], item: import('svelte').Snippet<[T, Group<T>]>, themeOf: (x: T) => string | undefined)}
+{#snippet paged<T extends { id: string }>(key: Kind, groups: Group<T>[], item: import('svelte').Snippet<[T, Group<T>]>, themeOf: (x: T) => string | undefined, bannerOf: (x: T) => string | undefined)}
   {@const count = pageCount(groups)}
   {@const page = pageIn(key, groups)}
   <div class="pagearea" use:fit style:min-height={count > 1 ? `${pageHeight}px` : undefined}>
@@ -714,6 +714,10 @@
                   bind:this={rowEls[x.id]}
                   style:transform={g.pinned && drag?.kind === (g.kind ?? key) ? shift(x.id) : undefined}
                   animate:flip={{ duration: drag || landing ? 0 : 260, easing: cubicOut }} out:fold>
+                {#if bannerOf(x)}
+                  <!-- Its banner, in the bottom right corner, fading into the card. -->
+                  <span class="cardbanner" aria-hidden="true" style:background-image="url('{bannerOf(x)?.replace(/'/g, '%27')}')"></span>
+                {/if}
                 {@render item(x, g)}
               </li>
             {/each}
@@ -861,7 +865,7 @@
               {#if sheets.length === 0}
                 <p class="dim">No characters yet. Make one and start filling it in.</p>
               {:else}
-                {@render paged('sheets', sheetGroups, sheetItem, (x) => themeStyle(x.definition?.identity?.theme))}
+                {@render paged('sheets', sheetGroups, sheetItem, (x) => themeStyle(x.definition?.identity?.theme), (x) => resolveImageUrl(x.definition?.identity?.bannerUrl).url || undefined)}
               {/if}
             {:else}
               <!-- The campaigns this player runs as DM and the ones their
@@ -883,7 +887,7 @@
                 </div>
               {/if}
               {#if running.length || joined.length}
-                {@render paged('campaigns', campaignGroups, campaignItem, () => undefined)}
+                {@render paged('campaigns', campaignGroups, campaignItem, () => undefined, (c) => resolveImageUrl(c.details?.bannerUrl).url || undefined)}
               {:else if !naming}
                 <p class="dim">None yet. Start one to get an invite link for your players, or join one from your DM's link.</p>
               {/if}
@@ -943,6 +947,28 @@
    * the right, in a card wide enough for it.
    */
   li { container-type: inline-size; }
+  /*
+   * A banner, when the character or campaign has one: a corner of the card,
+   * bottom right, fading out towards the left and the top, under everything
+   * in the card (the star, the grip, the ×, the words all stay on top), and
+   * fading in once it has loaded.
+   */
+  li { position: relative; isolation: isolate; overflow: hidden; }
+  .cardbanner {
+    position: absolute; right: 0; bottom: 0; z-index: -1; pointer-events: none;
+    width: min(45%, 24rem); height: 100%;
+    background-size: cover; background-position: center;
+    opacity: 0.35; animation: bannerIn 0.6s ease-out backwards;
+    -webkit-mask-image: linear-gradient(to left, #000 15%, transparent 95%), linear-gradient(to top, #000 20%, transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(to left, #000 15%, transparent 95%), linear-gradient(to top, #000 20%, transparent 100%);
+    mask-composite: intersect;
+    transition: opacity 0.3s ease;
+  }
+  li:hover .cardbanner { opacity: 0.5; }
+  :global([data-mode='light']) .cardbanner { opacity: 0.3; }
+  :global([data-mode='light']) li:hover .cardbanner { opacity: 0.42; }
+  @keyframes bannerIn { from { opacity: 0; } }
   .withface {
     --face: 4.75rem;
     display: grid; grid-template-columns: var(--face) minmax(0, 1fr) minmax(11rem, 14rem);
