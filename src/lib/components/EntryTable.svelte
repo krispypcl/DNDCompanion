@@ -34,6 +34,9 @@
     short?: string;
     /** Required: fixed layout is what stops the headers moving. */
     width: string;
+    /** Its share while reading, where that differs (a feature's title needs
+        less room than its description once nothing is being typed). */
+    viewWidth?: string;
     type?: 'text' | 'number';
     /** A fixed set of values renders as a select rather than a text box. */
     options?: readonly string[];
@@ -211,17 +214,19 @@
    * taking a double helping, rather than to the narrow tick column.
    */
   const pct = (w: string) => (/^[\d.]+%$/.test(w) ? parseFloat(w) : null);
+  const baseWidth = (c: Column) => (editable ? c.width : (c.viewWidth ?? c.width));
   const spare = $derived.by(() => {
     if (editable) return 0;
-    const ws = shownColumns.map((c) => pct(c.width));
+    const ws = shownColumns.map((c) => pct(baseWidth(c)));
     if (ws.some((w) => w === null)) return 0;
     return Math.max(0, 100 - ws.reduce<number>((a, w) => a + (w ?? 0), 0));
   });
-  const spareTo = $derived(shownColumns.find((c) => c.key === 'notes')?.key ?? null);
+  /** The long prose column (notes, a description) takes the double helping. */
+  const spareTo = $derived(shownColumns.find((c) => c.key === 'notes' || c.wide)?.key ?? null);
   function widthOf(col: Column): string {
-    const w = pct(col.width);
-    if (!spare || w === null) return col.width;
-    const notes = spareTo ? (pct(shownColumns.find((c) => c.key === spareTo)!.width) ?? 0) : 0;
+    const w = pct(baseWidth(col));
+    if (!spare || w === null) return baseWidth(col);
+    const notes = spareTo ? (pct(baseWidth(shownColumns.find((c) => c.key === spareTo)!)) ?? 0) : 0;
     const weight = col.key === spareTo ? 2 * w : w;
     return `${w + (spare * weight) / (100 - spare + notes)}%`;
   }
