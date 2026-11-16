@@ -3,7 +3,8 @@
   its button in the header. Type a name; every spell, item, feat, option,
   species, background, class, condition and monster on 5e.tools is there,
   best matches first. Enter (or a press) opens one in a pop-up of its own,
-  and the search stays for the next. On the campaign page the DM can also
+  and the search stays for the next (on a phone it steps aside, and its ×
+  stands in for Esc). On the campaign page the DM can also
   put a monster, or one of their own homebrew creatures, on the table.
 -->
 <script lang="ts">
@@ -66,8 +67,11 @@
   function close() {
     open = false;
   }
+  /** A phone or tablet: the result opens over the page, so the search steps aside for it. */
+  const touch = () => matchMedia('(hover: none), (pointer: coarse)').matches || window.innerWidth < 640;
   function choose(r: Row | undefined, add = false) {
     if (!r) return;
+    if (touch()) close();
     if (r.kind === 'homebrew') {
       onaddhomebrew?.(r.brew.id);
       return;
@@ -127,7 +131,8 @@
         <input bind:this={input} bind:value={query} onkeydown={key} placeholder="Search spells, items, monsters and more"
                aria-label="Search 5e.tools" aria-controls="spot-results" aria-activedescendant={results.length ? `spot-${at}` : undefined}
                autocomplete="off" spellcheck="false" />
-        <kbd>Esc</kbd>
+        <kbd class="spotesc">Esc</kbd>
+        <button type="button" class="closex spotx" aria-label="Close the search" onclick={close}>×</button>
       </div>
       {#if query.trim().length >= 2}
         <ul class="spotlist themed-scroll" id="spot-results" role="listbox" bind:this={list}>
@@ -168,6 +173,11 @@
   .spotfield { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1rem; color: var(--dim); }
   .spotfield input {
     flex: 1; min-width: 0; font: inherit; font-size: 1.125rem; color: var(--text); background: none; border: 0; outline: none;
+  }
+  .spotx { display: none; --x-size: 2.25rem; }
+  @media (hover: none), (pointer: coarse), (max-width: 639px) {
+    .spotesc { display: none; }
+    .spotx { display: grid; }
   }
   kbd {
     font: inherit; font-size: 0.6875rem; color: var(--dim); padding: 0.125rem 0.375rem;
