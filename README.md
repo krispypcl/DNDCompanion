@@ -1,9 +1,9 @@
-<h1 align="center">
+<p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset=".github/readme/brand-dark.png">
     <img src=".github/readme/brand-light.png" alt="DND Companion" width="400">
   </picture>
-</h1>
+</p>
 
 ## Overview
 
@@ -37,6 +37,8 @@ it. It works the same on a phone, a tablet and a laptop.
   release.
 
 ## Usage
+
+### In app
 
 1. Open the app and create an account: email and password, Google or Discord.
 2. Press **New sheet** to make a character, then **Edit** to fill it in. It
@@ -87,35 +89,19 @@ it. It works the same on a phone, a tablet and a laptop.
 
 ## Local Development
 
-The app talks to a Supabase API (database, sign-in and Realtime together), so
-you need one of these. Each runs the same `schema.sql`:
+The app runs on [Supabase](https://supabase.com/): its database, sign-in and
+live updates all come from one Supabase project.
 
-- **Supabase's cloud:** create a free project at
-  [supabase.com](https://supabase.com/).
-- **On your own machine:** with Docker and the
-  [Supabase CLI](https://supabase.com/docs/guides/local-development), run
-  `npx supabase init` and `npx supabase start` in the project folder. It prints
-  a local API URL and anon key.
-- **Your own server, or a PostgreSQL you already run:**
-  [self-host Supabase](https://supabase.com/docs/guides/self-hosting) and point
-  it at that database.
-
-Using a database without Supabase in front of it (MySQL, SQLite, Firebase…)
-means replacing the data layer in `src/lib/data/` and `src/lib/supabase.ts`,
-and moving the row-level security in `schema.sql` into your own server.
-
-1. Set up the database: run `schema.sql` once in the SQL editor (Supabase
-   Studio, or `psql` against a local or self-hosted database). Turn on email
-   confirmation under Authentication → Providers → Email; Google and Discord
-   are optional there too.
-2. Create a `.env` in the project folder with your project's URL and anon key:
+1. Create a Supabase project. In its SQL editor, run `schema.sql` once. Turn on
+   email confirmation under Authentication → Providers → Email; Google and
+   Discord are optional there too.
+2. Create a `.env` in the project folder with the project's URL and anon key
+   (Project Settings → API):
 
    ```
    PUBLIC_SUPABASE_URL=https://your-project.supabase.co
    PUBLIC_SUPABASE_ANON_KEY=your-anon-key
    ```
-
-   (For the local CLI, the URL is usually `http://127.0.0.1:54321`.)
 
 3. Install and start it:
 
