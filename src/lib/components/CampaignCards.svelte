@@ -18,6 +18,7 @@
   import { resolveImageUrl } from '$lib/rules/imageUrl';
   import { STANDARD_CONDITIONS, cleanName, defaultLook, isStandard, lookKey, lookOf } from '$lib/rules/conditions';
   import ConditionLookPicker from './ConditionLookPicker.svelte';
+  import { focusFirst, movable, portal } from '$lib/actions';
   import { themeStyle } from '$lib/theme';
   import { followHeight, glideTo, prefersReducedMotion } from '$lib/motion';
   import CardHp from './CardHp.svelte';
@@ -260,19 +261,28 @@
                                onchange={(patch) => setLook(s, tinting!.name, patch)} ondone={() => (tinting = null)} />
         {/if}
         {#if picking === s.id}
-          <div class="picker" transition:slide={unfold()} role="group" aria-label="Conditions for {nameOf(s)}">
-            <div class="grid">
-              {#each STANDARD_CONDITIONS as name (name)}
-                {@const look = lookOf(name)}
-                <button class="opt" class:on={has(conds, name)} aria-pressed={has(conds, name)} style:--cc={look?.color}
-                        onclick={() => toggle(s, name)}><span class="dot" aria-hidden="true"></span>{name}</button>
-              {/each}
-            </div>
-            <div class="own">
-              <input bind:value={custom} placeholder="Something else, e.g. Bless" aria-label="Another condition"
-                     onkeydown={(e) => { if (e.key === 'Enter') addCustom(s); }} />
-              <button class="give" onclick={() => addCustom(s)} disabled={!custom.trim()}>Give</button>
-              <button class="done" onclick={() => (picking = null)}>Done</button>
+          <!-- Giving conditions: a window over the dimmed page (as a picture
+               opened from Appearance), so the card keeps its size. A press
+               on the dimmed page, Done or Esc closes it. -->
+          <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+          <div class="condscrim" use:portal transition:fade={{ duration: prefersReducedMotion() ? 0 : 180 }}
+               onclick={(e) => { if (e.target === e.currentTarget) picking = null; }}>
+            <div class="condwindow" role="dialog" aria-modal="true" aria-labelledby="give-{s.id}" use:movable use:focusFirst
+                 in:scale={{ start: 0.97, duration: prefersReducedMotion() ? 0 : 200, easing: cubicOut }}>
+              <h2 id="give-{s.id}">Conditions for {nameOf(s)}</h2>
+              <div class="grid">
+                {#each STANDARD_CONDITIONS as name (name)}
+                  {@const look = lookOf(name)}
+                  <button class="opt" class:on={has(conds, name)} aria-pressed={has(conds, name)} style:--cc={look?.color}
+                          onclick={() => toggle(s, name)}><span class="dot" aria-hidden="true"></span>{name}</button>
+                {/each}
+              </div>
+              <div class="own">
+                <input bind:value={custom} placeholder="Something else, e.g. Bless" aria-label="Another condition"
+                       onkeydown={(e) => { if (e.key === 'Enter') addCustom(s); }} />
+                <button class="give" onclick={() => addCustom(s)} disabled={!custom.trim()}>Give</button>
+                <button class="done" onclick={() => (picking = null)}>Done</button>
+              </div>
             </div>
           </div>
         {/if}
@@ -443,18 +453,33 @@
   .plus:hover { color: var(--a); border-color: var(--a-edge); }
   .plus[aria-expanded='true'] { color: var(--a); border-color: var(--a-edge); transform: rotate(45deg); }
 
-  .picker { margin-top: 0.625rem; padding: 0.625rem; border-radius: var(--r-sm); background: var(--raised); border: 1px solid var(--line-soft); }
-  .grid { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+  /* The conditions window: the page dimmed and blurred behind it, as behind a picture opened from Appearance. */
+  .condscrim {
+    position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 1rem;
+    background: rgb(0 0 0 / 0.78); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  }
+  .condwindow {
+    width: min(30rem, 100%); padding: 1.125rem 1.25rem 1.25rem; border-radius: var(--r);
+    background: var(--surface); border: 1px solid var(--line); box-shadow: 0 24px 60px rgb(0 0 0 / 0.5);
+  }
+  .condwindow h2 { margin: 0 0 0.875rem; font-size: 1rem; font-weight: 650; color: var(--a); overflow-wrap: anywhere; }
+  .grid { display: flex; flex-wrap: wrap; gap: 0.375rem; }
   .opt {
     --cc: var(--dim);
-    display: inline-flex; align-items: center; gap: 0.3125rem; font: inherit; font-size: 0.75rem; cursor: pointer;
-    padding: 0.1875rem 0.5rem; border-radius: 999px; color: var(--dim);
+    display: inline-flex; align-items: center; gap: 0.375rem; font: inherit; font-size: 0.8125rem; cursor: pointer;
+    padding: 0.3125rem 0.625rem; border-radius: 999px; color: var(--dim);
     border: 1px solid var(--line-soft); background: var(--surface);
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
   .opt:hover { color: var(--text); border-color: color-mix(in oklch, var(--cc) 50%, var(--line)); }
-  .opt.on { color: var(--text); border-color: color-mix(in oklch, var(--cc) 65%, var(--line)); background: color-mix(in oklch, var(--cc) 22%, var(--raised)); }
-  .own { display: flex; gap: 0.375rem; margin-top: 0.5rem; }
+  /* Given: tinted in its colour and ringed, the ring mixed toward the text so
+     a dark colour (Blinded, Dead) still shows on a dark page, as a light one does on a light page. */
+  .opt.on {
+    color: var(--text); border-color: color-mix(in oklch, var(--cc) 65%, var(--text));
+    background: color-mix(in oklch, var(--cc) 22%, var(--raised));
+    box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--cc) 65%, var(--text));
+  }
+  .own { display: flex; gap: 0.375rem; margin-top: 1rem; }
   .own input {
     flex: 1; min-width: 0; font: inherit; font-size: 0.8125rem; padding: 0.3125rem 0.5rem; color: var(--text);
     border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg);
