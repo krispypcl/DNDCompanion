@@ -25,6 +25,15 @@ export class StaleWriteError extends Error {
 
 const COLUMNS = 'id, owner_id, campaign_id, name, retired, definition, state, created_at, updated_at';
 
+/** A character in a campaign, as the main menu's campaign cards show it. */
+export type PartyMember = {
+  id: string;
+  campaign_id: string;
+  retired: boolean;
+  name: string;
+  identity: { name?: string; portraitUrl?: string } | null;
+};
+
 /**
  * Whether an error means the private-text table has not been created yet. The
  * app is deployed before and after the migration that adds it, so this is an
@@ -218,6 +227,16 @@ export function makeSheetRepo(client: SupabaseClient) {
       const { data, error } = await client.from('characters').select(COLUMNS).eq('id', id).maybeSingle();
       if (error) throw new Error(error.message);
       return (data as Sheet | null) ?? null;
+    },
+
+    /** Who is in each of these campaigns, lightly (names and portraits), for the main menu's cards. */
+    async partyOf(campaignIds: string[]): Promise<PartyMember[]> {
+      const ids = [...new Set(campaignIds.filter(Boolean))];
+      if (!ids.length) return [];
+      const { data, error } = await client.from('characters')
+        .select('id, campaign_id, retired, name, identity:definition->identity').in('campaign_id', ids);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as PartyMember[];
     },
 
     async listCampaignSheets(campaignId: string): Promise<Sheet[]> {
