@@ -411,7 +411,7 @@
       <h2 id="stats-h">Statistics</h2>
       {#if stats}
         <dl class="stats" in:fade={{ duration: 200 }}>
-          <div><dt>Adventurer since</dt><dd>{numericDate($session.user.created_at) || 'Unknown'}</dd></div>
+          <div><dt>Larper since</dt><dd>{numericDate($session.user.created_at) || 'Unknown'}</dd></div>
           <div><dt>Characters</dt><dd>{stats.characters}{#if stats.retired}<small>{stats.retired} retired</small>{/if}</dd></div>
           <div><dt>Highest level</dt><dd>{stats.highest ? stats.highest.level : 'None'}{#if stats.highest}<small>{stats.highest.name}</small>{/if}</dd></div>
           <div><dt>Favourite class</dt><dd>{stats.favourite ?? 'None yet'}{#if stats.favouriteCount > 1}<small>{stats.favouriteCount} characters</small>{/if}</dd></div>
