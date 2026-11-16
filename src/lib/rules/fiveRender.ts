@@ -5,6 +5,7 @@
  * escaped, so it is safe to place in the page.
  */
 import type { Found, ItemWords, Raw } from './fiveData';
+import { fromFiveTools, kindLine, statBlockHtml } from './statblock';
 
 /** Every string here is HTML, built with its text escaped. */
 export type Rendered = {
@@ -418,6 +419,13 @@ export function render(found: Found): Rendered {
       kind = `${e.className} Subclass`;
       html = featureList(found.features);
       break;
+    }
+    case 'monster': {
+      // Through the app's own stat block, so a monster looks the same in a
+      // pop-up as on the DM's table.
+      const sb = fromFiveTools(e);
+      kind = kindLine(sb);
+      return { name: esc(e.name), kind: esc(kind), facts: [], html: statBlockHtml(sb), source: esc(sourceLine(e)) };
     }
     case 'class': {
       kind = 'Class';

@@ -13,7 +13,8 @@ const PAGES: Record<string, PeekPage> = {
   'backgrounds.html': 'backgrounds',
   'conditionsdiseases.html': 'conditionsdiseases',
   'optionalfeatures.html': 'optionalfeatures',
-  'classes.html': 'classes'
+  'classes.html': 'classes',
+  'bestiary.html': 'bestiary'
 };
 
 /** 5e.tools' search words for a category. */
@@ -25,7 +26,9 @@ const SEARCH: Record<string, PeekPage> = {
   con: 'conditionsdiseases',
   feat: 'feats',
   class: 'classes',
-  subclass: 'classes'
+  subclass: 'classes',
+  bestiary: 'bestiary',
+  creature: 'bestiary'
 };
 
 const decode = (s: string) => {

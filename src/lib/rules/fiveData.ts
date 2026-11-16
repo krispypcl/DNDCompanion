@@ -15,6 +15,7 @@ export type PeekPage =
   | 'conditionsdiseases'
   | 'optionalfeatures'
   | 'classes'
+  | 'bestiary'
   | 'any';
 
 /** An entry as a 5e.tools link names it. */
@@ -87,7 +88,8 @@ export type Found =
   | { kind: 'item'; entry: Raw; words?: ItemWords }
   | { kind: 'class'; entry: Raw; features: Raw[] }
   | { kind: 'subclass'; entry: Raw; features: Raw[]; only: boolean }
-  | { kind: 'classFeature'; entry: Raw; features: Raw[] };
+  | { kind: 'classFeature'; entry: Raw; features: Raw[] }
+  | { kind: 'monster'; entry: Raw };
 
 const same = (a: unknown, b: unknown) => String(a ?? '').toLowerCase() === String(b ?? '').toLowerCase();
 
@@ -235,6 +237,42 @@ async function findFeature(name: string, source: string): Promise<Found | null> 
   return hit ? { kind: 'classFeature', entry: hit, features: [] } : null;
 }
 
+/** The books whose monsters are looked through first when a link names none. */
+const MONSTERS_FIRST = ['XMM', 'MM', 'MPMM', 'VGM', 'MTF'];
+
+/**
+ * A monster, by name and (if known) its book. One made as a copy of another
+ * ("_copy") is the other with its own changes laid over it.
+ */
+export async function findMonster(name: string, source: string, depth = 0): Promise<Raw | null> {
+  const index = (await load('bestiary/index.json')) as Record<string, string>;
+  const books = Object.keys(index);
+  let order = [...new Set([...(source ? books.filter((b) => same(b, source)) : []), ...MONSTERS_FIRST])].filter((b) => index[b]);
+  if (!source) {
+    // Which books have it, from the search index (bundled, loaded only now).
+    const rows = ((await import('$lib/data/search-index.json')).default as [string, string, string, string][])
+      .filter(([n, k]) => k === 'm' && same(n, name))
+      .map(([, , b]) => books.find((x) => same(x, b)))
+      .filter((b): b is string => Boolean(b));
+    order = [...new Set([...order.filter((b) => rows.includes(b)), ...rows])];
+  }
+  for (const b of order) {
+    const data = await load(`bestiary/${index[b]}`);
+    const hit = pick(data.monster ?? [], name, source);
+    if (!hit) continue;
+    if (hit._copy && depth < 3) {
+      const base = await findMonster(hit._copy.name, hit._copy.source ?? '', depth + 1);
+      if (base) {
+        const own = Object.fromEntries(Object.entries(hit).filter(([k]) => k !== '_copy' && k !== '_mod'));
+        return { ...base, ...own };
+      }
+    }
+    return hit;
+  }
+  const home = await brew(source);
+  return home ? pick((home.monster ?? []).filter((e: Raw) => same(e.source, source)), name, source) : null;
+}
+
 /** The entry a link points at, in 5e.tools' data; null when it is not there. */
 export async function findEntry(t: PeekTarget, label = ''): Promise<Found | null> {
   const { name, source } = t;
@@ -264,6 +302,8 @@ export async function findEntry(t: PeekTarget, label = ''): Promise<Found | null
     }
     case 'classes':
       return findClass(t, label);
+    case 'bestiary':
+      return one('monster', findMonster(name, source));
     case 'any': {
       // A search with no category: each kind in turn, spells first
       // ("Invisibility" is a spell before it is anything else).
@@ -275,7 +315,8 @@ export async function findEntry(t: PeekTarget, label = ''): Promise<Found | null
         () => one('race', findRace(name, source)),
         () => one('background', findIn('backgrounds.json', 'background', name, source)),
         () => findEntry({ ...t, page: 'conditionsdiseases' }),
-        () => findFeature(name, source)
+        () => findFeature(name, source),
+        () => one('monster', findMonster(name, source))
       ];
       for (const attempt of tries) {
         const found = await attempt().catch(() => null);

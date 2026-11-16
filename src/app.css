@@ -287,6 +287,28 @@ body {
 .themed-scroll::-webkit-scrollbar-thumb { background: color-mix(in oklch, var(--a) 55%, transparent); border-radius: 6px; }
 .themed-scroll::-webkit-scrollbar-thumb:hover { background: var(--a); }
 
+/* A creature's stat block (rules/statblock statBlockHtml): in the 5e.tools
+   pop-ups and the DM's stat block windows alike. */
+.sb { display: grid; gap: 0.625rem; font-size: 0.8125rem; line-height: 1.5; color: var(--text); }
+.sb-lines { margin: 0; display: grid; gap: 0.1875rem; }
+.sb-lines div { display: flex; gap: 0.375rem; flex-wrap: wrap; }
+.sb-lines dt { font-weight: 650; color: var(--a); }
+.sb-lines dd { margin: 0; flex: 1 1 10rem; min-width: 0; overflow-wrap: anywhere; }
+.sb-abilities { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.25rem; }
+.sb-abilities div {
+  display: grid; justify-items: center; gap: 0.0625rem; padding: 0.3125rem 0.125rem;
+  border-radius: var(--r-sm); background: var(--raised); border: 1px solid var(--line-soft);
+}
+.sb-abilities span { font-size: 0.5625rem; font-weight: 650; letter-spacing: 0.08em; color: var(--label); }
+.sb-abilities b { font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
+.sb-abilities i { font-style: normal; font-size: 0.6875rem; color: var(--dim); }
+.sb-section {
+  margin: 0.375rem 0 0; padding-bottom: 0.25rem; border-bottom: 1px solid var(--a-edge);
+  font-size: 0.75rem; font-weight: 650; letter-spacing: 0.1em; text-transform: uppercase; color: var(--a);
+}
+.sb-feature { margin: 0; overflow-wrap: anywhere; }
+.sb-feature b { font-style: italic; }
+
 /* A pop-up that can be moved (lib/actions.ts `movable`): its title is what you take hold of. */
 [data-movable] :is(header, h2) { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
 [data-movable][data-moving] :is(header, h2) { cursor: grabbing; }
