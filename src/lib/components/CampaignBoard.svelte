@@ -331,6 +331,10 @@
         // A notch of a mouse wheel (about 100) is a 1.25× step.
         const dy = Math.max(-200, Math.min(200, e.deltaY * k));
         zoomAt(e.clientX - r.left, e.clientY - r.top, Math.pow(1.25, -dy / 100));
+        // Zooming while the page is held: the hold carries on from the new
+        // view, so the next move doesn't snap back to the old zoom.
+        if (panning) panning = { sx: e.clientX, sy: e.clientY, view };
+        if (pinch) pinch = { ...pinch, view };
       } else if (active) {
         e.preventDefault();
         const dx = e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX;
