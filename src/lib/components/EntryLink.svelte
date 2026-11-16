@@ -31,7 +31,6 @@
   const peeks = $derived(Boolean(href && peekTarget(href)));
 
   let link = $state<HTMLAnchorElement>();
-  let lastPointer = 'mouse';
 
   function target() {
     if (!link || !href) return null;
@@ -63,35 +62,16 @@
     };
   });
 
-  /*
-   * Which pointer pressed the link, heard directly (not through Svelte's
-   * shared listener, which a row's drag handling can stop before it gets
-   * here).
-   */
-  $effect(() => {
-    if (!link) return;
-    const down = (e: PointerEvent) => (lastPointer = e.pointerType);
-    link.addEventListener('pointerdown', down, { capture: true, passive: true });
-    return () => link?.removeEventListener('pointerdown', down, { capture: true });
-  });
-
-  /** A finger, by the click itself where the browser says, else by the press or the screen. */
-  function touched(e: MouseEvent): boolean {
-    const type = (e as PointerEvent).pointerType;
-    if (type) return type === 'touch';
-    return lastPointer === 'touch' || matchMedia('(hover: none)').matches;
-  }
-
   /**
-   * A tap opens the peek instead of a new tab (it has its own Open on
-   * 5e.tools), and while a tapped peek is open, another link only swaps it.
+   * A click or tap opens the peek, never the page itself: only the peek's
+   * own Open on 5e.tools leaves for 5e.tools. (Only links 5e.tools can't
+   * show in the peek, such as a homebrew site, open in a new tab.)
    */
-  function click(e: MouseEvent) {
-    if (!peeks || !(touched(e) || peek.tapped)) return;
-    const t = target();
-    if (!t) return;
+  function open(e: MouseEvent) {
+    if (!peeks) return;
     e.preventDefault();
-    peek.show(t, { tapped: true });
+    const t = target();
+    if (t) peek.show(t, { tapped: true });
   }
 </script>
 
@@ -100,11 +80,12 @@
     class="lookup"
     {href}
     bind:this={link}
-    onclick={click}
+    onclick={open}
+    onauxclick={(e) => peeks && e.preventDefault()}
     target="_blank"
     rel="noopener noreferrer"
-    title="Look up {name} on 5e.tools"
-    aria-label="Look up {name} on 5e.tools"
+    title="Look up {name}"
+    aria-label="Look up {name}"
   >
     <!-- An open book: look it up. -->
     <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">

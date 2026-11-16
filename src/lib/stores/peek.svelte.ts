@@ -27,7 +27,7 @@ class Peek {
   pinned = $state(false);
   /** The pointer is over the window itself. */
   inside = $state(false);
-  /** Opened by a tap (no hover to leave), so only × , Esc or a tap outside closes it. */
+  /** Opened by a click or tap (not a resting pointer), so only ×, Esc or a press outside closes it. */
   tapped = $state(false);
 
   #openTimer: ReturnType<typeof setTimeout> | undefined;
