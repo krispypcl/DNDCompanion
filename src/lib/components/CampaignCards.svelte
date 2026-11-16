@@ -420,18 +420,9 @@
     border: 1px solid color-mix(in oklch, var(--cc) 60%, var(--line));
     background: color-mix(in oklch, var(--cc) 18%, var(--raised));
   }
-  /* Light mode: the chips look like the sheet's own, in the character's
-     colour, and the condition's colour stays in the dot. (Washed in their
-     own colours they read as grey slabs on a light page.) */
-  :global([data-mode='light']) .conds li:not(.add) {
-    background: var(--a-wash);
-    border-color: var(--a-edge);
-  }
-  :global([data-mode='light']) .opt.on {
-    background: var(--a-wash);
-    border-color: var(--a-edge);
-  }
-  :global([data-mode='light']) .dot { width: 0.5625rem; height: 0.5625rem; box-shadow: 0 0 0 1px color-mix(in oklch, var(--text) 35%, transparent); }
+  /* Light mode: the same chips in the condition's own colour as in dark
+     mode; only the dot's ring is a little darker, to show on a light page. */
+  :global([data-mode='light']) .dot { box-shadow: 0 0 0 1px color-mix(in oklch, var(--text) 35%, transparent); }
   .dot {
     flex: none; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--cc, var(--dim));
     box-shadow: 0 0 0 1px color-mix(in oklch, var(--text) 25%, transparent);
