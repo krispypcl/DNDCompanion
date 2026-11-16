@@ -17,6 +17,9 @@
   import { pageTitle } from '$lib/title';
   import { profile } from '$lib/stores/profile';
   import { watchTable, type Here } from '$lib/presence';
+  import { paginate, type PageSize } from '$lib/rules/paging';
+  /** A group's name above its cards, with the space around it. */
+  const GROUP_NAME_H = 40;
   import { faceFamily, fontFace } from '$lib/rules/fonts';
   import D20Loader from '$lib/components/D20Loader.svelte';
   import Tabs from '$lib/components/Tabs.svelte';
@@ -300,8 +303,8 @@
 
   /** `kind`: whose pins a pinned group's cards are, where it differs from the list's. */
   type Group<T> = { key: string; label: string; items: T[]; pinned?: boolean; faded?: boolean; kind?: Kind };
-  /** How many cards a page holds: as many rows as fit below the list, times its columns. */
-  let perPage = $state(10);
+  /** The room below the list for a page of cards, a row's height, and cards to a row (lib/rules/paging.ts). */
+  let pageSize = $state<PageSize>({ room: 600, rowH: 120, nameH: GROUP_NAME_H, cols: 2 });
   /** The height a full page takes, so a short last page does not pull the pager up. */
   let pageHeight = $state(0);
   let pages = $state<Record<string, number>>({});
@@ -316,22 +319,9 @@
       { key: 'faded', label: fadedLabel, items: faded, faded: true }
     ];
   }
-  /** One page's worth of the groups, in order. */
-  function pageOfGroups<T>(groups: Group<T>[], page: number, size: number): Group<T>[] {
-    let skip = page * size;
-    let room = size;
-    const out: Group<T>[] = [];
-    for (const g of groups) {
-      const take = g.items.slice(Math.min(skip, g.items.length));
-      skip = Math.max(0, skip - g.items.length);
-      const shown = take.slice(0, room);
-      room -= shown.length;
-      if (shown.length) out.push({ ...g, items: shown });
-    }
-    return out;
-  }
-  const pageCount = (groups: Group<unknown>[]) =>
-    Math.max(1, Math.ceil(groups.reduce((n, g) => n + g.items.length, 0) / Math.max(1, perPage)));
+  /** The groups cut into pages by rows (lib/rules/paging.ts). */
+  const pagesOf = <T,>(groups: Group<T>[]) => paginate(groups, pageSize);
+  const pageCount = (groups: Group<unknown>[]) => pagesOf(groups).length;
   const pageIn = (key: string, groups: Group<unknown>[]) => Math.min(pages[key] ?? 0, pageCount(groups) - 1);
   function turn(key: string, to: number) {
     pageDirection = to > (pages[key] ?? 0) ? 1 : -1;
@@ -373,9 +363,9 @@
   );
 
   /**
-   * Measures how many cards fit: the rows left between the top of the list
-   * and the foot of the screen (less the pager and group names), times the
-   * columns the grid has at this width. Again on every resize.
+   * Measures the room for a page of cards: from the top of the list to the
+   * foot of the screen, less the pager; with a row's height and the columns
+   * the grid has at this width, the paginator fills it. Again on every resize.
    */
   function fit(node: HTMLElement) {
     let frame = 0;
@@ -390,11 +380,12 @@
         const heights = [...node.querySelectorAll('li')].map((li) => li.getBoundingClientRect().height).filter(Boolean);
         const rowH = (heights.length ? Math.max(...heights) : 66) + gap;
         const top = node.getBoundingClientRect().top + window.scrollY;
-        // The pager, a group name or two and some air at the bottom.
-        const room = window.innerHeight - top - 60 - 2 * 32 - 12;
-        const rows = Math.max(2, Math.floor(room / rowH));
-        perPage = rows * cols;
-        pageHeight = rows * rowH + 32;
+        // Under the list: the pager, and the page's own space at its foot.
+        const foot = parseFloat(getComputedStyle(node.closest('main') ?? node).paddingBottom) || 0;
+        const room = Math.max(window.innerHeight - top - 60 - foot, GROUP_NAME_H + 2 * rowH);
+        // (The last row needs no gap under it.)
+        pageSize = { room: room + gap, rowH, nameH: GROUP_NAME_H, cols };
+        pageHeight = room;
       });
     };
     measure();
@@ -705,7 +696,7 @@
   <div class="pagearea" use:fit style:min-height={count > 1 ? `${pageHeight}px` : undefined}>
     {#key `${key}:${page}`}
       <div class="pageset" in:pageSlide>
-        {#each pageOfGroups(groups, page, perPage) as g (g.key)}
+        {#each pagesOf(groups)[page] ?? [] as g (g.key)}
           {#if g.label}<h3 class="group">{g.label}</h3>{/if}
           <ul class="cascade" class:pinned={g.pinned} class:dragging={g.pinned && drag?.kind === (g.kind ?? key)} class:landing={g.pinned && landing}>
             {#each g.items as x, i (x.id)}
@@ -920,7 +911,8 @@
     border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg);
   }
   .hellorow input:focus { outline: none; border-color: var(--a-edge); }
-  main { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
+  /* Its foot is short: the menu is paged to fit, so that space is only air. */
+  main { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1rem 2rem; }
   /* A wide screen: the page widens and the cards sit in a grid. */
   @media (min-width: 900px) {
     main { max-width: var(--page-width); padding-left: var(--page-pad); padding-right: var(--page-pad); }
