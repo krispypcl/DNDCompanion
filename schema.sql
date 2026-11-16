@@ -18,13 +18,13 @@
 --   campaign_state    what is happening in a campaign now (music, invite)
 --   board_items       the campaign's table board
 --   campaign_creatures monsters and NPCs the DM keeps on the campaign page
+--   homebrew_creatures a DM's own monsters and NPCs, kept to add to any campaign
 --   shared_rows       rows players wrote, offered to others as they type
 --   shared_row_uses   which characters use which shared rows
 --
 -- Functions the app calls live in the `private` schema (not served by the
 -- API) with a thin public face running as the caller. An existing database
--- from before 16 Nov 2026 is brought up to this by database/0015, 0016 and
--- 0017.
+-- from before 16 Nov 2026 is brought up to this by database/0015 to 0018.
 
 create extension if not exists pgcrypto;
 
@@ -110,10 +110,27 @@ create table if not exists public.campaign_creatures (
   notes        text not null default '' constraint campaign_creatures_notes_check check (char_length(notes) <= 4000),
   link         text not null default '' constraint campaign_creatures_link_check check (char_length(link) <= 500),
   position     integer not null default 0,
+  initiative   integer constraint campaign_creatures_initiative_check check (initiative is null or initiative between -50 and 100),
+  visible      boolean not null default false,
+  statblock    jsonb not null default '{}'::jsonb
+               constraint campaign_creatures_statblock_size check (jsonb_typeof(statblock) = 'object' and octet_length(statblock::text) <= 60000),
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );
 create index if not exists campaign_creatures_campaign_idx on public.campaign_creatures (campaign_id);
+
+create table if not exists public.homebrew_creatures (
+  id           uuid primary key default gen_random_uuid(),
+  owner_id     uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  kind         text not null default 'monster'
+               constraint homebrew_creatures_kind_check check (kind in ('monster', 'npc')),
+  name         text not null constraint homebrew_creatures_name_check check (char_length(name) between 1 and 80),
+  statblock    jsonb not null default '{}'::jsonb
+               constraint homebrew_creatures_statblock_size check (jsonb_typeof(statblock) = 'object' and octet_length(statblock::text) <= 60000),
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+create index if not exists homebrew_creatures_owner_idx on public.homebrew_creatures (owner_id);
 
 create table if not exists public.shared_rows (
   id           uuid primary key default gen_random_uuid(),
@@ -206,6 +223,9 @@ create trigger board_items_touch before update on public.board_items
 drop trigger if exists campaign_creatures_touch on public.campaign_creatures;
 create trigger campaign_creatures_touch before update on public.campaign_creatures
   for each row execute function private.touch_updated_at();
+drop trigger if exists homebrew_creatures_touch on public.homebrew_creatures;
+create trigger homebrew_creatures_touch before update on public.homebrew_creatures
+  for each row execute function private.touch_updated_at();
 drop trigger if exists profiles_touch on public.profiles;
 create trigger profiles_touch before update on public.profiles
   for each row execute function private.touch_updated_at();
@@ -267,6 +287,23 @@ revoke all on function private.cap_campaign_creatures() from public, anon, authe
 drop trigger if exists campaign_creatures_cap on public.campaign_creatures;
 create trigger campaign_creatures_cap before insert on public.campaign_creatures
   for each row execute function private.cap_campaign_creatures();
+
+create or replace function private.cap_homebrew_creatures()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if (select count(*) from public.homebrew_creatures h where h.owner_id = new.owner_id) >= 500 then
+    raise exception 'Your bestiary is full';
+  end if;
+  return new;
+end;
+$$;
+revoke all on function private.cap_homebrew_creatures() from public, anon, authenticated;
+drop trigger if exists homebrew_creatures_cap on public.homebrew_creatures;
+create trigger homebrew_creatures_cap before insert on public.homebrew_creatures
+  for each row execute function private.cap_homebrew_creatures();
 
 -- Every campaign has its live state, made with it.
 create or replace function private.create_campaign_state()
@@ -363,6 +400,7 @@ alter table public.campaigns enable row level security;
 alter table public.campaign_state enable row level security;
 alter table public.board_items enable row level security;
 alter table public.campaign_creatures enable row level security;
+alter table public.homebrew_creatures enable row level security;
 alter table public.shared_rows enable row level security;
 alter table public.shared_row_uses enable row level security;
 alter table public.profiles enable row level security;
@@ -374,7 +412,7 @@ begin
   for p in
     select schemaname, tablename, policyname from pg_policies
     where schemaname = 'public'
-      and tablename in ('characters', 'character_pages', 'campaigns', 'campaign_state', 'board_items', 'campaign_creatures', 'profiles')
+      and tablename in ('characters', 'character_pages', 'campaigns', 'campaign_state', 'board_items', 'campaign_creatures', 'homebrew_creatures', 'profiles')
   loop
     execute format('drop policy %I on %I.%I', p.policyname, p.schemaname, p.tablename);
   end loop;
@@ -446,6 +484,13 @@ create policy "The DM changes them" on public.campaign_creatures for update
   with check (exists (select 1 from public.campaigns c where c.id = campaign_id and c.created_by = (select auth.uid())));
 create policy "The DM removes them" on public.campaign_creatures for delete
   using (exists (select 1 from public.campaigns c where c.id = campaign_id and c.created_by = (select auth.uid())));
+
+-- homebrew_creatures: each DM's own, for them alone.
+create policy "The DM reads their own" on public.homebrew_creatures for select using (owner_id = (select auth.uid()));
+create policy "The DM adds their own" on public.homebrew_creatures for insert with check (owner_id = (select auth.uid()));
+create policy "The DM changes their own" on public.homebrew_creatures for update
+  using (owner_id = (select auth.uid())) with check (owner_id = (select auth.uid()));
+create policy "The DM removes their own" on public.homebrew_creatures for delete using (owner_id = (select auth.uid()));
 
 -- profiles: each player reads and changes only their own.
 create policy "The player reads their own" on public.profiles for select using (id = (select auth.uid()));
@@ -768,6 +813,26 @@ $$;
 
 -- Shared rows whose name matches what is being typed, best first. The
 -- author's name only for players in a campaign with them.
+-- What the players see of the creatures the DM revealed.
+create or replace function private.revealed_creatures(p_campaign uuid)
+returns table (id uuid, name text, kind text, vital text, conditions text[], initiative integer, "position" integer)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select c.id, c.name, c.kind,
+         case when coalesce(c.hp_max, 0) <= 0 then 'unknown'
+              when coalesce(c.hp_current, c.hp_max) <= 0 then 'down'
+              when coalesce(c.hp_current, c.hp_max)::numeric / c.hp_max <= 0.25 then 'critical'
+              when coalesce(c.hp_current, c.hp_max)::numeric / c.hp_max <= 0.5 then 'bloodied'
+              else 'healthy' end,
+         c.conditions, c.initiative, c.position
+  from public.campaign_creatures c
+  where c.campaign_id = p_campaign and c.visible and private.is_campaign_member(p_campaign)
+  order by c.position, c.created_at;
+$$;
+
 create or replace function private.search_shared_rows(p_kind text, p_query text, p_limit integer default 12)
 returns table (id uuid, name text, data jsonb, uses integer, mine boolean, author text)
 language sql
@@ -864,6 +929,11 @@ create or replace function public.sync_shared_rows(p_character uuid, p_rows json
 returns integer language sql security invoker set search_path = ''
 as $$ select private.sync_shared_rows(p_character, p_rows) $$;
 
+create or replace function public.revealed_creatures(p_campaign uuid)
+returns table (id uuid, name text, kind text, vital text, conditions text[], initiative integer, "position" integer)
+language sql stable security invoker set search_path = ''
+as $$ select * from private.revealed_creatures(p_campaign) $$;
+
 create or replace function public.search_shared_rows(p_kind text, p_query text, p_limit integer default 12)
 returns table (id uuid, name text, data jsonb, uses integer, mine boolean, author text)
 language sql stable security invoker set search_path = ''
@@ -888,10 +958,13 @@ grant select on public.board_items to anon, authenticated;
 grant insert (campaign_id, kind, data, created_by), update (data), delete on public.board_items to authenticated;
 revoke all on public.campaign_creatures from anon, authenticated;
 grant select, delete on public.campaign_creatures to authenticated;
-grant insert (campaign_id, kind, name, hp_max, hp_current, hp_temp, ac, conditions, notes, link, position)
+grant insert (campaign_id, kind, name, hp_max, hp_current, hp_temp, ac, conditions, notes, link, position, initiative, visible, statblock)
   on public.campaign_creatures to authenticated;
-grant update (kind, name, hp_max, hp_current, hp_temp, ac, conditions, notes, link, position)
+grant update (kind, name, hp_max, hp_current, hp_temp, ac, conditions, notes, link, position, initiative, visible, statblock)
   on public.campaign_creatures to authenticated;
+revoke all on public.homebrew_creatures from anon, authenticated;
+grant select, delete on public.homebrew_creatures to authenticated;
+grant insert (kind, name, statblock), update (kind, name, statblock) on public.homebrew_creatures to authenticated;
 revoke all on public.shared_rows from anon, authenticated;
 revoke all on public.shared_row_uses from anon, authenticated;
 
@@ -905,7 +978,8 @@ begin
     'campaign_invite(uuid)', 'reset_campaign_invite(uuid)', 'remove_from_campaign(uuid)',
     'set_character_conditions(uuid, text[])', 'set_character_hp(uuid, integer, integer, text[], jsonb)',
     'set_character_condition_look(uuid, text, jsonb)', 'sync_shared_rows(uuid, jsonb)',
-    'search_shared_rows(text, text, integer)', 'forget_shared_rows()', 'campaign_by_invite(text)'
+    'search_shared_rows(text, text, integer)', 'forget_shared_rows()', 'campaign_by_invite(text)',
+    'revealed_creatures(uuid)'
   ] loop
     execute format('revoke all on function public.%s from public, anon, authenticated', f);
     execute format('revoke all on function private.%s from public, anon, authenticated', f);
