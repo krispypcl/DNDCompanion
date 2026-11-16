@@ -9,7 +9,7 @@
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
   import { fade } from 'svelte/transition';
-  import { creatureRepo, CreaturesMissing, type Creature, type CreatureFields } from '$lib/data/creatures';
+  import { creatureRepo, type Creature, type CreatureFields } from '$lib/data/creatures';
   import { creatureUrl, damage, heal, hpNow, numberedNames, type CreatureKind } from '$lib/rules/creatures';
   import { cleanName, lookOf } from '$lib/rules/conditions';
   import { vitalStatus } from '$lib/rules/hp';
@@ -24,7 +24,6 @@
 
   let creatures = $state<Creature[]>([]);
   let loading = $state(true);
-  let missing = $state(false);
   let error = $state<string | null>(null);
   $effect(() => {
     count = creatures.length;
@@ -35,10 +34,7 @@
     loading = true;
     creatureRepo.list(id)
       .then((rows) => (creatures = rows))
-      .catch((e) => {
-        if (e instanceof CreaturesMissing) missing = true;
-        else error = friendlyError(e, 'The monsters slipped their leash! Try again in a moment.');
-      })
+      .catch((e) => (error = friendlyError(e, 'The monsters slipped their leash! Try again in a moment.')))
       .finally(() => (loading = false));
   });
 
@@ -115,8 +111,7 @@
       }
       editing = null;
     } catch (e) {
-      error = e instanceof CreaturesMissing ? null : friendlyError(e, 'That one refused to be summoned! Try again.');
-      if (e instanceof CreaturesMissing) missing = true;
+      error = friendlyError(e, 'That one refused to be summoned! Try again.');
     } finally {
       saving = false;
     }
@@ -144,13 +139,7 @@
   const giver = $derived(creatures.find((c) => c.id === giving) ?? null);
 </script>
 
-{#if missing}
-  <p class="app-alert" role="status">
-    The monster pens aren’t built yet! Monsters and NPCs need a one-time database update
-    (<code>0017_monsters_and_npcs.sql</code>).
-  </p>
-{:else}
-  <div class="creaturebar">
+<div class="creaturebar">
     <span class="creaturetally">
       {creatures.length === 1 ? '1 creature' : `${creatures.length} creatures`}
       <InfoTip label="About monsters and NPCs">Only you, the DM, can see these. Your players never do.</InfoTip>
@@ -242,7 +231,6 @@
       {/each}
     </ul>
   {/if}
-{/if}
 
 {#if giver}
   <DimModal id="creature-conds" title="Conditions for {giver.name}" onclose={() => (giving = null)}>

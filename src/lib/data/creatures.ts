@@ -26,16 +26,7 @@ export type CreatureFields = Partial<Pick<Creature, 'kind' | 'name' | 'hp_max' |
 
 const COLUMNS = 'id, campaign_id, kind, name, hp_max, hp_current, hp_temp, ac, conditions, notes, link, position, created_at, updated_at';
 
-/** The database hasn't had 0017 yet: the table isn't there. */
-export class CreaturesMissing extends Error {
-  constructor() {
-    super('Monsters and NPCs need a one-time database update');
-    this.name = 'CreaturesMissing';
-  }
-}
-const missing = (e: { code?: string; message?: string }) =>
-  e.code === '42P01' || e.code === 'PGRST205' || (/campaign_creatures/.test(e.message ?? '') && /exist|schema cache/i.test(e.message ?? ''));
-const fail = (e: { code?: string; message?: string }) => (missing(e) ? new CreaturesMissing() : new Error(e.message || 'Something went wrong'));
+const fail = (e: { message?: string }) => new Error(e.message || 'Something went wrong');
 
 export function makeCreatureRepo(client: SupabaseClient) {
   return {
