@@ -71,7 +71,10 @@
     if (!peeks) return;
     e.preventDefault();
     const t = target();
-    if (t) peek.show(t, { tapped: true });
+    if (!t) return;
+    peek.show(t, { tapped: true });
+    // With a mouse, a click keeps it: the same as pressing its pin.
+    if (typeof matchMedia === 'function' && matchMedia('(hover: hover) and (pointer: fine)').matches) peek.pinned = true;
   }
 </script>
 
