@@ -63,9 +63,31 @@
     };
   });
 
-  /** A tap opens the peek instead of a new tab; it has its own Open on 5e.tools. */
+  /*
+   * Which pointer pressed the link, heard directly (not through Svelte's
+   * shared listener, which a row's drag handling can stop before it gets
+   * here).
+   */
+  $effect(() => {
+    if (!link) return;
+    const down = (e: PointerEvent) => (lastPointer = e.pointerType);
+    link.addEventListener('pointerdown', down, { capture: true, passive: true });
+    return () => link?.removeEventListener('pointerdown', down, { capture: true });
+  });
+
+  /** A finger, by the click itself where the browser says, else by the press or the screen. */
+  function touched(e: MouseEvent): boolean {
+    const type = (e as PointerEvent).pointerType;
+    if (type) return type === 'touch';
+    return lastPointer === 'touch' || matchMedia('(hover: none)').matches;
+  }
+
+  /**
+   * A tap opens the peek instead of a new tab (it has its own Open on
+   * 5e.tools), and while a tapped peek is open, another link only swaps it.
+   */
   function click(e: MouseEvent) {
-    if (!peeks || lastPointer !== 'touch') return;
+    if (!peeks || !(touched(e) || peek.tapped)) return;
     const t = target();
     if (!t) return;
     e.preventDefault();
@@ -78,7 +100,6 @@
     class="lookup"
     {href}
     bind:this={link}
-    onpointerdown={(e) => (lastPointer = e.pointerType)}
     onclick={click}
     target="_blank"
     rel="noopener noreferrer"
