@@ -244,10 +244,18 @@
   .room .list ol { max-height: 9rem; }
   .body.solo { display: block; }
   .body { display: grid; grid-template-columns: minmax(0, 19rem) minmax(0, 1fr); gap: 1rem; margin-top: 0.625rem; align-items: start; }
-  .player { display: grid; justify-items: center; }
+  /* The player sits in the middle of the row, however long the list. */
+  .player { display: grid; justify-items: center; align-self: center; }
   .none { margin: 0; color: var(--dim); font-size: 0.8125rem; line-height: 1.45; align-self: center; }
   /* No gap between rows: a row folding away takes its own room with it. */
-  ol { list-style: none; margin: 0; padding: 0; max-height: 13rem; overflow-y: auto; }
+  ol {
+    list-style: none; margin: 0; padding: 0; max-height: 13rem; overflow-y: auto;
+    /* A slim, neutral scrollbar when the songs outrun the room. */
+    scrollbar-width: thin; scrollbar-color: color-mix(in oklch, var(--text) 22%, transparent) transparent;
+  }
+  ol::-webkit-scrollbar { width: 6px; }
+  ol::-webkit-scrollbar-track { background: transparent; }
+  ol::-webkit-scrollbar-thumb { background: color-mix(in oklch, var(--text) 22%, transparent); border-radius: 6px; }
   li {
     display: flex; align-items: center; border-radius: var(--r-sm); margin-bottom: 0.125rem;
     transition: background-color 0.15s ease;
