@@ -346,8 +346,8 @@
     if (!joined.length) return groupsOf(pinnedCampaigns, otherCampaigns, endedCampaigns, 'Archived');
     if (!running.length) return groupsOf(pinnedJoined, otherJoined, endedJoined, 'Archived').map((g) => ({ ...g, kind: 'joined' as Kind }));
     return [
-      { key: 'run-pinned', label: 'Yours, pinned', items: pinnedCampaigns, pinned: true },
-      { key: 'run', label: 'Yours', items: otherCampaigns },
+      { key: 'run-pinned', label: 'Owned, pinned', items: pinnedCampaigns, pinned: true },
+      { key: 'run', label: 'Owned', items: otherCampaigns },
       { key: 'joined-pinned', label: 'Joined, pinned', items: pinnedJoined, pinned: true, kind: 'joined' },
       { key: 'joined', label: 'Joined', items: otherJoined, kind: 'joined' },
       { key: 'faded', label: 'Archived', items: [...endedCampaigns, ...endedJoined], faded: true }
@@ -357,7 +357,7 @@
   const isMine = (c: Campaign) => running.some((r) => r.id === c.id);
   const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`;
   const campaignTally = $derived(
-    running.length && joined.length ? `${running.length} yours · ${joined.length} joined` : plural(running.length + joined.length, 'campaign')
+    running.length && joined.length ? `${running.length} owned · ${joined.length} joined` : plural(running.length + joined.length, 'campaign')
   );
 
   /**
