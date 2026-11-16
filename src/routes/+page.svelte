@@ -22,6 +22,7 @@
   const GROUP_NAME_H = 40;
   import { faceFamily, fontFace } from '$lib/rules/fonts';
   import D20Loader from '$lib/components/D20Loader.svelte';
+  import MenuSkeleton from '$lib/components/MenuSkeleton.svelte';
   import Tabs from '$lib/components/Tabs.svelte';
   import ClassIcon from '$lib/components/ClassIcon.svelte';
   import { armorClass, characterLevel, classLine, mainClass } from '$lib/rules/derived';
@@ -795,7 +796,7 @@
       <code>PUBLIC_SUPABASE_ANON_KEY</code> and rebuild.
     </p>
   {:else if $session.loading}
-    <div class="dieload screen-center"><D20Loader size={56} label="Signing in" /></div>
+    <div class="menuloading"><MenuSkeleton greet /><div class="screen-center"><D20Loader size={56} label="Signing in" /></div></div>
   {:else}
     {#if $session.user}
       {@const me = profileOf($session.user, $profile)}
@@ -835,9 +836,13 @@
     />
 
     {#if loading || !listShown}
-      <div class="dieload screen-center">
-        <D20Loader size={56} label="Loading your characters" result={loading ? null : error ? 1 : 20}
-                   onlanded={() => { if (!loading) listShown = true; }} />
+      <!-- The menu's outline, dimmed, with the die rolling over it. -->
+      <div class="menuloading">
+        <MenuSkeleton greet={Boolean(profileOf($session.user, $profile).displayName.trim())} />
+        <div class="screen-center">
+          <D20Loader size={56} label="Loading your characters" result={loading ? null : error ? 1 : 20}
+                     onlanded={() => { if (!loading) listShown = true; }} />
+        </div>
       </div>
     {/if}
     <!-- Not an {:else}: that would wait for the die to finish leaving while
@@ -1131,7 +1136,7 @@
   }
   }
   .me:hover { border-color: var(--a-edge); color: var(--a); }
-  .dieload { min-height: 40vh; }
+  .menuloading > :global(.mskel) { opacity: 0.45; }
   .dim { color: var(--dim); }
   code { font-size: 0.85em; }
   li a { padding-left: 0.25rem; }
