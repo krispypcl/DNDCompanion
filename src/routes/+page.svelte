@@ -562,7 +562,7 @@
 {#snippet campside(c: Campaign)}
   <!-- At the right: who has the campaign open now, and when it next meets. -->
   {@const here = tables[c.id]}
-  {@const players = (here?.users ?? []).filter((u) => u !== c.created_by && u !== $session.user?.id).length}
+  {@const players = (here?.users ?? []).filter((u) => u !== c.created_by).length}
   {@const next = c.archived ? null : sessionWhen(c.details?.nextSession)}
   {#if (here && (here.dm || players)) || (next && !next.past)}
     <span class="campside">
@@ -987,19 +987,19 @@
   @container (max-width: 30rem) { .campside { justify-items: start; text-align: left; } .campnext { justify-content: flex-start; } }
   /*
    * A narrow card (a phone, two to a row on a small laptop): the square beside
-   * the name, class and campaign; the character's state across the card
-   * under them; and the dates as the card's foot.
+   * the name, class and campaign, and the dates as the card's foot.
    */
   @container (max-width: 36rem) {
     .withface {
       --face: 3.75rem; grid-template-columns: var(--face) minmax(0, 1fr);
-      grid-template-areas: 'face text' 'facts facts' 'dates dates'; row-gap: 0.625rem; align-items: center;
+      grid-template-areas: 'face text' 'dates dates'; row-gap: 0.625rem; align-items: center;
     }
     .cardtext { display: contents; }
     .lines { grid-area: text; }
-    .cardfacts { padding-left: 0; border-left: 0; }
-    /* The dates are the card's foot, under a hairline, on one line. */
-    .meta.dates { grid-area: dates; margin-top: 0; padding-top: 0.5rem; border-top: 1px solid var(--line-soft); }
+    /* No room for the character's state here: the sheet itself has it. */
+    .cardfacts { display: none; }
+    /* The dates are the card's foot, under a hairline, centred on one line. */
+    .meta.dates { grid-area: dates; margin-top: 0; padding-top: 0.5rem; border-top: 1px solid var(--line-soft); justify-content: center; }
   }
   .face {
     position: relative; flex: none; width: var(--face); height: var(--face); overflow: hidden;

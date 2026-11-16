@@ -264,8 +264,8 @@
   }, 'The campaign refused to vanish! Try again.');
 
   /** The banner and songs are saved together; the page shows the change at once. */
-  /** The players here besides this page and the DM. */
-  const others = $derived([...music.present].filter((u) => u !== $session.user?.id && u !== campaign?.created_by));
+  /** The players with the page open (this one included); the DM is told apart. */
+  const players = $derived([...music.present].filter((u) => u !== campaign?.created_by).length);
   /** When the table next meets (set by the DM). */
   const next = $derived(sessionWhen(campaign?.details.nextSession));
 
@@ -354,7 +354,7 @@
       <!-- The die, in the campaign's own colour: home to the list. -->
       <a class="home" href="{base}/" title="Your characters"><Logo size={26} /></a>
       <div class="title">
-        <span class="eyebrow">Campaign{#if ended}<span class="sep">·</span>ended{/if}{#if isDm}<span class="sep">·</span>you’re the DM{/if}</span>
+        <span class="eyebrow">Campaign{#if ended}<span class="sep">·</span>ended{/if}{#if isDm}<span class="sep">·</span>you’re the DM{/if}{#if music.presenceKnown && !isDm && music.dmHere}<span class="sep">·</span><span class="herenote"><i class="here-dot"></i>DM is here</span>{/if}{#if music.presenceKnown && players > 0}<span class="sep">·</span><span class="herenote"><i class="here-dot"></i>{players === 1 ? '1 player' : `${players} players`} here</span>{/if}</span>
         <h1 style:font-family={faceFamily(face)}>
           {#if isDm}
             <EditableField value={campaign.name} editable={editing} label="Campaign name" placeholder="Campaign name"
@@ -392,14 +392,8 @@
     </header>
 
     <!-- Who is at the table right now, and when it next meets. -->
-    {#if (music.presenceKnown && (others.length || (!isDm && music.dmHere))) || next || (isDm && editing)}
+    {#if (next && !next.past) || (isDm && editing)}
       <div class="tablebar" transition:slide={unfold()}>
-        <div class="who-here">
-          {#if !isDm && music.dmHere}<span class="herepill"><i class="here-dot"></i>DM is here</span>{/if}
-          {#if others.length}
-            <span class="herepill"><i class="here-dot"></i>{others.length === 1 ? '1 player' : `${others.length} players`} here</span>
-          {/if}
-        </div>
         <div class="nextsession">
           {#if isDm && editing}
             <label class="nextedit">
@@ -606,11 +600,8 @@
     display: flex; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; flex-wrap: wrap;
     margin-top: 1.25rem; font-size: 0.8125rem; color: var(--dim);
   }
-  .who-here { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-  .herepill {
-    display: inline-flex; align-items: center; gap: 0.4375rem; padding: 0.25rem 0.625rem; border-radius: 999px;
-    background: var(--surface); border: 1px solid var(--line-soft); color: var(--text); font-size: 0.75rem;
-  }
+  .herenote { display: inline-flex; align-items: center; gap: 0.375rem; color: oklch(74% 0.17 150); }
+  :global([data-mode='light']) .herenote { color: oklch(52% 0.15 150); }
   .here-dot {
     width: 0.4375rem; height: 0.4375rem; border-radius: 50%; background: oklch(74% 0.17 150); flex: none;
     animation: hereGlow 2.4s ease-out infinite;
@@ -643,7 +634,8 @@
     main { padding-top: 1.25rem; }
     h1 { font-size: 1.375rem; }
     header { flex-wrap: wrap; }
-    .tools { order: -1; width: 100%; justify-content: flex-end; gap: 0.375rem; }
+    /* As on a sheet: the controls in one row under the name, spread across it. */
+    .tools { width: 100%; justify-content: space-between; gap: 0.25rem; flex-wrap: wrap; }
     .edit { min-width: 3.25rem; padding: 0.375rem 0.5rem; }
     .back { padding: 0.375rem 0.5rem; }
   }

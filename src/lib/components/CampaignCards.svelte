@@ -346,18 +346,20 @@
     color: var(--faint); cursor: grab; touch-action: none; opacity: 0; transition: opacity 0.15s ease, color 0.15s ease;
   }
   .card:hover .grip, .grip:focus-visible, .lifted .grip { opacity: 1; }
-  /* Here: a small green light at the top right; the grip steps left of it. */
+  /* Here: a small tag sitting on the card's top edge at the right, over
+     the border, so nothing in the card moves for it. */
   .herebadge {
-    position: absolute; top: 0.625rem; right: 0.625rem; display: inline-flex; align-items: center; gap: 0.3125rem;
-    font-size: 0.625rem; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim);
+    position: absolute; top: 0; right: 0.875rem; transform: translateY(-50%); z-index: 2;
+    display: inline-flex; align-items: center; gap: 0.3125rem; padding: 0.125rem 0.5rem; border-radius: 999px;
+    background: var(--surface); border: 1px solid var(--line-soft);
+    font-size: 0.5625rem; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim);
+    pointer-events: none;
   }
   .herebadge i, :global(.here-dot) {
     width: 0.4375rem; height: 0.4375rem; border-radius: 50%; background: oklch(74% 0.17 150); flex: none;
     box-shadow: 0 0 0 0 oklch(74% 0.17 150 / 0.5); animation: hereGlow 2.4s ease-out infinite;
   }
   @keyframes hereGlow { 0% { box-shadow: 0 0 0 0 oklch(74% 0.17 150 / 0.5); } 70%, 100% { box-shadow: 0 0 0 6px oklch(74% 0.17 150 / 0); } }
-  .card.present .grip { right: 4.25rem; }
-  .card.present .open { padding-right: 5.5rem; }
   @media (prefers-reduced-motion: reduce) { .herebadge i { animation: none; } }
   .grip:hover { color: var(--a); }
   @media (hover: none) { .grip { opacity: 0.8; } }
@@ -397,6 +399,8 @@
      their own: an empty list takes none, and it eases in with the first. */
   .card > :global(*) + :global(*) { margin-top: 0.75rem; }
   .card > .condbox, .card > .x, .card > .grip { margin-top: 0; }
+  /* The Here tag floats on the edge: what follows it is still first in line. */
+  .card > .herebadge + :global(*) { margin-top: 0; }
   .conds { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.3125rem; align-items: center; }
   .conds:has(li) { padding-top: 0.75rem; }
 
