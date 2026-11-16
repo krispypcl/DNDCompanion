@@ -14,7 +14,7 @@
   import ModeToggle from '$lib/components/ModeToggle.svelte';
   import D20Loader from '$lib/components/D20Loader.svelte';
   import {
-    deleteAccount, enabledProviders, PICTURE_NUDGE_KEY, profileOf, PROVIDER_NAMES, providersOf, sheetsPrivate,
+    deleteAccount, enabledProviders, profileOf, PROVIDER_NAMES, providersOf, sheetsPrivate,
     setSheetsPrivate, signOut, signOutEverywhere, unlinkProvider, updatePassword, updateProfile,
     type OAuthProvider
   } from '$lib/data/session';
@@ -25,6 +25,16 @@
   import { session } from '$lib/stores/session';
   import { friendlyError } from '$lib/errors';
   import Switch from '$lib/components/Switch.svelte';
+  import Choice from '$lib/components/Choice.svelte';
+  import ThemePicker from '$lib/components/ThemePicker.svelte';
+  import { fade } from 'svelte/transition';
+  import { chooseMode, modeChoice, type ModeChoice } from '$lib/stores/mode';
+  import { prefsOf, savePrefs, setDiceStyle, setReduceMotion, storedDice, storedReduceMotion, type DiceStyle, type Prefs } from '$lib/prefs';
+  import { DEFAULT_THEME } from '$lib/theme';
+  import { sheetRepo } from '$lib/data/sheets';
+  import { campaignRepo } from '$lib/data/campaigns';
+  import { characterLevel, mainClass } from '$lib/rules/derived';
+  import { numericDate } from '$lib/rules/dates';
   import { setSharing, sharing } from '$lib/library';
 
   const MIN_PASSWORD = 8;
@@ -54,10 +64,6 @@
     profileMsg = null;
     try {
       await updateProfile({ displayName: name, avatarUrl: picture });
-      // No picture: the main menu asks for one again.
-      if (!picture.trim()) {
-        try { localStorage.removeItem(PICTURE_NUDGE_KEY); } catch { /* private window */ }
-      }
       profileMsg = { ok: true, text: 'Saved.' };
     } catch (err) {
       profileMsg = { ok: false, text: friendlyError(err, 'Your profile didn’t save! Try again in a moment.') };
@@ -141,6 +147,81 @@
     }
   }
 
+  /*
+   * Preferences: the look, dice and motion apply to this device at once and
+   * are kept on the account; the colour for new sheets only on the account.
+   */
+  /** Follows the header's own switch too. */
+  const look = $derived($modeChoice);
+  let dice = $state<DiceStyle>(storedDice());
+  let calm = $state(storedReduceMotion());
+  const defaultTheme = $derived(prefsOf($session.user).defaultTheme ?? DEFAULT_THEME);
+  let prefMsg = $state<{ ok: boolean; text: string } | null>(null);
+  async function keep(patch: Prefs) {
+    prefMsg = null;
+    try {
+      await savePrefs($session.user, patch);
+    } catch (err) {
+      prefMsg = { ok: false, text: friendlyError(err, 'Your preferences didn’t stick to your account! They still apply here.') };
+    }
+  }
+  function setLook(next: ModeChoice) {
+    chooseMode(next);
+    void keep({ mode: next });
+  }
+  function setDice(next: DiceStyle) {
+    dice = next;
+    setDiceStyle(next);
+    void keep({ dice: next });
+  }
+  function setCalm(on: boolean) {
+    calm = on;
+    setReduceMotion(on);
+    void keep({ reduceMotion: on });
+  }
+  function setDefaultTheme(next: string) {
+    void keep({ defaultTheme: next });
+  }
+
+  /** Statistics: counted from the account's sheets and campaigns. */
+  type Stats = {
+    characters: number; retired: number; highest: { level: number; name: string } | null;
+    favourite: string | null; favouriteCount: number; run: number; ended: number; joined: number;
+  };
+  let stats = $state<Stats | null>(null);
+  let statsError = $state<string | null>(null);
+  let counted: string | null = null;
+  $effect(() => {
+    const id = $session.user?.id;
+    if (!id || counted === id) return;
+    counted = id;
+    Promise.all([sheetRepo.listMySheets(id), campaignRepo.mine(id)])
+      .then(async ([mine, run]) => {
+        const theirs = (await campaignRepo.byIds(mine.map((s) => s.campaign_id ?? '')).catch(() => [])).filter((c) => c.created_by !== id);
+        let highest: Stats['highest'] = null;
+        const classes = new Map<string, number>();
+        for (const s of mine) {
+          if (!s.definition) continue;
+          const level = characterLevel(s.definition);
+          if (!highest || level > highest.level) highest = { level, name: s.definition.identity?.name?.trim() || s.name };
+          const main = mainClass(s.definition);
+          if (main) classes.set(main, (classes.get(main) ?? 0) + 1);
+        }
+        const top = [...classes.entries()].sort((a, b) => b[1] - a[1])[0];
+        stats = {
+          characters: mine.length,
+          retired: mine.filter((s) => s.retired).length,
+          highest,
+          favourite: top?.[0] ?? null,
+          favouriteCount: top?.[1] ?? 0,
+          run: run.length,
+          ended: run.filter((c) => c.archived).length,
+          joined: theirs.length
+        };
+      })
+      .catch((err) => (statsError = friendlyError(err, 'Your adventures wouldn’t add up! Try again in a moment.')));
+  });
+
   let confirmEverywhere = $state(false);
 
   /** Deleting the account: a button, then the phrase typed out, then gone. */
@@ -176,7 +257,7 @@
   <!-- Signed out: the same page as a link that leads nowhere, with the way in. -->
   <NotFound tab="Sign in needed" title="Who goes there?"
             message="This door only opens for its owner. Sign in to see your account, your connections and your privacy settings."
-            action={{ href: `${base}/login?next=${encodeURIComponent('/account')}`, label: 'Sign in' }} />
+            action={{ href: `${base}/login?next=${encodeURIComponent('/account')}`, label: 'Sign in' }} home={false} />
 {:else}
 <main>
   <header>
@@ -266,7 +347,12 @@
                 <button class="btn" disabled={unlinking === p} onclick={() => unlink(p)}>{unlinking === p ? 'Disconnecting…' : 'Disconnect'}</button>
               {/if}
             {:else}
-              <div class="conn-btn"><OAuthButton provider={p} link next="/account" /></div>
+              <!-- Not yet: said in grey where "connected" would be, the way to connect at the right. -->
+              <span class="linked off">
+                <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 3" /></svg>
+                {PROVIDER_NAMES[p]} is not yet connected.
+              </span>
+              <OAuthButton provider={p} link compact next="/account" />
             {/if}
           </li>
         {/each}
@@ -274,8 +360,31 @@
       {#if connMsg}<p class="msg" class:bad={!connMsg.ok} role="status">{connMsg.text}</p>{/if}
     </section>
 
-    <section class="card" aria-labelledby="priv-h">
-      <h2 id="priv-h">Privacy
+    <section class="card" aria-labelledby="pref-h">
+      <h2 id="pref-h">Preferences
+        <InfoTip label="About preferences">The look, motion and dice apply to this device straight away and are
+          saved to your account, so a device you sign in on for the first time starts the same way. The colour is
+          the one each new sheet starts in; a sheet's own colour is still changed on its Appearance tab.</InfoTip>
+      </h2>
+      <div class="prefs">
+        <span class="pref-name">Look</span>
+        <Choice label="Light, dark or your device's own" value={look} onchange={setLook}
+                options={[{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }, { value: 'system', label: 'System' }]} />
+        <span class="pref-name">Dice
+          <InfoTip label="About the dice style">How the dice roller shows a roll. <b>Tumble</b>: the dice spin through
+            their faces for a moment, then land. <b>Quick</b>: the total shows at once. Sound plays either way.</InfoTip>
+        </span>
+        <Choice label="How the dice roller shows a roll" value={dice} onchange={setDice}
+                options={[{ value: 'tumble', label: 'Tumble' }, { value: 'quick', label: 'Quick' }]} />
+        <span class="pref-name">Motion</span>
+        <Switch checked={calm} label="Reduce motion" onchange={setCalm}
+                title="Fewer and shorter animations, whatever your device is set to" />
+        <span class="pref-name top">New sheets</span>
+        <div class="pref-theme"><ThemePicker value={defaultTheme} label="Colour for new sheets" onchange={setDefaultTheme} /></div>
+      </div>
+      {#if prefMsg}<p class="msg" class:bad={!prefMsg.ok} role="status">{prefMsg.text}</p>{/if}
+
+      <h3 class="sub-h">Privacy
         <InfoTip label="About privacy"><b>Share my rows.</b> When you type a name in a table (an attack, spell, item,
           feature or tracker), rows other players have written are offered, ready to use. Your own rows are shared the
           same way, without your name: only players you share a campaign with can see who wrote them. Turning it off
@@ -283,7 +392,7 @@
           one you make, can then be opened only by you and by the DM of the campaign it is in. Other players, your
           campaign mates included, no longer see it or its card, and its share link stops working for anyone else.
           Turning it off opens them again.</InfoTip>
-      </h2>
+      </h3>
       <div class="switches">
         <Switch checked={sharing($session.user)} label="Share my rows" disabled={shareBusy}
                 title="Turning it off takes back everything you have shared"
@@ -294,6 +403,24 @@
                 onchange={togglePrivate} />
         {#if privateMsg}<span class="msg" class:bad={!privateMsg.ok} role="status">{privateMsg.text}</span>{/if}
       </div>
+    </section>
+
+    <section class="card" aria-labelledby="stats-h">
+      <h2 id="stats-h">Statistics</h2>
+      {#if stats}
+        <dl class="stats" in:fade={{ duration: 200 }}>
+          <div><dt>Adventurer since</dt><dd>{numericDate($session.user.created_at) || 'Unknown'}</dd></div>
+          <div><dt>Characters</dt><dd>{stats.characters}{#if stats.retired}<small>{stats.retired} retired</small>{/if}</dd></div>
+          <div><dt>Highest level</dt><dd>{stats.highest ? stats.highest.level : 'None'}{#if stats.highest}<small>{stats.highest.name}</small>{/if}</dd></div>
+          <div><dt>Favourite class</dt><dd>{stats.favourite ?? 'None yet'}{#if stats.favouriteCount > 1}<small>{stats.favouriteCount} characters</small>{/if}</dd></div>
+          <div><dt>Campaigns run</dt><dd>{stats.run}{#if stats.ended}<small>{stats.ended} ended</small>{/if}</dd></div>
+          <div><dt>Campaigns joined</dt><dd>{stats.joined}</dd></div>
+        </dl>
+      {:else if statsError}
+        <p class="msg bad">{statsError}</p>
+      {:else}
+        <p class="dim">Counting your adventures…</p>
+      {/if}
     </section>
 
     <section class="card danger-zone" aria-labelledby="del-h">
@@ -332,16 +459,46 @@
   .linked { display: flex; align-items: center; gap: 0.5rem; color: var(--a); margin: 0.5rem 0 0; }
   .conns { list-style: none; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.5rem; }
   .conns li { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; min-height: 2.5rem; }
-  .conns .linked { margin: 0; }
-  .conn-btn { width: min(18rem, 100%); }
+  .conns .linked { margin: 0; font-size: 0.875rem; }
+  .conns .linked.off { color: var(--faint); }
+  /* An OAuthButton's message sits under the row. */
+  .conns li :global(.err) { flex-basis: 100%; text-align: right; }
   /* The switches sit at the left, each with its message under it. */
-  .switches { display: grid; justify-items: start; gap: 0.375rem; margin-top: 0.5rem; }
+  .switches { display: grid; justify-items: start; gap: 0.375rem; margin-top: 0.25rem; }
+  /* Preferences: a name at the left, its control beside it. */
+  .prefs { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 0.625rem 1rem; margin-top: 0.25rem; }
+  .pref-name { font-size: 0.8125rem; color: var(--dim); display: inline-flex; align-items: center; gap: 0.125rem; }
+  .pref-name.top { align-self: start; padding-top: 0.375rem; }
+  .prefs > :global(*) { justify-self: start; }
+  .pref-theme { width: 100%; }
+  .sub-h {
+    font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600;
+    margin: 1rem 0 0; padding-top: 1rem; border-top: 1px solid var(--line-soft); display: flex; align-items: center; gap: 0.125rem;
+  }
+  /* Statistics: tiles of a number and what it counts. */
+  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 0.5rem; margin: 0.25rem 0 0; }
+  .stats div { background: var(--raised); border: 1px solid var(--line-soft); border-radius: var(--r-sm); padding: 0.625rem 0.75rem; }
+  .stats dt { font-size: 0.6875rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--label); }
+  .stats dd { margin: 0.25rem 0 0; font-size: 1.25rem; font-weight: 650; font-variant-numeric: tabular-nums; display: grid; }
+  .stats small { font-size: 0.75rem; font-weight: 400; color: var(--dim); overflow-wrap: anywhere; }
   .switches .msg { margin: 0 0 0.25rem; }
   /* The tracks line up under each other, whatever the label's length. */
   .switches :global(.switch .label) { min-width: 10rem; text-align: left; }
   /* Sign out and Sign out everywhere at the left, Save at the right. */
   .row.split { justify-content: flex-start; }
   .row.split .save { margin-left: auto; }
+  /* A phone: Save across the top, the two ways out side by side under it. */
+  @media (max-width: 520px) {
+    .row.split { display: grid; grid-template-columns: auto auto 1fr; }
+    .row.split .save { grid-column: 1 / -1; order: -1; margin-left: 0; }
+    .row.split .btn { white-space: nowrap; }
+    /* Preferences: each name above its control. */
+    .prefs { grid-template-columns: minmax(0, 1fr); gap: 0.375rem; }
+    .prefs > .pref-name:not(:first-child) { margin-top: 0.5rem; }
+    .pref-name.top { padding-top: 0; }
+  }
+  /* A Connect button keeps to the right, also when it wraps under its line. */
+  .conns li > :global(.oauth) { margin-left: auto; }
   p.msg { margin: 0.25rem 0 0; }
   h2 { display: flex; align-items: center; gap: 0.125rem; }
   /* As wide as every other page (app.css --page-width); the cards flow into

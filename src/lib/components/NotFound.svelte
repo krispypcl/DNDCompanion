@@ -14,13 +14,16 @@
     title,
     message,
     tab = 'Not found',
-    action
+    action,
+    home = true
   }: {
     title: string;
     message: string;
     tab?: string;
     /** Where the button goes instead of the sheets, and what it says. */
     action?: { href: string; label: string };
+    /** Offer Back to your sheets (not to someone signed out, who has none). */
+    home?: boolean;
   } = $props();
 </script>
 
@@ -32,7 +35,7 @@
   <p>{message}</p>
   <div class="ways">
     {#if action}<a class="home primary" href={action.href}>{action.label}</a>{/if}
-    <a class="home" href="{base}/">Back to your sheets</a>
+    {#if home}<a class="home" href="{base}/">Back to your sheets</a>{/if}
   </div>
 </div>
 

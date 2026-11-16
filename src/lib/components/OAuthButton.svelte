@@ -12,8 +12,13 @@
     provider = 'google',
     next = '/',
     link = false,
-    label
-  }: { provider?: OAuthProvider; next?: string; link?: boolean; label?: string } = $props();
+    label,
+    compact = false
+  }: {
+    provider?: OAuthProvider; next?: string; link?: boolean; label?: string;
+    /** Sized to its words, like the other buttons in a row (the account's Connections). */
+    compact?: boolean;
+  } = $props();
   const name = $derived(PROVIDER_NAMES[provider]);
   let busy = $state(false);
   let error = $state<string | null>(null);
@@ -31,7 +36,7 @@
   }
 </script>
 
-<button type="button" class="oauth {provider}" onclick={go} disabled={busy}>
+<button type="button" class="oauth {provider}" class:compact onclick={go} disabled={busy}>
   {#if provider === 'google'}
     <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
       <path fill="#4285F4" d="M22.6 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.6c2.1-1.9 3.3-4.8 3.3-8z" />
@@ -40,11 +45,8 @@
       <path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.2-3.2A11 11 0 0 0 2.1 7.1l3.7 2.8C6.7 7.3 9.1 5.4 12 5.4z" />
     </svg>
   {:else}
-    <!-- A plain speech bubble in Discord's colour. -->
-    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-      <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 4v-4h0A2.5 2.5 0 0 1 4 13.5Z" fill="#5865F2" />
-      <circle cx="9.25" cy="9.5" r="1.25" fill="#fff" /><circle cx="14.75" cy="9.5" r="1.25" fill="#fff" />
-    </svg>
+    <!-- Discord's own symbol, from its brand kit (static/brand). -->
+    <img class="mark" src="{base}/brand/discord-symbol-blurple.svg" alt="" width="18" height="14" />
   {/if}
   {busy ? `Opening ${name}…` : (label ?? (link ? `Connect ${name}` : `Continue with ${name}`))}
 </button>
@@ -60,5 +62,7 @@
   .oauth:hover:not(:disabled) { border-color: var(--a-edge); }
   .oauth:active:not(:disabled) { transform: translateY(1px); }
   .oauth:disabled { opacity: 0.6; cursor: default; }
+  .oauth.compact { width: auto; font-size: 0.875rem; padding: 0.5rem 0.875rem; gap: 0.5rem; }
+  .mark { display: block; width: 18px; height: auto; }
   .err { margin: 0.5rem 0 0; color: var(--bad); font-size: 0.8125rem; }
 </style>
