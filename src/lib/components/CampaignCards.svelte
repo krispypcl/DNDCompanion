@@ -18,7 +18,7 @@
   import { resolveImageUrl } from '$lib/rules/imageUrl';
   import { STANDARD_CONDITIONS, cleanName, defaultLook, isStandard, lookKey, lookOf } from '$lib/rules/conditions';
   import ConditionLookPicker from './ConditionLookPicker.svelte';
-  import { focusFirst, movable, portal } from '$lib/actions';
+  import DimModal from './DimModal.svelte';
   import { themeStyle } from '$lib/theme';
   import { followHeight, glideTo, prefersReducedMotion } from '$lib/motion';
   import CardHp from './CardHp.svelte';
@@ -181,7 +181,6 @@
   {#each faces as href (href)}<link rel="stylesheet" {href} />{/each}
 </svelte:head>
 
-<svelte:window onkeydown={(e) => { if (e.key === 'Escape') picking = null; }} />
 
 <ul class="cards cascade" class:dragging={drag}>
   {#each cards as s, i (s.id)}
@@ -256,35 +255,37 @@
             </li>
           {/if}
         </ul>
-        {#if tinting?.sheet === s.id && has(s.state?.conditions ?? [], tinting.name)}
-          <ConditionLookPicker name={tinting.name} look={lookFor(s, tinting.name)} who={nameOf(s)}
-                               onchange={(patch) => setLook(s, tinting!.name, patch)} ondone={() => (tinting = null)} />
-        {/if}
         {#if picking === s.id}
-          <!-- Giving conditions: a window over the dimmed page (as a picture
-               opened from Appearance), so the card keeps its size. A press
-               on the dimmed page, Done or Esc closes it. -->
-          <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-          <div class="condscrim" use:portal transition:fade={{ duration: prefersReducedMotion() ? 0 : 180 }}
-               onclick={(e) => { if (e.target === e.currentTarget) picking = null; }}>
-            <div class="condwindow" role="dialog" aria-modal="true" aria-labelledby="give-{s.id}" use:movable use:focusFirst
-                 in:scale={{ start: 0.97, duration: prefersReducedMotion() ? 0 : 200, easing: cubicOut }}>
-              <h2 id="give-{s.id}">Conditions for {nameOf(s)}</h2>
-              <div class="grid">
-                {#each STANDARD_CONDITIONS as name (name)}
-                  {@const look = lookOf(name)}
-                  <button class="opt" class:on={has(conds, name)} aria-pressed={has(conds, name)} style:--cc={look?.color}
-                          onclick={() => toggle(s, name)}><span class="dot" aria-hidden="true"></span>{name}</button>
-                {/each}
-              </div>
-              <div class="own">
-                <input bind:value={custom} placeholder="Something else, e.g. Bless" aria-label="Another condition"
-                       onkeydown={(e) => { if (e.key === 'Enter') addCustom(s); }} />
-                <button class="give" onclick={() => addCustom(s)} disabled={!custom.trim()}>Give</button>
-                <button class="done" onclick={() => (picking = null)}>Done</button>
-              </div>
+          <!-- Giving conditions, in a window over the dimmed page so the card
+               keeps its size; a new one's colour and motion are asked in the
+               same window. -->
+          <DimModal id="give-{s.id}" title="Conditions for {nameOf(s)}" onclose={() => { picking = null; tinting = null; }}>
+            <div class="grid">
+              {#each STANDARD_CONDITIONS as name (name)}
+                {@const look = lookOf(name)}
+                <button class="opt" class:on={has(conds, name)} aria-pressed={has(conds, name)} style:--cc={look?.color}
+                        onclick={() => toggle(s, name)}><span class="dot" aria-hidden="true"></span>{name}</button>
+              {/each}
             </div>
-          </div>
+            <div class="own">
+              <input bind:value={custom} placeholder="Something else, e.g. Bless" aria-label="Another condition"
+                     onkeydown={(e) => { if (e.key === 'Enter') addCustom(s); }} />
+              <button class="give" onclick={() => addCustom(s)} disabled={!custom.trim()}>Give</button>
+              <button class="done" onclick={() => { picking = null; tinting = null; }}>Done</button>
+            </div>
+            {#if tinting?.sheet === s.id && has(s.state?.conditions ?? [], tinting.name)}
+              <div class="lookin">
+                <ConditionLookPicker name={tinting.name} look={lookFor(s, tinting.name)} who={nameOf(s)}
+                                     onchange={(patch) => setLook(s, tinting!.name, patch)} ondone={() => (tinting = null)} />
+              </div>
+            {/if}
+          </DimModal>
+        {:else if tinting?.sheet === s.id && has(s.state?.conditions ?? [], tinting.name)}
+          <!-- A given condition's colour and motion, from its dot on the card. -->
+          <DimModal id="look-{s.id}" title="{tinting.name} on {nameOf(s)}" onclose={() => (tinting = null)}>
+            <ConditionLookPicker name={tinting.name} look={lookFor(s, tinting.name)} who={nameOf(s)}
+                                 onchange={(patch) => setLook(s, tinting!.name, patch)} ondone={() => (tinting = null)} />
+          </DimModal>
         {/if}
       </div>
 
@@ -453,16 +454,6 @@
   .plus:hover { color: var(--a); border-color: var(--a-edge); }
   .plus[aria-expanded='true'] { color: var(--a); border-color: var(--a-edge); transform: rotate(45deg); }
 
-  /* The conditions window: the page dimmed and blurred behind it, as behind a picture opened from Appearance. */
-  .condscrim {
-    position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 1rem;
-    background: rgb(0 0 0 / 0.78); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
-  }
-  .condwindow {
-    width: min(30rem, 100%); padding: 1.125rem 1.25rem 1.25rem; border-radius: var(--r);
-    background: var(--surface); border: 1px solid var(--line); box-shadow: 0 24px 60px rgb(0 0 0 / 0.5);
-  }
-  .condwindow h2 { margin: 0 0 0.875rem; font-size: 1rem; font-weight: 650; color: var(--a); overflow-wrap: anywhere; }
   .grid { display: flex; flex-wrap: wrap; gap: 0.375rem; }
   .opt {
     --cc: var(--dim);
@@ -480,6 +471,8 @@
     box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--cc) 65%, var(--text));
   }
   .own { display: flex; gap: 0.375rem; margin-top: 1rem; }
+  .lookin { margin-top: 1rem; }
+  .lookin :global(.ask) { margin: 0; }
   .own input {
     flex: 1; min-width: 0; font: inherit; font-size: 0.8125rem; padding: 0.3125rem 0.5rem; color: var(--text);
     border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg);
