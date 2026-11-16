@@ -224,22 +224,6 @@
     box-shadow: 0 18px 44px rgb(20 20 40 / 0.16), 0 2px 6px rgb(20 20 40 / 0.08);
   }
 
-  .peek-pin {
-    width: 1.75rem;
-    height: 1.75rem;
-    display: grid;
-    place-items: center;
-    padding: 0;
-    color: var(--dim);
-    cursor: pointer;
-    background: none;
-    border: 1px solid var(--line-soft);
-    border-radius: var(--r-sm);
-    transition: border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
-  }
-  .peek-pin:hover, .peek-pin.on { border-color: var(--a-edge); color: var(--a); }
-  .peek-pin:active { transform: translateY(1px); }
-  .peek-pin:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
 
   /* Moved aside: it became a kept window in the same place, so it goes at once. */
   .lookup-peek.quiet:not(.open) { transition: none; }

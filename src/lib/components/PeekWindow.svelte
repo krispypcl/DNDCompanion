@@ -28,6 +28,14 @@
 >
   <PeekContent name={kept.target.name} url={kept.target.url}>
     {#snippet tools()}
+      <!-- The same pin as the open peek's, pressed: this one stays. Pressing it lets it go. -->
+      <button type="button" class="peek-pin on" aria-pressed="true" aria-label="Kept here" title="Kept here: press to let it go"
+              onclick={() => peek.drop(kept.id)}>
+        <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
+          <path d="M6 2h4l-.6 4 2.6 2.4V10H4V8.4L6.6 6 6 2Zm2 8v4" fill="currentColor"
+                stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round" />
+        </svg>
+      </button>
       <a class="smallbtn quiet" href={kept.target.url} target="_blank" rel="noopener noreferrer">Open on 5e.tools</a>
       <button type="button" class="closex" aria-label="Close" onclick={() => peek.drop(kept.id)}>×</button>
     {/snippet}

@@ -4,16 +4,25 @@
   5e.tools' own data (rules/fiveData) and set in the app's type
   (rules/fiveRender). The live peek and every peek moved aside share it.
 -->
+<script lang="ts" module>
+  import type { Rendered } from '$lib/rules/fiveRender';
+  type Shown = { state: 'loading' } | { state: 'found'; entry: Rendered } | { state: 'missing' } | { state: 'offline' };
+  /** Entries already looked up this visit: a peek moved aside, or opened again, shows at once. */
+  const seen = new Map<string, Shown>();
+</script>
+
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import { peekTarget } from '$lib/rules/peek';
   import { findEntry } from '$lib/rules/fiveData';
-  import { render, type Rendered } from '$lib/rules/fiveRender';
+  import { render } from '$lib/rules/fiveRender';
 
   let { name, url, tools }: { name: string; url: string; tools: Snippet } = $props();
 
-  type Shown = { state: 'loading' } | { state: 'found'; entry: Rendered } | { state: 'missing' } | { state: 'offline' };
-  let shown = $state<Shown>({ state: 'loading' });
+  // svelte-ignore state_referenced_locally
+  let shown = $state<Shown>(seen.get(url) ?? { state: 'loading' });
+  /** Fades in only when it arrives after a wait; one already known is simply there. */
+  let arrived = $state(false);
   let slow = $state(false);
   let scroller = $state<HTMLElement>();
 
@@ -25,6 +34,12 @@
     const n = name;
     if (u === asked) return;
     asked = u;
+    const known = seen.get(u);
+    if (known) {
+      shown = known;
+      arrived = false;
+      return;
+    }
     const where = peekTarget(u);
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
       shown = { state: 'offline' };
@@ -37,6 +52,8 @@
       .then((found) => {
         if (asked !== u) return;
         shown = found ? { state: 'found', entry: render(found) } : { state: 'missing' };
+        seen.set(u, shown);
+        arrived = true;
         scroller?.scrollTo({ top: 0 });
       })
       .catch(() => {
@@ -57,7 +74,7 @@
   {#if shown.state === 'found'}
     {@const e = shown.entry}
     {#key e}
-      <div class="peek-entry">
+      <div class="peek-entry" class:arrived>
         {#if e.kind}<p class="peek-kind">{@html e.kind}</p>{/if}
         {#if e.facts.length}
           <dl class="peek-facts">
@@ -111,6 +128,23 @@
     gap: 0.375rem;
     --x-size: 1.75rem;
   }
+  /* The pin, in whichever window's buttons it sits (the open peek's or a kept one's). */
+  .peek-tools :global(.peek-pin) {
+    width: 1.75rem;
+    height: 1.75rem;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    color: var(--dim);
+    cursor: pointer;
+    background: none;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--r-sm);
+    transition: border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  }
+  .peek-tools :global(.peek-pin):hover, .peek-tools :global(.peek-pin.on) { border-color: var(--a-edge); color: var(--a); }
+  .peek-tools :global(.peek-pin):active { transform: translateY(1px); }
+  .peek-tools :global(.peek-pin):focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
   /* Only the entry scrolls, from its first line to its book, on a slim
      scrollbar in the character's colour. */
   .peek-body {
@@ -120,7 +154,7 @@
     overscroll-behavior: contain;
     padding: 0.75rem 0.875rem 0.875rem;
   }
-  .peek-entry { animation: peek-in 0.22s ease-out; }
+  .peek-entry.arrived { animation: peek-in 0.22s ease-out; }
   @keyframes peek-in { from { opacity: 0; } }
 
   .peek-kind { margin: 0 0 0.625rem; font-size: 0.8125rem; font-style: italic; color: var(--dim); }
