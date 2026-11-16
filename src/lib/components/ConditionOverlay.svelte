@@ -82,7 +82,7 @@
     mask-image: linear-gradient(90deg, transparent 0, #000 var(--side), #000 calc(100% - var(--side)), transparent 100%);
   }
   @media (max-width: 700px) {
-    .overlay { --side: calc(var(--hurt) * clamp(2.5rem, 14vw, 6rem)); }
+    .overlay { --side: calc(var(--hurt) * clamp(2rem, 11vw, 4.5rem)); }
   }
   /* The entrance is on the wrapper and the movement on the band inside it,
      so the two never fight over one transform: the movement starts from
@@ -105,6 +105,13 @@
       color-mix(in oklch, var(--tint) 7%, transparent) 70%,
       color-mix(in oklch, var(--tint) 2%, transparent) 86%,
       transparent 100%);
+  }
+
+  /* On a narrow screen the tint is lower and softer: the page shows only in
+     gutters there, and a strong tint turned the whole of it one colour. */
+  @media (max-width: 700px) {
+    .tint.on { opacity: 0.55; }
+    .tint i { height: clamp(12rem, 42vh, 22rem); }
   }
 
   /* Every movement begins and ends at rest (full strength, full height). */

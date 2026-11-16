@@ -62,8 +62,16 @@
     0%, 100% { opacity: 0.78; }
     50% { opacity: 1; }
   }
+  /*
+   * A narrow screen shows the page only in thin gutters, where full-strength
+   * edges read as a flat red. There they are narrower and at most half as
+   * strong, so the fade from the page into red still shows.
+   */
   @media (max-width: 700px) {
-    .edge { width: clamp(2.5rem, 14vw, 6rem); }
+    .edge {
+      width: clamp(2rem, 11vw, 4.5rem);
+      opacity: calc(min(var(--hurt) * 40, 1) * (0.16 + var(--hurt) * 0.3));
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .edge i.critical { animation: none; }
