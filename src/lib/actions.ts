@@ -24,6 +24,15 @@ export function portal(node: HTMLElement) {
   return { destroy: () => node.remove() };
 }
 
+/**
+ * A dialog opens with its first field or button ready for the keyboard.
+ * After the moment it mounts: a portal around it moves it to the page's end
+ * first, and moving a focused element takes the focus away again.
+ */
+export function focusFirst(node: HTMLElement) {
+  queueMicrotask(() => (node.querySelector('input, button') as HTMLElement | null)?.focus());
+}
+
 /** A modifier as it is written: "+3", "-1", "+0". */
 export const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 
