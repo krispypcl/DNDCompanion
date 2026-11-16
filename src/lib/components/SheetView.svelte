@@ -1785,8 +1785,10 @@
    * controls. (Wrapped as a row, the portrait sat alone above the name.)
    */
   @media (max-width: 700px) {
-    .identity { display: grid; grid-template-columns: 4.75rem minmax(0, 1fr); column-gap: 0.875rem; row-gap: 0.625rem; align-items: center; }
-    .identity .portrait { width: 4.75rem; }
+    /* The portrait at least as tall as the campaign and the name beside it,
+       which sit together in the middle of its height. */
+    .identity { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); column-gap: 0.875rem; row-gap: 0.375rem; align-items: center; }
+    .identity .portrait { width: 5.5rem; }
     .identity .who { display: contents; }
     .identity .portrait { grid-column: 1; grid-row: 1 / 3; align-self: center; }
     .identity .who > .campaign { grid-column: 2; grid-row: 1; align-self: end; justify-self: start; margin: 0; max-width: 100%; }
@@ -1796,7 +1798,7 @@
     .identity .campaign a, .identity button.campaign { border-radius: var(--r-sm); padding: 0.1875rem 0.5rem; }
     .identity .who > h1 { grid-column: 2; grid-row: 2; align-self: start; min-width: 0; }
     .identity .who:not(:has(> .campaign)) > h1 { grid-row: 1 / 3; align-self: center; }
-    .identity .who > .sub { grid-column: 1 / -1; margin-top: 0.375rem; }
-    .identity .musicslot, .identity .controls { grid-column: 1 / -1; }
+    .identity .who > .sub { grid-column: 1 / -1; margin-top: 0.875rem; }
+    .identity .musicslot, .identity .controls { grid-column: 1 / -1; margin-top: 0.25rem; }
   }
 </style>
