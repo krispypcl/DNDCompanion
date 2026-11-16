@@ -129,8 +129,13 @@
   /** Connections: Google, and Discord once it is switched on in Supabase. */
   const SERVICES: OAuthProvider[] = ['google', 'discord'];
   let switchedOn = $state<Partial<Record<string, boolean>>>({ google: true });
+  /** Until the services are known, the rows show as skeletons (no jump when Discord appears). */
+  let servicesKnown = $state(false);
   $effect(() => {
-    enabledProviders().then((on) => (switchedOn = { google: true, ...on }));
+    enabledProviders().then((on) => {
+      switchedOn = { google: true, ...on };
+      servicesKnown = true;
+    });
   });
   const linked = $derived(providersOf($session.user));
   let unlinking = $state<OAuthProvider | null>(null);
@@ -333,8 +338,11 @@
           your email. Taking one off leaves your sheets and campaigns as they are; your last way in can't be taken off.</InfoTip>
       </h2>
       <ul class="conns">
-        {#each SERVICES.filter((p) => switchedOn[p] || linked.includes(p)) as p (p)}
-          <li transition:slide={{ duration: 200 }}>
+        {#if !servicesKnown}
+          {#each SERVICES as p (p)}<li aria-hidden="true"><i class="skeleton sk-conn"></i><i class="skeleton sk-btn"></i></li>{/each}
+        {/if}
+        {#each servicesKnown ? SERVICES.filter((p) => switchedOn[p] || linked.includes(p)) : [] as p (p)}
+          <li out:slide={{ duration: 200 }}>
             {#if linked.includes(p)}
               <span class="linked">
                 <ProviderIcon provider={p} />
@@ -413,7 +421,11 @@
       {:else if statsError}
         <p class="msg bad">{statsError}</p>
       {:else}
-        <p class="dim">Counting your adventures…</p>
+        <!-- The tiles' outline while the numbers are counted, the same size as
+             the real ones, so the page doesn't move when they arrive. -->
+        <dl class="stats" aria-busy="true" aria-label="Counting your adventures">
+          {#each Array(6) as _, i (i)}<div><dt><i class="skeleton sk-label"></i></dt><dd><i class="skeleton sk-value"></i><i class="skeleton sk-small"></i></dd></div>{/each}
+        </dl>
       {/if}
     </section>
 
@@ -474,6 +486,11 @@
   .stats div { background: var(--raised); border: 1px solid var(--line-soft); border-radius: var(--r-sm); padding: 0.625rem 0.75rem; }
   .stats dt { font-size: 0.6875rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--label); }
   .stats dd { margin: 0.25rem 0 0; font-size: 1.25rem; font-weight: 650; font-variant-numeric: tabular-nums; display: grid; }
+  .sk-label { width: 70%; height: 0.6875rem; margin-top: 0.125rem; }
+  .sk-value { width: 45%; height: 1.25rem; margin-top: 0.125rem; }
+  .sk-small { width: 55%; height: 0.75rem; margin-top: 0.3125rem; }
+  .sk-conn { height: 1rem; width: 12rem; }
+  .sk-btn { height: 2.125rem; width: 6rem; border-radius: var(--r-sm); }
   .stats small { font-size: 0.75rem; font-weight: 400; color: var(--dim); overflow-wrap: anywhere; }
   .switches .msg { margin: 0 0 0.25rem; }
   /* The tracks line up under each other, whatever the label's length. */

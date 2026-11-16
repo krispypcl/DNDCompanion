@@ -255,6 +255,18 @@ body {
  * An alert in the page's flow (a failed load, a notice): a soft box spaced
  * like a section, the same on every page. `.bad` for something gone wrong.
  */
+/*
+ * Skeletons: the shape of what is coming, shimmering in place while it
+ * loads, the same size as the real thing so nothing moves when it arrives.
+ */
+.skeleton {
+  display: block; border-radius: var(--r-sm);
+  background: linear-gradient(90deg, var(--raised) 0%, var(--hover-bg) 40%, var(--raised) 80%);
+  background-size: 300% 100%; animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes skeleton-shimmer { from { background-position: 100% 0; } to { background-position: -50% 0; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+
 .app-alert {
   margin: 1.5rem 0 0; padding: 0.75rem 1rem; border: 1px solid var(--line-soft); border-radius: var(--r);
   background: var(--surface); color: var(--dim); font-size: 0.875rem; line-height: 1.45;

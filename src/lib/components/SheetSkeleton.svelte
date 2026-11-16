@@ -20,7 +20,7 @@
 </div>
 
 <style>
-  .skel { padding: 1.5rem; max-width: 110rem; margin: 0 auto; animation: in 0.4s ease 0.15s backwards; }
+  .skel { padding: var(--page-pad); max-width: var(--page-width); margin: 0 auto; animation: in 0.4s ease 0.15s backwards; }
   @keyframes in { from { opacity: 0; } }
   i {
     display: block; border-radius: var(--r-sm);
@@ -52,13 +52,12 @@
     .abil { grid-template-columns: repeat(3, 1fr); }
     .main .rail:last-child { display: none; }
   }
-  /* The real header stacks on a phone: the portrait, then the name under it. */
+  /* On a phone the real header keeps the portrait at the left of the name. */
   @media (max-width: 700px) {
-    .head { flex-direction: column; align-items: flex-start; gap: 0.875rem; }
-    .sq { width: 4rem; height: 4rem; }
-    .lines { width: 100%; }
-    .l1 { width: 11rem; }
-    .l2 { width: 16rem; }
+    .head { gap: 0.875rem; }
+    .sq { width: 5.5rem; height: 5.5rem; }
+    .l1 { width: 9rem; }
+    .l2 { width: 12rem; }
   }
   @media (prefers-reduced-motion: reduce) { i { animation: none; } }
 </style>

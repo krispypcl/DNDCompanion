@@ -35,6 +35,7 @@
   import ModeToggle from './ModeToggle.svelte';
   import Logo from './Logo.svelte';
   import NotFound from './NotFound.svelte';
+  import CampaignSkeleton from './CampaignSkeleton.svelte';
   import { pageTitle } from '$lib/title';
   import { sessionWhen } from '$lib/rules/dates';
   import ShareButton from './ShareButton.svelte';
@@ -339,9 +340,13 @@
 <svelte:window onkeydown={onKey} />
 
 {#if loading || !landed}
-  <div class="loading screen-center">
-    <D20Loader size={56} label="Loading the campaign" result={loading ? null : missing || (error && !campaign) ? 1 : 20}
-               onlanded={() => (landed = true)} />
+  <!-- The page's outline, dimmed, with the die rolling over it (as a sheet). -->
+  <div class="loading">
+    <CampaignSkeleton />
+    <div class="screen-center">
+      <D20Loader size={56} label="Loading the campaign" result={loading ? null : missing || (error && !campaign) ? 1 : 20}
+                 onlanded={() => (landed = true)} />
+    </div>
   </div>
 {:else if missing}
   <NotFound tab="Campaign not found" title="No campaign here!" message="This campaign has wandered off the map. It may have ended, or the link is off by a letter, so check it with your DM." />
@@ -525,7 +530,8 @@
   @media (max-width: 600px) { main { padding-left: 1rem; padding-right: 1rem; } }
   /* Above the banner, which lies behind the top of the page. */
   main > :global(*) { position: relative; z-index: 1; }
-  .loading { min-height: 60vh; }
+  .loading { position: relative; min-height: 60vh; }
+  .loading > :global(.cskel) { opacity: 0.45; }
   header { display: flex; align-items: center; gap: 0.875rem; }
   .home { display: grid; place-items: center; flex: none; color: var(--a); transition: color 0.3s ease; }
   .home:hover { color: var(--a-hi, var(--a)); }
