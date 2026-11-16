@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { friendlyDate, latest, numericDate, sessionWhen } from '$lib/rules/dates';
+import { countdown, friendlyDate, latest, numericDate, sessionWhen } from '$lib/rules/dates';
 
 const now = new Date(2026, 10, 2, 9, 0);
 
@@ -46,5 +46,20 @@ describe('sessionWhen', () => {
     expect(sessionWhen('2026-11-15T19:00:00', now)).toMatchObject({ past: true });
     expect(sessionWhen('', now)).toBeNull();
     expect(sessionWhen('soon', now)).toBeNull();
+  });
+});
+
+describe('countdown', () => {
+  const at = new Date(2026, 10, 16, 18, 0);
+  it('counts minutes, then hours and minutes, then days', () => {
+    expect(countdown('2026-11-16T18:45:00', at)).toBe('in 45 min');
+    expect(countdown('2026-11-16T20:15:00', at)).toBe('in 2 h 15 min');
+    expect(countdown('2026-11-16T21:00:00', at)).toBe('in 3 h');
+    expect(countdown('2026-11-18T19:00:00', at)).toBe('in 2 days');
+  });
+  it('is now while it runs, and nothing once past', () => {
+    expect(countdown('2026-11-16T17:00:00', at)).toBe('now');
+    expect(countdown('2026-11-15T10:00:00', at)).toBeNull();
+    expect(countdown(null, at)).toBeNull();
   });
 });

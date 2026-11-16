@@ -49,6 +49,24 @@ export function sessionWhen(iso: string | null | undefined, now: Date = new Date
   return { when, until, past: false };
 }
 
+/**
+ * How long until a session starts, as a countdown for the main menu's
+ * greeting: "in 45 min", "in 2 h 15 min", "tomorrow", "in 5 days"; "now"
+ * during its first hours, and null once it is well past.
+ */
+export function countdown(iso: string | null | undefined, now: Date = new Date()): string | null {
+  const w = sessionWhen(iso, now);
+  if (!w || w.past) return null;
+  if (w.until === 'now') return 'now';
+  const mins = Math.ceil((new Date(iso as string).getTime() - now.getTime()) / 60_000);
+  if (mins < 60) return `in ${mins} min`;
+  if (mins < 24 * 60) {
+    const h = Math.floor(mins / 60), m = mins % 60;
+    return m ? `in ${h} h ${m} min` : `in ${h} h`;
+  }
+  return w.until;
+}
+
 /** The later of several timestamps, ignoring blanks. */
 export function latest(...stamps: (string | null | undefined)[]): string | null {
   let best: string | null = null;
