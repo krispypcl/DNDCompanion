@@ -280,9 +280,9 @@
    * pages that fit the screen, so nothing is scrolled through.
    */
   const AREA_SHEETS = 'Characters';
-  const AREA_JOINED = 'Joined campaigns';
-  const AREA_RUN = 'Own campaigns';
-  const areaTabs = $derived(joined.length ? [AREA_SHEETS, AREA_JOINED, AREA_RUN] : [AREA_SHEETS, AREA_RUN]);
+  /** The campaigns this player runs and the ones their characters joined, together. */
+  const AREA_CAMPAIGNS = 'Campaigns';
+  const areaTabs = [AREA_SHEETS, AREA_CAMPAIGNS];
   let area = $state(AREA_SHEETS);
   /* The area in the address (#characters) is opened once the lists are in. */
   let areaRead = false;
@@ -290,14 +290,13 @@
     if (!ready || areaRead || typeof location === 'undefined') return;
     areaRead = true;
     const wanted = decodeURIComponent(location.hash.slice(1)).toLowerCase();
-    const hit = areaTabs.find((t) => t.toLowerCase() === wanted);
-    if (hit) area = hit;
-  });
-  $effect(() => {
-    if (!areaTabs.includes(area)) area = AREA_SHEETS;
+    // Old links named the two campaign areas apart.
+    if (/campaigns$/.test(wanted)) area = AREA_CAMPAIGNS;
+    else if (wanted === AREA_SHEETS.toLowerCase()) area = AREA_SHEETS;
   });
 
-  type Group<T> = { key: string; label: string; items: T[]; pinned?: boolean; faded?: boolean };
+  /** `kind`: whose pins a pinned group's cards are, where it differs from the list's. */
+  type Group<T> = { key: string; label: string; items: T[]; pinned?: boolean; faded?: boolean; kind?: Kind };
   /** How many cards a page holds: as many rows as fit below the list, times its columns. */
   let perPage = $state(10);
   /** The height a full page takes, so a short last page does not pull the pager up. */
@@ -338,8 +337,28 @@
   }
 
   const sheetGroups = $derived(groupsOf(pinnedSheets, otherSheets, retiredSheets, 'Retired'));
-  const joinedGroups = $derived(groupsOf(pinnedJoined, otherJoined, endedJoined, 'Archived'));
-  const runGroups = $derived(groupsOf(pinnedCampaigns, otherCampaigns, endedCampaigns, 'Archived'));
+  /*
+   * The campaigns area: the ones run here first, then the ones joined, each
+   * with its own pins; the ended ones of both last. With only one sort, it
+   * reads like the characters (Pinned, Everything else, Archived).
+   */
+  const campaignGroups = $derived.by((): Group<Campaign>[] => {
+    if (!joined.length) return groupsOf(pinnedCampaigns, otherCampaigns, endedCampaigns, 'Archived');
+    if (!running.length) return groupsOf(pinnedJoined, otherJoined, endedJoined, 'Archived').map((g) => ({ ...g, kind: 'joined' as Kind }));
+    return [
+      { key: 'run-pinned', label: 'Yours, pinned', items: pinnedCampaigns, pinned: true },
+      { key: 'run', label: 'Yours', items: otherCampaigns },
+      { key: 'joined-pinned', label: 'Joined, pinned', items: pinnedJoined, pinned: true, kind: 'joined' },
+      { key: 'joined', label: 'Joined', items: otherJoined, kind: 'joined' },
+      { key: 'faded', label: 'Archived', items: [...endedCampaigns, ...endedJoined], faded: true }
+    ];
+  });
+  /** Run here (not joined): its DM is this player. */
+  const isMine = (c: Campaign) => running.some((r) => r.id === c.id);
+  const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`;
+  const campaignTally = $derived(
+    running.length && joined.length ? `${running.length} yours · ${joined.length} joined` : plural(running.length + joined.length, 'campaign')
+  );
 
   /**
    * Measures how many cards fit: the rows left between the top of the list
@@ -591,6 +610,10 @@
   {/if}
 {/snippet}
 
+{#snippet campaignItem(c: Campaign, g: Group<Campaign>)}
+  {#if isMine(c)}{@render runItem(c, g)}{:else}{@render joinedItem(c, g)}{/if}
+{/snippet}
+
 {#snippet runItem(c: Campaign, g: Group<Campaign>)}
   {#if g.pinned}
     {@render star(c.id, c.name, true, 'campaigns')}
@@ -615,12 +638,12 @@
       <div class="pageset" in:pageSlide>
         {#each pageOfGroups(groups, page, perPage) as g (g.key)}
           {#if g.label}<h3 class="group">{g.label}</h3>{/if}
-          <ul class="cascade" class:pinned={g.pinned} class:dragging={g.pinned && drag?.kind === key} class:landing={g.pinned && landing}>
+          <ul class="cascade" class:pinned={g.pinned} class:dragging={g.pinned && drag?.kind === (g.kind ?? key)} class:landing={g.pinned && landing}>
             {#each g.items as x, i (x.id)}
               <li style:--i={i} class:retired={g.faded} class:lifted={drag?.id === x.id}
                   class="themed" style={themeOf(x)}
                   bind:this={rowEls[x.id]}
-                  style:transform={g.pinned && drag?.kind === key ? shift(x.id) : undefined}
+                  style:transform={g.pinned && drag?.kind === (g.kind ?? key) ? shift(x.id) : undefined}
                   animate:flip={{ duration: drag || landing ? 0 : 260, easing: cubicOut }} out:fold>
                 {@render item(x, g)}
               </li>
@@ -771,17 +794,12 @@
               {:else}
                 {@render paged('sheets', sheetGroups, sheetItem, (x) => themeStyle(x.definition?.identity?.theme))}
               {/if}
-            {:else if tab === AREA_JOINED}
-              <!-- The campaigns this player's characters are in, run by someone
-                   else: one card each, however many of their characters are in it. -->
-              <div class="bar">
-                <span class="tally">{joined.length} {joined.length === 1 ? 'campaign' : 'campaigns'}</span>
-              </div>
-              {@render paged('joined', joinedGroups, joinedItem, () => undefined)}
             {:else}
-              <!-- The campaigns this player runs as DM, and starting a new one. -->
+              <!-- The campaigns this player runs as DM and the ones their
+                   characters joined (one card each, however many of their
+                   characters are in it), and starting a new one. -->
               <div class="bar">
-                <span class="tally">{running.length} {running.length === 1 ? 'campaign' : 'campaigns'}</span>
+                <span class="tally">{campaignTally}</span>
                 <div class="actions">
                   {#if !naming}<button class="ghost" onclick={() => (naming = true)}>New campaign</button>{/if}
                 </div>
@@ -795,10 +813,10 @@
                   <button class="ghost" onclick={() => (naming = false)}>Cancel</button>
                 </div>
               {/if}
-              {#if running.length}
-                {@render paged('campaigns', runGroups, runItem, () => undefined)}
+              {#if running.length || joined.length}
+                {@render paged('campaigns', campaignGroups, campaignItem, () => undefined)}
               {:else if !naming}
-                <p class="dim">None yet. Start one to get an invite link for your players.</p>
+                <p class="dim">None yet. Start one to get an invite link for your players, or join one from your DM's link.</p>
               {/if}
             {/if}
           {/snippet}
