@@ -707,7 +707,7 @@
     {#if banner}<Banner url={banner} />{/if}
     <header class="identity">
       <div class="portrait" class:has={Boolean(portraitSrc)} class:fallen={dead} use:parallax>
-        <!-- The picture leans a little with the pointer, inside its frame. -->
+        <!-- The picture turns toward the pointer, inside its still frame. -->
         <span class="frame">
           <!-- No portrait yet: the main class, drawn (a bow for a ranger…); a
                picture covers it, and a picture that fails to load shows it again. -->
@@ -1381,28 +1381,30 @@
     width: 6rem; aspect-ratio: 1; border-radius: var(--r);
     flex: none; display: flex; align-items: flex-end; justify-content: center;
     position: relative; overflow: visible;
-    perspective: 420px;
   }
   .portrait img {
     position: absolute; inset: 0; width: 100%; height: 100%;
     object-fit: cover;
   }
   /*
-   * The portrait is a coin: its face turns toward the pointer (motion.ts
-   * parallax sets --px/--py from -1 to 1 and --pz while pointed at), with a
-   * soft shine where the light catches it, and eases flat again on leaving.
-   * The level badge stays put below it.
+   * The frame and its wash stay still; the picture inside (or the class
+   * drawn) turns toward the pointer like a coin (motion.ts parallax sets
+   * --px/--py from -1 to 1 and --pz while pointed at), a little larger so no
+   * edge shows, with a soft shine where the light catches it, and eases flat
+   * again on leaving. The level badge stays put below it.
    */
   .frame {
     position: absolute; inset: 0; overflow: hidden; border-radius: inherit;
     border: 1px solid var(--a-edge);
     background: linear-gradient(150deg, var(--portrait-from), var(--portrait-to));
+    perspective: 420px;
+  }
+  .frame > :global(img), .frame > :global(.class-icon) {
     transform:
-      rotateY(calc(var(--px, 0) * 16deg))
-      rotateX(calc(var(--py, 0) * -16deg))
-      scale(calc(1 + var(--pz, 0) * 0.04));
-    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.55s ease;
-    box-shadow: 0 calc(var(--pz, 0) * 10px) calc(var(--pz, 0) * 22px) rgb(0 0 0 / calc(var(--pz, 0) * 0.35));
+      rotateY(calc(var(--px, 0) * 14deg))
+      rotateX(calc(var(--py, 0) * -14deg))
+      scale(calc(1 + var(--pz, 0) * 0.12));
+    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), filter 0.8s ease;
   }
   .frame::after {
     content: ''; position: absolute; inset: 0; pointer-events: none;
@@ -1415,8 +1417,7 @@
     mix-blend-mode: soft-light;
   }
   /* Quick to follow the pointer; slow to settle back once it leaves. */
-  .portrait:hover .frame { transition-duration: 0.18s, 0.3s; }
-  .portrait img, .portrait :global(.class-icon) { transition: filter 0.8s ease; }
+  .portrait:hover .frame > :global(img), .portrait:hover .frame > :global(.class-icon) { transition-duration: 0.18s, 0.8s; }
   /* Sits on the bottom edge, half in and half out. */
   .lvl {
     position: absolute; left: 50%; bottom: 0; transform: translate(-50%, 50%); z-index: 2;
