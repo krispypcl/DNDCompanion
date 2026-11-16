@@ -573,6 +573,11 @@
   </button>
 {/snippet}
 
+{#snippet starspace()}
+  <!-- Where a retired or archived card's star would be, so it lines up with the rest. -->
+  <span class="starspace" aria-hidden="true"></span>
+{/snippet}
+
 {#snippet pin(sheet: Sheet, on: boolean)}
   {@render star(sheet.id, nameOf(sheet), on, 'sheets')}
 {/snippet}
@@ -654,7 +659,7 @@
 
 {#snippet joinedrow(c: Campaign)}
   <!-- A campaign not pinned: its star (none once ended), its card, and leaving it. -->
-  {#if !c.archived}{@render star(c.id, c.name, false, 'joined')}{/if}
+  {#if !c.archived}{@render star(c.id, c.name, false, 'joined')}{:else}{@render starspace()}{/if}
   {@render joinedcard(c)}
   {#if confirming === c.id}
     <div class="confirm" role="group" aria-label="Confirm leaving {c.name}">
@@ -766,7 +771,7 @@
     {@render campcard(c)}
     {@render grip(c.id, c.name, pinnedCampaigns.length, 'campaigns')}
   {:else}
-    {#if !g.faded}{@render star(c.id, c.name, false, 'campaigns')}{/if}
+    {#if !g.faded}{@render star(c.id, c.name, false, 'campaigns')}{:else}{@render starspace()}{/if}
     {@render campcard(c)}
   {/if}
 {/snippet}
@@ -852,7 +857,7 @@
 
 {#snippet row(sheet: Sheet)}
   <!-- A sheet that is not pinned: its star (none once retired), its card, and deleting it. -->
-  {#if !sheet.retired}{@render pin(sheet, false)}{/if}
+  {#if !sheet.retired}{@render pin(sheet, false)}{:else}{@render starspace()}{/if}
   {@render card(sheet)}
   {#if confirming === sheet.id}
     <div class="confirm" role="group" aria-label="Confirm deleting {nameOf(sheet)}">
@@ -1321,7 +1326,9 @@
   .confirm span { color: var(--dim); }
   .danger { border-color: var(--bad); color: var(--bad); padding: 0.25rem 0.6rem; font-size: 0.82rem; }
   .danger:hover:not(:disabled) { background: var(--bad); color: var(--bg); border-color: var(--bad); }
-  .retired a { opacity: 0.6; padding-left: 0.75rem; }
+  .retired a { opacity: 0.6; }
+  /* As wide as the star (its left padding and its 17px drawing). */
+  .starspace { flex: none; width: calc(0.75rem + 17px); align-self: stretch; }
   .meta { display: block; font-size: 0.8rem; color: var(--dim); margin-top: 0.125rem; overflow-wrap: anywhere; }
   .meta.campaign { color: var(--text); }
   /* Made, then last changed, side by side with a rule between them. */
