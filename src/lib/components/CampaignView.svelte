@@ -36,6 +36,8 @@
   import Logo from './Logo.svelte';
   import NotFound from './NotFound.svelte';
   import CampaignSkeleton from './CampaignSkeleton.svelte';
+  import CampaignCreatures from './CampaignCreatures.svelte';
+  import AreaSwitch from './AreaSwitch.svelte';
   import { pageTitle } from '$lib/title';
   import { sessionWhen } from '$lib/rules/dates';
   import ShareButton from './ShareButton.svelte';
@@ -77,6 +79,23 @@
   /** In the campaign: its DM, or a player with a character in it. They may see the invite. */
   const isMember = $derived(isDm || Boolean($session.user && sheets.some((s) => s.owner_id === $session.user!.id)));
   const hasMusic = $derived(Boolean(campaign?.details.songs?.length));
+
+  /*
+   * The DM's two sides of the table: the players' cards, and the monsters
+   * and NPCs only the DM sees (CampaignCreatures, database/0017).
+   */
+  const SIDE_PLAYERS = 'Players';
+  const SIDE_CREATURES = 'Monsters & NPCs';
+  let side = $state(SIDE_PLAYERS);
+  let creatureCount = $state(0);
+  /** A side slides in from the side it sits on in the switch. */
+  function sideIn(_node: Element, { dir = 1 }: { dir?: number } = {}) {
+    return {
+      duration: prefersReducedMotion() ? 0 : 260,
+      easing: cubicOut,
+      css: (t: number, u: number) => `opacity: ${t}; transform: translate3d(${u * 14 * dir}px, 0, 0);`
+    };
+  }
 
   /** The table's music and who is here to lead it (lib/tableMusic). */
   const music = $derived(new TableMusic(id));
@@ -396,8 +415,9 @@
       </div>
     </header>
 
-    <!-- Who is at the table right now, and when it next meets. -->
-    {#if (next && !next.past) || (isDm && editing)}
+    <!-- When the table next meets at the left; the DM's switch between the
+         players and their monsters and NPCs at the right. -->
+    {#if (next && !next.past) || isDm}
       <div class="tablebar" transition:slide={unfold()}>
         <div class="nextsession">
           {#if isDm && editing}
@@ -415,6 +435,14 @@
             <span class="nextuntil" class:soon={next.until === 'today' || next.until === 'now'}>{next.until === 'now' ? 'happening now' : next.until}</span>
           {/if}
         </div>
+        {#if isDm}
+          <div class="sideswitch">
+            <AreaSwitch active={side} onchoose={(k) => (side = k)} sides={[
+              { key: SIDE_PLAYERS, icon: 'person', count: active.length },
+              { key: SIDE_CREATURES, icon: 'monster', count: creatureCount }
+            ]} />
+          </div>
+        {/if}
       </div>
     {/if}
 
@@ -433,11 +461,23 @@
 
     {#if error}<p class="app-alert bad" role="alert">{error}</p>{/if}
 
-    {#if active.length === 0}
-      <p class="empty">No characters yet.{#if isDm}{' '}Send your players the invite link.{/if}</p>
-    {:else}
-      <CampaignCards here={music.present} sheets={active} order={campaign.details.order ?? []} {isDm} {editing} {ended}
-                     onorder={(order) => saveDetails({ order })} onremove={remove} onconditions={giveConditions} onlook={giveLook} />
+    <!-- The players' cards, or (the DM's other side) the monsters and NPCs.
+         The creatures stay mounted once opened, so their count and what was
+         typed survive a switch back and forth. -->
+    {#if side === SIDE_PLAYERS}
+      <div class="sidepane" in:sideIn={{ dir: -1 }}>
+        {#if active.length === 0}
+          <p class="empty">No characters yet.{#if isDm}{' '}Send your players the invite link.{/if}</p>
+        {:else}
+          <CampaignCards here={music.present} sheets={active} order={campaign.details.order ?? []} {isDm} {editing} {ended}
+                         onorder={(order) => saveDetails({ order })} onremove={remove} onconditions={giveConditions} onlook={giveLook} />
+        {/if}
+      </div>
+    {/if}
+    {#if isDm}
+      <div class="sidepane creaturespane" hidden={side !== SIDE_CREATURES}>
+        <CampaignCreatures campaignId={campaign.id} {ended} bind:count={creatureCount} />
+      </div>
     {/if}
 
     {#if retired.length}
@@ -608,7 +648,12 @@
   }
   .herenote { display: inline-flex; align-items: center; gap: 0.375rem; color: oklch(74% 0.17 150); }
   :global([data-mode='light']) .herenote { color: oklch(52% 0.15 150); }
-  .nextsession { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-left: auto; }
+  .nextsession { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .sideswitch { margin-left: auto; }
+  /* The monsters' side slides in from the right, as the players' does from the left. */
+  .creaturespane:not([hidden]) { animation: creaturesIn 0.26s cubic-bezier(0.33, 1, 0.68, 1); }
+  @keyframes creaturesIn { from { opacity: 0; transform: translate3d(14px, 0, 0); } }
+  @media (prefers-reduced-motion: reduce) { .creaturespane:not([hidden]) { animation: none; } }
   .nextlabel { font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600; }
   .nextwhen { color: var(--text); }
   .nextuntil { color: var(--dim); }
