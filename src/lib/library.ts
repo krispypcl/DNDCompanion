@@ -17,7 +17,7 @@ import type { Definition } from '$lib/types';
 export type LibraryKind = 'attacks' | 'spells' | 'items' | 'features' | 'trackers';
 
 /** Which field of a row is its name. */
-export const NAME_KEY: Record<LibraryKind, string> = {
+const NAME_KEY: Record<LibraryKind, string> = {
   attacks: 'name',
   spells: 'name',
   items: 'name',

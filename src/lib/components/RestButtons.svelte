@@ -1,6 +1,5 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
-  import { cubicOut } from 'svelte/easing';
   import { applyRest, healFromHitDice, hitDiceLeft, hitDicePool } from '$lib/rules/rest';
   import { formula as describePool, type Pool, type Roll } from '$lib/rules/dice';
   import { modifierOf } from '$lib/rules/derived';

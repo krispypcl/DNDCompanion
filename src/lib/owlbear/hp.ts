@@ -12,7 +12,7 @@ import { emptyState } from '$lib/types';
 
 export type HpChange = 'damage' | 'heal' | 'temp';
 
-export function changed(state: State, hpMax: number, how: HpChange, amount: number): State {
+function changed(state: State, hpMax: number, how: HpChange, amount: number): State {
   const n = Math.max(0, Math.floor(amount));
   const next = how === 'damage' ? applyDamage(state, n, hpMax) : how === 'heal' ? applyHealing(state, n, hpMax) : setTempHp(state, n);
   return withVitals(state, next, hpMax);

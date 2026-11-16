@@ -7,9 +7,9 @@
 import { peekTarget } from '$lib/rules/peek';
 
 /** How long the pointer rests on a name before the window opens. */
-export const HOVER_OPEN_MS = 450;
+const HOVER_OPEN_MS = 450;
 /** Grace to cross the gap from the name to the window before it closes. */
-export const HOVER_CLOSE_MS = 280;
+const HOVER_CLOSE_MS = 280;
 
 export type PeekTarget = {
   name: string;

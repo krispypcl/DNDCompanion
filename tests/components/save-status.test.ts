@@ -28,8 +28,6 @@ const fake = sheetStore as unknown as Writable<{
 const indicator = readFileSync('src/lib/components/SaveIndicator.svelte', 'utf8');
 const sheet = readFileSync('src/lib/components/SheetView.svelte', 'utf8');
 
-const STATES = ['idle', 'saving', 'saved', 'unsaved', 'stale', 'error'] as const;
-
 const setStatus = (status: string, message: string | null = null) =>
   fake.set({ sheet: null, status, message });
 

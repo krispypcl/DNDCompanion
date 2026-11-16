@@ -30,13 +30,13 @@ export function ready(): Promise<typeof OBR> {
 }
 
 /** Where this site's own files are, absolute (Owlbear wants whole addresses). */
-export const asset = (path: string) => `${location.origin}${base}/owlbear/${path}`;
+const asset = (path: string) => `${location.origin}${base}/owlbear/${path}`;
 /** A sheet's public address, for opening it. */
 export const sheetUrl = (id: string) => `${siteRoot(location.origin, base)}/s?id=${encodeURIComponent(id)}`;
 /** A campaign's page. */
 export const campaignUrl = (id: string) => `${siteRoot(location.origin, base)}/c?id=${encodeURIComponent(id)}`;
 /** The picture a sheet's token wears: its portrait, else the site's die. */
-export function portraitOf(sheet: Sheet): string {
+function portraitOf(sheet: Sheet): string {
   const url = resolveImageUrl(sheet.definition?.identity?.portraitUrl).url;
   return url || `${siteRoot(location.origin, base)}/icon-512.png`;
 }
@@ -103,7 +103,7 @@ const partOf = (item: Item): PartLink | null => {
 };
 
 /** A picture's size and type, by loading it. */
-export function imageInfo(url: string): Promise<{ width: number; height: number; mime: string }> {
+function imageInfo(url: string): Promise<{ width: number; height: number; mime: string }> {
   return new Promise((resolve, reject) => {
     const img = new window.Image();
     img.crossOrigin = 'anonymous';
@@ -161,7 +161,7 @@ function swapPicture(d: Image, url: string, info: { width: number; height: numbe
   d.grid = { dpi: info.width / across, offset: { x: info.width / 2, y: info.height / 2 } };
 }
 
-export async function untieToken(itemId: string): Promise<void> {
+async function untieToken(itemId: string): Promise<void> {
   const parts = (await OBR.scene.items.getItems((i) => partOf(i)?.token === itemId)).map((i) => i.id);
   if (parts.length) await OBR.scene.items.deleteItems(parts);
   await OBR.scene.items.updateItems([itemId], (drafts) => {
@@ -314,8 +314,8 @@ export async function followTheme(apply: (mode: 'light' | 'dark') => void): Prom
 }
 
 // ── The campaign's music and board, in the room ──
-export const MUSIC_ID = `${NS}/music`;
-export const BOARD_ID = `${NS}/board`;
+const MUSIC_ID = `${NS}/music`;
+const BOARD_ID = `${NS}/board`;
 const withCampaign = (path: string, campaignId: string) => `${asset(path)}?c=${encodeURIComponent(campaignId)}`;
 
 /**

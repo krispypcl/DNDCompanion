@@ -24,10 +24,10 @@ import { PAGE_BREAK } from '$lib/rules/pages';
 import { needsConcentration, ordinal } from '$lib/rules/spells';
 import { ABILITIES, SKILLS, type Ability, type Definition, type Item, type SkillName, type State } from '$lib/types';
 
-export const ABILITY_NAMES: Record<Ability, string> = {
+const ABILITY_NAMES: Record<Ability, string> = {
   str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma'
 };
-export const SKILL_NAMES: Record<SkillName, string> = {
+const SKILL_NAMES: Record<SkillName, string> = {
   acrobatics: 'Acrobatics', animalHandling: 'Animal Handling', arcana: 'Arcana', athletics: 'Athletics',
   deception: 'Deception', history: 'History', insight: 'Insight', intimidation: 'Intimidation',
   investigation: 'Investigation', medicine: 'Medicine', nature: 'Nature', perception: 'Perception',
@@ -36,10 +36,10 @@ export const SKILL_NAMES: Record<SkillName, string> = {
 };
 
 /** Proficient and expert, as the little circle on the sheet shows them (and a reader can type over). */
-export const PROF = '●';
-export const EXPERT = '◆';
+const PROF = '●';
+const EXPERT = '◆';
 
-export const signed = (n: number | null | undefined): string => (n == null || !Number.isFinite(n) ? '' : n >= 0 ? `+${n}` : `${n}`);
+const signed = (n: number | null | undefined): string => (n == null || !Number.isFinite(n) ? '' : n >= 0 ? `+${n}` : `${n}`);
 const text = (v: unknown): string => (v == null ? '' : String(v).trim());
 const num = (v: unknown): string => (v == null || v === '' || !Number.isFinite(Number(v)) ? '' : String(Number(v)));
 

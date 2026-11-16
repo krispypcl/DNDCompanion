@@ -14,7 +14,7 @@ import { emptyState, type Sheet } from '$lib/types';
  * (or be nearly empty, made and never filled in). The room fills the gaps
  * from a blank sheet, so one odd sheet can't stop the others from showing.
  */
-export function complete(sheet: Sheet): Sheet {
+function complete(sheet: Sheet): Sheet {
   const blank = blankDefinition('');
   const def = (sheet.definition ?? {}) as Partial<Sheet['definition']>;
   return {

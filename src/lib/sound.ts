@@ -94,7 +94,7 @@ function own(name: SoundName): boolean {
   return true;
 }
 /** Plays a recording once (also the preview beside its link). */
-export function playClip(url: string) {
+function playClip(url: string) {
   const yt = youtubeClip(url);
   if (yt) return void playYouTube(yt);
   let clip = clips.get(url);

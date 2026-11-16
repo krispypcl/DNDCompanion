@@ -265,15 +265,6 @@ export function storeLoop(place: 'sheet' | 'campaign', on: boolean) {
   }
 }
 
-/** A copy in random order (Fisher–Yates). */
-export function shuffled<T>(list: T[], random: () => number = Math.random): T[] {
-  const out = [...list];
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
-    [out[i], out[j]] = [out[j], out[i]];
-  }
-  return out;
-}
 
 /** 83 → "1:23"; 3723 → "1:02:03". */
 export function clock(seconds: number): string {

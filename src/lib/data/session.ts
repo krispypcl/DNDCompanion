@@ -50,8 +50,6 @@ export async function unlinkProvider(provider: OAuthProvider) {
   await unwrap(supabase.auth.unlinkIdentity(one));
   await supabase.auth.refreshSession();
 }
-export const signInWithGoogle = (redirectTo: string) => signInWithProvider('google', redirectTo);
-export const linkGoogle = (redirectTo: string) => linkProvider('google', redirectTo);
 
 let enabled: Promise<Partial<Record<string, boolean>>> | null = null;
 /**

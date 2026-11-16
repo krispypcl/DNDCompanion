@@ -42,7 +42,7 @@ export function tokenBox(
   };
 }
 
-export const VITAL_COLOURS: Record<string, string> = {
+const VITAL_COLOURS: Record<string, string> = {
   healthy: '#4fbf6a',
   bloodied: '#e0a72e',
   critical: '#e5484d',

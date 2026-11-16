@@ -7,11 +7,11 @@
  * - They are also saved on the account (profiles.preferences), so a
  *   device that has never chosen starts with them.
  */
-import { chooseMode, choiceKept, storedChoice, type ModeChoice } from '$lib/stores/mode';
+import { chooseMode, choiceKept, type ModeChoice } from '$lib/stores/mode';
 import { savePreferences, type ProfileRow } from '$lib/stores/profile';
 
-export const MOTION_KEY = 'dndcompanion:motion';
-export const DICE_KEY = 'dndcompanion:dice';
+const MOTION_KEY = 'dndcompanion:motion';
+const DICE_KEY = 'dndcompanion:dice';
 
 /** How the dice roller shows a roll: the faces tumble, then land; or the total at once. */
 export type DiceStyle = 'tumble' | 'quick';
@@ -23,7 +23,7 @@ export type Prefs = {
 };
 
 /** The look, motion and dice kept in the player's profile (preferences). */
-export function prefsOf(row: ProfileRow | null | undefined): Prefs {
+function prefsOf(row: ProfileRow | null | undefined): Prefs {
   const p = row?.preferences ?? {};
   return {
     ...(p.mode === 'light' || p.mode === 'dark' || p.mode === 'system' ? { mode: p.mode as ModeChoice } : {}),
@@ -63,11 +63,6 @@ export function storedDice(): DiceStyle {
 }
 export function setDiceStyle(style: DiceStyle) {
   write(DICE_KEY, style);
-}
-
-/** This device's preferences as they stand now. */
-export function devicePrefs(): Prefs {
-  return { mode: storedChoice(), reduceMotion: storedReduceMotion(), dice: storedDice() };
 }
 
 /** Keeps a change on the account (merged into what is there). */

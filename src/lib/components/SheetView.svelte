@@ -615,11 +615,6 @@
     setDefinition({ ...definition, identity: { ...definition.identity, [key]: value } });
   }
 
-  function patchCombat(key: string, value: string | number | undefined) {
-    if (!definition) return;
-    setDefinition({ ...definition, combat: { ...definition.combat, [key]: value } });
-  }
-
   /**
    * Trackers nest their reset rule, and a max may be a number or a formula.
    * The editor works on a flat, all-strings row and converts on the way back,

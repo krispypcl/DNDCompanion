@@ -4,7 +4,7 @@
  * checked by driving the built app. These guard the pieces that make those
  * measurements possible, which is what would quietly go missing in an edit.
  */
-import { render, screen } from '@testing-library/svelte';
+import { render } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import EntryTable from '$lib/components/EntryTable.svelte';

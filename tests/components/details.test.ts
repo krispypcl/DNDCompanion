@@ -1,7 +1,7 @@
 /** DetailsBlock: the written details that are not numbers. */
 import { readFileSync } from 'node:fs';
 import { render, screen } from '@testing-library/svelte';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import DetailsBlock from '$lib/components/DetailsBlock.svelte';
 import type { Definition } from '$lib/types';
 

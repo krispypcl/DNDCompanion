@@ -8,7 +8,7 @@
    */
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
-  import { fade, slide } from 'svelte/transition';
+  import { fade } from 'svelte/transition';
   import { parsePlaylist, youtubeTitle } from '$lib/music';
   import InfoTip from './InfoTip.svelte';
   import { nameFont } from '$lib/rules/fonts';
@@ -16,7 +16,7 @@
   import { resolveImageUrl } from '$lib/rules/imageUrl';
   import { SOUND_NAMES, audioUrl, previewSound, type SoundName } from '$lib/sound';
   import SpeakerButton from './SpeakerButton.svelte';
-  import { foldRow, prefersReducedMotion } from '$lib/motion';
+  import { foldRow } from '$lib/motion';
   import EditableField from './EditableField.svelte';
   import Lightbox from './Lightbox.svelte';
   import type { Definition } from '$lib/types';
@@ -102,7 +102,6 @@
     else delete next[key];
     onchange({ ...definition, sounds: next });
   }
-  const unfold = () => ({ duration: prefersReducedMotion() ? 0 : 220, easing: cubicOut });
 </script>
 
 <div class="links">

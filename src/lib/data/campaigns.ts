@@ -142,7 +142,7 @@ export function inviteCode(text: string): string {
   return (fromLink ? fromLink[1] : raw).toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
-export function makeCampaignRepo(client: SupabaseClient) {
+function makeCampaignRepo(client: SupabaseClient) {
   return {
     async get(id: string): Promise<Campaign | null> {
       const { data, error } = await client.from('campaigns').select(COLUMNS).eq('id', id).maybeSingle();

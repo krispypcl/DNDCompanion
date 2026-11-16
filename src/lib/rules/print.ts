@@ -9,9 +9,6 @@ import { formulaContext } from './derived';
 import { spellLevel, spellRank } from './spells';
 import { clampSpent, trackerMax } from './tracker';
 
-/** Above this many, boxes stop being quicker to read than a number. */
-export const MAX_BOXES = 20;
-
 /**
  * The spell level a tracker holds slots for, or null when it is not a slot
  * tracker. "1st-level slots", "Spell Slots · 3rd", "Pact slots (5th)" and a

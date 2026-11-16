@@ -8,8 +8,8 @@
  */
 import type { Definition, State, Tracker } from '$lib/types';
 
-export const EXHAUSTION = 'Exhaustion';
-export const MAX_EXHAUSTION = 6;
+const EXHAUSTION = 'Exhaustion';
+const MAX_EXHAUSTION = 6;
 
 const isExhaustion = (name: string) => /^\s*exhaustion\b/i.test(name);
 
