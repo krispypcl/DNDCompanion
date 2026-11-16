@@ -35,8 +35,9 @@
 
   function target() {
     if (!link || !href) return null;
-    const around = link.parentElement ?? link;
-    return { name, url: href, anchor: around.getBoundingClientRect(), ...themeAt(link) };
+    // The window opens beside the book icon itself, not the end of a long
+    // name cell (a class card, a feature row) far from it.
+    return { name, url: href, anchor: link.getBoundingClientRect(), ...themeAt(link) };
   }
 
   /*

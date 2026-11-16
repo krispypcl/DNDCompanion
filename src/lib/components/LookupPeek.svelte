@@ -16,7 +16,7 @@
   const NARROW = 640;
   const WIDTH = 400;
   const MAX_HEIGHT = 560;
-  const GAP = 16;
+  const GAP = 10;
   const EDGE = 12;
 
   let vw = $state(1280);
