@@ -4,7 +4,7 @@
   import AuthForm from '$lib/components/AuthForm.svelte';
   import ModeToggle from '$lib/components/ModeToggle.svelte';
   import SoundToggle from '$lib/components/SoundToggle.svelte';
-  import { sheetName, sheetRepo } from '$lib/data/sheets';
+  import { sheetName, sheetRepo, type PartyMember } from '$lib/data/sheets';
   import { campaignMessage, campaignRepo, type Campaign } from '$lib/data/campaigns';
   import { MAX_BYTES, importSheet } from '$lib/exchange';
   import { pinnedCampaignsOf, pinnedJoinedOf, pinnedOf, profileOf, savePinned, savePinnedCampaigns, savePinnedJoined, signIn, updateProfile } from '$lib/data/session';
@@ -176,6 +176,13 @@
   const endedJoined = $derived(joined.filter((c) => c.archived));
   /** This player's characters in a campaign (retired ones too: they were there). */
   const charactersIn = (c: Campaign) => sheets.filter((s) => s.campaign_id === c.id);
+  /** Who is in each campaign (names and portraits) for its card; null until known or if it failed. */
+  let party = $state<Map<string, PartyMember[]> | null>(null);
+  function groupParty(members: PartyMember[]): Map<string, PartyMember[]> {
+    const by = new Map<string, PartyMember[]>();
+    for (const m of members) if (!m.retired) by.set(m.campaign_id, [...(by.get(m.campaign_id) ?? []), m]);
+    return by;
+  }
 
   async function setPinned(next: string[], kind: Kind = 'sheets') {
     const previous = pinsOf(kind);
@@ -449,10 +456,12 @@
     Promise.all([sheetRepo.listMySheets(id), campaignRepo.mine(id).catch(() => [])])
       .then(async ([rows, mine]) => {
         const ids = rows.map((r) => r.campaign_id ?? '');
-        const [names, theirs] = await Promise.all([
+        const [names, theirs, members] = await Promise.all([
           campaignRepo.names(ids).catch(() => new Map<string, string>()),
-          campaignRepo.byIds(ids).catch(() => [])
+          campaignRepo.byIds(ids).catch(() => []),
+          sheetRepo.partyOf([...ids, ...mine.map((c) => c.id)]).catch(() => null)
         ]);
+        party = members ? groupParty(members) : null;
         sheets = rows;
         running = mine;
         campaignNames = names;
@@ -577,32 +586,63 @@
   </button>
 {/snippet}
 
-{#snippet campcard(c: Campaign)}
-  <a href="{base}/c/{c.id}" class="campcard"><span class="camptext"><strong style:font-family={faceFamily(fontFace(c.details?.nameFont))}>{c.name}</strong><span class="meta">started {friendlyDate(c.created_at)}{#if c.archived}{' '}· ended{/if}</span></span>{@render campside(c)}</a>
-{/snippet}
+{#snippet campcard(c: Campaign)}{@render campaigncard(c)}{/snippet}
+{#snippet joinedcard(c: Campaign)}{@render campaigncard(c)}{/snippet}
 
-{#snippet joinedcard(c: Campaign)}
+{#snippet campaigncard(c: Campaign)}
+  <!-- As tall as a character's card, laid out the same: the banner in the
+       square; the name, who you are there, the party's faces and how many,
+       and when it started; at the right of a wide card, who is here and the
+       next session. -->
+  {@const banner = resolveImageUrl(c.details?.bannerUrl).url}
   {@const mine = charactersIn(c).map(nameOf)}
-  <a href="{base}/c/{c.id}" class="campcard"><span class="camptext"><strong style:font-family={faceFamily(fontFace(c.details?.nameFont))}>{c.name}</strong><span class="meta">{#if mine.length}as {mine.length > 1 ? `${mine.slice(0, -1).join(', ')} and ${mine.at(-1)}` : mine[0]}{' · '}{/if}started {friendlyDate(c.created_at)}{#if c.archived}{' '}· ended{/if}</span></span>{@render campside(c)}</a>
-{/snippet}
-
-{#snippet campside(c: Campaign)}
-  <!-- At the right: who has the campaign open now, and when it next meets. -->
+  {@const members = party?.get(c.id) ?? []}
   {@const here = tables[c.id]}
   {@const players = (here?.users ?? []).filter((u) => u !== c.created_by).length}
+  {@const hereText = here && (here.dm || players) ? [here.dm ? 'DM' : '', players ? (players === 1 ? '1 player' : `${players} players`) : ''].filter(Boolean).join(' and ') + ' here' : ''}
   {@const next = c.archived ? null : sessionWhen(c.details?.nextSession)}
-  {#if (here && (here.dm || players)) || (next && !next.past)}
-    <span class="campside">
-      {#if here && (here.dm || players)}
-        <span class="camphere" transition:fade={{ duration: 200 }}>
-          <i class="here-dot"></i>{[here.dm ? 'DM' : '', players ? (players === 1 ? '1 player' : `${players} players`) : ''].filter(Boolean).join(' and ')} here
+  {@const upcoming = next && !next.past ? next : null}
+  <a href="{base}/c/{c.id}" class="withface campcard">
+    <span class="face campface">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V3.75M6 4.5h12l-2.5 4 2.5 4H6" /></svg>
+      {#if banner}<img src={banner} alt="" loading="lazy" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />{/if}
+    </span>
+    <span class="cardtext">
+      <span class="lines">
+        <strong style:font-family={faceFamily(fontFace(c.details?.nameFont))}>{c.name}</strong>
+        <span class="meta">{#if isMine(c)}You're the DM{:else if mine.length}Playing {mine[0]}{#if mine.length > 1}{' '}and {mine.length - 1} more{/if}{:else}A player{/if}</span>
+        <span class="meta partyline">
+          {#if members.length}
+            <span class="partyfaces" aria-hidden="true">
+              {#each members.slice(0, 5) as m (m.id)}
+                {@const pic = resolveImageUrl(m.identity?.portraitUrl).url}
+                <span class="pface" title={m.identity?.name || m.name}>{#if pic}<img src={pic} alt="" loading="lazy" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />{/if}<b>{(m.identity?.name || m.name || '?').trim().charAt(0).toUpperCase()}</b></span>
+              {/each}
+            </span>
+            <span>{members.length === 1 ? '1 character' : `${members.length} characters`}{#if members.length > 5}{' '}(+{members.length - 5}){/if}</span>
+          {:else if party}
+            <span>No characters yet</span>
+          {/if}
+          {#if hereText}<span class="camphere inhere" transition:fade={{ duration: 200 }}><i class="here-dot"></i>{hereText}</span>{/if}
         </span>
+      </span>
+      <!-- When it next meets stays; when it started drops out if both won't fit. -->
+      <span class="meta dates"><span class="datesrow">
+        {#if upcoming}<span class="nextshort" class:soon={upcoming.until === 'today' || upcoming.until === 'now'}>{upcoming.until === 'now' ? 'Session on now' : `Next session ${upcoming.until}`}</span>{/if}
+        <span class:made={Boolean(upcoming)}>Started {numericDate(c.created_at)}{#if c.archived}{' '}· ended{/if}</span>
+      </span></span>
+    </span>
+    <span class="cardfacts campfacts">
+      {#if hereText}
+        <span class="camphere" transition:fade={{ duration: 200 }}><i class="here-dot"></i>{hereText}</span>
       {/if}
-      {#if next && !next.past}
-        <span class="campnext"><span class="k">Next session</span>{next.when}<span class:soon={next.until === 'today' || next.until === 'now'}>{next.until === 'now' ? 'happening now' : next.until}</span></span>
+      {#if upcoming}
+        <span class="campnext"><span class="k">Next session</span><span>{upcoming.when}</span><span class:soon={upcoming.until === 'today' || upcoming.until === 'now'}>{upcoming.until === 'now' ? 'happening now' : upcoming.until}</span></span>
+      {:else}
+        <span class="campnext quiet">{c.archived ? 'This campaign has ended' : 'No session on the calendar'}</span>
       {/if}
     </span>
-  {/if}
+  </a>
 {/snippet}
 
 {#snippet joinedrow(c: Campaign)}
@@ -1147,11 +1187,33 @@
     border: 1px solid color-mix(in oklch, var(--cc) 55%, var(--line)); background: color-mix(in oklch, var(--cc) 16%, var(--raised));
   }
   .condmore { font-size: 0.6875rem; color: var(--dim); align-self: center; }
-  /* A campaign card: its name and line at the left; who is here and the next
-     session at the right (under them, in a narrow card). */
-  .campcard { display: flex; align-items: center; gap: 0.5rem 1rem; flex-wrap: wrap; }
-  .camptext { flex: 1 1 12rem; min-width: 0; display: block; }
-  .campside { display: grid; justify-items: end; gap: 0.25rem; font-size: 0.75rem; color: var(--dim); text-align: right; }
+  /*
+   * A campaign card, laid out as a character's (.withface): the banner in the
+   * square (a flag without one); the name, who you are there, the party's
+   * faces, and the dates. A wide card has who is here and the next session
+   * at the right; a narrower one keeps "here" on the party line and the next
+   * session in its dates.
+   */
+  .campface { display: grid; place-items: center; color: var(--a); }
+  .campface svg { width: 1.75rem; height: 1.75rem; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0.8; }
+  .partyline { display: flex; align-items: center; flex-wrap: wrap; gap: 0.25rem 0.5rem; }
+  .partyfaces { display: inline-flex; padding-left: 0.25rem; margin-block: -0.125rem; }
+  .pface {
+    position: relative; width: 1.125rem; height: 1.125rem; margin-left: -0.25rem; border-radius: 50%; overflow: hidden; flex: none;
+    display: grid; place-items: center; border: 1.5px solid var(--surface);
+    background: linear-gradient(150deg, var(--portrait-from), var(--portrait-to)); color: var(--text);
+  }
+  .pface b { font-size: 0.5625rem; font-weight: 650; }
+  .pface img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .nextshort { color: var(--text); }
+  .nextshort.soon { color: var(--a); font-weight: 600; }
+  .campfacts { font-size: 0.75rem; color: var(--dim); gap: 0.5rem; }
+  .campfacts .campnext { display: grid; gap: 0.125rem; justify-content: start; }
+  .campfacts .campnext.quiet { color: var(--faint); }
+  @container (min-width: 41rem) {
+    .inhere, .nextshort { display: none; }
+    .campcard .datesrow .made { padding-right: 0; border-right: 0; }
+  }
   .camphere { display: inline-flex; align-items: center; gap: 0.375rem; color: var(--text); }
   .here-dot {
     width: 0.4375rem; height: 0.4375rem; border-radius: 50%; background: oklch(74% 0.17 150); flex: none;
@@ -1161,7 +1223,6 @@
   .campnext { display: inline-flex; align-items: baseline; gap: 0.375rem; flex-wrap: wrap; justify-content: flex-end; }
   .campnext .k { font-size: 0.625rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--label); font-weight: 600; }
   .campnext .soon { color: var(--a); font-weight: 600; }
-  @container (max-width: 30rem) { .campside { justify-items: start; text-align: left; } .campnext { justify-content: flex-start; } }
   /*
    * A narrow card (a phone, two to a row on a small laptop): the square beside
    * the name, class and campaign, and the dates as the card's foot.
