@@ -814,7 +814,7 @@
 <style>
   .swap { position: relative; }
   .hello {
-    display: flex; align-items: center; gap: 0.75rem 1rem; flex-wrap: wrap; margin: 0 0 1.25rem; padding: 0.875rem 1rem;
+    display: flex; align-items: center; gap: 0.75rem 1rem; flex-wrap: wrap; margin: 1.75rem 0 0; padding: 0.875rem 1rem;
     border: 1px solid var(--a-edge); border-radius: var(--r); background: var(--a-wash);
   }
   .hello.slim { border-color: var(--line-soft); background: var(--surface); font-size: 0.875rem; color: var(--dim); }
@@ -985,6 +985,9 @@
     h1 { font-size: 1.3125rem; gap: 0.5rem; }
     header { gap: 0.625rem; }
     .tools { gap: 0.375rem; }
+    /* Tighter on a phone, the same above and below the nudge. */
+    .hello { margin-top: 1rem; }
+    .areas { margin-top: 1rem; }
     /* The picture alone says whose account it is: a round button, no pill. */
     .me span { display: none; }
     .me { padding: 0; border: 0; background: none; border-radius: 50%; }
