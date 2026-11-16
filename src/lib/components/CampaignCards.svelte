@@ -195,7 +195,7 @@
         animate:glideTo>
       {#if here.has(s.owner_id)}
         <!-- Their player has the campaign open right now. -->
-        <span class="herebadge" title="{nameOf(s)}’s player is here" transition:fade={{ duration: 200 }}><i></i>Here</span>
+        <span class="herebadge" role="img" aria-label="{nameOf(s)}’s player is here" title="{nameOf(s)}’s player is here" transition:fade={{ duration: 200 }}><i></i></span>
       {/if}
       <a class="open" href="{base}/s/{s.id}{s.campaign_id ? `?from=${s.campaign_id}` : ''}">
         <!-- Conditions ring the portrait in their colours (the card's own edge
@@ -348,16 +348,15 @@
     color: var(--faint); cursor: grab; touch-action: none; opacity: 0; transition: opacity 0.15s ease, color 0.15s ease;
   }
   .card:hover .grip, .grip:focus-visible, .lifted .grip { opacity: 1; }
-  /* Here: a small green light in the card's top right corner, placed over
+  /* Here: a small green light alone in the card's top right corner, placed over
      it so nothing in the card moves when it comes and goes (the name's
      line always leaves it room). Beside the grip where there is one. */
   .herebadge {
     position: absolute; top: 0.75rem; right: 0.75rem; z-index: 2;
     display: inline-flex; align-items: center; gap: 0.3125rem;
     font-size: 0.5625rem; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim);
-    pointer-events: none;
   }
-  .card.sortable .herebadge { right: 2.5rem; }
+  .card.sortable .herebadge { right: 2.75rem; }
   .herebadge i, :global(.here-dot) {
     width: 0.4375rem; height: 0.4375rem; border-radius: 50%; background: oklch(74% 0.17 150); flex: none;
     box-shadow: 0 0 0 0 oklch(74% 0.17 150 / 0.5); animation: hereGlow 2.4s ease-out infinite;
@@ -367,8 +366,8 @@
   .grip:hover { color: var(--a); }
   @media (hover: none) { .grip { opacity: 0.8; } }
 
-  .open { display: flex; gap: 0.75rem; align-items: center; color: inherit; text-decoration: none; min-width: 0; padding-right: 4.25rem; }
-  .card.sortable .open { padding-right: 5.75rem; }
+  .open { display: flex; gap: 0.75rem; align-items: center; color: inherit; text-decoration: none; min-width: 0; padding-right: 3.25rem; }
+  .card.sortable .open { padding-right: 4rem; }
   .portrait {
     position: relative; flex: none; width: 3.25rem; height: 3.25rem; border-radius: var(--r-sm);
     border: 1px solid var(--a-edge); background: linear-gradient(150deg, var(--portrait-from), var(--portrait-to));
