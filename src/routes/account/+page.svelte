@@ -19,6 +19,7 @@
     type OAuthProvider
   } from '$lib/data/session';
   import OAuthButton from '$lib/components/OAuthButton.svelte';
+  import ProviderIcon from '$lib/components/ProviderIcon.svelte';
   import { slide } from 'svelte/transition';
   import { passwordStrength } from '$lib/rules/password';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
@@ -334,7 +335,7 @@
           <li transition:slide={{ duration: 200 }}>
             {#if linked.includes(p)}
               <span class="linked">
-                <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                <ProviderIcon provider={p} />
                 {PROVIDER_NAMES[p]} is connected.
               </span>
               {#if linked.length > 1}
@@ -343,10 +344,10 @@
             {:else}
               <!-- Not yet: said in grey where "connected" would be, the way to connect at the right. -->
               <span class="linked off">
-                <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 3" /></svg>
+                <ProviderIcon provider={p} />
                 {PROVIDER_NAMES[p]} is not yet connected.
               </span>
-              <OAuthButton provider={p} link compact next="/account" />
+              <OAuthButton provider={p} link compact bare label="Connect" next="/account" />
             {/if}
           </li>
         {/each}
@@ -452,6 +453,8 @@
   .conns li { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; min-height: 2.5rem; }
   .conns .linked { margin: 0; font-size: 0.875rem; }
   .conns .linked.off { color: var(--faint); }
+  /* Not connected yet: the service's mark, greyed. */
+  .conns .linked.off :global(.provider-icon) { filter: grayscale(1); opacity: 0.55; }
   /* An OAuthButton's message sits under the row. */
   .conns li :global(.err) { flex-basis: 100%; text-align: right; }
   /* The switches sit at the left, each with its message under it. */
