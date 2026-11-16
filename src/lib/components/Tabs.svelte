@@ -6,12 +6,15 @@
     tabs,
     active = $bindable(),
     lit = null,
+    label,
     children
   }: {
     tabs: string[];
     active: string;
     /** A tab to flare for a moment (Spells, when a slot is spent). */
     lit?: string | null;
+    /** What a tab's button shows, when more than its name (the main menu's areas). */
+    label?: import('svelte').Snippet<[string]>;
     children: import('svelte').Snippet<[string]>;
   } = $props();
 
@@ -101,7 +104,7 @@
       class:lit={lit === tab}
       onclick={() => select(tab)}
     >
-      {tab}
+      {#if label}{@render label(tab)}{:else}{tab}{/if}
     </button>
   {/each}
   <i class="indicator" class:ready class:placed={bar.width > 0} style:transform="translateX({bar.left}px)"
