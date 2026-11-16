@@ -14,7 +14,8 @@
     "brew-sources": "node scripts/brew-sources.mjs",
     "subclass-names": "node scripts/subclass-names.mjs",
     "class-features": "node scripts/class-features.mjs",
-    "entry-index": "node scripts/entry-index.mjs"
+    "entry-index": "node scripts/entry-index.mjs",
+    "search-index": "node scripts/search-index.mjs"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.8",
