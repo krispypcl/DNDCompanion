@@ -10,6 +10,9 @@ export default {
     // the router resolves it client-side. Using index.html instead gives a
     // real 404, which breaks every shared sheet link.
     adapter: adapter({ fallback: '404.html', strict: false }),
-    paths: { base: process.env.BASE_PATH ?? '' }
+    paths: { base: process.env.BASE_PATH ?? '' },
+    // Every open page asks each minute whether a new version has been
+    // deployed (_app/version.json); +layout reloads once it is safe to.
+    version: { pollInterval: 60_000 }
   }
 };

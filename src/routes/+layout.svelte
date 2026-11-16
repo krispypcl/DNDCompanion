@@ -1,6 +1,7 @@
 <script lang="ts">
   import '../app.css';
-  import { page } from '$app/state';
+  import { page, updated } from '$app/state';
+  import { sheetStore } from '$lib/stores/sheet';
   import { onNavigate } from '$app/navigation';
   import Splash from '$lib/components/Splash.svelte';
   import ConnectionNotice from '$lib/components/ConnectionNotice.svelte';
@@ -10,6 +11,41 @@
   import { adoptAccountPrefs } from '$lib/prefs';
 
   let { children } = $props();
+
+  /*
+   * A new version was deployed: everyone's page reloads into it, but never
+   * over something being written. It waits until nothing is typed into, no
+   * change is still on its way to the database, and the reader has paused
+   * for a few seconds (or straight away while the tab is out of sight).
+   */
+  $effect(() => {
+    if (!updated.current) return;
+    let quietTimer: ReturnType<typeof setTimeout> | undefined;
+    const busy = () => {
+      const el = document.activeElement as HTMLElement | null;
+      const typing = Boolean(el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)));
+      return typing || sheetStore.hasUnsaved();
+    };
+    const tryReload = () => {
+      clearTimeout(quietTimer);
+      quietTimer = setTimeout(() => {
+        if (busy()) return tryReload();
+        location.reload();
+      }, document.hidden ? 0 : 4000);
+    };
+    const nudge = () => tryReload();
+    tryReload();
+    // Any input pushes the moment back; seeing the tab again checks at once.
+    window.addEventListener('pointerdown', nudge, true);
+    window.addEventListener('keydown', nudge, true);
+    document.addEventListener('visibilitychange', nudge);
+    return () => {
+      clearTimeout(quietTimer);
+      window.removeEventListener('pointerdown', nudge, true);
+      window.removeEventListener('keydown', nudge, true);
+      document.removeEventListener('visibilitychange', nudge);
+    };
+  });
 
   /* A device that has never chosen a look takes the account's on signing in. */
   let adopted: string | null = null;
