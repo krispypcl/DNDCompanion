@@ -131,8 +131,7 @@ export async function setSheetsPrivate(on: boolean) {
   await unwrap(supabase.auth.updateUser({ data: { sheets_private: on } }));
 }
 
-/** The main menu's "Add a profile picture?" nudge, put away with Not now. */
-export const PICTURE_NUDGE_KEY = 'dndcompanion:picture-nudge';
+
 
 /** Signs this account out on every device, this one included. */
 export async function signOutEverywhere() {

@@ -7,19 +7,23 @@
   import { sheetName, sheetRepo } from '$lib/data/sheets';
   import { campaignMessage, campaignRepo, type Campaign } from '$lib/data/campaigns';
   import { MAX_BYTES, importSheet } from '$lib/exchange';
-  import { pinnedCampaignsOf, pinnedJoinedOf, pinnedOf, profileOf, savePinned, savePinnedCampaigns, savePinnedJoined, signIn, updateProfile, PICTURE_NUDGE_KEY } from '$lib/data/session';
-  import { slide } from 'svelte/transition';
+  import { pinnedCampaignsOf, pinnedJoinedOf, pinnedOf, profileOf, savePinned, savePinnedCampaigns, savePinnedJoined, signIn, updateProfile } from '$lib/data/session';
+  import { fade, slide } from 'svelte/transition';
   import { tick } from 'svelte';
   import Avatar from '$lib/components/Avatar.svelte';
   import Logo from '$lib/components/Logo.svelte';
   import { friendlyError } from '$lib/errors';
-  import { friendlyDate, numericDate } from '$lib/rules/dates';
+  import { friendlyDate, numericDate, sessionWhen } from '$lib/rules/dates';
   import { pageTitle } from '$lib/title';
+  import { watchTable, type Here } from '$lib/presence';
+  import { prefsOf } from '$lib/prefs';
   import { faceFamily, fontFace } from '$lib/rules/fonts';
   import D20Loader from '$lib/components/D20Loader.svelte';
   import Tabs from '$lib/components/Tabs.svelte';
   import ClassIcon from '$lib/components/ClassIcon.svelte';
-  import { characterLevel, classLine, mainClass } from '$lib/rules/derived';
+  import { armorClass, characterLevel, classLine, mainClass } from '$lib/rules/derived';
+  import { vitalStatus } from '$lib/rules/hp';
+  import { lookOf } from '$lib/rules/conditions';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
   import { themeStyle } from '$lib/theme';
   import { flip } from 'svelte/animate';
@@ -44,15 +48,6 @@
     } finally {
       savingName = false;
     }
-  }
-  const NUDGE_KEY = PICTURE_NUDGE_KEY;
-  let pictureNudgeGone = $state(true);
-  $effect(() => {
-    try { pictureNudgeGone = localStorage.getItem(NUDGE_KEY) === 'gone'; } catch { pictureNudgeGone = false; }
-  });
-  function dismissPictureNudge() {
-    pictureNudgeGone = true;
-    try { localStorage.setItem(NUDGE_KEY, 'gone'); } catch { /* private window */ }
   }
 
   /** A new page of cards slides in from the side of the button pressed. */
@@ -361,6 +356,15 @@
       { key: 'faded', label: 'Archived', items: [...endedCampaigns, ...endedJoined], faded: true }
     ];
   });
+  /** Who has each campaign's page open (lib/presence.ts), for the cards' right side. */
+  let tables = $state<Record<string, Here>>({});
+  const watched = $derived([...running, ...joined].filter((c) => !c.archived).map((c) => c.id).sort().join(','));
+  $effect(() => {
+    const ids = watched ? watched.split(',') : [];
+    const stops = ids.map((id) => watchTable(id, (here) => (tables = { ...tables, [id]: here })));
+    return () => stops.forEach((stop) => stop());
+  });
+
   /** Run here (not joined): its DM is this player. */
   const isMine = (c: Campaign) => running.some((r) => r.id === c.id);
   const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`;
@@ -508,7 +512,11 @@
     if (!user) return;
     creating = true;
     try {
-      const sheet = await sheetRepo.createSheet(user.id, 'New character', blankDefinition(), blankState());
+      // In the colour chosen for new sheets (account page, Preferences), if any.
+      const def = blankDefinition();
+      const theme = prefsOf(user).defaultTheme;
+      if (theme) def.identity.theme = theme;
+      const sheet = await sheetRepo.createSheet(user.id, 'New character', def, blankState());
       await goto(`${base}/s/${sheet.id}`);
     } catch (e) {
       error = friendlyError(e, 'The new sheet fizzled! Try again in a moment.');
@@ -548,12 +556,31 @@
 {/snippet}
 
 {#snippet campcard(c: Campaign)}
-  <a href="{base}/c/{c.id}"><strong style:font-family={faceFamily(fontFace(c.details?.nameFont))}>{c.name}</strong><span class="meta">started {friendlyDate(c.created_at)}{#if c.archived}{' '}· ended{/if}</span></a>
+  <a href="{base}/c/{c.id}" class="campcard"><span class="camptext"><strong style:font-family={faceFamily(fontFace(c.details?.nameFont))}>{c.name}</strong><span class="meta">started {friendlyDate(c.created_at)}{#if c.archived}{' '}· ended{/if}</span></span>{@render campside(c)}</a>
 {/snippet}
 
 {#snippet joinedcard(c: Campaign)}
   {@const mine = charactersIn(c).map(nameOf)}
-  <a href="{base}/c/{c.id}"><strong style:font-family={faceFamily(fontFace(c.details?.nameFont))}>{c.name}</strong><span class="meta">{#if mine.length}as {mine.length > 1 ? `${mine.slice(0, -1).join(', ')} and ${mine.at(-1)}` : mine[0]}{' · '}{/if}started {friendlyDate(c.created_at)}{#if c.archived}{' '}· ended{/if}</span></a>
+  <a href="{base}/c/{c.id}" class="campcard"><span class="camptext"><strong style:font-family={faceFamily(fontFace(c.details?.nameFont))}>{c.name}</strong><span class="meta">{#if mine.length}as {mine.length > 1 ? `${mine.slice(0, -1).join(', ')} and ${mine.at(-1)}` : mine[0]}{' · '}{/if}started {friendlyDate(c.created_at)}{#if c.archived}{' '}· ended{/if}</span></span>{@render campside(c)}</a>
+{/snippet}
+
+{#snippet campside(c: Campaign)}
+  <!-- At the right: who has the campaign open now, and when it next meets. -->
+  {@const here = tables[c.id]}
+  {@const players = (here?.users ?? []).filter((u) => u !== c.created_by && u !== $session.user?.id).length}
+  {@const next = c.archived ? null : sessionWhen(c.details?.nextSession)}
+  {#if (here && (here.dm || players)) || (next && !next.past)}
+    <span class="campside">
+      {#if here && (here.dm || players)}
+        <span class="camphere" transition:fade={{ duration: 200 }}>
+          <i class="here-dot"></i>{[here.dm ? 'DM' : '', players ? (players === 1 ? '1 player' : `${players} players`) : ''].filter(Boolean).join(' and ')} here
+        </span>
+      {/if}
+      {#if next && !next.past}
+        <span class="campnext"><span class="k">Next session</span>{next.when}<span class:soon={next.until === 'today' || next.until === 'now'}>{next.until === 'now' ? 'happening now' : next.until}</span></span>
+      {/if}
+    </span>
+  {/if}
 {/snippet}
 
 {#snippet joinedrow(c: Campaign)}
@@ -601,7 +628,39 @@
         <span>Updated {friendlyDate(sheet.updated_at)}</span>
       </span>
     </span>
+    {@render facts(sheet)}
   </a>
+{/snippet}
+
+{#snippet facts(sheet: Sheet)}
+  <!-- How the character stands: hit points with their bar, armour class, and
+       the conditions on them (three, then how many more). -->
+  {@const def = sheet.definition}
+  {@const max = Number(def?.combat?.hpMax) || 0}
+  {@const cur = Number(sheet.state?.hpCurrent) || 0}
+  {@const temp = Number(sheet.state?.hpTemp) || 0}
+  {@const v = vitalStatus(cur, max, sheet.state?.deathSaves)}
+  {@const conds = sheet.state?.conditions ?? []}
+  {#if def && (max > 0 || conds.length)}
+    <span class="cardfacts">
+      {#if max > 0}
+        <span class="hpline">
+          <span class="k">HP</span><b>{cur}</b><span class="of">/ {max}</span>{#if temp}<span class="temp">+{temp}</span>{/if}
+          <span class="vitalword {v.vital}">{v.label}</span>
+          <span class="ac"><span class="k">AC</span><b>{armorClass(def).total}</b></span>
+        </span>
+        <span class="hpbar {v.vital}" aria-hidden="true"><i style:width="{Math.max(0, Math.min(100, (cur / max) * 100))}%"></i></span>
+      {/if}
+      {#if conds.length}
+        <span class="condchips">
+          {#each conds.slice(0, 3) as c (c)}
+            <span class="condchip" style:--cc={lookOf(c, def.conditionLooks ?? {})?.color ?? 'var(--dim)'}>{c}</span>
+          {/each}
+          {#if conds.length > 3}<span class="condmore">+{conds.length - 3}</span>{/if}
+        </span>
+      {/if}
+    </span>
+  {/if}
 {/snippet}
 
 {#snippet sheetItem(sheet: Sheet, g: Group<Sheet>)}
@@ -757,11 +816,10 @@
             <button disabled={!nameDraft.trim() || savingName}>{savingName ? 'Saving…' : 'Save'}</button>
           </div>
         </form>
-      {:else if !me.avatarUrl && !pictureNudgeGone}
+      {:else if !me.avatarUrl}
         <div class="hello slim" transition:slide={{ duration: 260 }}>
           <span>Add a profile picture, {me.displayName.split(' ')[0]}? It is how the rest of the table spots you.</span>
           <a class="smallbtn accent" href="{base}/account">Add one</a>
-          <button class="ghost" onclick={dismissPictureNudge} aria-label="Not now">Not now</button>
         </div>
       {/if}
     {/if}
@@ -884,10 +942,70 @@
    * The portrait (or the class drawn) at the card's left, in the sheet's
    * frame: a square as tall as the card's lines. Sized outright rather than
    * stretched to the card: Safari would not keep a stretched one square and
-   * squeezed it into a strip on a phone. The lines are centred beside it.
+   * squeezed it into a strip on a phone. The lines are centred beside it,
+   * and how the character stands (hit points, armour class, conditions) at
+   * the right, in a card wide enough for it.
    */
-  .withface { --face: 4.75rem; display: flex; align-items: center; gap: 0.75rem; }
-  .cardtext { display: flex; flex-direction: column; justify-content: center; min-width: 0; flex: 1; min-height: var(--face); }
+  li { container-type: inline-size; }
+  .withface {
+    --face: 4.75rem;
+    display: grid; grid-template-columns: var(--face) minmax(0, 1fr) minmax(11rem, 14rem);
+    grid-template-areas: 'face text facts'; align-items: center; column-gap: 1rem;
+  }
+  .withface > .face { grid-area: face; }
+  .cardtext { grid-area: text; display: flex; flex-direction: column; justify-content: center; min-width: 0; min-height: var(--face); }
+  .cardfacts {
+    grid-area: facts; display: grid; gap: 0.375rem; min-width: 0; align-self: center;
+    padding-left: 1rem; border-left: 1px solid var(--line-soft);
+  }
+  .hpline { display: flex; align-items: baseline; gap: 0.25rem; font-size: 0.8125rem; color: var(--dim); flex-wrap: wrap; }
+  .hpline b { color: var(--text); font-size: 1rem; font-variant-numeric: tabular-nums; }
+  .hpline .k { font-size: 0.625rem; letter-spacing: 0.08em; font-weight: 650; color: var(--label); }
+  .hpline .temp { color: var(--a); font-size: 0.75rem; }
+  .vitalword { font-size: 0.6875rem; margin-left: 0.25rem; }
+  .vitalword:is(.bloodied, .critical, .down, .dead) { color: oklch(66% 0.2 25); }
+  :global([data-mode='light']) .vitalword:is(.bloodied, .critical, .down, .dead) { color: oklch(52% 0.2 25); }
+  .hpline .ac { margin-left: auto; display: inline-flex; align-items: baseline; gap: 0.25rem; }
+  .hpbar { display: block; height: 4px; border-radius: 2px; background: var(--track); overflow: hidden; }
+  .hpbar i { display: block; height: 100%; background: var(--a); border-radius: inherit; }
+  .hpbar:is(.bloodied, .critical, .down, .dead) i { background: oklch(62% 0.21 25); }
+  .condchips { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+  .condchip {
+    font-size: 0.6875rem; padding: 0.0625rem 0.4375rem; border-radius: 999px; color: var(--text); white-space: nowrap;
+    border: 1px solid color-mix(in oklch, var(--cc) 55%, var(--line)); background: color-mix(in oklch, var(--cc) 16%, var(--raised));
+  }
+  .condmore { font-size: 0.6875rem; color: var(--dim); align-self: center; }
+  /* A campaign card: its name and line at the left; who is here and the next
+     session at the right (under them, in a narrow card). */
+  .campcard { display: flex; align-items: center; gap: 0.5rem 1rem; flex-wrap: wrap; }
+  .camptext { flex: 1 1 12rem; min-width: 0; display: block; }
+  .campside { display: grid; justify-items: end; gap: 0.25rem; font-size: 0.75rem; color: var(--dim); text-align: right; }
+  .camphere { display: inline-flex; align-items: center; gap: 0.375rem; color: var(--text); }
+  .here-dot {
+    width: 0.4375rem; height: 0.4375rem; border-radius: 50%; background: oklch(74% 0.17 150); flex: none;
+    animation: hereGlow 2.4s ease-out infinite;
+  }
+  @keyframes hereGlow { 0% { box-shadow: 0 0 0 0 oklch(74% 0.17 150 / 0.5); } 70%, 100% { box-shadow: 0 0 0 6px oklch(74% 0.17 150 / 0); } }
+  .campnext { display: inline-flex; align-items: baseline; gap: 0.375rem; flex-wrap: wrap; justify-content: flex-end; }
+  .campnext .k { font-size: 0.625rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--label); font-weight: 600; }
+  .campnext .soon { color: var(--a); font-weight: 600; }
+  @container (max-width: 30rem) { .campside { justify-items: start; text-align: left; } .campnext { justify-content: flex-start; } }
+  /*
+   * A narrow card (a phone, two to a row on a small laptop): the square beside
+   * the name, class and campaign; the character's state across the card
+   * under them; and the dates as the card's foot.
+   */
+  @container (max-width: 36rem) {
+    .withface {
+      --face: 3.75rem; grid-template-columns: var(--face) minmax(0, 1fr);
+      grid-template-areas: 'face text' 'facts facts' 'dates dates'; row-gap: 0.625rem; align-items: center;
+    }
+    .cardtext { display: contents; }
+    .lines { grid-area: text; }
+    .cardfacts { padding-left: 0; border-left: 0; }
+    /* The dates are the card's foot, under a hairline, on one line. */
+    .meta.dates { grid-area: dates; margin-top: 0; padding-top: 0.5rem; border-top: 1px solid var(--line-soft); }
+  }
   .face {
     position: relative; flex: none; width: var(--face); height: var(--face); overflow: hidden;
     border-radius: var(--r-sm); border: 1px solid var(--a-edge);
@@ -966,17 +1084,6 @@
   .meta.dates span { white-space: nowrap; }
   .meta.dates span + span { padding-left: 0.5rem; border-left: 1px solid var(--line); }
   .lines { display: block; }
-  /*
-   * A phone is too narrow for the dates beside the square: the square stays
-   * as tall as the name, class and campaign, and the dates run under it all,
-   * across the card.
-   */
-  @media (max-width: 520px) {
-    .withface { --face: 4.25rem; display: grid; grid-template-columns: var(--face) minmax(0, 1fr); column-gap: 0.75rem; align-items: center; }
-    .cardtext { display: contents; }
-    .lines { grid-column: 2; }
-    .meta.dates { grid-column: 1 / -1; margin-top: 0.5rem; }
-  }
   .newcamp { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
   .newcamp input {
     flex: 1; min-width: 0; font: inherit; padding: 0.5rem 0.75rem; border: 1px solid var(--line);
