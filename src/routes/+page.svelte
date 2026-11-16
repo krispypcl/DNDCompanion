@@ -1268,6 +1268,12 @@
     flex: 1 1 auto; min-width: 0; container-type: inline-size;
   }
   h1 .brandname { font-size: max(0.875rem, min(1em, calc((100cqi - 2.5rem) / 10.2))); }
+  /* A laptop: the brand larger, taking no more height in the header (its
+     margins give back what it grows), so nothing else moves. */
+  @media (min-width: 900px) {
+    h1 { font-size: 2rem; gap: 0.75rem; margin-block: -0.5rem; }
+    h1 :global(.logo) { width: 2.5rem; height: 2.5rem; }
+  }
   h1 :global(.logo) { flex: none; }
   .actions { display: flex; gap: 0.5rem; }
   .file {
