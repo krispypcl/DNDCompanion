@@ -29,9 +29,15 @@ it. It works the same on a phone, a tablet and a laptop.
   points, armour class and conditions live, gives and takes conditions, plays
   music for the table, sets the next session's date, and shares a board
   everyone can draw and write on. Each card shows who has the campaign open.
+- **Fights**: the DM calls for initiative and each player rolls their own,
+  on their sheet or the campaign page; the order and whose turn it is follow
+  live for everyone. The DM keeps monsters and NPCs with their stat blocks
+  (from 5e.tools or their own homebrew) and reveals them to the players when
+  the party finds them.
 - **Owlbear Rodeo extension**: the same party in an Owlbear room, with live hit
   points and conditions on the map's tokens, rolls from the sheets, the
-  campaign's board and its music.
+  initiative order, the DM's monsters and NPCs as tokens, the campaign's board
+  and its music.
 - **Progressive Web App**: install it on a phone's home screen or a computer
   and it opens like an app of its own. Pages update themselves after each new
   release.
@@ -66,11 +72,15 @@ it. It works the same on a phone, a tablet and a laptop.
 3. **Place token** puts a character on the map wearing their portrait, or
    right-click any character token and **Tie to a character**. Its hit point
    bar and condition dots follow the sheet.
-4. **Sign in** inside the panel to change hit points from a token's
-   right-click menu and to draw on the campaign's board. (Owlbear keeps its own
-   sign-in; accounts made with Google or Discord set a password on the account
-   page first.)
-5. **Board** opens the campaign's board over the room; **Music** opens a
+4. **Sign in** inside the panel (email, Google or Discord) to change hit
+   points from a token's right-click menu, draw on the campaign's board and
+   roll your initiative. Owlbear keeps its own sign-in; Google and Discord
+   open a small window, so allow pop-ups for owlbear.rodeo.
+5. **The DM**, signed in, runs the fight from the panel: the initiative order
+   (the token whose turn it is gets selected) and the monsters and NPCs, each
+   with **Place token**. Their bars show on the map only once revealed, and
+   only as hurt as they look.
+6. **Board** opens the campaign's board over the room; **Music** opens a
    small player that follows the DM's table music. Browsers need one press of
    play before they make sound, and phones don't play music inside Owlbear.
 
