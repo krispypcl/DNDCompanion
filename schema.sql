@@ -25,7 +25,7 @@
 --
 -- Functions the app calls live in the `private` schema (not served by the
 -- API) with a thin public face running as the caller. An existing database
--- from before 16 Nov 2026 is brought up to this by database/0015 to 0019.
+-- from before 16 Nov 2026 is brought up to this by database/0015 to 0020.
 
 create extension if not exists pgcrypto;
 
@@ -117,6 +117,9 @@ create table if not exists public.campaign_creatures (
   visible      boolean not null default false,
   statblock    jsonb not null default '{}'::jsonb
                constraint campaign_creatures_statblock_size check (jsonb_typeof(statblock) = 'object' and octet_length(statblock::text) <= 60000),
+  portrait     text not null default '' constraint campaign_creatures_portrait_check check (char_length(portrait) <= 2000),
+  condition_looks jsonb not null default '{}'::jsonb
+               constraint campaign_creatures_condition_looks_size check (jsonb_typeof(condition_looks) = 'object' and octet_length(condition_looks::text) <= 4000),
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );
@@ -130,6 +133,7 @@ create table if not exists public.homebrew_creatures (
   name         text not null constraint homebrew_creatures_name_check check (char_length(name) between 1 and 80),
   statblock    jsonb not null default '{}'::jsonb
                constraint homebrew_creatures_statblock_size check (jsonb_typeof(statblock) = 'object' and octet_length(statblock::text) <= 60000),
+  portrait     text not null default '' constraint homebrew_creatures_portrait_check check (char_length(portrait) <= 2000),
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );
@@ -849,9 +853,12 @@ $$;
 
 -- Shared rows whose name matches what is being typed, best first. The
 -- author's name only for players in a campaign with them.
--- What the players see of the creatures the DM revealed.
-create or replace function private.revealed_creatures(p_campaign uuid)
-returns table (id uuid, name text, kind text, vital text, conditions text[], initiative integer, "position" integer)
+-- What the players see of the creatures the DM revealed (dropped first: its columns grew in 0020).
+drop function if exists public.revealed_creatures(uuid);
+drop function if exists private.revealed_creatures(uuid);
+create function private.revealed_creatures(p_campaign uuid)
+returns table (id uuid, name text, kind text, vital text, conditions text[], initiative integer, "position" integer,
+               portrait text, condition_looks jsonb)
 language sql
 stable
 security definer
@@ -863,7 +870,7 @@ as $$
               when coalesce(c.hp_current, c.hp_max)::numeric / c.hp_max <= 0.25 then 'critical'
               when coalesce(c.hp_current, c.hp_max)::numeric / c.hp_max <= 0.5 then 'bloodied'
               else 'healthy' end,
-         c.conditions, c.initiative, c.position
+         c.conditions, c.initiative, c.position, c.portrait, c.condition_looks
   from public.campaign_creatures c
   where c.campaign_id = p_campaign and c.visible and private.is_campaign_member(p_campaign)
   order by c.position, c.created_at;
@@ -969,8 +976,9 @@ create or replace function public.sync_shared_rows(p_character uuid, p_rows json
 returns integer language sql security invoker set search_path = ''
 as $$ select private.sync_shared_rows(p_character, p_rows) $$;
 
-create or replace function public.revealed_creatures(p_campaign uuid)
-returns table (id uuid, name text, kind text, vital text, conditions text[], initiative integer, "position" integer)
+create function public.revealed_creatures(p_campaign uuid)
+returns table (id uuid, name text, kind text, vital text, conditions text[], initiative integer, "position" integer,
+               portrait text, condition_looks jsonb)
 language sql stable security invoker set search_path = ''
 as $$ select * from private.revealed_creatures(p_campaign) $$;
 
@@ -998,13 +1006,13 @@ grant select on public.board_items to anon, authenticated;
 grant insert (campaign_id, kind, data, created_by), update (data), delete on public.board_items to authenticated;
 revoke all on public.campaign_creatures from anon, authenticated;
 grant select, delete on public.campaign_creatures to authenticated;
-grant insert (campaign_id, kind, name, hp_max, hp_current, hp_temp, ac, conditions, notes, link, position, initiative, visible, statblock)
+grant insert (campaign_id, kind, name, hp_max, hp_current, hp_temp, ac, conditions, notes, link, position, initiative, visible, statblock, portrait, condition_looks)
   on public.campaign_creatures to authenticated;
-grant update (kind, name, hp_max, hp_current, hp_temp, ac, conditions, notes, link, position, initiative, visible, statblock)
+grant update (kind, name, hp_max, hp_current, hp_temp, ac, conditions, notes, link, position, initiative, visible, statblock, portrait, condition_looks)
   on public.campaign_creatures to authenticated;
 revoke all on public.homebrew_creatures from anon, authenticated;
 grant select, delete on public.homebrew_creatures to authenticated;
-grant insert (kind, name, statblock), update (kind, name, statblock) on public.homebrew_creatures to authenticated;
+grant insert (kind, name, statblock, portrait), update (kind, name, statblock, portrait) on public.homebrew_creatures to authenticated;
 revoke all on public.shared_rows from anon, authenticated;
 revoke all on public.shared_row_uses from anon, authenticated;
 
