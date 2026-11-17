@@ -15,7 +15,8 @@
 --                     how it stands in play)
 --   character_pages   a character's notes and backstory, public or private
 --   campaigns         a DM's campaign; characters join it by invite
---   campaign_state    what is happening in a campaign now (music, invite)
+--   campaign_state    what is happening in a campaign now (music, invite,
+--                     initiative)
 --   board_items       the campaign's table board
 --   campaign_creatures monsters and NPCs the DM keeps on the campaign page
 --   homebrew_creatures a DM's own monsters and NPCs, kept to add to any campaign
@@ -24,7 +25,7 @@
 --
 -- Functions the app calls live in the `private` schema (not served by the
 -- API) with a thin public face running as the caller. An existing database
--- from before 16 Nov 2026 is brought up to this by database/0015 to 0018.
+-- from before 16 Nov 2026 is brought up to this by database/0015 to 0019.
 
 create extension if not exists pgcrypto;
 
@@ -77,6 +78,8 @@ create table if not exists public.campaign_state (
   playback     jsonb not null default '{}'::jsonb
                constraint campaign_state_playback_size check (jsonb_typeof(playback) = 'object' and octet_length(playback::text) <= 4000),
   invite_rev   integer not null default 0,
+  initiative   jsonb not null default '{}'::jsonb
+               constraint campaign_state_initiative_size check (jsonb_typeof(initiative) = 'object' and octet_length(initiative::text) <= 8000),
   updated_at   timestamptz not null default now()
 );
 
@@ -462,7 +465,8 @@ create policy "The DM starts it" on public.campaigns for insert with check ((sel
 create policy "The DM changes it" on public.campaigns for update using ((select auth.uid()) = created_by);
 create policy "The DM deletes it" on public.campaigns for delete using ((select auth.uid()) = created_by);
 
--- campaign_state: read by anyone; the music changed by the DM.
+-- campaign_state: read by anyone; the music and the initiative order changed by
+-- the DM (a player's own number goes through set_my_initiative).
 create policy "Anyone reads" on public.campaign_state for select using (true);
 create policy "The DM changes the music" on public.campaign_state for update
   using (exists (select 1 from public.campaigns c where c.id = campaign_id and c.created_by = (select auth.uid())));
@@ -711,6 +715,38 @@ begin
 end;
 $$;
 
+-- A player's own character's initiative (or null to take it back).
+create or replace function private.set_my_initiative(p_character uuid, p_value integer)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  me uuid := (select auth.uid());
+  camp uuid;
+  now_init jsonb;
+begin
+  if me is null then raise exception 'Not signed in'; end if;
+  if p_value is not null and (p_value < -50 or p_value > 100) then raise exception 'Initiative out of range'; end if;
+  select ch.campaign_id into camp
+    from public.characters ch
+    join public.campaigns c on c.id = ch.campaign_id
+    where ch.id = p_character and ch.owner_id = me and not ch.retired and not c.archived;
+  if camp is null then raise exception 'Only the player of a character in a running campaign can do that'; end if;
+  update public.campaign_state s
+    set initiative = jsonb_set(
+          coalesce(s.initiative, '{}'::jsonb),
+          '{pcs}',
+          case when p_value is null
+               then coalesce(s.initiative -> 'pcs', '{}'::jsonb) - p_character::text
+               else coalesce(s.initiative -> 'pcs', '{}'::jsonb) || jsonb_build_object(p_character::text, p_value) end)
+    where s.campaign_id = camp
+    returning s.initiative into now_init;
+  return now_init;
+end;
+$$;
+
 -- The DM chooses how a condition they give looks.
 create or replace function private.set_character_condition_look(p_character uuid, p_key text, p_look jsonb)
 returns timestamptz
@@ -921,6 +957,10 @@ create or replace function public.set_character_hp(p_character uuid, p_current i
 returns timestamptz language sql security invoker set search_path = ''
 as $$ select private.set_character_hp(p_character, p_current, p_temp, p_conditions, p_death_saves) $$;
 
+create or replace function public.set_my_initiative(p_character uuid, p_value integer)
+returns jsonb language sql security invoker set search_path = ''
+as $$ select private.set_my_initiative(p_character, p_value) $$;
+
 create or replace function public.set_character_condition_look(p_character uuid, p_key text, p_look jsonb)
 returns timestamptz language sql security invoker set search_path = ''
 as $$ select private.set_character_condition_look(p_character, p_key, p_look) $$;
@@ -952,7 +992,7 @@ grant update (name, archived, details) on public.campaigns to authenticated;
 grant delete on public.campaigns to authenticated;
 revoke all on public.campaign_state from anon, authenticated;
 grant select on public.campaign_state to anon, authenticated;
-grant update (playback) on public.campaign_state to authenticated;
+grant update (playback, initiative) on public.campaign_state to authenticated;
 revoke all on public.board_items from anon, authenticated;
 grant select on public.board_items to anon, authenticated;
 grant insert (campaign_id, kind, data, created_by), update (data), delete on public.board_items to authenticated;
@@ -979,7 +1019,7 @@ begin
     'set_character_conditions(uuid, text[])', 'set_character_hp(uuid, integer, integer, text[], jsonb)',
     'set_character_condition_look(uuid, text, jsonb)', 'sync_shared_rows(uuid, jsonb)',
     'search_shared_rows(text, text, integer)', 'forget_shared_rows()', 'campaign_by_invite(text)',
-    'revealed_creatures(uuid)'
+    'revealed_creatures(uuid)', 'set_my_initiative(uuid, integer)'
   ] loop
     execute format('revoke all on function public.%s from public, anon, authenticated', f);
     execute format('revoke all on function private.%s from public, anon, authenticated', f);
@@ -1045,8 +1085,10 @@ comment on column public.campaigns.invite_code is 'The code in the invite link; 
 comment on column public.campaigns.archived is 'An ended campaign: still readable, its invite opens nothing.';
 comment on column public.campaigns.details is 'Banner, colour, name font, songs, card order and the next session.';
 
-comment on table public.campaign_state is 'What is happening in a campaign right now: the music and the invite counter.';
+comment on table public.campaign_state is 'What is happening in a campaign right now: the music, the invite counter and the initiative order.';
 comment on column public.campaign_state.playback is 'The DM''s music: which song, playing or paused, and where.';
+comment on column public.campaign_state.initiative is
+  'The initiative order: {pcs: {characterId: number}, turn: "pc:<id>"|"cr:<id>"|null, round, asking}.';
 comment on column public.campaign_state.invite_rev is 'Goes up when the DM makes a new invite, so open pages fetch it.';
 
 comment on table public.board_items is 'The campaign''s table board: pages, sticky notes, text and drawings.';
