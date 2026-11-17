@@ -151,11 +151,16 @@ export async function placeToken(sheet: Sheet): Promise<string> {
  * once the DM reveals it (layout: vitalsOfCreature).
  */
 export async function placeCreatureToken(c: Creature): Promise<string> {
-  const url = `${siteRoot(location.origin, base)}/owlbear/${c.kind === 'npc' ? 'npc' : 'monster'}.png`;
+  const mark = `${siteRoot(location.origin, base)}/owlbear/${c.kind === 'npc' ? 'npc' : 'monster'}.png`;
+  // Its portrait when the map can draw it (5e.tools' token art can), else the site's mark.
+  const pic = resolveImageUrl(c.portrait ?? '').url;
+  const info = pic ? await imageInfo(pic).catch(() => null) : null;
+  const img = info && pic ? { url: pic, ...info } : { url: mark, width: 512, height: 512, mime: 'image/png' };
   const [w, h] = await Promise.all([OBR.viewport.getWidth(), OBR.viewport.getHeight()]);
   const centre = await OBR.viewport.inverseTransformPoint({ x: w / 2, y: h / 2 });
   const at = await OBR.scene.grid.snapPosition(centre);
-  const token = buildImage({ url, width: 512, height: 512, mime: 'image/png' }, { dpi: 512, offset: { x: 256, y: 256 } })
+  const size = Math.min(img.width, img.height);
+  const token = buildImage(img, { dpi: size, offset: { x: img.width / 2, y: img.height / 2 } })
     .name(c.name)
     .plainText(c.name)
     .textItemType('LABEL')

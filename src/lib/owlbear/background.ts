@@ -70,7 +70,7 @@ export async function run(): Promise<() => void> {
       if (c && c.created_by === me) {
         const list = await creatureRepo.list(campaign);
         const next = new Map(list.map((x) => [x.id, x]));
-        const key = (m: Map<string, Creature> | null) => JSON.stringify(m ? [...m.values()].map((x) => [x.id, x.visible, x.hp_max, x.hp_current, x.conditions]) : null);
+        const key = (m: Map<string, Creature> | null) => JSON.stringify(m ? [...m.values()].map((x) => [x.id, x.visible, x.hp_max, x.hp_current, x.conditions, x.condition_looks]) : null);
         if (key(next) !== key(creatures)) {
           creatures = next;
           schedule();

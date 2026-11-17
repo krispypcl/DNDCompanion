@@ -71,13 +71,15 @@ export const vitalsOfSheet = (sheet: Sheet): Vitals => ({
  * it, and then only as hurt as it looks (the players' view: full, half, a
  * quarter, down), never its real numbers.
  */
-export function vitalsOfCreature(c: { visible?: boolean; hp_max: number | null; hp_current: number | null; conditions: string[] }): Vitals | null {
+export function vitalsOfCreature(c: {
+  visible?: boolean; hp_max: number | null; hp_current: number | null; conditions: string[]; condition_looks?: Record<string, ConditionLook>;
+}): Vitals | null {
   if (!c.visible) return null;
   const max = c.hp_max ?? 0;
   const cur = max > 0 ? Math.max(0, c.hp_current ?? max) : 0;
   const ratio = max > 0 ? cur / max : 0;
   const shown = max <= 0 ? 0 : cur <= 0 ? 0 : ratio <= 0.25 ? 1 : ratio <= 0.5 ? 2 : 4;
-  return { max: max > 0 ? 4 : 0, cur: shown, temp: 0, conditions: c.conditions, looks: {} };
+  return { max: max > 0 ? 4 : 0, cur: shown, temp: 0, conditions: c.conditions, looks: c.condition_looks ?? {} };
 }
 
 export function partsFor(box: Box, sheet: Sheet): Part[] {

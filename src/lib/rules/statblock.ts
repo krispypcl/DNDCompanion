@@ -201,6 +201,23 @@ function spellcasting(sc: Raw): Feature {
   return { name: words(sc.name ?? 'Spellcasting'), text: lines.filter(Boolean).join('\n') };
 }
 
+/** Where 5e.tools keeps its pictures (token art and the like), served with CORS so Owlbear can draw them too. */
+export const FIVE_IMG = 'https://raw.githubusercontent.com/5etools-mirror-3/5etools-img/main';
+/**
+ * A 5e.tools monster's token art (the round portrait its pages and maps use),
+ * or '' when it has none. Named as 5e.tools names the files: the monster's
+ * name in plain letters, under its book (or the book a token borrows from).
+ */
+export function monsterArt(m: Raw): string {
+  const plain = (n: string) => n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/"/g, '');
+  const at = (source: string, name: string) => `${FIVE_IMG}/bestiary/tokens/${encodeURIComponent(source)}/${encodeURIComponent(plain(name))}.webp`;
+  const token = m.token as { name?: unknown; source?: unknown } | undefined;
+  if (token && typeof token.name === 'string' && typeof token.source === 'string') return at(token.source, token.name);
+  if (typeof m.tokenHref === 'object' && m.tokenHref && typeof (m.tokenHref as { url?: unknown }).url === 'string') return (m.tokenHref as { url: string }).url;
+  if (m.hasToken === true && typeof m.name === 'string' && typeof m.source === 'string') return at(m.source, m.name);
+  return '';
+}
+
 /** A 5e.tools monster as a stat block. */
 export function fromFiveTools(m: Raw): StatBlock {
   const sb: StatBlock = {

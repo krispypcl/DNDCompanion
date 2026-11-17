@@ -12,7 +12,7 @@
 import { creatureRepo, type Creature, type CreatureFields, type Homebrew } from '$lib/data/creatures';
 import { friendlyError } from '$lib/errors';
 import { findMonster } from '$lib/rules/fiveData';
-import { fromFiveTools, leadingNumber, type StatBlock } from '$lib/rules/statblock';
+import { fromFiveTools, leadingNumber, monsterArt, type StatBlock } from '$lib/rules/statblock';
 import { numberedNames, type CreatureKind } from '$lib/rules/creatures';
 import { entryUrl } from '$lib/rules/spotlight';
 
@@ -21,6 +21,8 @@ export class CreatureTable {
   homebrew = $state<Homebrew[]>([]);
   loading = $state(true);
   error = $state<string | null>(null);
+  /** The database still waits on 0020: no portraits or condition colours yet. TODO: drop once 0020 has run. */
+  before0020 = $state(false);
   /** A short word on what just happened ("Added Goblin Boss"). */
   notice = $state<string | null>(null);
   readonly campaignId: string;
@@ -43,6 +45,7 @@ export class CreatureTable {
       const [list, brew] = await Promise.all([creatureRepo.list(this.campaignId), creatureRepo.homebrew.list().catch(() => [])]);
       this.list = list;
       this.#saved = new Map(list.map((x) => [x.id, x]));
+      this.before0020 = creatureRepo.before0020;
       this.homebrew = brew;
     } catch (e) {
       this.error = friendlyError(e, 'The monsters slipped their leash! Try again in a moment.');
@@ -102,12 +105,12 @@ export class CreatureTable {
   }
 
   /** Several of one creature (numbered on from those there), at the end of the list. */
-  async add(base: { name: string; kind: CreatureKind; hp_max: number | null; ac: number | null; link: string; statblock: StatBlock; notes?: string }, count = 1) {
+  async add(base: { name: string; kind: CreatureKind; hp_max: number | null; ac: number | null; link: string; statblock: StatBlock; notes?: string; portrait?: string }, count = 1) {
     const names = numberedNames(base.name, count, this.list.map((x) => x.name));
     const top = this.list.reduce((m, x) => Math.max(m, x.position), 0);
     const rows: CreatureFields[] = names.map((name, i) => ({
       name, kind: base.kind, hp_max: base.hp_max, hp_current: base.hp_max, ac: base.ac, link: base.link,
-      statblock: base.statblock, notes: base.notes ?? '', position: top + i + 1
+      statblock: base.statblock, notes: base.notes ?? '', position: top + i + 1, portrait: base.portrait ?? ''
     }));
     try {
       const made = await creatureRepo.add(this.campaignId, rows);
@@ -129,7 +132,7 @@ export class CreatureTable {
       const statblock = fromFiveTools(m);
       return await this.add({
         name: m.name, kind: 'monster', hp_max: leadingNumber(statblock.hp), ac: leadingNumber(statblock.ac),
-        link: entryUrl(m.name, 'm', m.source), statblock
+        link: entryUrl(m.name, 'm', m.source), statblock, portrait: monsterArt(m)
       }, count);
     } catch {
       this.error = `${name} wouldn’t come out of the book! Try again in a moment.`;
@@ -141,7 +144,8 @@ export class CreatureTable {
     const h = this.homebrew.find((x) => x.id === id);
     if (!h) return [];
     return this.add({
-      name: h.name, kind: h.kind, hp_max: leadingNumber(h.statblock.hp), ac: leadingNumber(h.statblock.ac), link: '', statblock: h.statblock
+      name: h.name, kind: h.kind, hp_max: leadingNumber(h.statblock.hp), ac: leadingNumber(h.statblock.ac), link: '', statblock: h.statblock,
+      portrait: h.portrait
     }, count);
   }
 
@@ -176,7 +180,7 @@ export class CreatureTable {
   }
 
   /** Kept in the DM's homebrew, to add to any campaign (a new one, or changes to one there). */
-  async keepHomebrew(row: { id?: string; kind: CreatureKind; name: string; statblock: StatBlock }) {
+  async keepHomebrew(row: { id?: string; kind: CreatureKind; name: string; statblock: StatBlock; portrait?: string }) {
     try {
       const saved = await creatureRepo.homebrew.save(row);
       this.homebrew = [...this.homebrew.filter((h) => h.id !== saved.id), saved].sort((a, b) => a.name.localeCompare(b.name));

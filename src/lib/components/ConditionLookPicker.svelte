@@ -15,6 +15,7 @@
     name,
     look,
     who = '',
+    colorOnly = false,
     onchange,
     ondone
   }: {
@@ -22,6 +23,8 @@
     look: ConditionLook;
     /** Whose screen it tints, when it is not the reader's own (the DM's view). */
     who?: string;
+    /** Only its colour (a monster's or NPC's: no screen to tint). */
+    colorOnly?: boolean;
     onchange: (patch: Partial<ConditionLook>) => void;
     ondone: () => void;
   } = $props();
@@ -29,7 +32,11 @@
 </script>
 
 <div class="ask" transition:slide={{ duration: prefersReducedMotion() ? 0 : 200, easing: cubicOut }} role="group" aria-label="How {name} tints the screen">
-  <p>What colour is <b>{name}</b>? It tints the bottom of {who ? `${who}’s` : 'the'} screen while it lasts.</p>
+  {#if colorOnly}
+    <p>What colour is <b>{name}</b>{who ? ` on ${who}` : ''}?</p>
+  {:else}
+    <p>What colour is <b>{name}</b>? It tints the bottom of {who ? `${who}’s` : 'the'} screen while it lasts.</p>
+  {/if}
   <div class="swatches">
     {#each SWATCHES as sw (sw.name)}
       <button class="sw" style:--sw={sw.color} aria-label={sw.name} title={sw.name}
@@ -43,12 +50,14 @@
     <button class="sw nonebtn" aria-label="No tint" title="No tint"
             aria-pressed={!look.color} onclick={() => onchange({ color: '' })}>⦸</button>
   </div>
-  <div class="motions" role="radiogroup" aria-label="How it moves">
-    {#each MOTIONS as m (m.value)}
-      <button role="radio" aria-checked={look.motion === m.value} disabled={!look.color}
-              onclick={() => onchange({ motion: m.value })}>{m.label}</button>
-    {/each}
-  </div>
+  {#if !colorOnly}
+    <div class="motions" role="radiogroup" aria-label="How it moves">
+      {#each MOTIONS as m (m.value)}
+        <button role="radio" aria-checked={look.motion === m.value} disabled={!look.color}
+                onclick={() => onchange({ motion: m.value })}>{m.label}</button>
+      {/each}
+    </div>
+  {/if}
   <div class="done"><button class="go" onclick={ondone}>Done</button></div>
 </div>
 

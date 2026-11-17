@@ -55,3 +55,15 @@ describe('bestiary links', () => {
     expect(peekTarget('https://5e.tools/search.html?q=Goblin in:bestiary')).toMatchObject({ page: 'bestiary', name: 'Goblin' });
   });
 });
+
+describe('monsterArt', async () => {
+  const { monsterArt, FIVE_IMG } = await import('$lib/rules/statblock');
+  it('names the token as 5e.tools does', () => {
+    expect(monsterArt({ name: 'Goblin Boss', source: 'XMM', hasToken: true })).toBe(`${FIVE_IMG}/bestiary/tokens/XMM/Goblin%20Boss.webp`);
+    expect(monsterArt({ name: 'Mûmak', source: 'XMM', hasToken: true })).toBe(`${FIVE_IMG}/bestiary/tokens/XMM/Mumak.webp`);
+  });
+  it('follows a borrowed token, and has none without one', () => {
+    expect(monsterArt({ name: 'Goblin', source: 'XYZ', token: { name: 'Goblin Warrior', source: 'XMM' } })).toBe(`${FIVE_IMG}/bestiary/tokens/XMM/Goblin%20Warrior.webp`);
+    expect(monsterArt({ name: 'Imp', source: 'XMM' })).toBe('');
+  });
+});

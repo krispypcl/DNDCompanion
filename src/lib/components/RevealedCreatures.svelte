@@ -1,7 +1,7 @@
 <!--
-  What the players see of the DM's monsters and NPCs (database/0018,
-  revealed_creatures): only those the DM revealed, by name, their
-  conditions and how hurt they look, never their numbers or notes.
+  What the players see of the DM's monsters and NPCs (database/0018, 0020,
+  revealed_creatures): only those the DM revealed, by name and portrait,
+  their conditions and how hurt they look, never their numbers or notes.
 -->
 <script lang="ts">
   import { flip } from 'svelte/animate';
@@ -9,6 +9,8 @@
   import { fade } from 'svelte/transition';
   import type { Revealed } from '$lib/data/creatures';
   import { lookOf } from '$lib/rules/conditions';
+  import { resolveImageUrl } from '$lib/rules/imageUrl';
+  import ConditionRing from './ConditionRing.svelte';
   import { prefersReducedMotion } from '$lib/motion';
   import SectionHead from './SectionHead.svelte';
 
@@ -26,16 +28,23 @@
     </SectionHead>
     <ul>
       {#each list as c (c.id)}
+        {@const pic = resolveImageUrl(c.portrait ?? '').url}
+        {@const ring = c.conditions.flatMap((n) => { const color = lookOf(n, c.condition_looks ?? {})?.color; return color ? [{ key: n.toLowerCase(), color }] : []; })}
         <li class="foe {c.vital}" animate:flip={{ duration: still ? 0 : 240, easing: cubicOut }} transition:fade={{ duration: still ? 0 : 160 }}>
           <div class="foehead">
-            <strong>{c.name}</strong>
-            <span class="foekind" class:npc={c.kind === 'npc'}>{c.kind === 'npc' ? 'NPC' : 'Monster'}</span>
+            {#if pic}
+              <span class="foepic" class:ringed={ring.length > 0}><img src={pic} alt="" loading="lazy" /><ConditionRing bands={ring} /></span>
+            {/if}
+            <span class="foename">
+              <strong>{c.name}</strong>
+              <span class="foekind" class:npc={c.kind === 'npc'}>{c.kind === 'npc' ? 'NPC' : 'Monster'}</span>
+            </span>
           </div>
           <span class="foelook"><i aria-hidden="true"></i>{LOOKS[c.vital]}</span>
           {#if c.conditions.length}
             <ul class="foeconds">
               {#each c.conditions as name (name)}
-                <li style:--cc={lookOf(name)?.color ?? 'var(--dim)'}><span aria-hidden="true"></span>{name}</li>
+                <li style:--cc={lookOf(name, c.condition_looks ?? {})?.color ?? 'var(--dim)'}><span aria-hidden="true"></span>{name}</li>
               {/each}
             </ul>
           {/if}
@@ -57,7 +66,14 @@
   .foe.critical { --vc: oklch(64% 0.2 35); }
   .foe.down { --vc: oklch(58% 0.2 25); border-color: color-mix(in oklch, oklch(62% 0.21 25) 45%, var(--line)); }
   .foe.unknown { --vc: var(--dim); }
-  .foehead { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .foehead { display: flex; align-items: center; gap: 0.75rem; }
+  .foename { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; min-width: 0; }
+  .foepic {
+    position: relative; flex: none; width: 2.75rem; height: 2.75rem; border-radius: var(--r-sm);
+    border: 1px solid var(--line-soft); background: var(--raised); transition: border-color 0.35s ease;
+  }
+  .foepic.ringed { border-color: transparent; }
+  .foepic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
   .foehead strong { overflow-wrap: anywhere; }
   .foekind {
     font-size: 0.625rem; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase;

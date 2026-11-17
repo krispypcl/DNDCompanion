@@ -1,7 +1,9 @@
 <!--
-  The DM's monsters and NPCs on the campaign page (database/0017, 0018): a
-  card each, like a character's: its hit points (damage and healing a press
-  away), armour class, conditions and a short note; its stat block in a
+  The DM's monsters and NPCs on the campaign page (database/0017, 0018, 0020):
+  a card each, like a character's: its portrait (the DM's picture, or a
+  5e.tools monster's token art) ringed by its conditions' colours, its hit
+  points (damage and healing a press away), armour class, conditions (the
+  DM's own in colours they choose) and a short note; its stat block in a
   window of its own; whether the players can see it; and its place, moved
   by dragging the card. Added from 5e.tools, from the DM's own homebrew, or
   written new with a stat block, in a window over the dimmed page.
@@ -14,7 +16,9 @@
   import type { Creature } from '$lib/data/creatures';
   import type { CreatureTable } from '$lib/creatureTable.svelte';
   import { creatureUrl, damage, heal, hpNow, type CreatureKind } from '$lib/rules/creatures';
-  import { cleanName, lookOf } from '$lib/rules/conditions';
+  import { cleanName, defaultLook, isStandard, lookKey, lookOf } from '$lib/rules/conditions';
+  import { resolveImageUrl } from '$lib/rules/imageUrl';
+  import type { ConditionLook } from '$lib/types';
   import { vitalStatus } from '$lib/rules/hp';
   import { peekTarget } from '$lib/rules/peek';
   import { cleanStatBlock, kindLine, leadingNumber, type StatBlock } from '$lib/rules/statblock';
@@ -25,6 +29,8 @@
   import CardHp from './CardHp.svelte';
   import DimModal from './DimModal.svelte';
   import ConditionGiver from './ConditionGiver.svelte';
+  import ConditionLookPicker from './ConditionLookPicker.svelte';
+  import ConditionRing from './ConditionRing.svelte';
   import InfoTip from './InfoTip.svelte';
   import SectionHead from './SectionHead.svelte';
   import StatBlockEditor from './StatBlockEditor.svelte';
@@ -69,8 +75,24 @@
   }
   function addCondition(c: Creature, written: string) {
     const name = cleanName(written);
-    if (name && !has(c.conditions, name)) void table.change(c, { conditions: [...c.conditions, name] });
+    if (!name || has(c.conditions, name)) return;
+    void table.change(c, { conditions: [...c.conditions, name] });
+    // One of the DM's own: ask its colour, starting from the first swatch.
+    if (!isStandard(name) && !table.before0020) {
+      if (!(lookKey(name) in (c.condition_looks ?? {}))) setLook(c, name, defaultLook());
+      tinting = { id: c.id, name };
+    }
   }
+  /** The condition whose colour the DM is choosing, on which creature. */
+  let tinting = $state<{ id: string; name: string } | null>(null);
+  const tinted = $derived(tinting ? table.list.find((c) => c.id === tinting!.id) ?? null : null);
+  const lookFor = (c: Creature, name: string): ConditionLook => c.condition_looks?.[lookKey(name)] ?? { color: '', motion: 'pulse' };
+  function setLook(c: Creature, name: string, patch: Partial<ConditionLook>) {
+    const cur = table.list.find((x) => x.id === c.id) ?? c;
+    void table.change(cur, { condition_looks: { ...(cur.condition_looks ?? {}), [lookKey(name)]: { ...lookFor(cur, name), ...patch } } });
+  }
+  const colourOf = (c: Creature, name: string) => lookOf(name, c.condition_looks ?? {})?.color;
+  const ringOf = (c: Creature) => c.conditions.flatMap((n) => { const color = colourOf(c, n); return color ? [{ key: n.toLowerCase(), color }] : []; });
 
   // ── Its page on 5e.tools: in a pop-up when the app can draw it, else in a new tab.
   function openPage(c: Creature, e: MouseEvent) {
@@ -106,13 +128,13 @@
 
   // ── Adding, and changing one: one window, three ways in.
   // Number fields bound with bind:value hold numbers once typed in, strings before.
-  type Draft = { name: string; kind: CreatureKind; hp: string | number; ac: string | number; howMany: string | number; link: string; statblock: StatBlock; keep: boolean };
+  type Draft = { name: string; kind: CreatureKind; hp: string | number; ac: string | number; howMany: string | number; link: string; portrait: string; statblock: StatBlock; keep: boolean };
   type Way = 'book' | 'homebrew' | 'write';
   type Editing = { id: string | null; homebrewId?: string; way: Way; draft: Draft };
   const WAYS: [Way, string][] = [['book', 'From 5e.tools'], ['homebrew', 'Your homebrew'], ['write', 'Write one']];
   let editing = $state<Editing | null>(null);
   let saving = $state(false);
-  const blank = (): Draft => ({ name: '', kind: 'monster', hp: '', ac: '', howMany: 1, link: '', statblock: {}, keep: false });
+  const blank = (): Draft => ({ name: '', kind: 'monster', hp: '', ac: '', howMany: 1, link: '', portrait: '', statblock: {}, keep: false });
   const num = (v: string | number | null | undefined) => {
     const s = String(v ?? '').trim();
     return s === '' || !Number.isFinite(Number(s)) ? null : Math.max(0, Math.round(Number(s)));
@@ -124,7 +146,7 @@
   function startEdit(c: Creature) {
     editing = {
       id: c.id, way: 'write',
-      draft: { name: c.name, kind: c.kind, hp: c.hp_max ?? '', ac: c.ac ?? '', howMany: 1, link: c.link, statblock: c.statblock ?? {}, keep: false }
+      draft: { name: c.name, kind: c.kind, hp: c.hp_max ?? '', ac: c.ac ?? '', howMany: 1, link: c.link, portrait: c.portrait ?? '', statblock: c.statblock ?? {}, keep: false }
     };
   }
   function editHomebrew(id: string) {
@@ -132,7 +154,7 @@
     if (!h) return;
     editing = {
       id: null, homebrewId: h.id, way: 'write',
-      draft: { ...blank(), name: h.name, kind: h.kind, statblock: h.statblock, keep: true }
+      draft: { ...blank(), name: h.name, kind: h.kind, portrait: h.portrait ?? '', statblock: h.statblock, keep: true }
     };
   }
   async function save() {
@@ -144,16 +166,17 @@
     const hpMax = num(d.hp) ?? leadingNumber(statblock.hp);
     const ac = num(d.ac) ?? leadingNumber(statblock.ac);
     const name = d.name.trim();
+    const portrait = d.portrait.trim();
     saving = true;
     try {
-      if (d.keep && !(await table.keepHomebrew({ id: e.homebrewId, kind: d.kind, name, statblock }))) return;
+      if (d.keep && !(await table.keepHomebrew({ id: e.homebrewId, kind: d.kind, name, statblock, portrait }))) return;
       if (e.id) {
         const c = table.list.find((x) => x.id === e.id);
         if (c) {
           // A new most keeps the hit points lost so far.
           const lost = c.hp_max === null ? 0 : c.hp_max - hpNow(c);
           await table.change(c, {
-            name, kind: d.kind, ac, link: d.link.trim(), hp_max: hpMax, statblock,
+            name, kind: d.kind, ac, link: d.link.trim(), hp_max: hpMax, statblock, portrait,
             hp_current: hpMax === null ? c.hp_current : Math.max(0, hpMax - lost)
           });
         }
@@ -162,7 +185,7 @@
         editing = { id: null, way: 'homebrew', draft: blank() };
         return;
       } else {
-        const made = await table.add({ name, kind: d.kind, hp_max: hpMax, ac, link: d.link.trim(), statblock }, count(d.howMany));
+        const made = await table.add({ name, kind: d.kind, hp_max: hpMax, ac, link: d.link.trim(), statblock, portrait }, count(d.howMany));
         if (!made.length) return;
       }
       editing = null;
@@ -235,6 +258,19 @@
       <li class="creature {v.vital}" class:revealed={c.visible} data-key={c.id}
           animate:flip={{ duration: still ? 0 : 240, easing: cubicOut }} transition:fade={{ duration: still ? 0 : 180 }}>
         <div class="creaturehead">
+          {#if !table.before0020}
+            {@const ring = ringOf(c)}
+            {@const pic = resolveImageUrl(c.portrait).url}
+            <span class="cportrait" class:ringed={ring.length > 0} class:npc={c.kind === 'npc'}>
+              {#if pic}<img src={pic} alt="" draggable="false" loading="lazy" />{:else}
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  {#if c.kind === 'npc'}<circle cx="12" cy="8.5" r="3.75" /><path d="M4.75 20c.6-3.9 3.6-6.25 7.25-6.25s6.65 2.35 7.25 6.25" />
+                  {:else}<path d="M8.25 8.5 5 3.25l.75 6.25M15.75 8.5 19 3.25l-.75 6.25" /><circle cx="12" cy="14" r="6.25" /><path d="M9.75 13.5h.01M14.25 13.5h.01M10 17.25h4" />{/if}
+                </svg>
+              {/if}
+              <ConditionRing bands={ring} />
+            </span>
+          {/if}
           <div class="creaturename">
             <strong>{c.name}</strong>
             <span class="kindtag" class:npc={c.kind === 'npc'}>{c.kind === 'npc' ? 'NPC' : 'Monster'}</span>
@@ -292,8 +328,14 @@
 
         <ul class="cconds">
           {#each c.conditions as name (name)}
-            <li style:--cc={lookOf(name)?.color ?? 'var(--dim)'} transition:fade={{ duration: still ? 0 : 150 }}>
-              <span class="cdot" aria-hidden="true"></span>{name}
+            {@const colour = colourOf(c, name)}
+            <li style:--cc={colour ?? 'var(--dim)'} class:plain={!colour} transition:fade={{ duration: still ? 0 : 150 }}>
+              {#if !ended && !isStandard(name) && !table.before0020}
+                <!-- One of the DM's own: its dot opens its colour. -->
+                <button class="cdot tint" aria-label="Choose {name}’s colour" title="Colour" onclick={() => (tinting = { id: c.id, name })}></button>
+              {:else}
+                <span class="cdot" aria-hidden="true"></span>
+              {/if}{name}
               {#if !ended}<button class="cx" aria-label="Take {name} away from {c.name}" onclick={() => toggleCondition(c, name)}>×</button>{/if}
             </li>
           {/each}
@@ -319,9 +361,21 @@
 {/each}
 
 {#if giver}
-  <DimModal id="creature-conds" title="Conditions for {giver.name}" onclose={() => (giving = null)}>
+  <!-- Giving conditions; a new one of the DM's own asks its colour in the same window. -->
+  <DimModal id="creature-conds" title="Conditions for {giver.name}" onclose={() => { giving = null; tinting = null; }}>
     <ConditionGiver given={giver.conditions} ontoggle={(name) => toggleCondition(giver, name)} onadd={(name) => addCondition(giver, name)}
-                    ondone={() => (giving = null)} />
+                    ondone={() => { giving = null; tinting = null; }} />
+    {#if tinted && tinted.id === giver.id && tinting && has(giver.conditions, tinting.name)}
+      <div class="lookin">
+        <ConditionLookPicker colorOnly name={tinting.name} who={giver.name} look={lookFor(giver, tinting.name)}
+                             onchange={(patch) => setLook(giver, tinting!.name, patch)} ondone={() => (tinting = null)} />
+      </div>
+    {/if}
+  </DimModal>
+{:else if tinted && tinting && has(tinted.conditions, tinting.name)}
+  <DimModal id="creature-look" title="{tinting.name} on {tinted.name}" onclose={() => (tinting = null)}>
+    <ConditionLookPicker colorOnly name={tinting.name} who={tinted.name} look={lookFor(tinted, tinting.name)}
+                         onchange={(patch) => setLook(tinted, tinting!.name, patch)} ondone={() => (tinting = null)} />
   </DimModal>
 {/if}
 
@@ -393,6 +447,10 @@
           <label class="wide"><span>5e.tools link (optional)</span>
             <input bind:value={e.draft.link} maxlength="500" placeholder="Left empty, its name is searched" /></label>
         {/if}
+        {#if !table.before0020}
+          <label class="wide"><span>Portrait (a picture link, optional)</span>
+            <input bind:value={e.draft.portrait} maxlength="2000" placeholder="Google Drive, Imgur, Pinterest, Dropbox or any image link" /></label>
+        {/if}
         <div class="wide sbwrap">
           <h3 class="sbtitle">Stat block</h3>
           <StatBlockEditor bind:value={e.draft.statblock} />
@@ -434,7 +492,22 @@
   .sk-hp { width: 5rem; height: 1.75rem; }
   .sk-bar { height: 6px; }
   .sk-row { height: 2rem; }
-  .creaturehead { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
+  .creaturehead { display: flex; align-items: flex-start; gap: 0.75rem; }
+  .creaturehead .creaturename { flex: 1; }
+  .cportrait {
+    position: relative; flex: none; width: 3.25rem; height: 3.25rem; border-radius: var(--r-sm); display: grid; place-items: center;
+    border: 1px solid color-mix(in oklch, oklch(62% 0.21 25) 45%, var(--line)); background: var(--raised); color: var(--dim);
+    transition: border-color 0.35s ease;
+  }
+  .cportrait.npc { border-color: var(--a-edge); }
+  .cportrait.ringed { border-color: transparent; }
+  .cportrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+  .cportrait svg { width: 1.625rem; height: 1.625rem; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .cdot.tint { padding: 0; border: 0; cursor: pointer; width: 0.625rem; height: 0.625rem; transition: transform 0.15s ease; }
+  .cdot.tint:hover { transform: scale(1.25); }
+  .cdot.tint:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
+  .cconds li.plain .cdot { background: none; box-shadow: inset 0 0 0 1px var(--dim); }
+  .lookin { margin-top: 0.75rem; }
   .creaturename { display: flex; align-items: center; gap: 0.25rem 0.5rem; flex-wrap: wrap; min-width: 0; }
   .creaturename strong { font-size: 1.0625rem; overflow-wrap: anywhere; }
   .creaturekind { flex-basis: 100%; font-size: 0.75rem; font-style: italic; color: var(--dim); }
