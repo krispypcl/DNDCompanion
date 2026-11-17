@@ -253,13 +253,9 @@
                 {/if}
               </button>
             {/if}
-            <button class="ctool" aria-label="{c.name}’s stat block" title="Stat block" onclick={() => openStats(c)}>
+            <button class="ctool" aria-label="{c.name}’s stat block" title="Stat block (and its 5e.tools page)" onclick={() => openStats(c)}>
               <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M6 3.5h9l3 3v14H6zM9 9h6M9 12.5h6M9 16h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
             </button>
-            <a class="ctool" href={creatureUrl(c.name, c.link)} target="_blank" rel="noopener noreferrer"
-               aria-label="{c.name} on 5e.tools" title="Its page on 5e.tools" onclick={(e) => openPage(c, e)}>
-              <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M2.5 3.5c2-.8 3.8-.6 5.5.6 1.7-1.2 3.5-1.4 5.5-.6v9c-2-.8-3.8-.6-5.5.6-1.7-1.2-3.5-1.4-5.5-.6zM8 4.1v9" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" /></svg>
-            </a>
             {#if !ended}
               <button class="ctool" aria-label="Change {c.name}" title="Change it and its stat block" onclick={() => startEdit(c)}>
                 <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10zM14 7l3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -317,7 +313,8 @@
 {/if}
 
 {#each opened as { w, c, rank } (w.id)}
-  <StatWindow name={c.name} statblock={c.statblock ?? {}} left={w.left} top={w.top} z={rank} onclose={() => closeStats(w.id)} onfront={() => front(w.id)} />
+  <StatWindow name={c.name} statblock={c.statblock ?? {}} left={w.left} top={w.top} z={rank} onclose={() => closeStats(w.id)} onfront={() => front(w.id)}
+              link={c.link.trim() || null} onlink={(e) => openPage(c, e)} />
 {/each}
 
 {#if giver}

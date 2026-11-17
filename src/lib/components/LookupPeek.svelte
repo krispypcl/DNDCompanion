@@ -178,7 +178,7 @@
 <style>
   .lookup-peek {
     position: fixed;
-    z-index: 70;
+    z-index: 90;
     display: flex;
     flex-direction: column;
     background: var(--surface);

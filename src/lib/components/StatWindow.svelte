@@ -1,7 +1,9 @@
 <!--
   A creature's stat block in a window of its own over the campaign page, as
   a 5e.tools pop-up is on a sheet: moved by its title, brought to the front
-  when pressed, and fading as × or Esc closes it.
+  when pressed, and fading as × or Esc closes it. A creature from 5e.tools
+  (or with a link of the DM's) has a button for its page, with the lore and
+  pictures the stat block leaves out.
 -->
 <script lang="ts">
   import { fade } from 'svelte/transition';
@@ -15,9 +17,17 @@
     left,
     top,
     z = 0,
+    link = null,
+    onlink,
     onclose,
     onfront
-  }: { name: string; statblock: StatBlock; left: number; top: number; z?: number; onclose: () => void; onfront: () => void } = $props();
+  }: {
+    name: string; statblock: StatBlock; left: number; top: number; z?: number;
+    /** Its page (5e.tools, or the DM's own link); onlink opens a 5e.tools page in its pop-up. */
+    link?: string | null; onlink?: (e: MouseEvent) => void;
+    onclose: () => void; onfront: () => void;
+  } = $props();
+  const onFive = $derived(Boolean(link && /^https:\/\/5e\.tools\//.test(link)));
 </script>
 
 <div class="statwindow" role="dialog" tabindex="-1" aria-label="{name}’s stat block" use:portal use:movable={{ handle: 'header' }}
@@ -28,6 +38,10 @@
       <h3>{name}</h3>
       {#if kindLine(statblock)}<p>{kindLine(statblock)}</p>{/if}
     </div>
+    {#if link}
+      <a class="smallbtn statlink" href={link} target="_blank" rel="noopener noreferrer" onclick={(e) => onlink?.(e)}
+         title={onFive ? 'Its page on 5e.tools, with the lore and pictures' : 'Your link for it'}>{onFive ? '5e.tools' : 'Link'}</a>
+    {/if}
     <button type="button" class="closex" aria-label="Close" onclick={onclose}>×</button>
   </header>
   <div class="statbody themed-scroll">
@@ -54,6 +68,7 @@
     border-bottom: 1px solid var(--line-soft); --x-size: 1.75rem;
   }
   .statname { flex: 1; min-width: 0; }
+  .statlink { flex: none; align-self: center; text-decoration: none; }
   h3 { margin: 0.125rem 0 0; font-size: 1.0625rem; font-weight: 650; color: var(--a); overflow-wrap: anywhere; }
   .statname p { margin: 0.125rem 0 0; font-size: 0.75rem; font-style: italic; color: var(--dim); }
   .statbody { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0.75rem 0.875rem 0.875rem; }
