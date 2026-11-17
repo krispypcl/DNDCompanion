@@ -48,7 +48,7 @@
 
 <main class="tie">
   {#if sheets === null}
-    <p class="msg">Gathering the party…</p>
+    <div class="tieskel" aria-busy="true" aria-label="Gathering the party">{#each [0, 1, 2] as i (i)}<i class="skeleton"></i>{/each}</div>
   {:else if !sheets.length}
     <p class="msg">No characters in this room yet. Add some from the DND Companion panel first.</p>
   {:else}
@@ -85,4 +85,6 @@
   .name { overflow-wrap: anywhere; }
   .msg { margin: 0; color: var(--dim); font-size: 0.75rem; line-height: 1.4; padding: 0 0.25rem; }
   .msg.bad { color: var(--bad); }
+  .tieskel { display: grid; gap: 0.375rem; }
+  .tieskel i { height: 2.5rem; border-radius: var(--r-sm); }
 </style>

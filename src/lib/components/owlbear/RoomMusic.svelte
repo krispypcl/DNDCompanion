@@ -82,7 +82,7 @@
   {#if gone}
     <p class="msg">This campaign has wandered off! It may have been deleted.</p>
   {:else if !campaign || !music?.ready}
-    <p class="msg">Tuning up…</p>
+    <div class="musicskel" aria-busy="true" aria-label="Tuning up"><i class="skeleton"></i><i class="skeleton"></i></div>
   {:else if !campaign.details.songs?.length}
     <p class="msg">No music on this campaign yet. The DM adds songs on the campaign page.</p>
   {:else}
@@ -105,4 +105,7 @@
   .cap { font-size: 0.6875rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--label); flex: none; }
   .end { margin-left: auto; display: inline-flex; }
   .msg { margin: 0; color: var(--dim); font-size: 0.8125rem; line-height: 1.4; }
+  .musicskel { display: grid; gap: 0.5rem; }
+  .musicskel i { height: 1.25rem; border-radius: var(--r-sm); }
+  .musicskel i:first-child { width: 70%; }
 </style>

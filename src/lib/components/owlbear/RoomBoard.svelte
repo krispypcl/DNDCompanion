@@ -66,7 +66,7 @@
   {#if gone}
     <p class="msg">This campaign has wandered off! It may have been deleted.</p>
   {:else if !campaign}
-    <p class="msg">Unrolling the board…</p>
+    <div class="boardskel skeleton" aria-busy="true" aria-label="Unrolling the board"></div>
   {:else}
     <div class="board" in:fade={{ duration: 200 }}>
       <CampaignBoard campaignId={campaign.id} userId={me} {canEdit} />
@@ -85,4 +85,5 @@
   .board { min-height: 0; display: grid; }
   .board :global(.boardwrap) { margin: 0; display: flex; flex-direction: column; min-height: 0; }
   .board :global(.boardwrap > .board) { flex: 1 1 auto; height: auto; min-height: 12rem; }
+  .boardskel { min-height: 0; border-radius: var(--r); }
 </style>
