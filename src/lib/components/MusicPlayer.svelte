@@ -8,6 +8,12 @@
    * the music waits, paused; on, it plays at once, or at the first tap on
    * the page where the browser will not start sound by itself.
    *
+   * As a capsule (the campaign page's table music, minimised, and all the
+   * players ever see of it): the title, scrolling when it outruns its line,
+   * beside the dancing bars, and a speaker that mutes and opens a volume
+   * slider. The YouTube player underneath is the same either way, so
+   * switching between the two never stops the song.
+   *
    * The player is rebuilt only when the link itself changes. The parent hands
    * in a new sheet on every edit, so everything here hangs off the link as a
    * string, which stays equal however often it is handed in again.
@@ -33,8 +39,14 @@
     follow = null,
     resume = null,
     away = false,
-    idle = ''
+    idle = '',
+    capsule = false,
+    onexpand
   }: {
+    /** Drawn as the little capsule (see above). */
+    capsule?: boolean;
+    /** The DM's capsule: back to the whole player. */
+    onexpand?: () => void;
     url: string;
     /** With no music to play yet: the player drawn still, saying this. */
     idle?: string;
@@ -582,17 +594,94 @@
     failed
       ? 'That playlist won’t play! It may be private, or the link is off.'
       : !ready
-        ? 'Tuning the lute…'
+        ? 'Tuning the lute'
         : waiting
           ? 'Tap anywhere to start the music'
           : title || (playing ? 'Playing' : 'Paused')
   );
+  // ── The capsule ──
+  /** How far the title outruns its line; past it, the title scrolls back and forth. */
+  let capBox = $state(0);
+  let capText = $state(0);
+  const capOver = $derived(Math.max(0, capText - capBox));
+  /** On a touch screen the first tap on the speaker opens the slider; the next mutes. */
+  let skipMute = false;
+  function capSpeakerDown(e: PointerEvent) {
+    if (e.pointerType !== 'mouse' && !volOpen) {
+      volOpen = true;
+      skipMute = true;
+    }
+  }
+  function capSpeaker() {
+    if (skipMute) {
+      skipMute = false;
+      return;
+    }
+    setSound(!$soundOn);
+  }
+  let capVol = $state<HTMLElement>();
+  function closeVolOutside(e: PointerEvent) {
+    if (volOpen && capVol && !capVol.contains(e.target as Node)) volOpen = false;
+  }
 </script>
 
+<svelte:window onpointerdown={capsule ? closeVolOutside : undefined} />
+
+{#snippet capsuleView(text: string, live: boolean)}
+  <div class="capsule" class:playing={live && playing} role="group" aria-label="Table music" in:fade={{ duration: 200 }}>
+    <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span class="capbox" class:rolling={capOver > 2} bind:clientWidth={capBox} title={text}>
+      <span class="captext" class:bad={failed} bind:clientWidth={capText}
+            style:--shift="-{capOver}px" style:--dur="{Math.max(7, 4 + capOver / 22)}s">{text}</span>
+    </span>
+    {#if live}
+      {#if !following}
+        <button class="capbtn" aria-label={playing ? 'Pause' : 'Play'} title={playing ? 'Pause' : 'Play'} disabled={!ready || failed} onclick={toggle}>
+          {#if playing}
+            <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4.5 3h2.2v10H4.5zM9.3 3h2.2v10H9.3z" fill="currentColor" /></svg>
+          {:else}
+            <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z" fill="currentColor" /></svg>
+          {/if}
+        </button>
+      {/if}
+      <!-- The speaker mutes; hovered (or tapped once on a touch screen), the volume slides out beside it. -->
+      <div class="capvol" class:open={volOpen} bind:this={capVol} role="group" aria-label="Volume"
+           onmouseenter={() => { clearTimeout(volTimer); volOpen = true; }}
+           onmouseleave={() => { clearTimeout(volTimer); volTimer = setTimeout(() => (volOpen = false), 450); }}
+           onfocusin={() => (volOpen = true)}>
+        <input class="caprange" type="range" min="0" max="100" step="1" value={volume} aria-label="Volume"
+               style:--v="{volume}%" tabindex={volOpen ? 0 : -1} oninput={(e) => setVol(Number(e.currentTarget.value))} />
+        <button class="capbtn" aria-pressed={!$soundOn} aria-label={$soundOn ? 'Mute the music' : 'Unmute the music'}
+                title={$soundOn ? `Mute (volume ${volume}%)` : 'Unmute'} onpointerdown={capSpeakerDown} onclick={capSpeaker}>
+          <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
+            <path d="M2.5 6.2h2.3l3-2.6v8.8l-3-2.6H2.5z" fill="currentColor" />
+            {#if !$soundOn || volume === 0}
+              <path d="M10.5 6.2l3.4 3.6M13.9 6.2l-3.4 3.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+            {:else}
+              <path d="M10.4 6a2.8 2.8 0 0 1 0 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+              {#if volume > 50}<path d="M12.3 4.2a5.4 5.4 0 0 1 0 7.6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />{/if}
+            {/if}
+          </svg>
+        </button>
+      </div>
+    {/if}
+    {#if onexpand}
+      <button class="capbtn" aria-label="Open the whole music player" title="Open the whole player" onclick={onexpand}>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M9.5 2.5h4v4M6.5 13.5h-4v-4M13.5 2.5 9 7M2.5 13.5 7 9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </button>
+    {/if}
+  </div>
+{/snippet}
+
 {#if playlist}
+  <!-- Out of sight: YouTube plays here and the controls drive it. Outside the
+       two looks, so switching between them never stops the song. -->
+  <div class="ythost" bind:this={host} aria-hidden="true"></div>
+{/if}
+{#if playlist && capsule}
+  {@render capsuleView(following && away ? 'The DM isn’t here yet' : status, true)}
+{:else if playlist}
   <div class="music" class:playing role="group" aria-label="Music" transition:fade={{ duration: 200 }}>
-    <!-- Out of sight: YouTube plays here and the controls below drive it. -->
-    <div class="ythost" bind:this={host} aria-hidden="true"></div>
     <div class="title" title={title || undefined} aria-live="polite">
       <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
       {#key status}<span class="text" class:bad={failed} in:fade={{ duration: 220 }}>{status}</span>{/key}
@@ -684,6 +773,8 @@
       </button>
     </div>
   </div>
+{:else if idle && capsule}
+  {@render capsuleView(idle, false)}
 {:else if idle}
   <!-- Nothing to play yet: the same player, at rest, waiting. -->
   <div class="music idle" role="group" aria-label="Music" in:fade={{ duration: 200 }}>
@@ -746,6 +837,48 @@
     -webkit-appearance: none; width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--a); border: 0;
   }
   .pop input::-moz-range-thumb { width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--a); border: 0; }
+  /* The capsule: a pill one line high. */
+  .capsule {
+    display: inline-flex; align-items: center; gap: 0.5rem; height: 2.25rem; min-width: 0; max-width: min(24rem, 100%);
+    padding: 0 0.3125rem 0 0.875rem; border-radius: 999px; font-size: 0.8125rem; color: var(--dim);
+    border: 1px solid color-mix(in oklch, var(--line) 70%, transparent);
+    background: color-mix(in oklch, var(--surface) 70%, transparent);
+    backdrop-filter: blur(14px) saturate(1.1); -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  }
+  @media (max-width: 720px), (pointer: coarse) {
+    .capsule { backdrop-filter: none; -webkit-backdrop-filter: none; background: color-mix(in oklch, var(--surface) 88%, transparent); }
+  }
+  .capsule.playing { color: var(--text); }
+  .capbox { flex: 1 1 auto; min-width: 3rem; overflow: clip; white-space: nowrap; }
+  .capbox.rolling { mask-image: linear-gradient(to right, transparent 0, #000 0.625rem, #000 calc(100% - 0.625rem), transparent 100%); }
+  .captext { display: inline-block; padding: 0 0.625rem 0 0; }
+  .rolling .captext { padding-left: 0.625rem; animation: capscroll var(--dur) ease-in-out infinite alternate; }
+  .captext.bad { color: var(--bad); }
+  @keyframes capscroll { 0%, 18% { transform: translateX(0); } 82%, 100% { transform: translateX(var(--shift)); } }
+  /* Without motion the title wraps instead: it is never cut short. */
+  @media (prefers-reduced-motion: reduce) {
+    .capsule { height: auto; min-height: 2.25rem; padding-block: 0.25rem; border-radius: 1.125rem; }
+    .capbox { white-space: normal; overflow-wrap: anywhere; mask-image: none; }
+    .rolling .captext { animation: none; padding-left: 0; }
+  }
+  .capbtn {
+    flex: none; width: 1.75rem; height: 1.75rem; border-radius: 50%; display: grid; place-items: center; padding: 0;
+    border: 0; background: none; color: var(--dim); cursor: pointer; transition: color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
+  }
+  .capbtn:hover:not(:disabled), .capvol.open .capbtn { color: var(--a); background: var(--a-wash); }
+  .capbtn:active:not(:disabled) { transform: translateY(1px); }
+  .capbtn:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
+  .capbtn:disabled { opacity: 0.4; cursor: default; }
+  .capbtn[aria-pressed='true'] { color: var(--bad); }
+  .capvol { flex: none; display: inline-flex; align-items: center; }
+  .caprange {
+    -webkit-appearance: none; appearance: none; width: 0; height: 4px; margin: 0; padding: 0; border-radius: 2px; opacity: 0;
+    background: linear-gradient(to right, var(--a) var(--v), var(--line) var(--v)); cursor: pointer; touch-action: none;
+    transition: width 0.25s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease, margin 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .capvol.open .caprange { width: 5.5rem; opacity: 1; margin: 0 0.375rem 0 0.25rem; }
+  .caprange::-webkit-slider-thumb { -webkit-appearance: none; width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--a); border: 0; }
+  .caprange::-moz-range-thumb { width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--a); border: 0; }
   .ythost { position: fixed; left: -10000px; top: 0; width: 200px; height: 200px; opacity: 0; pointer-events: none; }
   .title {
     max-width: 100%; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 0.4375rem;

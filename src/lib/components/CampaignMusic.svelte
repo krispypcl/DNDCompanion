@@ -6,6 +6,11 @@
    * only their own volume and speaker. A playlist pasted in is added song by
    * song. When one ends, the next follows unless the DM's loop is on. Adding
    * and removing songs is for edit mode.
+   *
+   * Compact, it is the little capsule (MusicPlayer's): the song playing, a
+   * mute and a volume slider. The players only ever see that; the DM can fold
+   * the whole jukebox into it and open it again. The same player plays
+   * underneath either way, so the music never stops for the switch.
    */
   import { fade, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
@@ -14,6 +19,7 @@
   import { setSound } from '$lib/sound';
   import type { Playback, Song } from '$lib/data/campaigns';
   import MusicPlayer from './MusicPlayer.svelte';
+  import SectionHead from './SectionHead.svelte';
 
   let {
     campaignId,
@@ -23,9 +29,17 @@
     playback = null,
     away = false,
     room = false,
+    compact = false,
+    oncompact,
+    onexpand,
     onplayback,
     onchange
   }: {
+    /** The capsule (see above). */
+    compact?: boolean;
+    /** The DM folds the jukebox into the capsule, or opens it again. */
+    oncompact?: () => void;
+    onexpand?: () => void;
     campaignId: string;
     songs: Song[];
     editing: boolean;
@@ -173,20 +187,32 @@
   const motion = () => ({ duration: prefersReducedMotion() ? 0 : 240, easing: cubicOut });
 </script>
 
-<section class="jukebox" class:room aria-label="Table music">
-  {#if !room}<span class="cap">Table music</span>{/if}
+<section class="jukebox" class:room class:compact aria-label="Table music">
+  {#if !room && !compact}
+    <SectionHead title="Table music">
+      {#snippet info()}
+        You play the table’s music here and everyone on the campaign page hears it, each at their own volume. Your players
+        only see the song playing, in a small capsule. Add songs and playlists in edit mode.
+      {/snippet}
+      {#snippet end()}
+        {#if oncompact}
+          <button class="smallbtn" onclick={oncompact} title="Fold it into a small capsule, as your players see it">Minimise</button>
+        {/if}
+      {/snippet}
+    </SectionHead>
+  {/if}
   <div class="body" class:solo={room && !lead}>
     <div class="player">
       {#if playingSong}
-        <MusicPlayer url={playingSong.url} place="campaign" onended={next} ontitle={learnTitle}
+        <MusicPlayer url={playingSong.url} place="campaign" onended={next} ontitle={learnTitle} capsule={compact} onexpand={compact ? onexpand : undefined}
                      lead={lead ? told : undefined} follow={followMoment} resume={resumeMoment} {away} />
-      {:else if lead}
+      {:else if lead && !compact}
         <p class="none" in:fade={{ duration: 160 }}>Add a song or a playlist and it plays here, for the whole table.</p>
       {:else}
-        <MusicPlayer url="" idle="Waiting for the DM to play music..." />
+        <MusicPlayer url="" idle={lead ? 'No song playing' : 'Waiting for the DM to play music'} capsule={compact} onexpand={compact ? onexpand : undefined} />
       {/if}
     </div>
-    {#if !(room && !lead)}
+    {#if !(room && !lead) && !compact}
     <div class="list">
       <ol>
         {#each songs as song, i (song.url)}
@@ -210,7 +236,7 @@
                    oninput={() => (problem = null)}
                    onkeydown={(e) => { if (e.key === 'Enter') add(); }} />
             <button onclick={add} disabled={!adding.trim() || busy}>
-              {busy ? (progress ? `Adding ${progress.done} of ${progress.of}…` : 'Adding…') : 'Add'}
+              {busy ? (progress ? `Adding ${progress.done} of ${progress.of}` : 'Adding') : 'Add'}
             </button>
           </div>
           {#if progress}
@@ -227,23 +253,25 @@
 </section>
 
 <style>
-  /* Frosted glass: the banner and the page behind it show through, softened. */
-  .jukebox {
-    margin-top: 1rem; padding: 0.875rem 1rem; border-radius: var(--r);
+  /* The title sits above, like every section's; the jukebox itself is frosted
+     glass, the banner and the page behind it showing through, softened. */
+  .jukebox:not(.room):not(.compact) .body {
+    padding: 0.875rem 1rem; border-radius: var(--r);
     border: 1px solid color-mix(in oklch, var(--line) 70%, transparent);
     background: color-mix(in oklch, var(--surface) 55%, transparent);
     backdrop-filter: blur(18px) saturate(1.15); -webkit-backdrop-filter: blur(18px) saturate(1.15);
     box-shadow: inset 0 1px 0 color-mix(in oklch, white 6%, transparent);
   }
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .jukebox { background: color-mix(in oklch, var(--surface) 92%, transparent); }
+    .jukebox:not(.room):not(.compact) .body { background: color-mix(in oklch, var(--surface) 92%, transparent); }
   }
-  .cap { font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600; }
-  .jukebox.room { margin: 0; padding: 0; border: 0; background: none; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
+  .jukebox.compact { min-width: 0; max-width: min(24rem, 100%); }
+  .compact .body { display: flex; margin: 0; }
+  .compact .player { display: flex; min-width: 0; max-width: 100%; }
   .room .body { margin-top: 0; grid-template-columns: minmax(0, 1fr); }
   .room .list ol { max-height: 9rem; }
   .body.solo { display: block; }
-  .body { display: grid; grid-template-columns: minmax(0, 19rem) minmax(0, 1fr); gap: 1rem; margin-top: 0.625rem; align-items: start; }
+  .body { display: grid; grid-template-columns: minmax(0, 19rem) minmax(0, 1fr); gap: 1rem; align-items: start; }
   /* The player sits in the middle of the row, however long the list. */
   .player { display: grid; justify-items: center; align-self: center; }
   .none { margin: 0; color: var(--dim); font-size: 0.8125rem; line-height: 1.45; align-self: center; }

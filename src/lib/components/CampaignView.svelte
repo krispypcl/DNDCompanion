@@ -89,6 +89,26 @@
   /** In the campaign: its DM, or a player with a character in it. They may see the invite. */
   const isMember = $derived(isDm || Boolean($session.user && sheets.some((s) => s.owner_id === $session.user!.id)));
   const hasMusic = $derived(Boolean(campaign?.details.songs?.length));
+  /** The table's music: the players always see the capsule; the DM chooses (remembered on the device), and edits in the whole jukebox. */
+  const musicKey = $derived(campaign ? `dndcompanion:musicCompact:${campaign.id}` : '');
+  let musicChoice = $state<boolean | null>(null);
+  const storedCompact = (key: string) => {
+    try {
+      return Boolean(key) && localStorage.getItem(key) === '1';
+    } catch {
+      return false;
+    }
+  };
+  const compactMusic = $derived(!isDm || (!editing && (musicChoice ?? storedCompact(musicKey))));
+  function setMusicCompact(on: boolean) {
+    musicChoice = on;
+    try {
+      if (on) localStorage.setItem(musicKey, '1');
+      else localStorage.removeItem(musicKey);
+    } catch {
+      // Not remembered, that's all.
+    }
+  }
 
   /*
    * The DM's two sides of the table: the players' cards, and the monsters
@@ -139,6 +159,7 @@
 
   /** The table's music and who is here to lead it (lib/tableMusic). */
   const music = $derived(new TableMusic(id));
+  const showMusic = $derived((hasMusic || (isDm && editing)) && music.ready);
   $effect(() => music.setDm(isDm));
   $effect(() => music.setUser($session.user?.id ?? null));
   $effect(() => music.start());
@@ -526,9 +547,11 @@
       </div>
     </header>
 
-    <!-- When the table next meets at the left; the DM's switch between the
-         players and their monsters and NPCs at the right. -->
-    {#if (next && !next.past) || isDm}
+    <!-- When the table next meets at the left; the table's music in the
+         middle, as a capsule (all the players see of it, at the right for
+         them); the DM's switch between the players and their monsters and
+         NPCs at the right. The DM's whole jukebox takes its own row below. -->
+    {#if (next && !next.past) || isDm || showMusic}
       <div class="tablebar" transition:slide={unfold()}>
         <div class="nextsession">
           {#if isDm && editing}
@@ -546,6 +569,16 @@
             <span class="nextuntil" class:soon={next.until === 'today' || next.until === 'now'}>{next.until === 'now' ? 'happening now' : next.until}</span>
           {/if}
         </div>
+        <!-- One jukebox, capsule or whole: switching between them never stops the song. -->
+        {#if showMusic}
+          <div class="musicslot" class:whole={!compactMusic} class:forplayers={!isDm}>
+            <CampaignMusic campaignId={campaign.id} songs={campaign.details.songs ?? []} editing={isDm && editing}
+                           lead={isDm} playback={music.table} away={music.away} onplayback={(p) => music.send(p)}
+                           onchange={(songs) => saveDetails({ songs })} compact={compactMusic}
+                           oncompact={isDm && !editing ? () => setMusicCompact(true) : undefined}
+                           onexpand={isDm ? () => setMusicCompact(false) : undefined} />
+          </div>
+        {/if}
         {#if isDm}
           <div class="sideswitch">
             <AreaSwitch active={side} onchoose={(k) => (side = k)} sides={[
@@ -559,15 +592,6 @@
 
     {#if ended}
       <p class="ended">This campaign has ended. Its characters stay here as the story left them{#if isDm}, and nobody new can join{/if}.</p>
-    {/if}
-
-    <!-- The table's music: the DM plays it, everyone hears it. Empty, only while the DM edits. -->
-    {#if (hasMusic || (isDm && editing)) && music.ready}
-      <div transition:slide={unfold()}>
-        <CampaignMusic campaignId={campaign.id} songs={campaign.details.songs ?? []} editing={isDm && editing}
-                       lead={isDm} playback={music.table} away={music.away} onplayback={(p) => music.send(p)}
-                       onchange={(songs) => saveDetails({ songs })} />
-      </div>
     {/if}
 
     {#if error}<p class="app-alert bad" role="alert">{error}</p>{/if}
@@ -800,7 +824,12 @@
   .herenote { display: inline-flex; align-items: center; gap: 0.375rem; color: oklch(74% 0.17 150); }
   :global([data-mode='light']) .herenote { color: oklch(52% 0.15 150); }
   .nextsession { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-  .sideswitch { margin-left: auto; }
+  .sideswitch { margin-left: auto; order: 3; }
+  .nextsession { order: 1; }
+  /* The capsule in the middle of the line (at its right for players); the whole jukebox on a row of its own below. */
+  .musicslot { order: 2; flex: 1 1 auto; display: flex; justify-content: center; min-width: 0; }
+  .musicslot.forplayers { justify-content: flex-end; }
+  .musicslot.whole { order: 4; flex-basis: 100%; display: block; margin-top: 1.25rem; color: var(--text); font-size: 0.875rem; }
   /* The monsters' side slides in from the right, as the players' does from the left. */
   .creaturespane:not([hidden]) { animation: creaturesIn 0.26s cubic-bezier(0.33, 1, 0.68, 1); }
   @keyframes creaturesIn { from { opacity: 0; transform: translate3d(14px, 0, 0); } }

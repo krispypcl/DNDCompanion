@@ -2,7 +2,8 @@
   /** Opened from another page: the page fades in as a whole, so this doesn't fade in again inside it. */
   const arrived = typeof document !== 'undefined' && document.documentElement.hasAttribute('data-arriving');
   /** The campaign page's outline while it loads (the header, three character
-      cards, the table music and the board), shimmering, so nothing jumps when it arrives. */
+      cards and the board, each under its title as the page has them, and the line with the next
+      session and the music's capsule), shimmering, so nothing jumps when it arrives. */
 </script>
 
 <div class="cskel" class:arrived aria-busy="true" aria-label="Loading the campaign">
@@ -11,13 +12,8 @@
     <div class="lines"><i class="skeleton eyebrow"></i><i class="skeleton title"></i></div>
     <div class="tools">{#each Array(4) as _, i (i)}<i class="skeleton tool"></i>{/each}</div>
   </div>
-  <div class="music">
-    <i class="skeleton mcap"></i>
-    <div class="mbody">
-      <i class="skeleton player"></i>
-      <div class="songs">{#each Array(4) as _, i (i)}<i class="skeleton song" style:width="{[9, 7, 10.5, 8][i]}rem"></i>{/each}</div>
-    </div>
-  </div>
+  <div class="bar"><i class="skeleton next"></i><i class="skeleton capsule"></i></div>
+  <i class="skeleton seccap"></i>
   <div class="cards">
     {#each Array(3) as _, i (i)}
       <div class="card">
@@ -42,15 +38,13 @@
   .title { width: 16rem; max-width: 80%; height: 1.875rem; }
   .tools { display: flex; gap: 0.5rem; }
   .tool { width: 2.25rem; height: 2.125rem; }
-  /* The table music's box (CampaignMusic): the player at the left, songs beside it. */
-  .music { margin-top: 1rem; padding: 0.875rem 1rem; border-radius: var(--r); border: 1px solid var(--line-soft); background: var(--surface); }
-  .mcap { display: block; width: 6rem; height: 0.6875rem; }
-  .mbody { display: grid; grid-template-columns: minmax(0, 19rem) minmax(0, 1fr); gap: 1rem; margin-top: 0.875rem; align-items: center; }
-  .player { height: 3.75rem; }
-  .songs { display: grid; gap: 0.75rem; }
-  .song { height: 0.9375rem; max-width: 100%; }
-  @media (max-width: 700px) { .mbody { grid-template-columns: minmax(0, 1fr); } }
-  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(25rem, 100%), 1fr)); gap: 0.875rem; margin-top: 1.5rem; }
+  /* The line under the header: the next session, and the music's capsule. */
+  .bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1.25rem; }
+  .next { width: 15rem; max-width: 55%; height: 0.875rem; }
+  .capsule { width: 14rem; max-width: 40%; height: 2.25rem; border-radius: 999px; }
+  /* Each section's title, as SectionHead draws it. */
+  .seccap { display: block; width: 6.5rem; height: 0.75rem; margin: 2.5625rem 0 1.1875rem; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(25rem, 100%), 1fr)); gap: 0.875rem; }
   .card { background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--r); padding: 0.875rem; display: grid; gap: 0.75rem; }
   .who { display: flex; gap: 0.75rem; align-items: center; }
   .face { width: 3.25rem; height: 3.25rem; border-radius: var(--r-sm); flex: none; }
