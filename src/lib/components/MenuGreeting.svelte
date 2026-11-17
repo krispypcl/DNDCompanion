@@ -1,10 +1,8 @@
 <script lang="ts">
   /**
    * The main menu's hello, and under it when the table next meets, counted
-   * down, with the campaign as a button in the page's own type (or one
-   * plain line when nothing is set).
+   * down, with the campaign's name (or one plain line when nothing is set).
    */
-  import { base } from '$app/paths';
   import type { Campaign } from '$lib/data/campaigns';
 
   let {
@@ -23,7 +21,7 @@
   <p class="greethi">Hello, {name}!</p>
   <p class="greetnext">
     {#if next}
-      <a class="smallbtn accent greetcamp" href="{base}/c/{next.c.id}">{next.c.name}</a>
+      <span class="greetcamp">{next.c.name}</span>
       <span class="greetcount" class:now={next.count === 'now'}>{next.count === 'now' ? 'is on now' : `starts ${next.count}`}</span>
       <span class="greetwhen">{next.when}</span>
     {:else if hasCampaigns}
@@ -41,7 +39,7 @@
     margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 0.25rem 0.5rem;
     min-height: 1.875rem; font-size: 0.9375rem; color: var(--dim);
   }
-  .greetcamp { font-size: 0.875rem; }
+  .greetcamp { color: var(--text); overflow-wrap: anywhere; }
   .greetcount { color: var(--text); }
   .greetcount.now { color: var(--a); font-weight: 600; }
   .greetwhen { color: var(--faint); font-size: 0.8125rem; }
