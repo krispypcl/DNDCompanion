@@ -34,6 +34,7 @@
   import { glide } from '$lib/flip';
   import Banner from './Banner.svelte';
   import CampaignMusic from './CampaignMusic.svelte';
+  import SectionHead from './SectionHead.svelte';
   import CampaignBoard from './CampaignBoard.svelte';
   import CampaignCards from './CampaignCards.svelte';
   import D20Loader from './D20Loader.svelte';
@@ -175,6 +176,7 @@
   const active = $derived(sheets.filter((s) => !s.retired));
   /** Back goes to your own character at this table, or home if you have none here. */
   const retired = $derived(sheets.filter((s) => s.retired));
+  let retiredOpen = $state(false);
   const inviteLink = $derived(
     invite && typeof location !== 'undefined' ? `${siteRoot(location.origin, base)}/join?code=${invite}` : ''
   );
@@ -570,13 +572,12 @@
 
     {#if error}<p class="app-alert bad" role="alert">{error}</p>{/if}
 
-    <!-- The initiative order sits between the characters and the monsters:
-         under the party's cards, and on the DM's other side above the
-         monsters and NPCs. The DM always has it; the players while the DM
-         calls for initiative or a fight runs. -->
+    <!-- Every section the same way, as the table board: its title above (SectionHead), its content below.
+         The initiative order comes after the characters (and for the DM, after the monsters and NPCs on
+         that side too); the players see it while the DM calls for initiative or a fight runs. -->
     {#snippet order()}
       {#if !ended && combatants.length && (isDm || fighting || init.asking)}
-        <div class="orderslot" transition:slide={unfold()}>
+        <div class="campsec" transition:slide={unfold()}>
           <InitiativeTracker {combatants} turn={init.turn} round={init.round} asking={init.asking} {isDm}
                              onvalue={setInitiative} onrollone={rollOne} onask={callForInitiative}
                              onrollrest={isDm ? rollRest : undefined}
@@ -591,34 +592,52 @@
          typed survive a switch back and forth. -->
     {#if side === SIDE_PLAYERS}
       <div class="sidepane" in:sideIn={{ dir: -1 }}>
-        {#if active.length === 0}
-          <p class="empty">No characters yet.{#if isDm}{' '}Send your players the invite link.{/if}</p>
-        {:else}
-          <CampaignCards here={music.present} sheets={active} order={campaign.details.order ?? []} {isDm} {editing} {ended}
-                         onorder={(order) => saveDetails({ order })} onremove={remove} onconditions={giveConditions} onlook={giveLook} />
-        {/if}
+        <section class="campsec" aria-label="Characters">
+          <SectionHead title="Characters">
+            {#snippet info()}
+              {#if isDm}
+                The party, live from their sheets. Drag a card to put them in order; + gives a condition, and its dot
+                chooses the colour of one of your own. A green light means that player has the page open.
+              {:else}
+                The party, live from their sheets. A green light means that player has the page open.
+              {/if}
+            {/snippet}
+          </SectionHead>
+          {#if active.length === 0}
+            <p class="empty">No characters yet.{#if isDm}{' '}Send your players the invite link.{/if}</p>
+          {:else}
+            <CampaignCards here={music.present} sheets={active} order={campaign.details.order ?? []} {isDm} {editing} {ended}
+                           onorder={(order) => saveDetails({ order })} onremove={remove} onconditions={giveConditions} onlook={giveLook} />
+          {/if}
+        </section>
         {@render order()}
       </div>
     {/if}
     {#if isDm && table}
       <div class="sidepane creaturespane" hidden={side !== SIDE_CREATURES}>
+        <section class="campsec" aria-label="Monsters and NPCs">
+          <CampaignCreatures {table} {ended} />
+        </section>
         {@render order()}
-        <CampaignCreatures {table} {ended} />
       </div>
     {:else if revealed.length}
-      <RevealedCreatures list={revealed} />
+      <section class="campsec"><RevealedCreatures list={revealed} /></section>
     {/if}
 
     {#if retired.length}
-      <details class="retired">
-        <summary>Retired ({retired.length})</summary>
-        <ul>
-          {#each retired as s (s.id)}
-            <li><a class="smallbtn" href="{base}/s/{s.id}?from={id}">{s.definition?.identity?.name || s.name}</a>
-              <span class="sub">{classLine(s.definition)}</span></li>
-          {/each}
-        </ul>
-      </details>
+      <section class="campsec retired" aria-label="Retired characters">
+        <SectionHead title="Retired ({retired.length})" folded={!retiredOpen} ontoggle={() => (retiredOpen = !retiredOpen)} controls="retired-list">
+          {#snippet info()}Characters their players retired from the campaign. Their sheets stay as the story left them.{/snippet}
+        </SectionHead>
+        {#if retiredOpen}
+          <ul id="retired-list" transition:slide={unfold()}>
+            {#each retired as s (s.id)}
+              <li><a class="smallbtn" href="{base}/s/{s.id}?from={id}">{s.definition?.identity?.name || s.name}</a>
+                <span class="sub">{classLine(s.definition)}</span></li>
+            {/each}
+          </ul>
+        {/if}
+      </section>
     {/if}
 
     <CampaignBoard campaignId={campaign.id} userId={$session.user?.id ?? null} canEdit={isMember && !ended} foldable />
@@ -801,11 +820,11 @@
     margin: 1.5rem 0 0; padding: 0.75rem 1rem; border: 1px solid var(--line-soft); border-radius: var(--r);
     background: var(--surface); color: var(--dim); font-size: 0.875rem; line-height: 1.45;
   }
-  .empty { color: var(--dim); margin-top: 2rem; }
+  /* Every section the same distance apart, as the table board. */
+  .campsec { margin-top: 2rem; }
+  .empty { color: var(--dim); margin: 0; }
 
-  .retired { margin-top: 2rem; }
-  .retired summary { cursor: pointer; color: var(--dim); font-size: 0.875rem; }
-  .retired ul { list-style: none; padding: 0; margin: 0.625rem 0 0; display: grid; gap: 0.375rem; }
+  .retired ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.375rem; }
   .retired .smallbtn { margin-right: 0.5rem; }
   .end { margin-top: 3rem; display: flex; align-items: center; gap: 0.625rem; flex-wrap: wrap; font-size: 0.875rem; color: var(--dim); }
   @media (max-width: 600px) {

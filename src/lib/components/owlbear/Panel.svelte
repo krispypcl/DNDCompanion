@@ -782,7 +782,6 @@
   .service { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.5625rem 0.75rem; }
   .order :global(.initiative) { margin-top: 0; }
   .viewswitch { display: flex; justify-content: center; }
-  .beasts :global(.creaturebar) { margin-top: 0; }
   .ctoken {
     width: 1.75rem; height: 1.75rem; display: grid; place-items: center; padding: 0; border-radius: var(--r-sm);
     border: 1px solid transparent; background: none; color: var(--dim); transition: color 0.15s ease, border-color 0.15s ease, transform 0.08s ease;

@@ -11,7 +11,7 @@
   import { fade, slide } from 'svelte/transition';
   import { prefersReducedMotion } from '$lib/motion';
   import { ordered, type InitiativeRow } from '$lib/rules/initiative';
-  import InfoTip from './InfoTip.svelte';
+  import SectionHead from './SectionHead.svelte';
 
   let {
     combatants,
@@ -62,21 +62,20 @@
   }
 </script>
 
-<section class="initiative" class:asking={asking && !running} aria-label="Initiative">
-  <div class="inithead">
-    <h3>Initiative{#if running}<span class="round" in:fade={quick}>Round {round}</span>{/if}</h3>
-    <InfoTip label="About initiative">
+<section class="initiative" aria-label="Initiative">
+  <SectionHead title="Initiative">
+    {#snippet info()}
       {#if isDm}
-        Call for initiative and your players roll theirs, here, on their sheets or in Owlbear. Write any number in
-        yourself, or roll the rest. Start, then Next turn moves it on; your players see the order and whose turn it is,
-        with only the monsters and NPCs you’ve revealed.
+        Call for initiative and your players roll theirs here, on the campaign page. Write any number in yourself, or
+        roll the rest. Start, then Next turn moves it on; your players see the order and whose turn it is, with only
+        the monsters and NPCs you’ve revealed.
       {:else}
-        Your DM runs the order. When they call for initiative, roll yours on the campaign page, or write in what your
-        own dice gave.
+        Your DM runs the order. When they call for initiative, roll yours here, or write in what your own dice gave.
       {/if}
-    </InfoTip>
-    {#if isDm}
-      <div class="initdo">
+    {/snippet}
+    {#if running}<span class="round" in:fade={quick}>Round {round}</span>{/if}
+    {#snippet end()}
+      {#if isDm}
         {#if running}
           <button class="smallbtn" onclick={onprevious} aria-label="Previous turn" title="Previous turn">
             <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M10 3.5 5.5 8l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -88,9 +87,9 @@
           {#if onrollrest && list.some((c) => c.value === null)}<button class="smallbtn" onclick={onrollrest}>Roll the rest</button>{/if}
           <button class="smallbtn accent" onclick={onstart} disabled={!list.some((c) => c.value !== null)}>Start</button>
         {/if}
-      </div>
-    {/if}
-  </div>
+      {/if}
+    {/snippet}
+  </SectionHead>
 
   {#if asking && !running}
     <p class="initcall" transition:slide={quick}>
@@ -135,20 +134,10 @@
 </section>
 
 <style>
-  .initiative {
-    margin-top: 1rem; padding: 0.75rem 0.875rem; border-radius: var(--r);
-    border: 1px solid var(--line-soft); background: var(--surface); transition: border-color 0.25s ease, box-shadow 0.25s ease;
-  }
-  .initiative.asking { border-color: var(--a-edge); box-shadow: 0 0 0 3px color-mix(in oklch, var(--a) 14%, transparent); }
-  .inithead { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-  h3 {
-    margin: 0; display: inline-flex; align-items: baseline; gap: 0.625rem;
-    font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600;
-  }
-  .round { letter-spacing: 0.04em; text-transform: none; font-size: 0.8125rem; color: var(--a); font-weight: 650; }
-  .initdo { display: flex; gap: 0.375rem; flex-wrap: wrap; margin-left: auto; }
-  .initcall { margin: 0.5rem 0 0; font-size: 0.875rem; font-weight: 600; color: var(--a); }
-  .initlist { list-style: none; margin: 0.625rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.375rem; }
+  .initiative { min-width: 0; }
+  .round { font-size: 0.8125rem; color: var(--a); font-weight: 650; }
+  .initcall { margin: 0 0 0.625rem; font-size: 0.875rem; font-weight: 600; color: var(--a); }
+  .initlist { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.375rem; }
   .initrow {
     display: inline-flex; align-items: center; gap: 0.4375rem; padding: 0.25rem 0.625rem 0.25rem 0.25rem;
     border-radius: 999px; border: 1px solid var(--line-soft); background: var(--raised); font-size: 0.8125rem;

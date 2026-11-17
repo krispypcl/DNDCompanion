@@ -306,7 +306,7 @@
 
 <style>
   .cards {
-    list-style: none; padding: 0; margin: 1.5rem 0 0;
+    list-style: none; padding: 0; margin: 0;
     /* Wide enough for each stat's whole name (Passive Perception). */
     display: grid; grid-template-columns: repeat(auto-fill, minmax(min(25rem, 100%), 1fr)); gap: 0.875rem;
   }

@@ -26,6 +26,7 @@
   import DimModal from './DimModal.svelte';
   import ConditionGiver from './ConditionGiver.svelte';
   import InfoTip from './InfoTip.svelte';
+  import SectionHead from './SectionHead.svelte';
   import StatBlockEditor from './StatBlockEditor.svelte';
   import StatWindow from './StatWindow.svelte';
 
@@ -199,16 +200,16 @@
   }
 </script>
 
-<div class="creaturebar">
-  <span class="creaturetally">
-    {table.list.length === 1 ? '1 creature' : `${table.list.length} creatures`}
-    <InfoTip label="About monsters and NPCs">Only you see these, unless you reveal one with its eye: your players then see its name, its conditions and how hurt it looks, never its numbers or notes. Drag a card to move it.</InfoTip>
-  </span>
+<SectionHead title="Monsters & NPCs" infoLabel="About monsters and NPCs">
+  {#snippet info()}
+    Only you see these, unless you reveal one with its eye: your players then see its name, portrait, conditions and how
+    hurt it looks, never its numbers or notes. Drag a card to move it.
+  {/snippet}
   {#if table.notice}<span class="creaturenotice" role="status" transition:fade={{ duration: still ? 0 : 160 }}>{table.notice}</span>{/if}
-  {#if !ended}
-    <button class="smallbtn accent" onclick={startAdd}>Add a monster or NPC</button>
-  {/if}
-</div>
+  {#snippet end()}
+    {#if !ended}<button class="smallbtn accent" onclick={startAdd}>Add a monster or NPC</button>{/if}
+  {/snippet}
+</SectionHead>
 
 {#if table.error}<p class="app-alert bad" role="alert">{table.error}</p>{/if}
 
@@ -414,9 +415,6 @@
 {/if}
 
 <style>
-  .creaturebar { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin: 1rem 0 0.875rem; }
-  .creaturebar > .smallbtn { margin-left: auto; }
-  .creaturetally { display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.8125rem; color: var(--dim); }
   .creaturenotice { font-size: 0.8125rem; color: var(--a); }
   .creatureempty { color: var(--dim); font-size: 0.875rem; margin: 0.5rem 0 0; }
   .creaturegrid {

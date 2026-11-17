@@ -10,7 +10,7 @@
   import type { Revealed } from '$lib/data/creatures';
   import { lookOf } from '$lib/rules/conditions';
   import { prefersReducedMotion } from '$lib/motion';
-  import InfoTip from './InfoTip.svelte';
+  import SectionHead from './SectionHead.svelte';
 
   let { list }: { list: Revealed[] } = $props();
   const still = prefersReducedMotion();
@@ -21,7 +21,9 @@
 
 {#if list.length}
   <section class="foes" aria-label="Monsters and NPCs in sight" transition:fade={{ duration: still ? 0 : 180 }}>
-    <h3>In sight <InfoTip label="About these">The monsters and NPCs your DM has shown you, and how hurt they look.</InfoTip></h3>
+    <SectionHead title="In sight" infoLabel="About these">
+      {#snippet info()}The monsters and NPCs your DM has shown you, and how hurt they look.{/snippet}
+    </SectionHead>
     <ul>
       {#each list as c (c.id)}
         <li class="foe {c.vital}" animate:flip={{ duration: still ? 0 : 240, easing: cubicOut }} transition:fade={{ duration: still ? 0 : 160 }}>
@@ -44,11 +46,7 @@
 {/if}
 
 <style>
-  .foes { margin-top: 1rem; }
-  h3 {
-    margin: 0 0 0.625rem; display: flex; align-items: center; gap: 0.375rem;
-    font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600;
-  }
+  .foes { min-width: 0; }
   .foes > ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.625rem; grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr)); }
   .foe {
     --vc: oklch(68% 0.15 150);
