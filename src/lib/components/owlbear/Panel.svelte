@@ -281,6 +281,17 @@
   const dmKey = $derived(isDm ? campaignId : null);
   const table = $derived(dmKey ? new CreatureTable(dmKey) : null);
   $effect(() => void table?.load());
+  // What is still waiting to be saved goes before the page does.
+  $effect(() => {
+    const t = table;
+    if (!t) return;
+    const go = () => t.flushAll();
+    window.addEventListener('pagehide', go);
+    return () => {
+      window.removeEventListener('pagehide', go);
+      go();
+    };
+  });
   /** Party or Monsters & NPCs, for the DM. */
   let view = $state('Party');
   /** The creatures a player can see (only those the DM revealed), looked at again every few seconds. */

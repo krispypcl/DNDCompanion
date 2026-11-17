@@ -3,6 +3,11 @@
  * them: the list, kept in step with the database (each change shown at once,
  * saved behind, put back if the save fails), the DM's own homebrew to add
  * from, and adding a monster straight from 5e.tools.
+ *
+ * Changes are debounced per creature: a quick run of presses (Damage,
+ * Damage, Heal) shows each at once but saves once, a moment after the last,
+ * and one creature never has two saves in flight, so they can't land out of
+ * order.
  */
 import { creatureRepo, type Creature, type CreatureFields, type Homebrew } from '$lib/data/creatures';
 import { friendlyError } from '$lib/errors';
@@ -20,6 +25,13 @@ export class CreatureTable {
   notice = $state<string | null>(null);
   readonly campaignId: string;
   #noticeTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Each creature as the database last confirmed it (what a failed save goes back to). */
+  #saved = new Map<string, Creature>();
+  /** Changes waiting to be saved, merged, with who is waiting on them. */
+  #pending = new Map<string, { patch: CreatureFields; timer: ReturnType<typeof setTimeout>; done: (() => void)[] }>();
+  /** The save in flight for each creature, so the next one waits its turn. */
+  #flying = new Map<string, Promise<void>>();
+  static readonly SAVE_AFTER = 350;
 
   constructor(campaignId: string) {
     this.campaignId = campaignId;
@@ -30,6 +42,7 @@ export class CreatureTable {
     try {
       const [list, brew] = await Promise.all([creatureRepo.list(this.campaignId), creatureRepo.homebrew.list().catch(() => [])]);
       this.list = list;
+      this.#saved = new Map(list.map((x) => [x.id, x]));
       this.homebrew = brew;
     } catch (e) {
       this.error = friendlyError(e, 'The monsters slipped their leash! Try again in a moment.');
@@ -44,15 +57,48 @@ export class CreatureTable {
     this.#noticeTimer = setTimeout(() => (this.notice = null), 3500);
   }
 
-  async change(c: Creature, patch: CreatureFields) {
-    const before = this.list;
+  /** Shows the change at once; saves it (with any that follow quickly) a moment after the last. */
+  change(c: Creature, patch: CreatureFields): Promise<void> {
     this.list = this.list.map((x) => (x.id === c.id ? { ...x, ...patch } : x));
-    try {
-      await creatureRepo.update(c.id, patch);
-    } catch (e) {
-      this.list = before;
-      this.error = friendlyError(e, 'That change rolled a natural 1! Try it again.');
+    const was = this.#pending.get(c.id);
+    if (was) clearTimeout(was.timer);
+    const entry = { patch: { ...(was?.patch ?? {}), ...patch }, timer: undefined as unknown as ReturnType<typeof setTimeout>, done: was?.done ?? [] };
+    const settled = new Promise<void>((resolve) => entry.done.push(resolve));
+    entry.timer = setTimeout(() => void this.#flush(c.id), CreatureTable.SAVE_AFTER);
+    this.#pending.set(c.id, entry);
+    return settled;
+  }
+
+  /** Saves whatever is waiting now (leaving the page, or the table closing). */
+  flushAll() {
+    for (const [id, entry] of this.#pending) {
+      clearTimeout(entry.timer);
+      void this.#flush(id);
     }
+  }
+
+  async #flush(id: string) {
+    const entry = this.#pending.get(id);
+    if (!entry) return;
+    this.#pending.delete(id);
+    const before = this.#flying.get(id) ?? Promise.resolve();
+    const run = before.then(async () => {
+      try {
+        await creatureRepo.update(id, entry.patch);
+        const base = this.#saved.get(id);
+        if (base) this.#saved.set(id, { ...base, ...entry.patch });
+      } catch (e) {
+        // Back to what the database has, keeping any newer change still waiting.
+        const base = this.#saved.get(id);
+        const newer = this.#pending.get(id)?.patch ?? {};
+        if (base) this.list = this.list.map((x) => (x.id === id ? { ...base, ...newer } : x));
+        this.error = friendlyError(e, 'That change rolled a natural 1! Try it again.');
+      }
+    });
+    this.#flying.set(id, run);
+    await run;
+    if (this.#flying.get(id) === run) this.#flying.delete(id);
+    entry.done.forEach((d) => d());
   }
 
   /** Several of one creature (numbered on from those there), at the end of the list. */
@@ -66,6 +112,7 @@ export class CreatureTable {
     try {
       const made = await creatureRepo.add(this.campaignId, rows);
       this.list = [...this.list, ...made];
+      for (const m of made) this.#saved.set(m.id, m);
       this.#say(names.length > 1 ? `Added ${names[0]} to ${names[names.length - 1]}` : `Added ${names[0]}`);
       return made;
     } catch (e) {
@@ -99,6 +146,12 @@ export class CreatureTable {
   }
 
   async remove(c: Creature) {
+    const waiting = this.#pending.get(c.id);
+    if (waiting) {
+      clearTimeout(waiting.timer);
+      this.#pending.delete(c.id);
+      waiting.done.forEach((d) => d());
+    }
     const before = this.list;
     this.list = this.list.filter((x) => x.id !== c.id);
     try {

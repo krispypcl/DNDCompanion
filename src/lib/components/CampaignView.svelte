@@ -102,6 +102,17 @@
   $effect(() => {
     void table?.load();
   });
+  // What is still waiting to be saved goes before the page does.
+  $effect(() => {
+    const t = table;
+    if (!t) return;
+    const go = () => t.flushAll();
+    window.addEventListener('pagehide', go);
+    return () => {
+      window.removeEventListener('pagehide', go);
+      go();
+    };
+  });
   const creatureCount = $derived(table?.list.length ?? 0);
   /** What the players see of them: only the revealed ones (database/0018). */
   let revealed = $state<Revealed[]>([]);
