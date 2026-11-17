@@ -6,6 +6,12 @@
    * and the latest rolls made on the sheets. A room has one campaign (pasted
    * by its link, replaceable) and any characters added on their own; the DM
    * (Owlbear's GM) puts them in order by picking them up.
+   *
+   * Signed in as the campaign's DM, the panel also runs the fight: the
+   * initiative order (lib/initiative) and the monsters and NPCs (the same
+   * tracker as the campaign page), each placeable as a token. Players see
+   * the order while it runs and the creatures the DM has revealed. Signing
+   * in works with an email, Google or Discord (lib/owlbear/signin).
    */
   import { onMount } from 'svelte';
   import { flip } from 'svelte/animate';
@@ -21,7 +27,15 @@
   import { applyMode } from '$lib/stores/mode';
   import { themeStyle } from '$lib/theme';
   import { session } from '$lib/stores/session';
-  import { signIn, signOut } from '$lib/data/session';
+  import { profile } from '$lib/stores/profile';
+  import { enabledProviders, PROVIDER_NAMES, profileOf, signIn, signOut, type OAuthProvider } from '$lib/data/session';
+  import { signInFromOwlbear } from '$lib/owlbear/signin';
+  import { creatureRepo, type Creature, type Revealed } from '$lib/data/creatures';
+  import { CreatureTable } from '$lib/creatureTable.svelte';
+  import { LiveInitiative } from '$lib/initiative.svelte';
+  import { initiativeParts } from '$lib/rules/derived';
+  import { initiativeBonus } from '$lib/rules/statblock';
+  import { next as nextTurn, previous as previousTurn, rollInitiative, start as startTurns, type InitiativeRow } from '$lib/rules/initiative';
   import { campaignRepo, inviteCode, type Campaign } from '$lib/data/campaigns';
   import { prefersReducedMotion } from '$lib/motion';
   import { addLink, campaignOf, orderSheets, parseLink, removeLink, type RoomLink, type RoomLinks } from '$lib/owlbear/links';
@@ -34,6 +48,11 @@
   import ConditionRing from '../ConditionRing.svelte';
   import InfoTip from '../InfoTip.svelte';
   import HpBar from './HpBar.svelte';
+  import AreaSwitch from '../AreaSwitch.svelte';
+  import CampaignCreatures from '../CampaignCreatures.svelte';
+  import RevealedCreatures from '../RevealedCreatures.svelte';
+  import InitiativeTracker from '../InitiativeTracker.svelte';
+  import ProviderIcon from '../ProviderIcon.svelte';
 
   type O = typeof import('$lib/owlbear/obr');
   let obr = $state.raw<O | null>(null);
@@ -44,6 +63,8 @@
   let rolls = $state.raw<RollNote[]>([]);
   /** Which sheets have a token on the map: sheet id → token ids. */
   let onMap = $state.raw<Record<string, string[]>>({});
+  /** The same for the DM's monsters and NPCs: creature id → token ids. */
+  let creaturesOnMap = $state.raw<Record<string, string[]>>({});
   let campaignNames = $state(new Map<string, string>());
   /** The room's campaign (its name, songs and order), once read. */
   let campaign = $state.raw<Campaign | null>(null);
@@ -98,11 +119,15 @@
       stops.push(m.onRolls((r) => (rolls = r)));
       const readMap = (items: { id: string; metadata: Record<string, unknown> }[]) => {
         const next: Record<string, string[]> = {};
+        const beasts: Record<string, string[]> = {};
         for (const i of items) {
           const link = m.linkOf(i as never);
           if (link) (next[link.id] ??= []).push(i.id);
+          const cl = m.creatureLinkOf(i as never);
+          if (cl) (beasts[cl.id] ??= []).push(i.id);
         }
         onMap = next;
+        creaturesOnMap = beasts;
       };
       if (await m.OBR.scene.isReady()) readMap(await m.OBR.scene.items.getItems());
       stops.push(m.OBR.scene.items.onChange(readMap));
@@ -181,6 +206,24 @@
       busy = null;
     }
   }
+  async function placeCreature(c: Creature) {
+    if (!obr) return;
+    busy = c.id;
+    error = null;
+    try {
+      await obr.placeCreatureToken(c);
+    } catch (e) {
+      error = e instanceof Error ? e.message : 'The token slipped off the table! Try again.';
+    } finally {
+      busy = null;
+    }
+  }
+  async function findTokens(ids: string[]) {
+    if (!obr || !ids.length) return;
+    await obr.OBR.player.select(ids, true);
+    const box = await obr.OBR.scene.items.getItemBounds(ids).catch(() => null);
+    if (box) await obr.OBR.viewport.animateToBounds({ ...box, min: { x: box.min.x - box.width, y: box.min.y - box.height }, max: { x: box.max.x + box.width, y: box.max.y + box.height }, width: box.width * 3, height: box.height * 3 });
+  }
   async function find(s: Sheet) {
     if (!obr) return;
     const ids = onMap[s.id] ?? [];
@@ -231,12 +274,117 @@
   const directLink = (s: Sheet) => links.find((l) => l.kind === 'sheet' && l.id === s.id) ?? null;
   const faces = $derived([...new Set(sheets.map((s) => fontFace(s.definition?.identity?.nameFont)?.href).filter(Boolean) as string[])]);
 
+  // ── The fight: the DM's creatures and the initiative order ──
+  const me = $derived($session.user?.id ?? null);
+  const isDm = $derived(Boolean(me && campaign && campaign.id === campaignId && campaign.created_by === me && !campaign.archived));
+  const dmKey = $derived(isDm ? campaignId : null);
+  const table = $derived(dmKey ? new CreatureTable(dmKey) : null);
+  $effect(() => void table?.load());
+  /** Party or Monsters & NPCs, for the DM. */
+  let view = $state('Party');
+  /** The creatures a player can see (only those the DM revealed), looked at again every few seconds. */
+  let revealed = $state.raw<Revealed[]>([]);
+  $effect(() => {
+    const id = campaignId;
+    if (!id || !me || isDm) return void (revealed = []);
+    let on = true;
+    const look = () => creatureRepo.revealed(id).then((r) => { if (on) revealed = r; }).catch(() => {});
+    void look();
+    const t = setInterval(look, 12000);
+    return () => { on = false; clearInterval(t); };
+  });
+  /** The campaign's characters in the order (not those added on their own). */
+  const fighters = $derived(sheets.filter((s) => campaignId && s.campaign_id === campaignId && !s.retired));
+  const live = $derived(campaignId ? new LiveInitiative(campaignId, {
+    read: () => (campaign?.id === campaignId ? campaign?.details.initiative : undefined),
+    save: async (i) => {
+      if (!campaign) return;
+      const details = { ...campaign.details, initiative: i };
+      await campaignRepo.saveDetails(campaign.id, details);
+      campaign = { ...campaign, details };
+    }
+  }) : null);
+  $effect(() => live?.start());
+  $effect(() => {
+    void campaign?.details.initiative;
+    live?.syncLegacy();
+  });
+  const init = $derived(live?.state ?? { pcs: {}, turn: null, round: 0, asking: false });
+  const combatants = $derived<InitiativeRow[]>([
+    ...fighters.map((s) => ({
+      key: `pc:${s.id}`, name: obr?.nameOf(s) ?? s.name, value: init.pcs[s.id] ?? null,
+      dex: s.definition ? initiativeParts(s.definition).total : 0, side: 'pc' as const, mine: Boolean(me && s.owner_id === me)
+    })),
+    ...(table
+      ? table.before0018 ? [] : table.list.map((c) => ({ key: `cr:${c.id}`, name: c.name, value: c.initiative, dex: initiativeBonus(c.statblock), side: 'creature' as const, hidden: !c.visible }))
+      : revealed.map((c) => ({ key: `cr:${c.id}`, name: c.name, value: c.initiative, side: 'creature' as const })))
+  ]);
+  const showOrder = $derived(Boolean(live && combatants.length && (isDm || init.turn || init.asking)));
+  const orderFail = (e: unknown) => (error = e instanceof Error ? e.message : 'The order slipped! Try again.');
+  function setInitiative(key: string, value: number | null) {
+    const ref = key.slice(3);
+    if (key.startsWith('cr:')) {
+      const c = table?.list.find((x) => x.id === ref);
+      if (c) void table!.change(c, { initiative: value });
+    } else if (live && isDm) {
+      const pcs = { ...init.pcs };
+      if (value === null) delete pcs[ref];
+      else pcs[ref] = value;
+      live.patch({ pcs }).catch(orderFail);
+    } else live?.setMine(ref, value).catch(orderFail);
+  }
+  function rollOne(key: string) {
+    const s = fighters.find((x) => `pc:${x.id}` === key);
+    if (s?.definition) setInitiative(key, rollInitiative(initiativeParts(s.definition).total));
+  }
+  function rollRest() {
+    if (!live) return;
+    const pcs = { ...init.pcs };
+    for (const s of fighters) if (pcs[s.id] === undefined && s.definition) pcs[s.id] = rollInitiative(initiativeParts(s.definition).total);
+    live.patch({ pcs }).catch(orderFail);
+    if (table && !table.before0018) for (const c of table.list.filter((x) => x.initiative === null)) void table.change(c, { initiative: rollInitiative(initiativeBonus(c.statblock)) });
+  }
+  const moveTurn = (t: { turn: string | null; round: number }) => live?.patch({ ...t, asking: false }).catch(orderFail);
+  function endFight() {
+    live?.save({ pcs: {}, turn: null, round: 0, asking: false }).catch(orderFail);
+    for (const c of table?.list.filter((x) => x.initiative !== null) ?? []) void table!.change(c, { initiative: null });
+  }
+  /** Whose turn it is, picked out on the map for the DM (its token selected). */
+  let lastTurn: string | null = null;
+  $effect(() => {
+    const t = init.turn;
+    if (!isDm || !t || t === lastTurn) return;
+    lastTurn = t;
+    const ids = t.startsWith('pc:') ? onMap[t.slice(3)] ?? [] : creaturesOnMap[t.slice(3)] ?? [];
+    if (ids.length) void obr?.OBR.player.select(ids, true).catch(() => {});
+  });
+
   // ── Signing in, here inside Owlbear (it keeps its own sign-in) ──
   let signing = $state(false);
   let email = $state('');
   let password = $state('');
   let authError = $state<string | null>(null);
   let authBusy = $state(false);
+  /** The services switched on in Supabase (a button only for one that works). */
+  let services = $state<OAuthProvider[]>([]);
+  onMount(() => {
+    void enabledProviders().then((on) => (services = (['google', 'discord'] as OAuthProvider[]).filter((p) => on[p])));
+  });
+  let withEmail = $state(false);
+  let opening = $state<OAuthProvider | null>(null);
+  async function signInWith(p: OAuthProvider) {
+    opening = p;
+    authError = null;
+    try {
+      await signInFromOwlbear(p);
+      signing = false;
+    } catch (e) {
+      authError = e instanceof Error ? e.message : `${PROVIDER_NAMES[p]} didn’t answer! Try again.`;
+    } finally {
+      opening = null;
+    }
+  }
+  const myName = $derived(profileOf($session.user, $profile).displayName || $session.user?.email || 'you');
   async function doSignIn(e: SubmitEvent) {
     e.preventDefault();
     authBusy = true;
@@ -274,7 +422,7 @@
   <form class="add" onsubmit={(e) => { e.preventDefault(); void add(); }}>
     <input bind:value={draft} use:focusIf={!first} aria-label={kind === 'character' ? 'A character’s link' : 'A campaign’s link'}
            placeholder={kind === 'character' ? 'Paste a character’s link' : 'Paste your campaign’s link'} />
-    <button class="go" disabled={!draft.trim() || addBusy}>{addBusy ? 'Adding…' : 'Add'}</button>
+    <button class="go" disabled={!draft.trim() || addBusy}>{addBusy ? 'Adding' : 'Add'}</button>
     {#if !first}<button type="button" class="smallbtn" onclick={stopAdding}>Cancel</button>{/if}
     <InfoTip label="Where to find the link">
       {#if kind === 'character'}
@@ -304,7 +452,11 @@
       <code>{location.origin}{location.pathname.replace(/panel\/?$/, 'manifest.json')}</code></p>
   {:else}
     {#if !loaded}
-      <p class="note">Gathering the party…</p>
+      <ul class="chars partyskel" aria-busy="true" aria-label="Gathering the party">
+        {#each [0, 1, 2] as i (i)}
+          <li class="char"><div class="top"><i class="skeleton skface"></i><span class="who"><i class="skeleton skname"></i><i class="skeleton skline"></i></span></div><i class="skeleton skbar"></i></li>
+        {/each}
+      </ul>
     {:else if !campaignId}
       <section class="start" in:fade={{ duration: 180 }}>
         <h2 class="lead">Bring your campaign to the table</h2>
@@ -332,10 +484,46 @@
         <InfoTip label="About these buttons">
           Campaign opens its page. Board opens its board over the room. Music plays the DM’s table music in a small
           player that stays open.{#if role === 'GM'} Drag a character to put them in order.{/if}
+          {#if isDm} Signed in as the DM, you run the fight from here too: the initiative order, and your monsters and NPCs.{/if}
         </InfoTip>
       </div>
     {/if}
 
+    {#if showOrder && live}
+      <div class="order" transition:slide={ease()}>
+        <InitiativeTracker {combatants} turn={init.turn} round={init.round} asking={init.asking} {isDm}
+                           onvalue={setInitiative} onrollone={rollOne} onask={() => live?.save({ pcs: {}, turn: null, round: 0, asking: true }).catch(orderFail)}
+                           onrollrest={isDm ? rollRest : undefined}
+                           onstart={() => moveTurn(startTurns(combatants))} onnext={() => moveTurn(nextTurn(combatants, { turn: init.turn, round: init.round }))}
+                           onprevious={() => moveTurn(previousTurn(combatants, { turn: init.turn, round: init.round }))} onend={endFight} />
+      </div>
+    {/if}
+
+    {#if isDm && table}
+      <div class="viewswitch" in:fade={{ duration: 180 }}>
+        <AreaSwitch active={view} onchoose={(k) => (view = k)} sides={[
+          { key: 'Party', icon: 'person', count: characters.length },
+          { key: 'Monsters & NPCs', icon: 'monster', count: table.list.length }
+        ]} />
+      </div>
+    {/if}
+
+    {#snippet tokenTools(c: Creature)}
+      {#if creaturesOnMap[c.id]?.length}
+        <button class="ctoken" onclick={() => findTokens(creaturesOnMap[c.id] ?? [])} title="Find its token" aria-label="Find {c.name}’s token">
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="12" cy="12" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+        </button>
+      {/if}
+      <button class="ctoken" disabled={busy === c.id} onclick={() => placeCreature(c)} title={creaturesOnMap[c.id]?.length ? 'Another token' : 'Place its token'} aria-label="Place a token for {c.name}">
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="12" cy="10" r="5.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M12 15.5V21M9 21h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+      </button>
+    {/snippet}
+
+    {#if isDm && table && view === 'Monsters & NPCs'}
+      <div class="beasts" in:fade={{ duration: 200 }}>
+        <CampaignCreatures {table} tools={tokenTools} />
+      </div>
+    {:else}
     {#if loaded && campaignId && !characters.length}<p class="note">No characters in this campaign yet.</p>{/if}
     {#if characters.length}
       <ul class="chars cascade" class:can-reorder={canArrange}
@@ -391,12 +579,15 @@
               {#if onMap[s.id]?.length}
                 <button class="btn" onclick={() => find(s)}>Find token</button>
               {/if}
-              <button class="btn" disabled={busy === s.id} onclick={() => place(s)}>{busy === s.id ? 'Placing…' : onMap[s.id]?.length ? 'Another token' : 'Place token'}</button>
+              <button class="btn" disabled={busy === s.id} onclick={() => place(s)}>{busy === s.id ? 'Placing' : onMap[s.id]?.length ? 'Another token' : 'Place token'}</button>
             </div>
           </li>
         {/each}
       </ul>
     {/if}
+    {/if}
+
+    {#if !isDm && revealed.length}<RevealedCreatures list={revealed} />{/if}
 
     <section class="rolls">
       <h2>Rolls
@@ -437,27 +628,45 @@
     <footer class="smooth-height" use:smoothHeight>
       <div class="swap-cell">
         {#if signing && !$session.user}
-          <form class="signin" onsubmit={doSignIn} in:fade={{ duration: 200, delay: 90 }} out:fade={{ duration: 120 }}>
-            <input type="email" bind:value={email} placeholder="Email" autocomplete="email" aria-label="Email" required />
-            <input type="password" bind:value={password} placeholder="Password" autocomplete="current-password" aria-label="Password" required />
-            <div class="row">
-              <button class="go" disabled={authBusy}>{authBusy ? 'Signing in…' : 'Sign in'}</button>
-              <button type="button" class="smallbtn" onclick={() => { signing = false; authError = null; }}>Cancel</button>
-            </div>
+          <div class="signin" in:fade={{ duration: 200, delay: 90 }} out:fade={{ duration: 120 }}>
+            {#if services.length && !withEmail}
+              <div class="services">
+                {#each services as p (p)}
+                  <button class="go service {p}" disabled={opening !== null} onclick={() => signInWith(p)}>
+                    <ProviderIcon provider={p} />{opening === p ? `Waiting for ${PROVIDER_NAMES[p]}` : `Continue with ${PROVIDER_NAMES[p]}`}
+                  </button>
+                {/each}
+              </div>
+              <div class="row">
+                <button type="button" class="smallbtn" onclick={() => (withEmail = true)}>Use an email instead</button>
+                <button type="button" class="smallbtn" onclick={() => { signing = false; authError = null; }}>Cancel</button>
+                <InfoTip label="About signing in here">A small window opens for {services.map((p) => PROVIDER_NAMES[p]).join(' or ')}; once you’re in, it closes and you’re signed in here. If nothing opens, allow pop-ups for owlbear.rodeo.</InfoTip>
+              </div>
+            {:else}
+              <form class="signin" onsubmit={doSignIn}>
+                <input type="email" bind:value={email} placeholder="Email" autocomplete="email" aria-label="Email" required use:focusIf={true} />
+                <input type="password" bind:value={password} placeholder="Password" autocomplete="current-password" aria-label="Password" required />
+                <div class="row">
+                  <button class="go" disabled={authBusy}>{authBusy ? 'Signing in' : 'Sign in'}</button>
+                  {#if services.length}<button type="button" class="smallbtn" onclick={() => (withEmail = false)}>Back</button>{/if}
+                  <button type="button" class="smallbtn" onclick={() => { signing = false; withEmail = false; authError = null; }}>Cancel</button>
+                </div>
+              </form>
+            {/if}
             {#if authError}<p class="err" role="alert">{authError}</p>{/if}
-          </form>
+          </div>
         {:else}
           <div class="who-row" in:fade={{ duration: 200, delay: 90 }} out:fade={{ duration: 120 }}>
             {#if $session.user}
-              <span class="me">Signed in as {$session.user.email}
-                <InfoTip label="What signing in does">You can change hit points from a token’s right-click menu and draw on the campaign’s board.</InfoTip>
+              <span class="me">Signed in as {myName}
+                <InfoTip label="What signing in does">You can change hit points from a token’s right-click menu, draw on the campaign’s board and roll your initiative here. As the campaign’s DM, you run the fight and your monsters and NPCs from this panel.</InfoTip>
               </span>
               <button class="smallbtn" onclick={() => signOut()}>Sign out</button>
             {:else}
               <span class="me">Not signed in
                 <InfoTip label="Why sign in">
-                  Sign in to change hit points from a token and draw on the board. Owlbear keeps its own sign-in; Google
-                  accounts set a password on the account page first.
+                  Sign in to change hit points from a token, draw on the board and roll your initiative here; the DM signs in
+                  to run the fight. Owlbear keeps its own sign-in, apart from the site’s.
                 </InfoTip>
               </span>
               <button class="smallbtn" onclick={() => (signing = true)}>Sign in</button>
@@ -569,6 +778,24 @@
   .who-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
   .me { display: inline-flex; align-items: center; gap: 0.375rem; min-width: 0; overflow-wrap: anywhere; }
   .signin { display: grid; gap: 0.5rem; }
+  .services { display: grid; gap: 0.5rem; }
+  .service { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.5625rem 0.75rem; }
+  .order :global(.initiative) { margin-top: 0; }
+  .viewswitch { display: flex; justify-content: center; }
+  .beasts :global(.creaturebar) { margin-top: 0; }
+  .ctoken {
+    width: 1.75rem; height: 1.75rem; display: grid; place-items: center; padding: 0; border-radius: var(--r-sm);
+    border: 1px solid transparent; background: none; color: var(--dim); transition: color 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+  }
+  .ctoken:hover:not(:disabled) { color: var(--a); border-color: var(--a-edge); }
+  .ctoken:active:not(:disabled) { transform: translateY(1px); }
+  .ctoken:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
+  .ctoken:disabled { opacity: 0.5; }
+  .partyskel .char { min-height: 7rem; }
+  .skface { width: 3rem; height: 3rem; border-radius: var(--r-sm); flex: none; }
+  .skname { width: 8rem; height: 1rem; }
+  .skline { width: 11rem; height: 0.75rem; }
+  .skbar { height: 0.625rem; border-radius: 999px; }
   .signin input { width: 100%; box-sizing: border-box; }
   .signin .row { display: flex; gap: 0.5rem; align-items: center; }
 </style>
