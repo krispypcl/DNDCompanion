@@ -163,7 +163,7 @@
   {#if last}
     {#key seq}
       <div class="result" class:tumbling class:crit={!tumbling && isCrit(last)} class:fumble={!tumbling && isFumble(last)} role="status">
-        <strong class="total" class:settled={!tumbling}>{tumbling ? '…' : last.total}</strong>
+        <strong class="total" class:settled={!tumbling}>{tumbling ? '–' : last.total}</strong>
         <div class="faces">
           {#each last.dice as d, i (i)}
             <span class="face d{d.sides}" class:max={d.value === d.sides} class:min={d.value === 1}
