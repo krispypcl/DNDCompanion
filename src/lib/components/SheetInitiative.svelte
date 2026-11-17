@@ -17,7 +17,7 @@
   const mine = $derived(s.pcs[sheetId] ?? null);
   const running = $derived(Boolean(s.turn));
   const myTurn = $derived(s.turn === `pc:${sheetId}`);
-  const shown = $derived(!live.legacy && (s.asking || running));
+  const shown = $derived(s.asking || running);
   let typed = $state<string | number>('');
   let error = $state<string | null>(null);
   async function write() {

@@ -18,8 +18,6 @@ export class CreatureTable {
   error = $state<string | null>(null);
   /** A short word on what just happened ("Added Goblin Boss"). */
   notice = $state<string | null>(null);
-  /** The database still waits on 0018: no stat blocks, reveal, initiative or homebrew yet. TODO: drop once 0018 has run. */
-  before0018 = $state(false);
   readonly campaignId: string;
   #noticeTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -33,7 +31,6 @@ export class CreatureTable {
       const [list, brew] = await Promise.all([creatureRepo.list(this.campaignId), creatureRepo.homebrew.list().catch(() => [])]);
       this.list = list;
       this.homebrew = brew;
-      this.before0018 = creatureRepo.before0018;
     } catch (e) {
       this.error = friendlyError(e, 'The monsters slipped their leash! Try again in a moment.');
     } finally {

@@ -295,20 +295,8 @@
   });
   /** The campaign's characters in the order (not those added on their own). */
   const fighters = $derived(sheets.filter((s) => campaignId && s.campaign_id === campaignId && !s.retired));
-  const live = $derived(campaignId ? new LiveInitiative(campaignId, {
-    read: () => (campaign?.id === campaignId ? campaign?.details.initiative : undefined),
-    save: async (i) => {
-      if (!campaign) return;
-      const details = { ...campaign.details, initiative: i };
-      await campaignRepo.saveDetails(campaign.id, details);
-      campaign = { ...campaign, details };
-    }
-  }) : null);
+  const live = $derived(campaignId ? new LiveInitiative(campaignId) : null);
   $effect(() => live?.start());
-  $effect(() => {
-    void campaign?.details.initiative;
-    live?.syncLegacy();
-  });
   const init = $derived(live?.state ?? { pcs: {}, turn: null, round: 0, asking: false });
   const combatants = $derived<InitiativeRow[]>([
     ...fighters.map((s) => ({
@@ -316,7 +304,7 @@
       dex: s.definition ? initiativeParts(s.definition).total : 0, side: 'pc' as const, mine: Boolean(me && s.owner_id === me)
     })),
     ...(table
-      ? table.before0018 ? [] : table.list.map((c) => ({ key: `cr:${c.id}`, name: c.name, value: c.initiative, dex: initiativeBonus(c.statblock), side: 'creature' as const, hidden: !c.visible }))
+      ? table.list.map((c) => ({ key: `cr:${c.id}`, name: c.name, value: c.initiative, dex: initiativeBonus(c.statblock), side: 'creature' as const, hidden: !c.visible }))
       : revealed.map((c) => ({ key: `cr:${c.id}`, name: c.name, value: c.initiative, side: 'creature' as const })))
   ]);
   const showOrder = $derived(Boolean(live && combatants.length && (isDm || init.turn || init.asking)));
@@ -342,7 +330,7 @@
     const pcs = { ...init.pcs };
     for (const s of fighters) if (pcs[s.id] === undefined && s.definition) pcs[s.id] = rollInitiative(initiativeParts(s.definition).total);
     live.patch({ pcs }).catch(orderFail);
-    if (table && !table.before0018) for (const c of table.list.filter((x) => x.initiative === null)) void table.change(c, { initiative: rollInitiative(initiativeBonus(c.statblock)) });
+    for (const c of table?.list.filter((x) => x.initiative === null) ?? []) void table!.change(c, { initiative: rollInitiative(initiativeBonus(c.statblock)) });
   }
   const moveTurn = (t: { turn: string | null; round: number }) => live?.patch({ ...t, asking: false }).catch(orderFail);
   function endFight() {

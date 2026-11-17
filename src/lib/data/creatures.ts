@@ -50,52 +50,22 @@ export type Revealed = {
 
 const fail = (e: { message?: string }) => new Error(e.message || 'Something went wrong');
 
-/*
- * Until database/0018 has run, the table has no initiative, visible or
- * statblock columns: the list is read without them (and they are left out
- * of what is saved), so the tracker keeps working with its v1 features.
- * TODO: drop once 0018 has run.
- */
-const OLD_COLUMNS = 'id, campaign_id, kind, name, hp_max, hp_current, hp_temp, ac, conditions, notes, link, position, created_at, updated_at';
-const NEW_FIELDS = ['initiative', 'visible', 'statblock'] as const;
-const missingColumn = (e: { code?: string; message?: string }) => e.code === '42703' || /column .* does not exist/i.test(e.message ?? '');
-const filled = (rows: unknown[]) =>
-  (rows as Partial<Creature>[]).map((r) => ({ initiative: null, visible: false, statblock: {}, ...r }) as Creature);
-
 export function makeCreatureRepo(client: SupabaseClient) {
-  let before0018 = false;
-  const columns = () => (before0018 ? OLD_COLUMNS : COLUMNS);
-  const strip = <T extends CreatureFields>(r: T): T => {
-    if (!before0018) return r;
-    const copy = { ...r };
-    for (const k of NEW_FIELDS) delete copy[k];
-    return copy;
-  };
   return {
-    /** Whether the database still waits on 0018 (the features it brings are hidden). */
-    get before0018() {
-      return before0018;
-    },
     async list(campaignId: string): Promise<Creature[]> {
-      const read = () => client.from('campaign_creatures').select(columns()).eq('campaign_id', campaignId).order('position').order('created_at');
-      let { data, error } = await read();
-      if (error && !before0018 && missingColumn(error)) {
-        before0018 = true;
-        ({ data, error } = await read());
-      }
+      const { data, error } = await client.from('campaign_creatures').select(COLUMNS).eq('campaign_id', campaignId)
+        .order('position').order('created_at');
       if (error) throw fail(error);
-      return filled(data ?? []);
+      return (data ?? []) as Creature[];
     },
     async add(campaignId: string, rows: CreatureFields[]): Promise<Creature[]> {
       const { data, error } = await client.from('campaign_creatures')
-        .insert(rows.map((r) => ({ ...strip(r), campaign_id: campaignId }))).select(columns());
+        .insert(rows.map((r) => ({ ...r, campaign_id: campaignId }))).select(COLUMNS);
       if (error) throw fail(error);
-      return filled(data ?? []);
+      return (data ?? []) as Creature[];
     },
     async update(id: string, patch: CreatureFields): Promise<void> {
-      const fields = strip(patch);
-      if (!Object.keys(fields).length) return;
-      const { error } = await client.from('campaign_creatures').update(fields).eq('id', id);
+      const { error } = await client.from('campaign_creatures').update(patch).eq('id', id);
       if (error) throw fail(error);
     },
     async remove(id: string): Promise<void> {
@@ -111,8 +81,6 @@ export function makeCreatureRepo(client: SupabaseClient) {
     /** The players' view: only the revealed ones, without their numbers. */
     async revealed(campaignId: string): Promise<Revealed[]> {
       const { data, error } = await client.rpc('revealed_creatures', { p_campaign: campaignId });
-      // Before 0018 there is nothing to reveal.
-      if (error?.code === 'PGRST202' || error?.code === '42883') return [];
       if (error) throw fail(error);
       return (data ?? []) as Revealed[];
     },

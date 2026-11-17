@@ -24,11 +24,6 @@ export type CampaignDetails = {
   nextSession?: string;
   /** When it last met: the session set before, kept once it had started. */
   lastSession?: string;
-  /**
-   * Where the initiative order was kept before database/0019 moved it to
-   * campaign_state (see Initiative below). TODO: drop once 0019 has run.
-   */
-  initiative?: Partial<Initiative>;
 };
 
 /**
@@ -296,14 +291,9 @@ function makeCampaignRepo(client: SupabaseClient) {
       if (error) throw new Error(error.message);
     },
 
-    /**
-     * The initiative order (database/0019); null when the database is from
-     * before 0019 (it was kept in the details then). TODO: drop the null once
-     * 0019 has run.
-     */
-    async initiative(campaignId: string): Promise<Initiative | null> {
+    /** The initiative order (database/0019). */
+    async initiative(campaignId: string): Promise<Initiative> {
       const { data, error } = await client.from('campaign_state').select('initiative').eq('campaign_id', campaignId).maybeSingle();
-      if (error && (error.code === '42703' || /column .*initiative.* does not exist/i.test(error.message))) return null;
       if (error) throw new Error(error.message);
       return readInitiative(data?.initiative);
     },
@@ -316,9 +306,6 @@ function makeCampaignRepo(client: SupabaseClient) {
     /** A player writes their own character's number (null takes it back). */
     async setMyInitiative(sheetId: string, value: number | null): Promise<Initiative> {
       const { data, error } = await client.rpc('set_my_initiative', { p_character: sheetId, p_value: value });
-      if (error && (error.code === 'PGRST202' || error.code === '42883')) {
-        throw new CampaignError('The table isn’t ready for that yet! Your DM needs to update the database first.');
-      }
       if (error) throw refusal(error);
       return readInitiative(data);
     },

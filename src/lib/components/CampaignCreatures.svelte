@@ -40,8 +40,6 @@
     tools?: Snippet<[Creature]>;
   } = $props();
   const still = prefersReducedMotion();
-  /** Everything 0018 brings (stat blocks, reveal, homebrew). TODO: drop once 0018 has run. */
-  const full = $derived(!table.before0018);
 
   // ── Order, by dragging a card (lib/reorder): shown as it moves, kept on letting go.
   let preview = $state<string[] | null>(null);
@@ -243,7 +241,7 @@
           </div>
           <div class="creaturetools">
             {#if tools}{@render tools(c)}{/if}
-            {#if !ended && full}
+            {#if !ended}
               <button class="ctool eye" class:on={c.visible} aria-pressed={c.visible}
                       aria-label={c.visible ? `Hide ${c.name} from your players` : `Reveal ${c.name} to your players`}
                       title={c.visible ? 'Your players can see it. Press to hide it.' : 'Hidden from your players. Press to reveal it.'}
@@ -255,11 +253,9 @@
                 {/if}
               </button>
             {/if}
-            {#if full}
-              <button class="ctool" aria-label="{c.name}’s stat block" title="Stat block" onclick={() => openStats(c)}>
-                <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M6 3.5h9l3 3v14H6zM9 9h6M9 12.5h6M9 16h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
-              </button>
-            {/if}
+            <button class="ctool" aria-label="{c.name}’s stat block" title="Stat block" onclick={() => openStats(c)}>
+              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M6 3.5h9l3 3v14H6zM9 9h6M9 12.5h6M9 16h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
             <a class="ctool" href={creatureUrl(c.name, c.link)} target="_blank" rel="noopener noreferrer"
                aria-label="{c.name} on 5e.tools" title="Its page on 5e.tools" onclick={(e) => openPage(c, e)}>
               <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M2.5 3.5c2-.8 3.8-.6 5.5.6 1.7-1.2 3.5-1.4 5.5-.6v9c-2-.8-3.8-.6-5.5.6-1.7-1.2-3.5-1.4-5.5-.6zM8 4.1v9" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" /></svg>
@@ -337,7 +333,7 @@
             title={e.id ? `Change ${e.draft.name || 'it'}` : e.homebrewId ? `Change ${e.draft.name || 'it'} in your homebrew` : 'Add a monster or NPC'}>
     {#if !e.id && !e.homebrewId}
       <div class="ways" role="tablist" aria-label="Where it comes from">
-        {#each WAYS.filter(([w]) => full || w !== 'homebrew') as [way, label] (way)}
+        {#each WAYS as [way, label] (way)}
           <button type="button" role="tab" aria-selected={e.way === way} class:on={e.way === way} onclick={() => (e.way = way)}>{label}</button>
         {/each}
       </div>
@@ -399,13 +395,11 @@
           <label class="wide"><span>5e.tools link (optional)</span>
             <input bind:value={e.draft.link} maxlength="500" placeholder="Left empty, its name is searched" /></label>
         {/if}
-        {#if full}
-          <div class="wide sbwrap">
-            <h3 class="sbtitle">Stat block</h3>
-            <StatBlockEditor bind:value={e.draft.statblock} />
-          </div>
-        {/if}
-        {#if !e.homebrewId && full}
+        <div class="wide sbwrap">
+          <h3 class="sbtitle">Stat block</h3>
+          <StatBlockEditor bind:value={e.draft.statblock} />
+        </div>
+        {#if !e.homebrewId}
           <label class="wide keep"><input type="checkbox" bind:checked={e.draft.keep} />
             <span>Keep it in your homebrew too</span>
             <InfoTip label="About your homebrew">Kept there, it’s yours to add to any of your campaigns, from Your homebrew when adding, or from the search.</InfoTip>

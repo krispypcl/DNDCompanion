@@ -480,7 +480,7 @@
   function rollInitiativeHere() {
     if (!definition || !sheet) return;
     const id = sheet.id;
-    const wanted = liveInit && !liveInit.legacy && (liveInit.state.asking || liveInit.state.turn) && liveInit.state.pcs[id] === undefined;
+    const wanted = liveInit && (liveInit.state.asking || liveInit.state.turn) && liveInit.state.pcs[id] === undefined;
     rollSkill('Initiative', initiative, initAdv.length ? 'advantage' : 'normal',
       wanted ? (r) => void liveInit!.setMine(id, r.total).catch((e) => say(e instanceof Error ? e.message : 'Your initiative didn’t reach the table! Try again.')) : undefined);
   }

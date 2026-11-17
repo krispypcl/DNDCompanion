@@ -224,9 +224,7 @@
     const timer = setInterval(() => {
       if (document.visibilityState !== 'visible') return;
       ticks += 1;
-      // Before 0019, while a fight runs the players follow the turn every look (it is live after).
-      const following = !isDm && Boolean(live?.legacy && (init.turn || init.asking));
-      void lookAgain(following || ticks % 4 === 0);
+      void lookAgain(ticks % 4 === 0);
       void lookAtRevealed();
     }, 15000);
     const back = () => document.visibilityState === 'visible' && load();
@@ -351,16 +349,8 @@
    * player rolls or writes their own characters'.
    */
   const initKey = $derived(campaign?.id ?? null);
-  const live = $derived(initKey ? new LiveInitiative(initKey, {
-    read: () => campaign?.details.initiative,
-    save: (i) => saveDetails({ initiative: i })
-  }) : null);
+  const live = $derived(initKey ? new LiveInitiative(initKey) : null);
   $effect(() => live?.start());
-  // Before 0019 the order comes with the campaign, read again every look.
-  $effect(() => {
-    void campaign?.details.initiative;
-    live?.syncLegacy();
-  });
   const init = $derived(live?.state ?? NO_INITIATIVE);
   const me = $derived($session.user?.id ?? null);
   const combatants = $derived<InitiativeRow[]>([
@@ -369,7 +359,7 @@
       dex: s.definition ? initiativeParts(s.definition).total : 0, side: 'pc' as const, mine: Boolean(me && s.owner_id === me)
     })),
     ...(table
-      ? table.before0018 ? [] : table.list.map((c) => ({
+      ? table.list.map((c) => ({
           key: `cr:${c.id}`, name: c.name, value: c.initiative, dex: initiativeBonus(c.statblock), side: 'creature' as const, hidden: !c.visible
         }))
       : revealed.map((c) => ({ key: `cr:${c.id}`, name: c.name, value: c.initiative, side: 'creature' as const })))
@@ -405,9 +395,7 @@
     const pcs = { ...init.pcs };
     for (const s of active) if (pcs[s.id] === undefined && s.definition) pcs[s.id] = rollInitiative(initiativeParts(s.definition).total);
     live.patch({ pcs }).catch(initFail);
-    if (table && !table.before0018) {
-      for (const c of table.list.filter((x) => x.initiative === null)) void table.change(c, { initiative: rollInitiative(initiativeBonus(c.statblock)) });
-    }
+    for (const c of table?.list.filter((x) => x.initiative === null) ?? []) void table!.change(c, { initiative: rollInitiative(initiativeBonus(c.statblock)) });
   }
   const moveTurn = (t: { turn: string | null; round: number }) => live?.patch({ ...t, asking: false }).catch(initFail);
   /** A fight is coming: the players roll theirs (a fresh order). */
