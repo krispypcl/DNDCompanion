@@ -1,4 +1,6 @@
 <script lang="ts">
+  /** Opened from another page: the page fades in as a whole, so this doesn't fade in again inside it. */
+  const arrived = typeof document !== 'undefined' && document.documentElement.hasAttribute('data-arriving');
   /** The main menu's outline while the characters load (the greeting, with
       the buttons and the area switch on its line, and a page of cards),
       shimmering, in the place the real ones take, so nothing jumps when they
@@ -6,7 +8,7 @@
   let { greet = false }: { greet?: boolean } = $props();
 </script>
 
-<div class="mskel" aria-busy="true" aria-label="Loading your characters">
+<div class="mskel" class:arrived aria-busy="true" aria-label="Loading your characters">
   <div class="mhead">
     {#if greet}
       <div class="mgreet"><i class="skeleton mhi"></i><i class="skeleton mnext"></i></div>
@@ -88,4 +90,6 @@
     .mgroup { margin-top: 1.25rem; }
     .mcard { padding-left: 2rem; }
   }
+  /* Arriving from another page, the page's own arrival is the fade (+layout). */
+  .mskel.arrived { animation: none; }
 </style>

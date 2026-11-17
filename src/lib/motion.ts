@@ -45,6 +45,21 @@ export function arrive(_node: Element, { y = 10, duration = 260, delay = 0 }: Ri
 }
 
 /**
+ * A small arrival for a part that swaps in place (the Edit/Done label, the
+ * campaign chip): as a local `in:` transition it plays on a change, never with
+ * the page's own arrival, and not while the sheet glides between reading and
+ * editing (lib/flip moves it then, and a second motion would double it).
+ */
+export function popIn(_node: Element, { y = 4, duration = 250 }: { y?: number; duration?: number } = {}) {
+  const quiet = prefersReducedMotion() || document.documentElement.classList.contains('gliding');
+  return {
+    duration: quiet ? 0 : duration,
+    easing: cubicOut,
+    css: (t: number, u: number) => `opacity: ${t}; transform: translateY(${u * y}px);`
+  };
+}
+
+/**
  * A number that changed gives a small pop, so the eye catches it: an ability
  * modifier after a score changes, a skill after proficiency is toggled, AC.
  * Not on the first render, only on a change. `kind` picks the effect:

@@ -301,6 +301,8 @@
   const AREA_CAMPAIGNS = 'Campaigns';
   const areaTabs = [AREA_SHEETS, AREA_CAMPAIGNS];
   let area = $state(AREA_SHEETS);
+  /** Switched areas at least once: from then on, the lists don't rise in (the area itself slides). */
+  let switched = $state(false);
   /* The area in the address (#characters) is opened once the lists are in. */
   let areaRead = false;
   $effect(() => {
@@ -368,6 +370,8 @@
 
   /** The area switch: the page's own control (Tabs shows no buttons here), kept in the address. */
   function chooseArea(tab: string) {
+    // The area slides in as a whole; its cards don't rise in a second time inside it.
+    if (tab !== area) switched = true;
     area = tab;
     confirming = null;
     if (typeof location !== 'undefined') history.replaceState(null, '', `#${tab.toLowerCase()}`);
@@ -858,7 +862,7 @@
     <a class="smallbtn" href="{base}/reset">Forgot password</a>
   </AuthForm>
 {:else}
-<main>
+<main class:switched>
   <header>
     <h1><Logo size={30} /><span class="brandname">DND Companion</span></h1>
     <div class="tools">
@@ -1210,6 +1214,7 @@
   ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
   /* Rows arrive in order; past the sixth they are all but simultaneous. */
   li { animation: rise 0.28s cubic-bezier(0.2, 0.7, 0.3, 1) backwards; }
+  .switched li { animation: none; }
   li:nth-child(2) { animation-delay: 0.04s; }
   li:nth-child(3) { animation-delay: 0.08s; }
   li:nth-child(4) { animation-delay: 0.12s; }

@@ -181,8 +181,8 @@
 </svelte:head>
 
 
-<ul class="cards cascade" class:dragging={drag}>
-  {#each cards as s, i (s.id)}
+<ul class="cards" class:dragging={drag}>
+  {#each cards as s (s.id)}
     {@const def = s.definition}
     {@const hp = hpOf(s)}
     {@const v = vitalStatus(hp.cur, hp.max, s.state?.deathSaves)}
@@ -190,7 +190,7 @@
     {@const conds = previews[s.id] ?? s.state?.conditions ?? []}
     {@const ring = ringOf(conds, def?.conditionLooks ?? {})}
     <li class="card themed {v.vital}" class:lifted={drag?.id === s.id} class:present={here.has(s.owner_id)} class:sortable={isDm && cards.length > 1} bind:this={els[s.id]}
-        style={themeStyle(def?.identity?.theme)} style:transform={shift(s.id)} style:--i={i}
+        style={themeStyle(def?.identity?.theme)} style:transform={shift(s.id)}
         animate:glideTo>
       {#if here.has(s.owner_id)}
         <!-- Their player has the campaign open right now. -->

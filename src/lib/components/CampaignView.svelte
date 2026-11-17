@@ -28,7 +28,7 @@
   import { faceFamily, nameFont } from '$lib/rules/fonts';
   import { themeStyle } from '$lib/theme';
   import { friendlyError } from '$lib/errors';
-  import { prefersReducedMotion } from '$lib/motion';
+  import { popIn, prefersReducedMotion } from '$lib/motion';
   import { glide } from '$lib/flip';
   import Banner from './Banner.svelte';
   import CampaignMusic from './CampaignMusic.svelte';
@@ -466,7 +466,7 @@
       <div class="tools">
         {#if isDm}
           <button class="edit" aria-pressed={editing} onclick={toggleEditing}>
-            {#key editing}<span class="edlabel">{editing ? 'Done' : 'Edit'}</span>{/key}
+            {#key editing}<span class="edlabel" in:popIn>{editing ? 'Done' : 'Edit'}</span>{/key}
           </button>
         {/if}
         <a class="back" href="{base}/" title="Back to your characters and campaigns">Back</a>
@@ -731,8 +731,7 @@
   .edit:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
   .edit:active { transform: translateY(1px); }
   /* Edit and Done cross over rather than swap. */
-  .edlabel { display: inline-block; animation: edIn 0.25s cubic-bezier(0.2, 0.8, 0.3, 1); }
-  @keyframes edIn { from { opacity: 0; transform: translateY(4px); } }
+  .edlabel { display: inline-block; }
   .edit[aria-pressed='true'] { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
   .edit[aria-pressed='true']:hover { border-color: var(--a); background: var(--a-edge); color: var(--text); }
   /* Who is here, and the next session, in a line under the header. */

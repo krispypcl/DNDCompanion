@@ -65,8 +65,18 @@
    * new one rises in, instead of simply vanishing. Only between pages: a
    * change of hash (switching tabs on a sheet) is not a navigation away.
    */
+  let arrivingTimer: ReturnType<typeof setTimeout> | undefined;
   onNavigate((navigation) => {
-    if (typeof document === 'undefined' || !('startViewTransition' in document)) return;
+    if (typeof document === 'undefined') return;
+    // The page arriving fades in as a whole (the {#key} below): what it
+    // shows while it loads doesn't fade in a second time inside it.
+    if (navigation.from?.url.pathname !== navigation.to?.url.pathname) {
+      const root = document.documentElement;
+      root.dataset.arriving = '';
+      clearTimeout(arrivingTimer);
+      arrivingTimer = setTimeout(() => delete root.dataset.arriving, 600);
+    }
+    if (!('startViewTransition' in document)) return;
     if (prefersReducedMotion()) return;
     if (navigation.from?.url.pathname === navigation.to?.url.pathname) return;
     return new Promise<void>((resolve) => {

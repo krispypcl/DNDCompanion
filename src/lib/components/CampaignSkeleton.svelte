@@ -1,9 +1,11 @@
 <script lang="ts">
+  /** Opened from another page: the page fades in as a whole, so this doesn't fade in again inside it. */
+  const arrived = typeof document !== 'undefined' && document.documentElement.hasAttribute('data-arriving');
   /** The campaign page's outline while it loads (the header, three character
       cards, the table music and the board), shimmering, so nothing jumps when it arrives. */
 </script>
 
-<div class="cskel" aria-busy="true" aria-label="Loading the campaign">
+<div class="cskel" class:arrived aria-busy="true" aria-label="Loading the campaign">
   <div class="head">
     <i class="skeleton logo"></i>
     <div class="lines"><i class="skeleton eyebrow"></i><i class="skeleton title"></i></div>
@@ -65,4 +67,6 @@
     .head { flex-wrap: wrap; }
     .tools { width: 100%; justify-content: flex-end; }
   }
+  /* Arriving from another page, the page's own arrival is the fade (+layout). */
+  .cskel.arrived { animation: none; }
 </style>

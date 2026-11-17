@@ -100,7 +100,7 @@
   import { campaignRepo, type Campaign } from '$lib/data/campaigns';
   import { slotLevel } from '$lib/rules/print';
   import { themeStyle } from '$lib/theme';
-  import { bump, glow, parallax, sparkle } from '$lib/motion';
+  import { bump, glow, parallax, popIn, sparkle } from '$lib/motion';
   import { glide } from '$lib/flip';
   import { isDead } from '$lib/rules/hp';
   import ConditionOverlay from '$lib/components/ConditionOverlay.svelte';
@@ -752,7 +752,7 @@
             <span style:font-family={campaign ? faceFamily(campaignFace) : undefined}>{campaign?.name ?? definition.identity.campaign?.trim() ?? 'Add to a campaign'}</span>
           </button>
         {:else if campaign || definition.identity.campaign?.trim()}
-          <div class="campaign" data-flip-ghost="identity:campaign" data-flip="identity:campaign-at">
+          <div class="campaign" data-flip-ghost="identity:campaign" data-flip="identity:campaign-at" in:popIn={{ duration: 400 }}>
             {@render flag()}
             {#if campaign}
               <a href="{base}/c/{campaign.id}" title="Open the campaign" style:font-family={faceFamily(campaignFace)}>{campaign.name}</a>
@@ -820,7 +820,7 @@
         {/if}
         {#if isOwner}
           <button class="edit" aria-pressed={editing} onclick={() => glide(() => (editing = !editing))}>
-            {#key editing}<span class="edlabel">{editing ? 'Done' : 'Edit'}</span>{/key}
+            {#key editing}<span class="edlabel" in:popIn>{editing ? 'Done' : 'Edit'}</span>{/key}
           </button>
         {/if}
         <!-- For a visitor, when the sheet was made and last touched. The owner
@@ -1322,13 +1322,12 @@
 {/if}
 
 <style>
-  /* The heading rises in with the panels, and only on arrival: as a lasting
-     rule, it played a second time the moment the arrival ended. */
-  @keyframes rise {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: none; }
-  }
-  .entering .identity { animation: rise 0.3s cubic-bezier(0.2, 0.7, 0.3, 1) backwards; }
+  /* The heading fades in with the panels, and only on arrival: as a lasting
+     rule, it played a second time the moment the arrival ended. In place,
+     over the outline that held its spot: the page itself already rose in,
+     and a second rise read as the sheet arriving twice. */
+  @keyframes sheetFill { from { opacity: 0; } }
+  .entering .identity { animation: sheetFill 0.3s ease-out backwards; }
 
   .loading { position: relative; }
   .loading > :global(.skel) { opacity: 0.45; }
@@ -1470,7 +1469,6 @@
   .campaign {
     display: flex; align-items: center; gap: 0.375rem; margin-bottom: 0.1875rem; min-width: 0;
     font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--a);
-    animation: campaignIn 0.4s cubic-bezier(0.2, 0.8, 0.3, 1);
   }
   .campaign svg { flex: none; }
   .campaign > span { overflow-wrap: anywhere; }
@@ -1493,7 +1491,6 @@
     color: var(--a); cursor: pointer; transition: background-color 0.15s ease, border-color 0.15s ease;
   }
   button.campaign:hover { background: var(--a-wash); border-style: solid; }
-  @keyframes campaignIn { from { opacity: 0; transform: translateY(4px); } }
   /* On a phone the name sits under the portrait, whose level badge hangs below it. */
   @media (max-width: 700px) { .campaign { margin-top: 0.5rem; } }
   .sub :global(input.field) { min-width: 5.5rem; }
@@ -1521,8 +1518,7 @@
   }
   .edit:hover { border-color: var(--a-edge); color: var(--a); }
   /* Edit and Done cross over rather than swap. */
-  .edlabel { display: inline-block; animation: edIn 0.25s cubic-bezier(0.2, 0.8, 0.3, 1); }
-  @keyframes edIn { from { opacity: 0; transform: translateY(4px); } }
+  .edlabel { display: inline-block; }
   .edit[aria-pressed='true'] { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
   .edit[aria-pressed='true']:hover { border-color: var(--a); background: var(--a-edge); color: var(--text); }
   .edit, .undo, .back { transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease; }
@@ -1713,9 +1709,8 @@
     .identity .controls :global(:is(.share, .print, .dl, .sound, .mode)) { width: 1.875rem; height: 1.875rem; }
     .identity .stamps { gap: 0.625rem; margin-right: 0.25rem; }
   }
-  /* Opening a sheet: the panels arrive one after another. */
-  .entering .panel { animation: panelIn 0.5s cubic-bezier(0.2, 0.8, 0.3, 1) backwards; animation-delay: calc(var(--i, 0) * 70ms); }
-  @keyframes panelIn { from { opacity: 0; transform: translateY(12px); } }
+  /* Opening a sheet: the panels fill in one after another, where the outline had them. */
+  .entering .panel { animation: sheetFill 0.4s ease-out backwards; animation-delay: calc(var(--i, 0) * 60ms); }
   /* Inspiration held: a soft glow that breathes until it is spent. */
   /* The glow is a layer whose opacity breathes; animating the shadow itself
      repainted the box on every frame. */

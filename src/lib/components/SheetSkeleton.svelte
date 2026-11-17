@@ -1,9 +1,11 @@
 <script lang="ts">
+  /** Opened from another page: the page fades in as a whole, so this doesn't fade in again inside it. */
+  const arrived = typeof document !== 'undefined' && document.documentElement.hasAttribute('data-arriving');
   /** The sheet's outline while it loads: the same layout, shimmering, so the
       page does not jump when the real thing arrives. */
 </script>
 
-<div class="skel" aria-busy="true" aria-label="Loading the sheet">
+<div class="skel" class:arrived aria-busy="true" aria-label="Loading the sheet">
   <div class="head">
     <i class="skeleton sq"></i>
     <div class="lines"><i class="skeleton l1"></i><i class="skeleton l2"></i></div>
@@ -54,4 +56,6 @@
     .l1 { width: 9rem; }
     .l2 { width: 12rem; }
   }
+  /* Arriving from another page, the page's own arrival is the fade (+layout). */
+  .skel.arrived { animation: none; }
 </style>
