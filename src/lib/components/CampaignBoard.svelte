@@ -25,8 +25,35 @@
   let {
     campaignId,
     userId,
-    canEdit
-  }: { campaignId: string; userId: string | null; canEdit: boolean } = $props();
+    canEdit,
+    foldable = false
+  }: {
+    campaignId: string; userId: string | null; canEdit: boolean;
+    /** Folds away under its title, like the sheet's dice roller (the campaign page); remembered per campaign on this device. */
+    foldable?: boolean;
+  } = $props();
+
+  // ── Folding: the board stays as it is underneath (its view, its live link), only out of sight. ──
+  const foldKey = () => `dndcompanion:boardFolded:${campaignId}`;
+  // Read before the first paint, so a board left folded doesn't fold shut as the page arrives.
+  let folded = $state(untrack(() => {
+    if (!foldable) return false;
+    try {
+      return localStorage.getItem(foldKey()) === '1';
+    } catch {
+      return false; // Storage blocked: it starts open.
+    }
+  }));
+  function toggleFold() {
+    folded = !folded;
+    try {
+      if (folded) localStorage.setItem(foldKey(), '1');
+      else localStorage.removeItem(foldKey());
+    } catch {
+      // Not remembered, that's all.
+    }
+  }
+  let foldInner = $state(0);
 
   type Tool = 'move' | 'pen' | 'note' | 'text' | 'erase';
   type Paper = NonNullable<BoardData['paper']>;
@@ -593,13 +620,17 @@
 
 <section class="boardwrap" aria-label="Table board">
   <div class="head">
-    <span class="cap">Table board
+    <span class="cap">
+      {#if foldable}
+        <button class="boardfoldbtn" aria-expanded={!folded} aria-controls="board-fold-{campaignId}" onclick={toggleFold}
+                title={folded ? 'Show the board' : 'Fold the board away'}>Table board</button>
+      {:else}Table board{/if}
       <InfoTip label="How the board works">Everyone in the campaign can add to it, and sees changes as they happen: drop sticky notes,
         write, or draw with the tools. Drag the page to look
         around; once you have clicked the board, the scroll wheel zooms (two fingers on a phone). Double-click a page's name to rename it.
         Each page opens fitted to what is on it.</InfoTip>
     </span>
-    {#if !missing}
+    {#if !missing && !folded}
       <!-- The board's pages. -->
       <div class="pages" role="tablist" aria-label="Board pages">
         {#each pages as p (p.id)}
@@ -620,6 +651,9 @@
       </div>
     {/if}
   </div>
+  <!-- Folding eases the height to nothing; the board underneath keeps its size, so it opens as it was. -->
+  <div class="boardfold" id="board-fold-{campaignId}" class:folded inert={folded} style:height={foldable && (folded || foldInner) ? `${folded ? 0 : foldInner}px` : undefined}>
+  <div class="boardfoldin" bind:clientHeight={foldInner}>
   {#if canEdit && !missing}
     <div class="tools" role="toolbar" aria-label="Board tools">
       {#each [
@@ -751,10 +785,29 @@
   {/if}
   <!-- Under the board, so a message never moves the board itself. -->
   {#if error}<p class="err" role="alert" transition:slide={unfold()}>{error}</p>{/if}
+  </div>
+  </div>
 </section>
 
 <style>
   .boardwrap { margin-top: 2rem; }
+  .boardfold { overflow: clip; overflow-clip-margin: 6px; transition: height 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.26s ease; }
+  .boardfold.folded { opacity: 0; }
+  .boardfoldbtn {
+    font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.625rem; margin-left: -0.625rem;
+    border: 1px solid transparent; border-radius: 999px; background: none;
+    transition: border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+  }
+  .boardfoldbtn::after {
+    content: ''; width: 0.4rem; height: 0.4rem; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+    transform: rotate(-135deg) translateY(-1px); transition: transform 0.2s ease;
+  }
+  .boardfoldbtn[aria-expanded='false']::after { transform: rotate(45deg) translateY(-1px); }
+  .boardfoldbtn:hover { border-color: var(--a-edge); color: var(--a); }
+  .boardfoldbtn:active { transform: translateY(1px); }
+  .boardfoldbtn:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .boardfold { transition: none; } }
   .head { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
   .cap { font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600; }
   .pages { display: flex; flex-wrap: wrap; gap: 0.25rem; align-items: center; min-width: 0; }

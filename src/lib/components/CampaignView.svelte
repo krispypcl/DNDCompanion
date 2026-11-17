@@ -558,20 +558,25 @@
 
     {#if error}<p class="app-alert bad" role="alert">{error}</p>{/if}
 
+    <!-- The initiative order sits between the characters and the monsters:
+         under the party's cards, and on the DM's other side above the
+         monsters and NPCs. The DM always has it; the players while the DM
+         calls for initiative or a fight runs. -->
+    {#snippet order()}
+      {#if !ended && combatants.length && (isDm || fighting || init.asking)}
+        <div class="orderslot" transition:slide={unfold()}>
+          <InitiativeTracker {combatants} turn={init.turn} round={init.round} asking={init.asking} {isDm}
+                             onvalue={setInitiative} onrollone={rollOne} onask={callForInitiative}
+                             onrollrest={isDm ? rollRest : undefined}
+                             onstart={() => moveTurn(startTurns(combatants))} onnext={() => moveTurn(nextTurn(combatants, turnNow()))}
+                             onprevious={() => moveTurn(previousTurn(combatants, turnNow()))} onend={endFight} />
+        </div>
+      {/if}
+    {/snippet}
+
     <!-- The players' cards, or (the DM's other side) the monsters and NPCs.
          The creatures stay mounted once opened, so their count and what was
          typed survive a switch back and forth. -->
-    <!-- The initiative order: the DM's on either side; the players' while the DM calls for it or a fight runs. -->
-    {#if !ended && combatants.length && (isDm || fighting || init.asking)}
-      <div transition:slide={unfold()}>
-        <InitiativeTracker {combatants} turn={init.turn} round={init.round} asking={init.asking} {isDm}
-                           onvalue={setInitiative} onrollone={rollOne} onask={callForInitiative}
-                           onrollrest={isDm ? rollRest : undefined}
-                           onstart={() => moveTurn(startTurns(combatants))} onnext={() => moveTurn(nextTurn(combatants, turnNow()))}
-                           onprevious={() => moveTurn(previousTurn(combatants, turnNow()))} onend={endFight} />
-      </div>
-    {/if}
-
     {#if side === SIDE_PLAYERS}
       <div class="sidepane" in:sideIn={{ dir: -1 }}>
         {#if active.length === 0}
@@ -580,10 +585,12 @@
           <CampaignCards here={music.present} sheets={active} order={campaign.details.order ?? []} {isDm} {editing} {ended}
                          onorder={(order) => saveDetails({ order })} onremove={remove} onconditions={giveConditions} onlook={giveLook} />
         {/if}
+        {@render order()}
       </div>
     {/if}
     {#if isDm && table}
       <div class="sidepane creaturespane" hidden={side !== SIDE_CREATURES}>
+        {@render order()}
         <CampaignCreatures {table} {ended} />
       </div>
     {:else if revealed.length}
@@ -602,7 +609,7 @@
       </details>
     {/if}
 
-    <CampaignBoard campaignId={campaign.id} userId={$session.user?.id ?? null} canEdit={isMember && !ended} />
+    <CampaignBoard campaignId={campaign.id} userId={$session.user?.id ?? null} canEdit={isMember && !ended} foldable />
 
     <!-- Editing: the invite, the banner, and ending or deleting the campaign. -->
     {#if isDm && editing}
