@@ -29,8 +29,8 @@ it. It works the same on a phone, a tablet and a laptop.
   points, armour class and conditions live, gives and takes conditions, plays
   music for the table, sets the next session's date, and shares a board
   everyone can draw and write on. Each card shows who has the campaign open.
-- **Fights**: the DM calls for initiative and each player rolls their own,
-  on their sheet or the campaign page; the order and whose turn it is follow
+- **Fights**: the DM calls for initiative and each player rolls their own
+  on the campaign page (their sheet points them there); the order and whose turn it is follow
   live for everyone. The DM keeps monsters and NPCs with their stat blocks
   (from 5e.tools or their own homebrew) and reveals them to the players when
   the party finds them.
@@ -73,8 +73,8 @@ it. It works the same on a phone, a tablet and a laptop.
    right-click any character token and **Tie to a character**. Its hit point
    bar and condition dots follow the sheet.
 4. **Sign in** inside the panel (email, Google or Discord) to change hit
-   points from a token's right-click menu, draw on the campaign's board and
-   roll your initiative. Owlbear keeps its own sign-in; Google and Discord
+   points from a token's right-click menu and draw on the campaign's board.
+   Owlbear keeps its own sign-in; Google and Discord
    open a small window, so allow pop-ups for owlbear.rodeo.
 5. **The DM**, signed in, runs the fight from the panel: the initiative order
    (the token whose turn it is gets selected) and the monsters and NPCs, each

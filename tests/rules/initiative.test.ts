@@ -26,3 +26,16 @@ describe('initiative', () => {
     expect(rollInitiative(3, () => 11)).toBe(14);
   });
 });
+
+describe('rollInitiative with advantage', () => {
+  it('keeps the higher of two d20s', () => {
+    const dice = [4, 17];
+    const die = () => dice.shift()!;
+    expect(rollInitiative(2, die, true)).toBe(19);
+  });
+  it('rolls once without it', () => {
+    let n = 0;
+    expect(rollInitiative(1, () => (n++, 8))).toBe(9);
+    expect(n).toBe(1);
+  });
+});

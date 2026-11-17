@@ -20,6 +20,7 @@
   import { isConfigured, supabase } from '$lib/supabase';
   import { session } from '$lib/stores/session';
   import { classLine, initiativeParts } from '$lib/rules/derived';
+  import { advantageFrom } from '$lib/rules/equipment';
   import { creatureRepo, type Revealed } from '$lib/data/creatures';
   import { CreatureTable } from '$lib/creatureTable.svelte';
   import { next as nextTurn, previous as previousTurn, rollInitiative, start as startTurns, type InitiativeRow } from '$lib/rules/initiative';
@@ -387,13 +388,13 @@
   /** A d20 and what the character adds to initiative. */
   function rollOne(key: string) {
     const s = active.find((x) => `pc:${x.id}` === key);
-    if (s?.definition) setInitiative(key, rollInitiative(initiativeParts(s.definition).total));
+    if (s?.definition) setInitiative(key, rollInitiative(initiativeParts(s.definition).total, undefined, advantageFrom(s.definition, 'init').length > 0));
   }
   /** Everyone still without a number: characters and creatures. */
   function rollRest() {
     if (!live) return;
     const pcs = { ...init.pcs };
-    for (const s of active) if (pcs[s.id] === undefined && s.definition) pcs[s.id] = rollInitiative(initiativeParts(s.definition).total);
+    for (const s of active) if (pcs[s.id] === undefined && s.definition) pcs[s.id] = rollInitiative(initiativeParts(s.definition).total, undefined, advantageFrom(s.definition, 'init').length > 0);
     live.patch({ pcs }).catch(initFail);
     for (const c of table?.list.filter((x) => x.initiative === null) ?? []) void table!.change(c, { initiative: rollInitiative(initiativeBonus(c.statblock)) });
   }

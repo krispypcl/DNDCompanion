@@ -470,20 +470,13 @@
 
   /*
    * The fight (lib/initiative, database/0019): on a player's own sheet in a
-   * campaign, the DM's call for initiative and the running order. An
-   * initiative rolled while the DM is asking (or a fight runs without this
-   * character) goes into the order.
+   * campaign, a pointer to the campaign page when the DM calls for
+   * initiative (it is rolled there, in one place), then the round and their
+   * turn while the fight runs.
    */
   const initFor = $derived(isOwner && campaignId && !sheet?.retired ? campaignId : null);
   const liveInit = $derived(initFor ? new LiveInitiative(initFor) : null);
   $effect(() => liveInit?.start());
-  function rollInitiativeHere() {
-    if (!definition || !sheet) return;
-    const id = sheet.id;
-    const wanted = liveInit && (liveInit.state.asking || liveInit.state.turn) && liveInit.state.pcs[id] === undefined;
-    rollSkill('Initiative', initiative, initAdv.length ? 'advantage' : 'normal',
-      wanted ? (r) => void liveInit!.setMine(id, r.total).catch((e) => say(e instanceof Error ? e.message : 'Your initiative didn’t reach the table! Try again.')) : undefined);
-  }
 
   /** Keeps the public note of which writings are private in step. */
   function markPrivate(key: TextKey, on: boolean) {
@@ -872,7 +865,7 @@
       </div>
     </header>
 
-    {#if liveInit && sheet}<SheetInitiative live={liveInit} sheetId={sheet.id} onroll={rollInitiativeHere} />{/if}
+    {#if liveInit && sheet}<SheetInitiative live={liveInit} sheetId={sheet.id} />{/if}
 
     <div class="band">
       <section class="panel hp" style:--i=0>
@@ -1178,7 +1171,7 @@
               {#if !editable && isOwner}
                 <!-- Out of edit mode, initiative is a die to roll: the whole box is the button. -->
                 <button class="rollnum" title="Roll initiative: d20 {sign(initiative)}{initAdv.length ? ' with advantage' : ''}" aria-label="Roll initiative"
-                        onclick={rollInitiativeHere}>{sign(initiative)}</button>
+                        onclick={() => rollSkill('Initiative', initiative, initAdv.length ? 'advantage' : 'normal')}>{sign(initiative)}</button>
               {:else}
                 <span class="computed">{sign(initiative)}</span>
               {/if}

@@ -34,6 +34,7 @@
   import { CreatureTable } from '$lib/creatureTable.svelte';
   import { LiveInitiative } from '$lib/initiative.svelte';
   import { initiativeParts } from '$lib/rules/derived';
+  import { advantageFrom } from '$lib/rules/equipment';
   import { initiativeBonus } from '$lib/rules/statblock';
   import { next as nextTurn, previous as previousTurn, rollInitiative, start as startTurns, type InitiativeRow } from '$lib/rules/initiative';
   import { campaignRepo, inviteCode, type Campaign } from '$lib/data/campaigns';
@@ -301,7 +302,8 @@
   const combatants = $derived<InitiativeRow[]>([
     ...fighters.map((s) => ({
       key: `pc:${s.id}`, name: obr?.nameOf(s) ?? s.name, value: init.pcs[s.id] ?? null,
-      dex: s.definition ? initiativeParts(s.definition).total : 0, side: 'pc' as const, mine: Boolean(me && s.owner_id === me)
+      // Players roll on the campaign page (one place for the whole table); here they watch.
+      dex: s.definition ? initiativeParts(s.definition).total : 0, side: 'pc' as const
     })),
     ...(table
       ? table.list.map((c) => ({ key: `cr:${c.id}`, name: c.name, value: c.initiative, dex: initiativeBonus(c.statblock), side: 'creature' as const, hidden: !c.visible }))
@@ -319,16 +321,16 @@
       if (value === null) delete pcs[ref];
       else pcs[ref] = value;
       live.patch({ pcs }).catch(orderFail);
-    } else live?.setMine(ref, value).catch(orderFail);
+    }
   }
   function rollOne(key: string) {
     const s = fighters.find((x) => `pc:${x.id}` === key);
-    if (s?.definition) setInitiative(key, rollInitiative(initiativeParts(s.definition).total));
+    if (s?.definition) setInitiative(key, rollInitiative(initiativeParts(s.definition).total, undefined, advantageFrom(s.definition, 'init').length > 0));
   }
   function rollRest() {
     if (!live) return;
     const pcs = { ...init.pcs };
-    for (const s of fighters) if (pcs[s.id] === undefined && s.definition) pcs[s.id] = rollInitiative(initiativeParts(s.definition).total);
+    for (const s of fighters) if (pcs[s.id] === undefined && s.definition) pcs[s.id] = rollInitiative(initiativeParts(s.definition).total, undefined, advantageFrom(s.definition, 'init').length > 0);
     live.patch({ pcs }).catch(orderFail);
     for (const c of table?.list.filter((x) => x.initiative === null) ?? []) void table!.change(c, { initiative: rollInitiative(initiativeBonus(c.statblock)) });
   }
@@ -647,14 +649,13 @@
           <div class="who-row" in:fade={{ duration: 200, delay: 90 }} out:fade={{ duration: 120 }}>
             {#if $session.user}
               <span class="me">Signed in as {myName}
-                <InfoTip label="What signing in does">You can change hit points from a token’s right-click menu, draw on the campaign’s board and roll your initiative here. As the campaign’s DM, you run the fight and your monsters and NPCs from this panel.</InfoTip>
+                <InfoTip label="What signing in does">You can change hit points from a token’s right-click menu and draw on the campaign’s board. As the campaign’s DM, you run the fight and your monsters and NPCs from this panel.</InfoTip>
               </span>
               <button class="smallbtn" onclick={() => signOut()}>Sign out</button>
             {:else}
               <span class="me">Not signed in
                 <InfoTip label="Why sign in">
-                  Sign in to change hit points from a token, draw on the board and roll your initiative here; the DM signs in
-                  to run the fight. Owlbear keeps its own sign-in, apart from the site’s.
+                  Sign in to change hit points from a token and draw on the board; the DM signs in to run the fight. Owlbear keeps its own sign-in, apart from the site’s.
                 </InfoTip>
               </span>
               <button class="smallbtn" onclick={() => (signing = true)}>Sign in</button>

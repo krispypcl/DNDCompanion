@@ -54,5 +54,6 @@ export function previous(list: Combatant[], at: Turn): Turn {
   return at.round > 1 ? { turn: order[order.length - 1].key, round: at.round - 1 } : at;
 }
 
-/** A d20 plus what it adds to initiative. */
-export const rollInitiative = (bonus: number, die: Rng = fairRng) => die(20) + bonus;
+/** A d20 plus what it adds to initiative; with advantage (an item or feature), the higher of two d20s. */
+export const rollInitiative = (bonus: number, die: Rng = fairRng, advantage = false) =>
+  (advantage ? Math.max(die(20), die(20)) : die(20)) + bonus;

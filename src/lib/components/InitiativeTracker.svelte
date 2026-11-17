@@ -71,7 +71,7 @@
         yourself, or roll the rest. Start, then Next turn moves it on; your players see the order and whose turn it is,
         with only the monsters and NPCs you’ve revealed.
       {:else}
-        Your DM runs the order. When they call for initiative, roll yours here, on your sheet, or write the number your
+        Your DM runs the order. When they call for initiative, roll yours on the campaign page, or write in what your
         own dice gave.
       {/if}
     </InfoTip>
