@@ -1,91 +1,145 @@
 <!--
-  The initiative order on the campaign page (rules/initiative): everyone at
-  the table, highest first, whose turn it is lit, and the round. The DM
-  writes or rolls the numbers and moves the turn on; the players watch it.
+  The initiative order (rules/initiative, lib/initiative): everyone at the
+  table, highest first, whose turn it is lit, and the round. The DM calls for
+  initiative, the players roll (or write) their own characters' numbers, the
+  DM rolls the rest, starts the fight and moves the turn on; everyone
+  follows it live.
 -->
 <script lang="ts">
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
-  import { fade } from 'svelte/transition';
+  import { fade, slide } from 'svelte/transition';
   import { prefersReducedMotion } from '$lib/motion';
-  import { ordered, type Combatant } from '$lib/rules/initiative';
+  import { ordered, type InitiativeRow } from '$lib/rules/initiative';
   import InfoTip from './InfoTip.svelte';
 
-  type Row = Combatant & { hidden?: boolean };
   let {
     combatants,
     turn,
     round,
+    asking = false,
     isDm,
     onvalue,
+    onrollone,
+    onask,
     onstart,
     onnext,
     onprevious,
     onend,
-    onroll
+    onrollrest
   }: {
-    combatants: Row[];
+    combatants: InitiativeRow[];
     turn: string | null;
     round: number;
+    /** The DM has called for initiative: the players roll theirs. */
+    asking?: boolean;
     isDm: boolean;
+    /** A number written in (the DM's for anyone, a player's for their own). */
     onvalue?: (key: string, value: number | null) => void;
+    /** Rolls a d20 for this one (with what it adds). */
+    onrollone?: (key: string) => void;
+    onask?: () => void;
     onstart?: () => void;
     onnext?: () => void;
     onprevious?: () => void;
     onend?: () => void;
-    /** Roll for the monsters and NPCs that have no number yet. */
-    onroll?: () => void;
+    /** Rolls for everyone still without a number. */
+    onrollrest?: () => void;
   } = $props();
 
-  const list = $derived(ordered(combatants) as Row[]);
+  const list = $derived(ordered(combatants) as InitiativeRow[]);
   const running = $derived(Boolean(turn));
+  /** Whose turn it is is someone the players can't see. */
+  const unseenTurn = $derived(running && !list.some((c) => c.key === turn));
+  const waiting = $derived(list.filter((c) => c.side === 'pc' && c.value === null).length);
+  const mineToRoll = $derived(list.filter((c) => c.mine && c.value === null));
   const still = prefersReducedMotion();
+  const quick = { duration: still ? 0 : 200, easing: cubicOut };
+  const canWrite = (c: InitiativeRow) => isDm || Boolean(c.mine);
   function write(key: string, v: string) {
     const n = Number(v);
-    onvalue?.(key, v.trim() === '' || !Number.isFinite(n) ? null : Math.round(n));
+    onvalue?.(key, v.trim() === '' || !Number.isFinite(n) ? null : Math.max(-50, Math.min(100, Math.round(n))));
   }
 </script>
 
-<section class="initiative" aria-label="Initiative">
+<section class="initiative" class:asking={asking && !running} aria-label="Initiative">
   <div class="inithead">
-    <h3>Initiative{#if running}<span class="round">Round {round}</span>{/if}</h3>
+    <h3>Initiative{#if running}<span class="round" in:fade={quick}>Round {round}</span>{/if}</h3>
+    <InfoTip label="About initiative">
+      {#if isDm}
+        Call for initiative and your players roll theirs, here, on their sheets or in Owlbear. Write any number in
+        yourself, or roll the rest. Start, then Next turn moves it on; your players see the order and whose turn it is,
+        with only the monsters and NPCs you’ve revealed.
+      {:else}
+        Your DM runs the order. When they call for initiative, roll yours here, on your sheet, or write the number your
+        own dice gave.
+      {/if}
+    </InfoTip>
     {#if isDm}
-      <InfoTip label="About initiative">Write each one’s initiative, or roll for the monsters and NPCs. Start, then Next turn moves it on; your players see the order and whose turn it is, but only the monsters and NPCs you’ve revealed.</InfoTip>
       <div class="initdo">
-        {#if onroll}<button class="smallbtn" onclick={onroll}>Roll for monsters</button>{/if}
         {#if running}
-          <button class="smallbtn" onclick={onprevious} aria-label="Previous turn">Back</button>
+          <button class="smallbtn" onclick={onprevious} aria-label="Previous turn" title="Previous turn">
+            <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M10 3.5 5.5 8l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </button>
           <button class="smallbtn accent" onclick={onnext}>Next turn</button>
           <button class="smallbtn quiet" onclick={onend}>End</button>
         {:else}
+          {#if !asking}<button class="smallbtn" onclick={onask}>Call for initiative</button>{/if}
+          {#if onrollrest && list.some((c) => c.value === null)}<button class="smallbtn" onclick={onrollrest}>Roll the rest</button>{/if}
           <button class="smallbtn accent" onclick={onstart} disabled={!list.some((c) => c.value !== null)}>Start</button>
         {/if}
       </div>
     {/if}
   </div>
+
+  {#if asking && !running}
+    <p class="initcall" transition:slide={quick}>
+      {#if isDm}
+        {waiting === 0 ? 'Every character has rolled.' : waiting === 1 ? 'Waiting on 1 character.' : `Waiting on ${waiting} characters.`}
+      {:else if mineToRoll.length}
+        Roll for initiative!
+      {:else if list.some((c) => c.mine)}
+        You’re in the order. The fight starts soon.
+      {:else}
+        The DM calls for initiative.
+      {/if}
+    </p>
+  {/if}
+
   <ol class="initlist">
     {#each list as c (c.key)}
-      <li class="initrow" class:initcr={c.side === 'creature'} class:now={c.key === turn} class:waiting={c.value === null} class:hiddenone={c.hidden}
+      <li class="initrow" class:initcr={c.side === 'creature'} class:now={c.key === turn} class:waiting={c.value === null}
+          class:hiddenone={c.hidden} class:mine={c.mine}
           animate:flip={{ duration: still ? 0 : 260, easing: cubicOut }} in:fade={{ duration: still ? 0 : 160 }}>
-        {#if isDm}
+        {#if canWrite(c)}
           <input type="number" inputmode="numeric" aria-label="{c.name}’s initiative" value={c.value ?? ''} placeholder="–"
                  onchange={(e) => write(c.key, e.currentTarget.value)} />
         {:else}
           <b class="initvalue">{c.value ?? '–'}</b>
         {/if}
         <span class="initname">{c.name}</span>
+        {#if c.value === null && canWrite(c) && onrollone && c.side === 'pc'}
+          <button class="initroll" onclick={() => onrollone?.(c.key)} aria-label="Roll {c.name}’s initiative" title="Roll a d20 with what it adds">
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 2.5 20.5 7.5v9L12 21.5 3.5 16.5v-9z M12 2.5 7.5 15h9z M3.5 7.5 7.5 15 3.5 16.5 M20.5 7.5 16.5 15l4 1.5 M7.5 15 12 21.5 16.5 15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" /></svg>
+            Roll
+          </button>
+        {/if}
         {#if c.hidden}<span class="inittag" title="Hidden from your players">hidden</span>{/if}
-        {#if c.key === turn}<span class="initnow">Now</span>{/if}
+        {#if c.key === turn}<span class="initnow" in:fade={quick}>Now</span>{/if}
       </li>
     {/each}
+    {#if unseenTurn}
+      <li class="initrow now unseen" in:fade={quick}><span class="initname">Something unseen acts</span><span class="initnow">Now</span></li>
+    {/if}
   </ol>
 </section>
 
 <style>
   .initiative {
     margin-top: 1rem; padding: 0.75rem 0.875rem; border-radius: var(--r);
-    border: 1px solid var(--line-soft); background: var(--surface);
+    border: 1px solid var(--line-soft); background: var(--surface); transition: border-color 0.25s ease, box-shadow 0.25s ease;
   }
+  .initiative.asking { border-color: var(--a-edge); box-shadow: 0 0 0 3px color-mix(in oklch, var(--a) 14%, transparent); }
   .inithead { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
   h3 {
     margin: 0; display: inline-flex; align-items: baseline; gap: 0.625rem;
@@ -93,6 +147,7 @@
   }
   .round { letter-spacing: 0.04em; text-transform: none; font-size: 0.8125rem; color: var(--a); font-weight: 650; }
   .initdo { display: flex; gap: 0.375rem; flex-wrap: wrap; margin-left: auto; }
+  .initcall { margin: 0.5rem 0 0; font-size: 0.875rem; font-weight: 600; color: var(--a); }
   .initlist { list-style: none; margin: 0.625rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.375rem; }
   .initrow {
     display: inline-flex; align-items: center; gap: 0.4375rem; padding: 0.25rem 0.625rem 0.25rem 0.25rem;
@@ -100,8 +155,10 @@
     transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
   }
   .initrow.initcr { border-style: dashed; }
-  .initrow.waiting { opacity: 0.6; }
+  .initrow.waiting:not(.mine) { opacity: 0.6; }
+  .initrow.mine { border-color: var(--a-edge); }
   .initrow.hiddenone .initname { color: var(--dim); }
+  .initrow.unseen { padding-left: 0.625rem; font-style: italic; }
   .initrow.now { border-color: var(--a-edge); background: var(--a-wash); box-shadow: 0 0 0 2px color-mix(in oklch, var(--a) 30%, transparent); }
   .initrow input {
     width: 2.75rem; padding: 0.125rem 0.25rem; text-align: center; font: inherit; font-size: 0.8125rem; font-weight: 650;
@@ -110,6 +167,14 @@
   .initrow input:focus { outline: none; border-color: var(--a-edge); }
   .initvalue { min-width: 1.75rem; text-align: center; font-variant-numeric: tabular-nums; }
   .initname { font-weight: 600; overflow-wrap: anywhere; }
+  .initroll {
+    display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.0625rem 0.5rem; font: inherit; font-size: 0.75rem; font-weight: 600;
+    color: var(--a); background: var(--a-wash); border: 1px solid var(--a-edge); border-radius: 999px; cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.08s ease;
+  }
+  .initroll:hover { background: color-mix(in oklch, var(--a) 22%, transparent); }
+  .initroll:active { transform: translateY(1px); }
+  .initroll:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
   .inittag { font-size: 0.625rem; color: var(--dim); letter-spacing: 0.06em; text-transform: uppercase; }
   .initnow { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--a); }
 </style>

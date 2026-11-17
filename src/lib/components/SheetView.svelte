@@ -106,6 +106,8 @@
   import ConditionOverlay from '$lib/components/ConditionOverlay.svelte';
   import DownScreen from '$lib/components/DownScreen.svelte';
   import ShortcutHelp from '$lib/components/ShortcutHelp.svelte';
+  import SheetInitiative from '$lib/components/SheetInitiative.svelte';
+  import { LiveInitiative } from '$lib/initiative.svelte';
   import Spotlight from '$lib/components/Spotlight.svelte';
   import { friendlyError } from '$lib/errors';
   import { session } from '$lib/stores/session';
@@ -457,13 +459,30 @@
   let spotTimer: ReturnType<typeof setTimeout> | undefined;
 
   /** A skill, pressed: the Combat tab comes up, and the roll is made there. */
-  function rollSkill(label: string, bonus: number, mode: 'normal' | 'advantage' = 'normal') {
+  function rollSkill(label: string, bonus: number, mode: 'normal' | 'advantage' = 'normal', then?: (r: Roll) => void) {
     if (activeTab !== 'Combat') {
       activeTab = 'Combat';
       if (typeof location !== 'undefined') history.replaceState(null, '', '#combat');
     }
     // With advantage from a feature or item, the roll takes it; otherwise whatever the tray is set to.
-    requestRoll({ dice: { 20: 1 }, modifier: bonus, mode }, label, undefined, mode === 'advantage' ? 'pool' : 'keep');
+    requestRoll({ dice: { 20: 1 }, modifier: bonus, mode }, label, then, mode === 'advantage' ? 'pool' : 'keep');
+  }
+
+  /*
+   * The fight (lib/initiative, database/0019): on a player's own sheet in a
+   * campaign, the DM's call for initiative and the running order. An
+   * initiative rolled while the DM is asking (or a fight runs without this
+   * character) goes into the order.
+   */
+  const initFor = $derived(isOwner && campaignId && !sheet?.retired ? campaignId : null);
+  const liveInit = $derived(initFor ? new LiveInitiative(initFor) : null);
+  $effect(() => liveInit?.start());
+  function rollInitiativeHere() {
+    if (!definition || !sheet) return;
+    const id = sheet.id;
+    const wanted = liveInit && !liveInit.legacy && (liveInit.state.asking || liveInit.state.turn) && liveInit.state.pcs[id] === undefined;
+    rollSkill('Initiative', initiative, initAdv.length ? 'advantage' : 'normal',
+      wanted ? (r) => void liveInit!.setMine(id, r.total).catch((e) => say(e instanceof Error ? e.message : 'Your initiative didn’t reach the table! Try again.')) : undefined);
   }
 
   /** Keeps the public note of which writings are private in step. */
@@ -853,6 +872,8 @@
       </div>
     </header>
 
+    {#if liveInit && sheet}<SheetInitiative live={liveInit} sheetId={sheet.id} onroll={rollInitiativeHere} />{/if}
+
     <div class="band">
       <section class="panel hp" style:--i=0>
         <HitPoints {definition} state={sheetState} editable={isOwner} editDefinition={editable}
@@ -1157,7 +1178,7 @@
               {#if !editable && isOwner}
                 <!-- Out of edit mode, initiative is a die to roll: the whole box is the button. -->
                 <button class="rollnum" title="Roll initiative: d20 {sign(initiative)}{initAdv.length ? ' with advantage' : ''}" aria-label="Roll initiative"
-                        onclick={() => rollSkill('Initiative', initiative, initAdv.length ? 'advantage' : 'normal')}>{sign(initiative)}</button>
+                        onclick={rollInitiativeHere}>{sign(initiative)}</button>
               {:else}
                 <span class="computed">{sign(initiative)}</span>
               {/if}

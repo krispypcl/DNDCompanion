@@ -29,3 +29,16 @@ describe('last session', () => {
     expect(lastSessionOf(undefined, now)).toBeNull();
   });
 });
+
+describe('readInitiative', async () => {
+  const { readInitiative, NO_INITIATIVE } = await import('$lib/data/campaigns');
+  it('reads nothing as no fight', () => {
+    expect(readInitiative(null)).toEqual(NO_INITIATIVE);
+    expect(readInitiative('x')).toEqual(NO_INITIATIVE);
+  });
+  it('keeps good parts and drops bad ones', () => {
+    expect(readInitiative({ pcs: { a: 12, b: 'x', c: Number.NaN }, turn: 'pc:a', round: 2.7, asking: 'yes' }))
+      .toEqual({ pcs: { a: 12 }, turn: 'pc:a', round: 2, asking: false });
+    expect(readInitiative({ turn: '', round: -1, asking: true })).toEqual({ pcs: {}, turn: null, round: 0, asking: true });
+  });
+});

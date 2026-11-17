@@ -14,7 +14,7 @@
   import { cubicOut } from 'svelte/easing';
   import { base } from '$app/paths';
   import { goto } from '$app/navigation';
-  import { campaignMessage, campaignRepo, setNextSession, type Campaign, type CampaignDetails } from '$lib/data/campaigns';
+  import { campaignMessage, campaignRepo, NO_INITIATIVE, setNextSession, type Campaign, type CampaignDetails } from '$lib/data/campaigns';
   import { TableMusic } from '$lib/tableMusic.svelte';
   import { sheetRepo } from '$lib/data/sheets';
   import { isConfigured, supabase } from '$lib/supabase';
@@ -22,7 +22,8 @@
   import { classLine, initiativeParts } from '$lib/rules/derived';
   import { creatureRepo, type Revealed } from '$lib/data/creatures';
   import { CreatureTable } from '$lib/creatureTable.svelte';
-  import { next as nextTurn, previous as previousTurn, rollInitiative, start as startTurns } from '$lib/rules/initiative';
+  import { next as nextTurn, previous as previousTurn, rollInitiative, start as startTurns, type InitiativeRow } from '$lib/rules/initiative';
+  import { LiveInitiative } from '$lib/initiative.svelte';
   import { initiativeBonus } from '$lib/rules/statblock';
   import { resolveImageUrl } from '$lib/rules/imageUrl';
   import { faceFamily, nameFont } from '$lib/rules/fonts';
@@ -223,9 +224,9 @@
     const timer = setInterval(() => {
       if (document.visibilityState !== 'visible') return;
       ticks += 1;
-      // While a fight runs, the players follow the turn every look.
-      const fighting = !isDm && Boolean(campaign?.details.initiative?.turn);
-      void lookAgain(fighting || ticks % 4 === 0);
+      // Before 0019, while a fight runs the players follow the turn every look (it is live after).
+      const following = !isDm && Boolean(live?.legacy && (init.turn || init.asking));
+      void lookAgain(following || ticks % 4 === 0);
       void lookAtRevealed();
     }, 15000);
     const back = () => document.visibilityState === 'visible' && load();
@@ -344,15 +345,28 @@
   }
 
   /*
-   * Initiative (rules/initiative): the characters' numbers and whose turn it
-   * is live in the campaign's details, the creatures' on each creature. The
-   * DM writes, rolls and moves the turn on; the players follow it.
+   * Initiative (lib/initiative, database/0019): the characters' numbers,
+   * whose turn it is and whether the DM has called for it, live for the whole
+   * table; the creatures' numbers are on each creature. The DM runs it; a
+   * player rolls or writes their own characters'.
    */
-  const init = $derived(campaign?.details.initiative ?? {});
-  const combatants = $derived([
+  const initKey = $derived(campaign?.id ?? null);
+  const live = $derived(initKey ? new LiveInitiative(initKey, {
+    read: () => campaign?.details.initiative,
+    save: (i) => saveDetails({ initiative: i })
+  }) : null);
+  $effect(() => live?.start());
+  // Before 0019 the order comes with the campaign, read again every look.
+  $effect(() => {
+    void campaign?.details.initiative;
+    live?.syncLegacy();
+  });
+  const init = $derived(live?.state ?? NO_INITIATIVE);
+  const me = $derived($session.user?.id ?? null);
+  const combatants = $derived<InitiativeRow[]>([
     ...active.map((s) => ({
-      key: `pc:${s.id}`, name: s.definition?.identity?.name || s.name, value: init.pcs?.[s.id] ?? null,
-      dex: s.definition ? initiativeParts(s.definition).total : 0, side: 'pc' as const
+      key: `pc:${s.id}`, name: s.definition?.identity?.name || s.name, value: init.pcs[s.id] ?? null,
+      dex: s.definition ? initiativeParts(s.definition).total : 0, side: 'pc' as const, mine: Boolean(me && s.owner_id === me)
     })),
     ...(table
       ? table.before0018 ? [] : table.list.map((c) => ({
@@ -361,29 +375,46 @@
       : revealed.map((c) => ({ key: `cr:${c.id}`, name: c.name, value: c.initiative, side: 'creature' as const })))
   ]);
   const fighting = $derived(Boolean(init.turn));
-  const turnNow = () => ({ turn: init.turn ?? null, round: init.round ?? 0 });
+  const turnNow = () => ({ turn: init.turn, round: init.round });
+  const initFail = (e: unknown) => (error = campaignMessage(e, 'The order slipped! Try again.'));
   function setInitiative(key: string, value: number | null) {
     const [kind, ref] = [key.slice(0, 2), key.slice(3)];
-    if (kind === 'pc') {
-      const pcs = { ...(init.pcs ?? {}) };
-      if (value === null) delete pcs[ref];
-      else pcs[ref] = value;
-      void saveDetails({ initiative: { ...init, pcs } });
-    } else {
+    if (kind === 'cr') {
       const c = table?.list.find((x) => x.id === ref);
       if (c) void table!.change(c, { initiative: value });
+      return;
+    }
+    if (!live) return;
+    if (isDm) {
+      const pcs = { ...init.pcs };
+      if (value === null) delete pcs[ref];
+      else pcs[ref] = value;
+      live.patch({ pcs }).catch(initFail);
+    } else {
+      live.setMine(ref, value).catch(initFail);
     }
   }
-  function rollForCreatures() {
-    if (!table) return;
-    for (const c of table.list.filter((x) => x.initiative === null)) {
-      void table.change(c, { initiative: rollInitiative(initiativeBonus(c.statblock)) });
+  /** A d20 and what the character adds to initiative. */
+  function rollOne(key: string) {
+    const s = active.find((x) => `pc:${x.id}` === key);
+    if (s?.definition) setInitiative(key, rollInitiative(initiativeParts(s.definition).total));
+  }
+  /** Everyone still without a number: characters and creatures. */
+  function rollRest() {
+    if (!live) return;
+    const pcs = { ...init.pcs };
+    for (const s of active) if (pcs[s.id] === undefined && s.definition) pcs[s.id] = rollInitiative(initiativeParts(s.definition).total);
+    live.patch({ pcs }).catch(initFail);
+    if (table && !table.before0018) {
+      for (const c of table.list.filter((x) => x.initiative === null)) void table.change(c, { initiative: rollInitiative(initiativeBonus(c.statblock)) });
     }
   }
-  const moveTurn = (t: { turn: string | null; round: number }) => saveDetails({ initiative: { ...init, ...t } });
+  const moveTurn = (t: { turn: string | null; round: number }) => live?.patch({ ...t, asking: false }).catch(initFail);
+  /** A fight is coming: the players roll theirs (a fresh order). */
+  const callForInitiative = () => live?.save({ pcs: {}, turn: null, round: 0, asking: true }).catch(initFail);
   /** The fight is over: the order is cleared for the next one. */
   function endFight() {
-    void saveDetails({ initiative: { pcs: {}, turn: null, round: 0 } });
+    live?.save(NO_INITIATIVE).catch(initFail);
     for (const c of table?.list.filter((x) => x.initiative !== null) ?? []) void table!.change(c, { initiative: null });
   }
 
@@ -542,11 +573,12 @@
     <!-- The players' cards, or (the DM's other side) the monsters and NPCs.
          The creatures stay mounted once opened, so their count and what was
          typed survive a switch back and forth. -->
-    <!-- The initiative order: the DM sets it up beside the monsters and runs it from either side; the players see it while a fight runs. -->
-    {#if !ended && combatants.length && (fighting || (isDm && side === SIDE_CREATURES))}
+    <!-- The initiative order: the DM's on either side; the players' while the DM calls for it or a fight runs. -->
+    {#if !ended && combatants.length && (isDm || fighting || init.asking)}
       <div transition:slide={unfold()}>
-        <InitiativeTracker {combatants} turn={init.turn ?? null} round={init.round ?? 0} {isDm}
-                           onvalue={setInitiative} onroll={table && !table.before0018 ? rollForCreatures : undefined}
+        <InitiativeTracker {combatants} turn={init.turn} round={init.round} asking={init.asking} {isDm}
+                           onvalue={setInitiative} onrollone={rollOne} onask={callForInitiative}
+                           onrollrest={isDm ? rollRest : undefined}
                            onstart={() => moveTurn(startTurns(combatants))} onnext={() => moveTurn(nextTurn(combatants, turnNow()))}
                            onprevious={() => moveTurn(previousTurn(combatants, turnNow()))} onend={endFight} />
       </div>

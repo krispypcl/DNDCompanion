@@ -15,6 +15,8 @@ export type Combatant = {
   side: 'pc' | 'creature';
 };
 export type Turn = { turn: string | null; round: number };
+/** A line in the tracker: hidden from the players (the DM's view), or the viewer's own character. */
+export type InitiativeRow = Combatant & { hidden?: boolean; mine?: boolean };
 
 export function ordered(list: Combatant[]): Combatant[] {
   return [...list].sort((a, b) => {

@@ -25,12 +25,36 @@ export type CampaignDetails = {
   /** When it last met: the session set before, kept once it had started. */
   lastSession?: string;
   /**
-   * The initiative order the DM runs (rules/initiative): the characters'
-   * initiatives by sheet id (the creatures keep their own), whose turn it is
-   * ("pc:<sheet id>" or "cr:<creature id>") and the round. Players read it.
+   * Where the initiative order was kept before database/0019 moved it to
+   * campaign_state (see Initiative below). TODO: drop once 0019 has run.
    */
-  initiative?: { pcs?: Record<string, number>; turn?: string | null; round?: number };
+  initiative?: Partial<Initiative>;
 };
+
+/**
+ * The initiative order (database/0019, campaign_state.initiative; rules/
+ * initiative): the characters' numbers by sheet id (the creatures keep their
+ * own, database/0018), whose turn it is ("pc:<sheet id>" or "cr:<creature
+ * id>"), the round, and whether the DM has called for initiative. Everyone
+ * at the table follows it live; the DM changes it, a player only their own
+ * character's number.
+ */
+export type Initiative = { pcs: Record<string, number>; turn: string | null; round: number; asking: boolean };
+export const NO_INITIATIVE: Initiative = { pcs: {}, turn: null, round: 0, asking: false };
+/** Whatever was stored, as an Initiative (bad parts dropped). */
+export function readInitiative(v: unknown): Initiative {
+  const o = v && typeof v === 'object' ? (v as Record<string, unknown>) : {};
+  const pcs: Record<string, number> = {};
+  if (o.pcs && typeof o.pcs === 'object') {
+    for (const [k, n] of Object.entries(o.pcs as Record<string, unknown>)) if (typeof n === 'number' && Number.isFinite(n)) pcs[k] = n;
+  }
+  return {
+    pcs,
+    turn: typeof o.turn === 'string' && o.turn ? o.turn : null,
+    round: typeof o.round === 'number' && o.round > 0 ? Math.floor(o.round) : 0,
+    asking: o.asking === true
+  };
+}
 
 const startedBy = (iso: string | undefined, now: Date) => {
   const t = iso ? new Date(iso).getTime() : NaN;
@@ -270,6 +294,45 @@ function makeCampaignRepo(client: SupabaseClient) {
     async savePlayback(campaignId: string, playback: Playback | null): Promise<void> {
       const { error } = await client.from('campaign_state').update({ playback: playback ?? {} }).eq('campaign_id', campaignId);
       if (error) throw new Error(error.message);
+    },
+
+    /**
+     * The initiative order (database/0019); null when the database is from
+     * before 0019 (it was kept in the details then). TODO: drop the null once
+     * 0019 has run.
+     */
+    async initiative(campaignId: string): Promise<Initiative | null> {
+      const { data, error } = await client.from('campaign_state').select('initiative').eq('campaign_id', campaignId).maybeSingle();
+      if (error && (error.code === '42703' || /column .*initiative.* does not exist/i.test(error.message))) return null;
+      if (error) throw new Error(error.message);
+      return readInitiative(data?.initiative);
+    },
+    /** The DM runs the order. */
+    async saveInitiative(campaignId: string, initiative: Initiative): Promise<void> {
+      const { data, error } = await client.from('campaign_state').update({ initiative }).eq('campaign_id', campaignId).select('campaign_id');
+      if (error) throw new Error(error.message);
+      if (!data?.length) throw new CampaignError('Only the DM can do that!');
+    },
+    /** A player writes their own character's number (null takes it back). */
+    async setMyInitiative(sheetId: string, value: number | null): Promise<Initiative> {
+      const { data, error } = await client.rpc('set_my_initiative', { p_character: sheetId, p_value: value });
+      if (error && (error.code === 'PGRST202' || error.code === '42883')) {
+        throw new CampaignError('The table isn’t ready for that yet! Your DM needs to update the database first.');
+      }
+      if (error) throw refusal(error);
+      return readInitiative(data);
+    },
+    /** Follows the order as the DM changes it; returns how to stop. */
+    followInitiative(campaignId: string, onchange: (i: Initiative) => void): () => void {
+      const channel = client
+        .channel(`initiative-${campaignId}-${Math.random().toString(36).slice(2, 8)}`)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'campaign_state', filter: `campaign_id=eq.${campaignId}` }, (payload) => {
+          const row = payload.new as { initiative?: unknown };
+          // A large order may be left out of a change that didn't touch it.
+          if (row && 'initiative' in row) onchange(readInitiative(row.initiative));
+        })
+        .subscribe();
+      return () => void client.removeChannel(channel);
     },
 
     async board(campaignId: string): Promise<BoardItem[] | null> {
