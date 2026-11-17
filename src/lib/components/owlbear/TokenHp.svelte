@@ -2,8 +2,10 @@
   /**
    * A tied token's right-click menu in Owlbear: its character's hit points,
    * and damage, healing or temporary hit points written straight to the
-   * sheet (lib/owlbear/hp.ts). Sits inside Owlbear's own menu, so it keeps
-   * to Owlbear's background and stays small.
+   * sheet (lib/owlbear/hp.ts). With `?creature=1`, the GM's menu on one of
+   * the DM's monsters or NPCs instead (database/0017), read and changed as
+   * the DM. Sits inside Owlbear's own menu, so it keeps to Owlbear's
+   * background and stays small.
    */
   import { onMount, tick } from 'svelte';
   import { joinRoom } from '$lib/owlbear/frame';
@@ -11,6 +13,8 @@
   import { followSheets } from '$lib/owlbear/live';
   import { changeHp, type HpChange } from '$lib/owlbear/hp';
   import type { Sheet } from '$lib/types';
+  import { creatureRepo, type Creature } from '$lib/data/creatures';
+  import { damage, heal, hpNow } from '$lib/rules/creatures';
   import HpBar from './HpBar.svelte';
 
   let sheet = $state.raw<Sheet | null>(null);
@@ -21,6 +25,9 @@
   let field = $state<HTMLInputElement>();
   let open = $state('');
   let name = $state('');
+  /** A monster's or NPC's token (the DM's menu). */
+  let creature = $state.raw<Creature | null>(null);
+  let forCreature = $state(false);
 
   onMount(() => {
     const stops: (() => void)[] = [];
@@ -28,6 +35,21 @@
       const m = await joinRoom(stops);
       const sel = (await m.OBR.player.getSelection()) ?? [];
       const item = sel.length ? (await m.OBR.scene.items.getItems(sel))[0] : undefined;
+      forCreature = new URLSearchParams(location.search).has('creature');
+      if (forCreature) {
+        const cl = item ? m.creatureLinkOf(item) : null;
+        if (!cl) return void (gone = true);
+        try {
+          creature = (await creatureRepo.list(cl.campaign)).find((c) => c.id === cl.id) ?? null;
+          gone = !creature;
+          if (creature) name = creature.name;
+        } catch {
+          message = { ok: false, text: 'Only the DM can read this one! Sign in as the DM in the DND Companion panel.' };
+        }
+        await tick();
+        field?.focus();
+        return;
+      }
       const link = item ? m.linkOf(item) : null;
       if (!link) return void (gone = true);
       open = m.sheetUrl(link.id);
@@ -42,18 +64,25 @@
     return () => stops.forEach((s) => s());
   });
 
-  const max = $derived(Number(sheet?.definition?.combat?.hpMax) || 0);
-  const cur = $derived(Number(sheet?.state?.hpCurrent) || 0);
-  const temp = $derived(Number(sheet?.state?.hpTemp) || 0);
-  const v = $derived(vitalStatus(cur, max, sheet?.state?.deathSaves));
+  const max = $derived(creature ? creature.hp_max ?? 0 : Number(sheet?.definition?.combat?.hpMax) || 0);
+  const cur = $derived(creature ? hpNow(creature) : Number(sheet?.state?.hpCurrent) || 0);
+  const temp = $derived(creature ? creature.hp_temp : Number(sheet?.state?.hpTemp) || 0);
+  const v = $derived(vitalStatus(cur, max, creature ? undefined : sheet?.state?.deathSaves));
+  const ready = $derived(Boolean(sheet || creature));
 
   async function act(how: HpChange) {
-    if (!sheet || !amount || amount <= 0 || busy) return;
+    if (!ready || !amount || amount <= 0 || busy) return;
     busy = true;
     message = null;
     try {
-      const next = await changeHp(sheet.id, how, amount);
-      sheet = next;
+      if (creature) {
+        const n = Math.floor(amount);
+        const patch = how === 'damage' ? damage(creature, n) : how === 'heal' ? heal(creature, n) : { hp_temp: n };
+        await creatureRepo.update(creature.id, patch);
+        creature = { ...creature, ...patch };
+      } else if (sheet) {
+        sheet = await changeHp(sheet.id, how, amount);
+      }
       message = { ok: true, text: how === 'damage' ? `Ouch! ${amount} damage taken.` : how === 'heal' ? `${amount} healed.` : `${amount} temporary hit points.` };
       amount = null;
     } catch (e) {
@@ -66,13 +95,17 @@
 
 <main class="hp {v.vital}">
   {#if gone}
-    <p class="msg">This token isn’t tied to a character any more.</p>
-  {:else if !sheet}
-    <p class="msg">Reading the sheet…</p>
+    <p class="msg">{forCreature ? 'This monster or NPC has left the campaign.' : 'This token isn’t tied to a character any more.'}</p>
+  {:else if !ready}
+    {#if message}
+      <p class="msg bad" role="status">{message.text}</p>
+    {:else}
+      <div class="skelhp" aria-busy="true" aria-label="Reading the hit points"><i class="skeleton"></i><i class="skeleton"></i><i class="skeleton"></i></div>
+    {/if}
   {:else}
     <div class="row head">
       <strong>{name}</strong>
-      <a class="smallbtn" href={open} target="_blank" rel="noopener noreferrer" title="Open the sheet">Sheet</a>
+      {#if !forCreature}<a class="smallbtn" href={open} target="_blank" rel="noopener noreferrer" title="Open the sheet">Sheet</a>{/if}
     </div>
     {#if max > 0}
       <div class="row">
@@ -115,5 +148,8 @@
   .dmg { flex: none; }
   .dmg:hover:not(:disabled) { border-color: var(--hurt-red); color: var(--hurt-red); }
   .msg { margin: 0; color: var(--dim); font-size: 0.75rem; line-height: 1.4; }
+  .skelhp { display: grid; gap: 0.5rem; padding-top: 0.25rem; }
+  .skelhp i { height: 1.375rem; border-radius: var(--r-sm); }
+  .skelhp i:first-child { width: 55%; height: 1rem; }
   .msg.bad { color: var(--bad); }
 </style>

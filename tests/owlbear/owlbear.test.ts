@@ -105,3 +105,25 @@ describe('token parts', () => {
     expect(partsFor({ x: 0, y: 0, w: 100, h: 100 }, sheet(0, 0))).toEqual([]);
   });
 });
+
+describe('creature tokens', async () => {
+  const { partsForVitals, vitalsOfCreature } = await import('$lib/owlbear/layout');
+  const box = { x: 0, y: 0, w: 100, h: 100 };
+  const c = (over: Record<string, unknown> = {}) => ({ visible: true, hp_max: 20, hp_current: 20, conditions: [] as string[], ...over });
+  it('shows nothing until the DM reveals it', () => {
+    expect(vitalsOfCreature(c({ visible: false }))).toBeNull();
+  });
+  it('shows only how hurt it looks, never its numbers', () => {
+    const fill = (v: ReturnType<typeof vitalsOfCreature>) => partsForVitals(box, v!).find((p) => p.kind === 'hp-fill')?.w ?? 0;
+    const full = fill(vitalsOfCreature(c()));
+    expect(fill(vitalsOfCreature(c({ hp_current: 19 })))).toBe(full);
+    expect(fill(vitalsOfCreature(c({ hp_current: 9 })))).toBeCloseTo(full / 2);
+    expect(fill(vitalsOfCreature(c({ hp_current: 4 })))).toBeCloseTo(full / 4);
+    expect(fill(vitalsOfCreature(c({ hp_current: 0 })))).toBe(0);
+  });
+  it('has no bar without hit points, but keeps its condition dots', () => {
+    const parts = partsForVitals(box, vitalsOfCreature(c({ hp_max: null, conditions: ['Prone'] }))!);
+    expect(parts.some((p) => p.kind.startsWith('hp'))).toBe(false);
+    expect(parts.some((p) => p.kind === 'cond-0')).toBe(true);
+  });
+});

@@ -6,7 +6,7 @@
  */
 import { vitalStatus } from '$lib/rules/hp';
 import { lookOf } from '$lib/rules/conditions';
-import type { Sheet } from '$lib/types';
+import type { ConditionLook, Sheet, State } from '$lib/types';
 import { toHex } from './colour';
 import type { PartKind } from './keys';
 
@@ -53,17 +53,46 @@ const VITAL_COLOURS: Record<string, string> = {
 const TEMP = '#5aa6f0';
 const MAX_DOTS = 6;
 
+/** What a token's bar and dots are drawn from. */
+export type Vitals = {
+  max: number; cur: number; temp: number; deathSaves?: State['deathSaves'];
+  conditions: string[]; looks: Record<string, ConditionLook>;
+};
+export const vitalsOfSheet = (sheet: Sheet): Vitals => ({
+  max: Number(sheet.definition?.combat?.hpMax) || 0,
+  cur: Math.max(0, Number(sheet.state?.hpCurrent) || 0),
+  temp: Math.max(0, Number(sheet.state?.hpTemp) || 0),
+  deathSaves: sheet.state?.deathSaves,
+  conditions: sheet.state?.conditions ?? [],
+  looks: sheet.definition?.conditionLooks ?? {}
+});
+/**
+ * A monster's or NPC's token (database/0017): only once the DM has revealed
+ * it, and then only as hurt as it looks (the players' view: full, half, a
+ * quarter, down), never its real numbers.
+ */
+export function vitalsOfCreature(c: { visible?: boolean; hp_max: number | null; hp_current: number | null; conditions: string[] }): Vitals | null {
+  if (!c.visible) return null;
+  const max = c.hp_max ?? 0;
+  const cur = max > 0 ? Math.max(0, c.hp_current ?? max) : 0;
+  const ratio = max > 0 ? cur / max : 0;
+  const shown = max <= 0 ? 0 : cur <= 0 ? 0 : ratio <= 0.25 ? 1 : ratio <= 0.5 ? 2 : 4;
+  return { max: max > 0 ? 4 : 0, cur: shown, temp: 0, conditions: c.conditions, looks: {} };
+}
+
 export function partsFor(box: Box, sheet: Sheet): Part[] {
+  return partsForVitals(box, vitalsOfSheet(sheet));
+}
+
+export function partsForVitals(box: Box, vitals: Vitals): Part[] {
   const out: Part[] = [];
-  const max = Number(sheet.definition?.combat?.hpMax) || 0;
-  const cur = Math.max(0, Number(sheet.state?.hpCurrent) || 0);
-  const temp = Math.max(0, Number(sheet.state?.hpTemp) || 0);
+  const { max, cur, temp } = vitals;
   const w = box.w * 0.84;
   const h = Math.max(4, box.w * 0.07);
   const x = box.x + (box.w - w) / 2;
   const y = box.y + box.h - h * 1.6;
   if (max > 0) {
-    const v = vitalStatus(cur, max, sheet.state?.deathSaves);
+    const v = vitalStatus(cur, max, vitals.deathSaves);
     out.push({ kind: 'hp-back', shape: 'RECTANGLE', x, y, w, h, fill: '#000000', opacity: 0.55, stroke: '#000000', strokeWidth: 0, z: 1 });
     const ratio = Math.min(1, cur / max);
     if (ratio > 0) out.push({ kind: 'hp-fill', shape: 'RECTANGLE', x, y, w: w * ratio, h, fill: VITAL_COLOURS[v.vital] ?? VITAL_COLOURS.healthy, opacity: 1, stroke: '#000000', strokeWidth: 0, z: 2 });
@@ -72,8 +101,7 @@ export function partsFor(box: Box, sheet: Sheet): Part[] {
       out.push({ kind: 'hp-temp', shape: 'RECTANGLE', x, y: y - th - h * 0.2, w: w * Math.min(1, temp / max), h: th, fill: TEMP, opacity: 1, stroke: '#000000', strokeWidth: 0, z: 2 });
     }
   }
-  const looks = sheet.definition?.conditionLooks ?? {};
-  const colours = (sheet.state?.conditions ?? []).map((c) => lookOf(c, looks)?.color).filter(Boolean) as string[];
+  const colours = vitals.conditions.map((c) => lookOf(c, vitals.looks)?.color).filter(Boolean) as string[];
   const d = Math.max(6, box.w * 0.16);
   colours.slice(0, MAX_DOTS).forEach((c, i) => {
     out.push({

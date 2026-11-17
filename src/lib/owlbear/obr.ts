@@ -10,9 +10,10 @@ import { resolveImageUrl } from '$lib/rules/imageUrl';
 import { siteRoot } from '$lib/rules/share';
 import { easeMode } from '$lib/stores/mode';
 import type { Sheet } from '$lib/types';
-import { NS, ORDER_KEY, PART_KEY, ROLLS_KEY, ROOM_KEY, SHEET_KEY, type PartLink, type TokenLink } from './keys';
+import { CREATURE_KEY, NS, ORDER_KEY, PART_KEY, ROLLS_KEY, ROOM_KEY, SHEET_KEY, type CreatureLink, type PartLink, type TokenLink } from './keys';
+import type { Creature } from '$lib/data/creatures';
 import { readLinks, type RoomLinks } from './links';
-import { partsFor, sameParts, tokenBox, type Part } from './layout';
+import { partsFor, partsForVitals, sameParts, tokenBox, vitalsOfCreature, type Part } from './layout';
 import { pushNote, readLog, type RollNote } from './rolls';
 
 export { OBR };
@@ -97,6 +98,10 @@ export const linkOf = (item: Item): TokenLink | null => {
   const v = item.metadata?.[SHEET_KEY] as TokenLink | undefined;
   return v && typeof v.id === 'string' ? v : null;
 };
+export const creatureLinkOf = (item: Item): CreatureLink | null => {
+  const v = item.metadata?.[CREATURE_KEY] as CreatureLink | undefined;
+  return v && typeof v.id === 'string' && typeof v.campaign === 'string' ? v : null;
+};
 const partOf = (item: Item): PartLink | null => {
   const v = item.metadata?.[PART_KEY] as PartLink | undefined;
   return v && typeof v.token === 'string' && typeof v.kind === 'string' ? v : null;
@@ -135,6 +140,28 @@ export async function placeToken(sheet: Sheet): Promise<string> {
     .layer('CHARACTER')
     .position(at)
     .metadata({ [SHEET_KEY]: { id: sheet.id, portrait: url } satisfies TokenLink })
+    .build();
+  await OBR.scene.items.addItems([token]);
+  return token.id;
+}
+
+/**
+ * A token for one of the DM's monsters or NPCs, in the middle of the view:
+ * the site's monster or NPC mark, its name as the label. Its bar shows only
+ * once the DM reveals it (layout: vitalsOfCreature).
+ */
+export async function placeCreatureToken(c: Creature): Promise<string> {
+  const url = `${siteRoot(location.origin, base)}/owlbear/${c.kind === 'npc' ? 'npc' : 'monster'}.png`;
+  const [w, h] = await Promise.all([OBR.viewport.getWidth(), OBR.viewport.getHeight()]);
+  const centre = await OBR.viewport.inverseTransformPoint({ x: w / 2, y: h / 2 });
+  const at = await OBR.scene.grid.snapPosition(centre);
+  const token = buildImage({ url, width: 512, height: 512, mime: 'image/png' }, { dpi: 512, offset: { x: 256, y: 256 } })
+    .name(c.name)
+    .plainText(c.name)
+    .textItemType('LABEL')
+    .layer('CHARACTER')
+    .position(at)
+    .metadata({ [CREATURE_KEY]: { id: c.id, campaign: c.campaign_id } satisfies CreatureLink })
     .build();
   await OBR.scene.items.addItems([token]);
   return token.id;
@@ -210,18 +237,29 @@ const swapping = new Set<string>();
  * no longer wanted. Parts of a token whose sheet has not been read yet are
  * left alone. A changed portrait is put on the token too.
  */
-export async function syncTokens(sheets: Map<string, Sheet>): Promise<void> {
+export async function syncTokens(sheets: Map<string, Sheet>, creatures: Map<string, Creature> | null = null): Promise<void> {
   const [items, dpi] = await Promise.all([OBR.scene.items.getItems(), OBR.scene.grid.getDpi()]);
   const tokens = new Map<string, Image>();
-  for (const i of items) if (isImage(i) && linkOf(i)) tokens.set(i.id, i);
+  for (const i of items) if (isImage(i) && (linkOf(i) || creatureLinkOf(i))) tokens.set(i.id, i);
 
   const want = new Map<string, { token: Image; part: Part }>();
   const known = new Set<string>();
   for (const t of tokens.values()) {
-    const sheet = sheets.get(linkOf(t)!.id);
-    if (!sheet) continue;
+    const link = linkOf(t);
+    if (link) {
+      const sheet = sheets.get(link.id);
+      if (!sheet) continue;
+      known.add(t.id);
+      for (const part of partsFor(tokenBox(t, dpi), sheet)) want.set(`${t.id}|${part.kind}`, { token: t, part });
+      continue;
+    }
+    // A monster's or NPC's: only when the DM's creatures could be read (else left as they are).
+    if (!creatures) continue;
     known.add(t.id);
-    for (const part of partsFor(tokenBox(t, dpi), sheet)) want.set(`${t.id}|${part.kind}`, { token: t, part });
+    const c = creatures.get(creatureLinkOf(t)!.id);
+    const vitals = c ? vitalsOfCreature(c) : null;
+    if (!vitals) continue;
+    for (const part of partsForVitals(tokenBox(t, dpi), vitals)) want.set(`${t.id}|${part.kind}`, { token: t, part });
   }
 
   const have = new Map<string, Shape>();
@@ -260,7 +298,8 @@ export async function syncTokens(sheets: Map<string, Sheet>): Promise<void> {
 
   // A portrait changed on the sheet: the token tied with the old one follows.
   for (const t of tokens.values()) {
-    const link = linkOf(t)!;
+    const link = linkOf(t);
+    if (!link) continue;
     const sheet = sheets.get(link.id);
     if (!sheet || !link.portrait || swapping.has(t.id)) continue;
     const url = resolveImageUrl(sheet.definition?.identity?.portraitUrl).url;
@@ -284,6 +323,14 @@ export async function syncTokens(sheets: Map<string, Sheet>): Promise<void> {
 export async function makeMenus(): Promise<void> {
   const tied = { key: ['metadata', SHEET_KEY], value: undefined, operator: '!=' as const };
   const untied = { key: ['metadata', SHEET_KEY], value: undefined };
+  const creature = { key: ['metadata', CREATURE_KEY], value: undefined, operator: '!=' as const };
+  const notCreature = { key: ['metadata', CREATURE_KEY], value: undefined };
+  // A monster's or NPC's hit points: the GM's menu only (the DM changes them).
+  await OBR.contextMenu.create({
+    id: `${NS}/creature-hp`,
+    icons: [{ icon: asset('heart.svg'), label: 'Hit points', filter: { max: 1, roles: ['GM'], every: [creature] } }],
+    embed: { url: `${asset('hp')}?creature=1`, height: 176 }
+  });
   await OBR.contextMenu.create({
     id: `${NS}/hp`,
     icons: [{ icon: asset('heart.svg'), label: 'Hit points', filter: { max: 1, every: [tied] } }],
@@ -291,7 +338,7 @@ export async function makeMenus(): Promise<void> {
   });
   await OBR.contextMenu.create({
     id: `${NS}/tie`,
-    icons: [{ icon: asset('link.svg'), label: 'Tie to a character', filter: { max: 1, every: [{ key: 'layer', value: 'CHARACTER' }, untied] } }],
+    icons: [{ icon: asset('link.svg'), label: 'Tie to a character', filter: { max: 1, every: [{ key: 'layer', value: 'CHARACTER' }, untied, notCreature] } }],
     embed: { url: asset('link'), height: 230 }
   });
   await OBR.contextMenu.create({

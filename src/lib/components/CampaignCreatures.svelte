@@ -7,6 +7,7 @@
   written new with a stat block, in a window over the dimmed page.
 -->
 <script lang="ts">
+  import type { Snippet } from 'svelte';
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
   import { fade } from 'svelte/transition';
@@ -28,7 +29,16 @@
   import StatBlockEditor from './StatBlockEditor.svelte';
   import StatWindow from './StatWindow.svelte';
 
-  let { table, ended = false }: { table: CreatureTable; ended?: boolean } = $props();
+  let {
+    table,
+    ended = false,
+    tools
+  }: {
+    table: CreatureTable;
+    ended?: boolean;
+    /** More buttons for each card (Owlbear's Place token). */
+    tools?: Snippet<[Creature]>;
+  } = $props();
   const still = prefersReducedMotion();
   /** Everything 0018 brings (stat blocks, reveal, homebrew). TODO: drop once 0018 has run. */
   const full = $derived(!table.before0018);
@@ -232,6 +242,7 @@
             {#if kind || c.statblock?.cr}<span class="creaturekind">{kind}{#if c.statblock?.cr}{kind ? ', ' : ''}CR {c.statblock.cr}{/if}</span>{/if}
           </div>
           <div class="creaturetools">
+            {#if tools}{@render tools(c)}{/if}
             {#if !ended && full}
               <button class="ctool eye" class:on={c.visible} aria-pressed={c.visible}
                       aria-label={c.visible ? `Hide ${c.name} from your players` : `Reveal ${c.name} to your players`}

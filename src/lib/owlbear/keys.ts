@@ -12,9 +12,12 @@ export const ROLLS_KEY = `${NS}/rolls`;
 export const ORDER_KEY = `${NS}/order`;
 /** A token's metadata: the sheet it stands for (TokenLink). */
 export const SHEET_KEY = `${NS}/sheet`;
+/** A token's metadata: the DM's monster or NPC it stands for (CreatureLink). */
+export const CREATURE_KEY = `${NS}/creature`;
 /** An attachment's metadata: what it shows, for which token (PartLink). */
 export const PART_KEY = `${NS}/part`;
 
 export type TokenLink = { id: string; portrait?: string };
+export type CreatureLink = { id: string; campaign: string };
 export type PartKind = 'hp-back' | 'hp-fill' | 'hp-temp' | `cond-${number}`;
 export type PartLink = { token: string; kind: PartKind };
