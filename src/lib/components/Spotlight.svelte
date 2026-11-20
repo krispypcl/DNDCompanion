@@ -14,6 +14,7 @@
   import { prefersReducedMotion } from '#lib/motion.ts';
   import { peek, themeAt } from '#lib/stores/peek.svelte.ts';
   import { matchRank, search, type Hit, type IndexRow } from '#lib/rules/spotlight.ts';
+  import { debounce } from '#lib/debounce.ts';
 
   type Homebrew = { id: string; name: string; kind: string };
   let {
@@ -48,19 +49,35 @@
     if (open) queueMicrotask(() => input?.select());
   });
 
+  /**
+   * What is searched: the field's words once typing pauses for a breath, so
+   * the ten thousand entries aren't searched again for every letter. Enter
+   * searches at once (flush) before choosing.
+   */
+  let searched = $state('');
+  const settle = debounce((q: string) => (searched = q), 120);
+  $effect(() => {
+    const q = query;
+    if (q.trim().length < 2) {
+      settle.cancel();
+      searched = q;
+    } else settle(q);
+  });
+  $effect(() => () => settle.cancel());
+
   type Row = { kind: 'entry'; hit: Hit } | { kind: 'homebrew'; brew: Homebrew };
   const results = $derived.by((): Row[] => {
     const own: Row[] = homebrew
-      .map((b) => ({ b, rank: matchRank(b.name, query) }))
-      .filter((x) => query.trim().length >= 2 && x.rank >= 0)
+      .map((b) => ({ b, rank: matchRank(b.name, searched) }))
+      .filter((x) => searched.trim().length >= 2 && x.rank >= 0)
       .sort((a, b) => a.rank - b.rank)
       .slice(0, 8)
       .map(({ b }) => ({ kind: 'homebrew', brew: b }));
-    const found: Row[] = rows ? search(rows, query, 40).map((hit) => ({ kind: 'entry', hit })) : [];
+    const found: Row[] = rows ? search(rows, searched, 40).map((hit) => ({ kind: 'entry', hit })) : [];
     return [...own, ...found];
   });
   $effect(() => {
-    query;
+    searched;
     at = 0;
   });
 
@@ -92,6 +109,7 @@
       queueMicrotask(() => list?.querySelector<HTMLElement>(`[data-i="${at}"]`)?.scrollIntoView({ block: 'nearest' }));
     } else if (e.key === 'Enter' && e.target === input) {
       e.preventDefault();
+      settle.flush();
       choose(results[at], e.shiftKey);
     } else if (e.key === 'Escape') {
       e.preventDefault();
@@ -135,7 +153,7 @@
         <kbd class="spotesc">Esc</kbd>
         <button type="button" class="closex spotx" aria-label="Close the search" onclick={close}>×</button>
       </div>
-      {#if query.trim().length >= 2}
+      {#if searched.trim().length >= 2}
         <ul class="spotlist themed-scroll" id="spot-results" role="listbox" bind:this={list}>
           {#each results as r, i (r.kind === 'homebrew' ? `h${r.brew.id}` : r.hit.url)}
             <li id="spot-{i}" data-i={i} role="option" aria-selected={i === at} class:at={i === at}

@@ -49,10 +49,10 @@
     if (!around || !peeks) return;
     const enter = (e: PointerEvent) => {
       if (e.pointerType === 'touch' || e.buttons) return;
-      peek.hoverIn(target);
+      peek.hoverIn(target, { x: e.clientX, y: e.clientY });
     };
     const leave = (e: PointerEvent) => {
-      if (e.pointerType !== 'touch') peek.hoverOut();
+      if (e.pointerType !== 'touch') peek.hoverOut({ x: e.clientX, y: e.clientY });
     };
     around.addEventListener('pointerenter', enter);
     around.addEventListener('pointerleave', leave);

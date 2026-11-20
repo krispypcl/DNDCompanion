@@ -108,11 +108,19 @@
       if (box?.contains(t) || t?.closest?.('.lookup')) return;
       if (peek.tapped) peek.close();
     };
+    // The pointer heading for the open window keeps it open (stores/peek, the safe triangle).
+    peek.box = () => box?.getBoundingClientRect() ?? null;
+    const moved = (e: PointerEvent) => {
+      if (e.pointerType === 'mouse' && peek.target) peek.moved({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener('pointermove', moved, { passive: true });
     window.addEventListener('resize', size);
     window.addEventListener('keydown', key, true);
     window.addEventListener('scroll', scrolled, { passive: true, capture: true });
     window.addEventListener('pointerdown', down, true);
     return () => {
+      peek.box = () => null;
+      window.removeEventListener('pointermove', moved);
       window.removeEventListener('resize', size);
       window.removeEventListener('keydown', key, true);
       window.removeEventListener('scroll', scrolled, true);

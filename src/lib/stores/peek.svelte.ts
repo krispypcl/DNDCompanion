@@ -5,6 +5,7 @@
  * the layout, draws it.
  */
 import { peekTarget } from '#lib/rules/peek.ts';
+import { inSafeTriangle, type Point } from '#lib/safeTriangle.ts';
 
 /** How long the pointer rests on a name before the window opens. */
 const HOVER_OPEN_MS = 450;
@@ -45,6 +46,17 @@ class Peek {
   #openTimer: ReturnType<typeof setTimeout> | undefined;
   #closeTimer: ReturnType<typeof setTimeout> | undefined;
 
+  /**
+   * Where the pointer left the name of the open peek, while it may be on its
+   * way to the window (lib/safeTriangle). LookupPeek gives the window's box.
+   */
+  #aim: Point | null = null;
+  box: () => DOMRect | null = () => null;
+  #heading(p: Point): boolean {
+    const r = this.box();
+    return Boolean(this.#aim && r && inSafeTriangle(this.#aim, r, p));
+  }
+
   show(target: PeekTarget, { tapped = false } = {}) {
     this.#clear();
     if (!peekTarget(target.url)) return;
@@ -54,7 +66,9 @@ class Peek {
   }
 
   /** The pointer settled on a name: open after a moment, unless it moves on. */
-  hoverIn(get: () => PeekTarget | null) {
+  hoverIn(get: () => PeekTarget | null, at?: Point) {
+    // Crossing a name on the way to the open window: that one doesn't open.
+    if (at && this.#heading(at)) return;
     clearTimeout(this.#closeTimer);
     clearTimeout(this.#openTimer);
     // Already showing this one: nothing to wait for.
@@ -67,13 +81,22 @@ class Peek {
   }
 
   /** The pointer left the name: close soon, unless it reaches the window. */
-  hoverOut() {
+  hoverOut(at?: Point) {
     clearTimeout(this.#openTimer);
+    this.#aim = this.target && at ? at : null;
     this.#scheduleClose();
+  }
+
+  /** The pointer moved while the peek is open outside it: heading for the window holds it open. */
+  moved(at: Point) {
+    if (!this.#aim || this.inside) return;
+    if (this.#heading(at)) this.#scheduleClose();
+    else this.#aim = null;
   }
 
   enter() {
     this.inside = true;
+    this.#aim = null;
     clearTimeout(this.#closeTimer);
   }
 
@@ -140,6 +163,7 @@ class Peek {
 
   close({ quietly = false } = {}) {
     this.quiet = quietly;
+    this.#aim = null;
     this.#clear();
     this.target = null;
     this.pinned = false;

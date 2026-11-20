@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { peek } from '#lib/stores/peek.svelte.ts';
 
 const fireball = { name: 'Fireball', url: 'https://5e.tools/spells.html#fireball_xphb', anchor: new DOMRect() };
@@ -27,6 +27,26 @@ describe('peek windows', () => {
     expect(again.id).toBe(first.id); // the same window, so it glides rather than reopening
     expect(again.moves).toBe(1);
     expect(again.target.name).toBe('Fireball'); // and it comes to the front
+  });
+
+  it('keeps a hover peek open, and other names shut, while the pointer heads for it', () => {
+    vi.useFakeTimers();
+    peek.box = () => new DOMRect(300, 100, 400, 300);
+    peek.show(fireball);
+    peek.hoverOut({ x: 100, y: 200 });
+    // On the way to the window: a name crossed there doesn't open, and the window stays.
+    peek.hoverIn(() => shield, { x: 180, y: 200 });
+    for (let x = 180; x < 300; x += 20) {
+      vi.advanceTimersByTime(150);
+      peek.moved({ x, y: 200 });
+    }
+    expect(peek.target?.name).toBe('Fireball');
+    // Heading elsewhere lets it close.
+    peek.moved({ x: 120, y: 40 });
+    vi.advanceTimersByTime(400);
+    expect(peek.target).toBeNull();
+    vi.useRealTimers();
+    peek.box = () => null;
   });
 
   it('moves the kept window to where a peek of the same entry was dragged', () => {
