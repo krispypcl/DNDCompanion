@@ -50,7 +50,7 @@
 
 <style>
   .notice {
-    position: fixed; z-index: 45; left: 50%; bottom: 1rem; translate: -50% 0;
+    position: fixed; z-index: 45; left: 50%; bottom: calc(1rem + var(--foot, 0px)); translate: -50% 0;
     display: flex; align-items: center; gap: 0.5rem; max-width: calc(100vw - 2rem);
     padding: 0.625rem 0.875rem; border-radius: var(--r);
     background: var(--raised); border: 1px solid var(--line); color: var(--text);

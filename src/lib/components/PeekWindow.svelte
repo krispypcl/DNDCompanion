@@ -84,6 +84,14 @@
     overflow: hidden;
   }
   .peek-window:focus { outline: none; }
+  /* A phone: a kept window is a sheet from the bottom, as the open peek is. */
+  @media (max-width: 700px) {
+    .peek-window {
+      left: 0 !important; width: 100% !important; top: auto !important; bottom: 0; translate: none !important;
+      max-height: 75dvh !important; border-radius: var(--r) var(--r) 0 0; border-bottom: 0;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+  }
   :global([data-mode='light']) .peek-window {
     box-shadow: 0 18px 44px rgb(20 20 40 / 0.16), 0 2px 6px rgb(20 20 40 / 0.08);
   }

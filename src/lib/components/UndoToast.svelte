@@ -32,7 +32,7 @@
        to clear that. Below the splash, which is 60. */
     z-index: 40;
     inset-inline: 0;
-    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    bottom: calc(1rem + var(--foot, env(safe-area-inset-bottom, 0px)));
     margin-inline: auto;
     width: min(24rem, calc(100% - 2rem));
     background: var(--surface);

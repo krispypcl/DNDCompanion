@@ -57,7 +57,7 @@
     position: fixed;
     z-index: 40;
     right: 1rem;
-    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    bottom: calc(1rem + var(--foot, env(safe-area-inset-bottom, 0px)));
     margin: 0;
     background: var(--surface);
     border: 1px solid var(--line);
@@ -72,6 +72,6 @@
   /* A phone's other messages run the width of the screen, so this clears
      them rather than landing on top. */
   @media (max-width: 700px) {
-    .saveword { bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px)); }
+    .saveword { bottom: calc(4.5rem + var(--foot, env(safe-area-inset-bottom, 0px))); }
   }
 </style>

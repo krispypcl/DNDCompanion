@@ -43,7 +43,7 @@
     inset-inline: 0;
     /* Clear of the undo toast, which lives at the same edge: when a write is
        refused mid-session both can be on screen at once. */
-    bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+    bottom: calc(4.75rem + var(--foot, env(safe-area-inset-bottom, 0px)));
     margin-inline: auto;
     width: min(28rem, calc(100% - 2rem));
     background: var(--surface);
@@ -68,6 +68,6 @@
   /* On a phone the other two messages run the width of the screen, so this
      clears the save word as well as the undo toast beneath it. */
   @media (max-width: 700px) {
-    .stale-banner { bottom: calc(8rem + env(safe-area-inset-bottom, 0px)); }
+    .stale-banner { bottom: calc(8rem + var(--foot, env(safe-area-inset-bottom, 0px))); }
   }
 </style>
