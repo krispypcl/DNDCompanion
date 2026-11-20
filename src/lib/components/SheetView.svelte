@@ -607,8 +607,9 @@
     if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
     if (document.querySelector('.lightbox, [role="dialog"]:not([data-keys]), [role="alertdialog"]')) return;
     const mod = e.ctrlKey || e.metaKey;
-    // Printing the page itself would print the app: the sheet's PDF is what prints.
-    if (mod && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'p') {
+    // Printing the page itself would print the app: the sheet's PDF is what
+    // prints, for its owner (exporting is theirs alone).
+    if (mod && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'p' && isOwner) {
       e.preventDefault();
       void makePdf();
       return;
@@ -631,7 +632,7 @@
       // The music's speaker, on or off.
       e.preventDefault();
       setMusicOn(!get(musicOn));
-    } else if (e.key.toLowerCase() === 'p') {
+    } else if (e.key.toLowerCase() === 'p' && isOwner) {
       e.preventDefault();
       void makePdf();
     } else if (/^[1-9]$/.test(e.key)) {
@@ -670,8 +671,9 @@
    * Writing this reader may not see is left out, as everywhere else.
    */
   let makingPdf = $state(false);
+  /** The sheet as a PDF, with the sheet inside it: its owner's alone, as Export is. */
   async function makePdf() {
-    if (!definition || !sheetState || makingPdf) return;
+    if (!definition || !sheetState || makingPdf || !isOwner) return;
     makingPdf = true;
     try {
       const { sheetPdf } = await import('#lib/pdf/sheetPdf.ts');
@@ -964,8 +966,10 @@
         <a class="back" href={cameFrom ? `${base}/c/${cameFrom}` : `${base}/`}
            title={cameFrom ? 'Back to the campaign' : 'Back to your characters'}>Back</a>
         <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
-        <PrintButton onprint={makePdf} busy={makingPdf} />
-        {#if isOwner}<DownloadButton ondownload={exportNow} />{/if}
+        {#if isOwner}
+          <PrintButton onprint={makePdf} busy={makingPdf} />
+          <DownloadButton ondownload={exportNow} />
+        {/if}
         <button class="keys searchbtn" onclick={() => (searching = true)} aria-label="Search 5e.tools" title="Search 5e.tools (/)">
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
         </button>
@@ -986,8 +990,10 @@
       <!-- The sheet's own tools, which sit in the header on a computer. -->
       <div class="phonetools" data-places="more">
         <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
-        <PrintButton onprint={makePdf} busy={makingPdf} />
-        {#if isOwner}<DownloadButton ondownload={exportNow} />{/if}
+        {#if isOwner}
+          <PrintButton onprint={makePdf} busy={makingPdf} />
+          <DownloadButton ondownload={exportNow} />
+        {/if}
         <ModeToggle />
         {#if !isOwner}
           <dl class="stamps">
