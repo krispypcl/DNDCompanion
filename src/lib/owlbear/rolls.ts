@@ -1,7 +1,7 @@
 /**
  * Rolls made on a sheet, as the Owlbear room hears of them: who rolled, what
- * for, the total and the dice. Kept small: the room keeps the latest few in
- * its metadata (which Owlbear limits to 16 kB for everything).
+ * for, the total and the dice, shown to everyone in the room as a pop-up.
+ * Kept small, as they travel on a broadcast.
  */
 import type { Roll } from '#lib/rules/dice.ts';
 
@@ -16,8 +16,6 @@ export type RollNote = {
   mode: 'normal' | 'advantage' | 'disadvantage';
   at: number;
 };
-
-export const ROLL_LOG_MAX = 20;
 
 export function noteOf(roll: Roll, sheet: string, who: string): RollNote {
   return {
@@ -55,11 +53,11 @@ export function natural(note: RollNote): 'crit' | 'fumble' | null {
   return d20.v === 20 ? 'crit' : d20.v === 1 ? 'fumble' : null;
 }
 
-/** "Loka rolled Stealth: 17" — with the dice after, for the log. */
+/** "Loka rolled Stealth: 17", with the dice after it in the pop-up. */
 export function headline(note: RollNote): string {
   const what = note.label ? ` ${note.label}` : '';
   const nat = natural(note);
-  const flourish = nat === 'crit' ? ' (natural 20!)' : nat === 'fumble' ? ' (natural 1…)' : '';
+  const flourish = nat === 'crit' ? ' (natural 20!)' : nat === 'fumble' ? ' (natural 1!)' : '';
   return `${note.who} rolled${what}: ${note.total}${flourish}`;
 }
 
@@ -67,15 +65,4 @@ export function diceLine(note: RollNote): string {
   const faces = note.dice.map((d) => (d.d !== undefined ? `${d.v} (${d.d})` : String(d.v))).join(', ');
   const mode = note.mode === 'advantage' ? ' with advantage' : note.mode === 'disadvantage' ? ' with disadvantage' : '';
   return `${note.formula}${mode}${faces ? ` · ${faces}` : ''}`;
-}
-
-/** The log with this note added: newest first, no repeats, kept short. */
-export function pushNote(log: RollNote[], note: RollNote): RollNote[] {
-  const same = (a: RollNote) => a.sheet === note.sheet && a.at === note.at && a.total === note.total;
-  if (log.some(same)) return log;
-  return [note, ...log].sort((a, b) => b.at - a.at).slice(0, ROLL_LOG_MAX);
-}
-
-export function readLog(value: unknown): RollNote[] {
-  return Array.isArray(value) ? (value.map(readNote).filter(Boolean) as RollNote[]).slice(0, ROLL_LOG_MAX) : [];
 }

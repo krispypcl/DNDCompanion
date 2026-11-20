@@ -1,13 +1,14 @@
 <script lang="ts">
   /**
    * A token's right-click menu in Owlbear, while it is not tied to anyone:
-   * pick one of the room's characters, and the token takes on their
-   * portrait and from then on carries their hit points and conditions.
+   * pick one of the room's campaign's characters (live), and the token takes
+   * on their portrait and from then on carries their hit points and
+   * conditions.
    */
   import { onMount } from 'svelte';
   import { joinRoom, type Obr } from '#lib/owlbear/frame.ts';
   import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
-  import { readSheets } from '#lib/owlbear/live.ts';
+  import { followSheets } from '#lib/owlbear/live.ts';
   import type { Sheet } from '#lib/types.ts';
 
   let obr = $state.raw<Obr | null>(null);
@@ -22,11 +23,8 @@
       const m = await joinRoom(stops);
       obr = m;
       itemId = ((await m.OBR.player.getSelection()) ?? [])[0] ?? null;
-      const links = await m.getLinks();
-      sheets = await readSheets({
-        sheets: links.filter((l) => l.kind === 'sheet').map((l) => l.id),
-        campaigns: links.filter((l) => l.kind === 'campaign').map((l) => l.id)
-      }).catch(() => []);
+      const campaign = await m.getCampaign();
+      stops.push(followSheets({ sheets: [], campaigns: campaign ? [campaign] : [] }, (list) => (sheets = list), () => (sheets ??= [])));
     })();
     return () => stops.forEach((s) => s());
   });
@@ -50,12 +48,12 @@
   {#if sheets === null}
     <div class="tieskel" aria-busy="true" aria-label="Gathering the party">{#each [0, 1, 2] as i (i)}<i class="skeleton"></i>{/each}</div>
   {:else if !sheets.length}
-    <p class="msg">No characters in this room yet. Add some from the DND Companion panel first.</p>
+    <p class="msg">No characters in this room yet. Bring your campaign in from the DND Companion panel first.</p>
   {:else}
     <ul>
-      {#each sheets as s (s.id)}
+      {#each sheets as s, i (s.id)}
         {@const portrait = resolveImageUrl(s.definition?.identity?.portraitUrl).url}
-        <li>
+        <li class="rise" style:--i={i}>
           <button disabled={busy !== null} onclick={() => tie(s)}>
             <span class="pic">{#if portrait}<img src={portrait} alt="" />{/if}</span>
             <span class="name">{obr?.nameOf(s)}</span>
@@ -87,4 +85,8 @@
   .msg.bad { color: var(--bad); }
   .tieskel { display: grid; gap: 0.375rem; }
   .tieskel i { height: 2.5rem; border-radius: var(--r-sm); }
+  /* The list replacing the skeleton fades up, a row at a time. */
+  .rise { animation: tie-rise 0.24s cubic-bezier(0.33, 1, 0.68, 1) both; animation-delay: calc(var(--i, 0) * 30ms); }
+  @keyframes tie-rise { from { opacity: 0; translate: 0 4px; } }
+  @media (prefers-reduced-motion: reduce) { .rise { animation: none; } }
 </style>

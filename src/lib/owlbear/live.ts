@@ -33,7 +33,7 @@ const COLUMNS = 'id, owner_id, campaign_id, name, retired, definition, state, cr
 
 export type Follow = { sheets: string[]; campaigns: string[] };
 
-export async function readSheets(follow: Follow): Promise<Sheet[]> {
+async function readSheets(follow: Follow): Promise<Sheet[]> {
   if (!isConfigured) return [];
   const reads: PromiseLike<{ data: unknown; error: { message: string } | null }>[] = [];
   if (follow.sheets.length) reads.push(supabase.from('characters').select(COLUMNS).in('id', follow.sheets));

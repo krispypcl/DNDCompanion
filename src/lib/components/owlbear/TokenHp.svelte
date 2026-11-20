@@ -4,16 +4,17 @@
    * and damage, healing or temporary hit points written straight to the
    * sheet (lib/owlbear/hp.ts). With `?creature=1`, the GM's menu on one of
    * the DM's monsters or NPCs instead (database/0017), read and changed as
-   * the DM. Sits inside Owlbear's own menu, so it keeps to Owlbear's
-   * background and stays small.
+   * the DM, with its stat block a press away. Both follow changes made
+   * anywhere as they land. Sits inside Owlbear's own menu, so it keeps to
+   * Owlbear's background and stays small.
    */
   import { onMount, tick } from 'svelte';
-  import { joinRoom } from '#lib/owlbear/frame.ts';
+  import { joinRoom, type Obr } from '#lib/owlbear/frame.ts';
   import { vitalStatus } from '#lib/rules/hp.ts';
   import { followSheets } from '#lib/owlbear/live.ts';
   import { changeHp, type HpChange } from '#lib/owlbear/hp.ts';
   import type { Sheet } from '#lib/types.ts';
-  import { creatureRepo, type Creature } from '#lib/data/creatures.ts';
+  import { creatureRepo, followCreatures, type Creature } from '#lib/data/creatures.ts';
   import { damage, heal, hpNow } from '#lib/rules/creatures.ts';
   import HpBar from './HpBar.svelte';
 
@@ -28,26 +29,30 @@
   /** A monster's or NPC's token (the DM's menu). */
   let creature = $state.raw<Creature | null>(null);
   let forCreature = $state(false);
+  let obr = $state.raw<Obr | null>(null);
 
   onMount(() => {
     const stops: (() => void)[] = [];
     void (async () => {
       const m = await joinRoom(stops);
+      obr = m;
       const sel = (await m.OBR.player.getSelection()) ?? [];
       const item = sel.length ? (await m.OBR.scene.items.getItems(sel))[0] : undefined;
       forCreature = new URLSearchParams(location.search).has('creature');
       if (forCreature) {
         const cl = item ? m.creatureLinkOf(item) : null;
         if (!cl) return void (gone = true);
-        try {
-          creature = (await creatureRepo.list(cl.campaign)).find((c) => c.id === cl.id) ?? null;
-          gone = !creature;
+        let first = true;
+        stops.push(followCreatures(cl.campaign, (list) => {
+          // While a change of this menu's is on its way, its own numbers stand.
+          if (!busy) creature = list.find((c) => c.id === cl.id) ?? null;
+          gone = !list.some((c) => c.id === cl.id);
           if (creature) name = creature.name;
-        } catch {
-          message = { ok: false, text: 'Only the DM can read this one! Sign in as the DM in the DND Companion panel.' };
-        }
-        await tick();
-        field?.focus();
+          if (first) {
+            first = false;
+            void tick().then(() => field?.focus());
+          }
+        }, () => (message = { ok: false, text: 'Only the DM can read this one! Sign in as the DM in the DND Companion panel.' })));
         return;
       }
       const link = item ? m.linkOf(item) : null;
@@ -105,7 +110,11 @@
   {:else}
     <div class="row head">
       <strong>{name}</strong>
-      {#if !forCreature}<a class="smallbtn" href={open} target="_blank" rel="noopener noreferrer" title="Open the sheet">Sheet</a>{/if}
+      {#if creature}
+        <button type="button" class="smallbtn" title="Its stat block, beside the map" onclick={() => obr?.openStats(creature!.campaign_id, creature!.id)}>Stat block</button>
+      {:else}
+        <a class="smallbtn" href={open} target="_blank" rel="noopener noreferrer" title="Open the sheet">Sheet</a>
+      {/if}
     </div>
     {#if max > 0}
       <div class="row">
@@ -129,7 +138,7 @@
   .hp { padding: 0.5rem 0.75rem 0.625rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.4375rem; font-size: 0.8125rem; }
   .row { display: flex; align-items: center; gap: 0.375rem; }
   .head strong { flex: 1; min-width: 0; font-size: 0.875rem; overflow-wrap: anywhere; }
-  .head .smallbtn { padding: 0.1875rem 0.5rem; font-size: 0.75rem; }
+  .head .smallbtn { flex: none; padding: 0.1875rem 0.5rem; font-size: 0.75rem; }
   input {
     flex: 1; min-width: 0; font: inherit; padding: 0.3125rem 0.5rem; color: var(--text);
     border: 1px solid var(--line); border-radius: var(--r-sm); background: color-mix(in oklch, var(--bg) 70%, transparent);

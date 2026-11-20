@@ -1,31 +1,32 @@
 /**
  * The extension's background page, which Owlbear keeps running for as long
- * as the room is open: it follows the characters the room knows (linked in
- * the panel, or tied to a token), keeps the tied tokens' bars and dots in
- * step with their sheets, registers the right-click entries, and passes on
- * rolls made on the sheets as notifications and into the room's roll log.
+ * as the room is open: it follows the room's campaign and any character tied
+ * to a token, keeps the tied tokens' bars and dots in step with their sheets
+ * (and the DM's creatures' with theirs), registers the right-click entries,
+ * and shows rolls made on the sheets as pop-ups for everyone in the room.
+ * Everything arrives live (Supabase Realtime); nothing is asked again on a
+ * timer.
  */
 import type { Sheet } from '#lib/types.ts';
 import { supabase } from '#lib/supabase.ts';
 import { campaignRepo } from '#lib/data/campaigns.ts';
-import { creatureRepo, type Creature } from '#lib/data/creatures.ts';
-import { campaignOf } from './links';
+import { followCreatures, type Creature } from '#lib/data/creatures.ts';
 import { followSheets } from './live';
 import { hearRolls } from './channel';
 import { diceLine, headline, natural } from './rolls';
-import { OBR, creatureLinkOf, getLinks, isKeeper, linkOf, logRoll, makeMenus, onLinks, ready, syncTokens } from './obr';
-import type { RoomLinks } from './links';
+import { OBR, clearOldRolls, creatureLinkOf, getCampaign, isKeeper, linkOf, makeMenus, onCampaign, ready, syncTokens } from './obr';
 
 export async function run(): Promise<() => void> {
   await ready();
   const stops: (() => void)[] = [];
   await makeMenus().catch(() => {});
 
-  let links: RoomLinks = await getLinks().catch(() => []);
+  let campaign = await getCampaign().catch(() => null);
   let tokenSheets: string[] = [];
   let sheets = new Map<string, Sheet>();
   let keeper = await isKeeper().catch(() => false);
   let sceneReady = await OBR.scene.isReady().catch(() => false);
+  if (keeper) void clearOldRolls().catch(() => {});
 
   // ── Keeping the tokens in step (one client does it) ──
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -54,32 +55,35 @@ export async function run(): Promise<() => void> {
 
   // ── The DM's monsters and NPCs on the map ──
   // Their numbers are the DM's alone, so only a keeper signed in (in the panel)
-  // as the room's campaign's DM can read them; then they are read every few
-  // seconds while any of their tokens is on the map.
+  // as the room's campaign's DM follows them, and only while one of their
+  // tokens is on the map.
   let creatures: Map<string, Creature> | null = null;
   let creatureTokens = 0;
-  let creatureTimer: ReturnType<typeof setTimeout> | undefined;
-  const readCreatures = async () => {
-    clearTimeout(creatureTimer);
-    const campaign = campaignOf(links);
-    if (!keeper || !creatureTokens || !campaign) return;
-    try {
-      const { data } = await supabase.auth.getSession();
-      const me = data.session?.user.id;
-      const c = me ? await campaignRepo.get(campaign) : null;
-      if (c && c.created_by === me) {
-        const list = await creatureRepo.list(campaign);
-        const next = new Map(list.map((x) => [x.id, x]));
-        const key = (m: Map<string, Creature> | null) => JSON.stringify(m ? [...m.values()].map((x) => [x.id, x.visible, x.hp_max, x.hp_current, x.conditions, x.condition_looks]) : null);
-        if (key(next) !== key(creatures)) {
-          creatures = next;
-          schedule();
-        }
-      }
-    } catch {
-      // Offline for a moment: the next look tries again.
-    }
-    creatureTimer = setTimeout(readCreatures, 4000);
+  let creatureKey = '';
+  let stopCreatures = () => {};
+  let asked = 0;
+  const watchCreatures = async () => {
+    const turn = ++asked;
+    const { data } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+    const me = data.session?.user.id ?? null;
+    const c = keeper && creatureTokens && campaign && me ? await campaignRepo.get(campaign).catch(() => null) : null;
+    const key = c && c.created_by === me ? `${c.id}|${me}` : '';
+    // A newer look (signing in, the campaign replaced) answers instead.
+    if (turn !== asked || key === creatureKey) return;
+    creatureKey = key;
+    stopCreatures();
+    stopCreatures = () => {};
+    creatures = null;
+    if (!key) return;
+    let shown = '';
+    stopCreatures = followCreatures(c!.id, (list) => {
+      // Only what the tokens show: a note or a roll for initiative leaves them be.
+      const next = JSON.stringify(list.map((x) => [x.id, x.visible, x.hp_max, x.hp_current, x.conditions, x.condition_looks]));
+      if (next === shown && creatures) return;
+      shown = next;
+      creatures = new Map(list.map((x) => [x.id, x]));
+      schedule();
+    });
   };
 
   // ── Rolls from the sheets ──
@@ -94,16 +98,15 @@ export async function run(): Promise<() => void> {
     stopRolls = hearRolls(ids, (note) => {
       const nat = natural(note);
       void OBR.notification.show(`${headline(note)} · ${diceLine(note)}`, nat === 'crit' ? 'SUCCESS' : nat === 'fumble' ? 'ERROR' : 'DEFAULT');
-      if (keeper) void logRoll(note).catch(() => {});
     });
   };
 
-  // ── Which characters to follow ──
+  // ── Which characters to follow: the campaign's, and any tied to a token ──
   let followKey = '';
   let stopFollow = () => {};
   const follow = () => {
-    const ids = [...new Set([...links.filter((l) => l.kind === 'sheet').map((l) => l.id), ...tokenSheets])].sort();
-    const camps = links.filter((l) => l.kind === 'campaign').map((l) => l.id).sort();
+    const ids = [...new Set(tokenSheets)].sort();
+    const camps = campaign ? [campaign] : [];
     const key = JSON.stringify([ids, camps]);
     if (key === followKey) return;
     followKey = key;
@@ -114,61 +117,55 @@ export async function run(): Promise<() => void> {
       schedule();
     });
   };
-  const readTokens = async () => {
-    if (!sceneReady) return;
-    const items = await OBR.scene.items.getItems((i) => Boolean(linkOf(i) || creatureLinkOf(i)));
+  const readTokens = (items: Parameters<typeof linkOf>[0][]) => {
     tokenSheets = [...new Set(items.map((i) => linkOf(i)?.id).filter(Boolean) as string[])];
     const had = creatureTokens;
     creatureTokens = items.filter((i) => creatureLinkOf(i)).length;
-    if (creatureTokens && !had) void readCreatures();
+    if (Boolean(creatureTokens) !== Boolean(had)) void watchCreatures();
   };
 
-  await readTokens().catch(() => {});
+  if (sceneReady) readTokens(await OBR.scene.items.getItems().catch(() => []));
   follow();
 
   stops.push(
     OBR.scene.items.onChange((items) => {
-      tokenSheets = [...new Set(items.map((i) => linkOf(i)?.id).filter(Boolean) as string[])];
-      const had = creatureTokens;
-      creatureTokens = items.filter((i) => creatureLinkOf(i)).length;
-      if (creatureTokens && !had) void readCreatures();
+      readTokens(items);
       follow();
       schedule();
     }),
     OBR.scene.grid.onChange(() => schedule()),
     OBR.scene.onReadyChange(async (ok) => {
       sceneReady = ok;
-      if (ok) {
-        await readTokens().catch(() => {});
-        follow();
-        schedule();
-      }
-    }),
-    OBR.party.onChange(async () => {
-      keeper = await isKeeper().catch(() => false);
-      void readCreatures();
+      if (!ok) return;
+      readTokens(await OBR.scene.items.getItems().catch(() => []));
+      follow();
       schedule();
     }),
-    onLinks((next) => {
-      links = next;
+    OBR.party.onChange(async () => {
+      const was = keeper;
+      keeper = await isKeeper().catch(() => false);
+      if (keeper && !was) void clearOldRolls().catch(() => {});
+      void watchCreatures();
+      schedule();
+    }),
+    onCampaign((next) => {
+      if (next === campaign) return;
+      campaign = next;
       follow();
-      void readCreatures();
+      void watchCreatures();
     }),
     // Signing in or out in the panel (the same storage) changes what can be read.
     (() => {
-      const { data } = supabase.auth.onAuthStateChange(() => {
-        creatures = null;
-        void readCreatures();
-      });
+      const { data } = supabase.auth.onAuthStateChange(() => void watchCreatures());
       return () => data.subscription.unsubscribe();
     })()
   );
 
   return () => {
     clearTimeout(timer);
-    clearTimeout(creatureTimer);
     stopFollow();
     stopRolls();
+    stopCreatures();
     stops.forEach((s) => s());
   };
 }

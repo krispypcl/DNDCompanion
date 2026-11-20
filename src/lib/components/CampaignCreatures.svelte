@@ -11,7 +11,6 @@
   written new with a stat block, in a window over the dimmed page.
 -->
 <script lang="ts">
-  import type { Snippet } from 'svelte';
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
   import { fade } from 'svelte/transition';
@@ -41,13 +40,10 @@
 
   let {
     table,
-    ended = false,
-    tools
+    ended = false
   }: {
     table: CreatureTable;
     ended?: boolean;
-    /** More buttons for each card (Owlbear's Place token). */
-    tools?: Snippet<[Creature]>;
   } = $props();
   const still = prefersReducedMotion();
 
@@ -292,7 +288,6 @@
           <!-- Under the name, and under the buttons too: it has the card's width. -->
           {#if kind || c.statblock?.cr}<span class="creaturekind">{kind}{#if c.statblock?.cr}{kind ? ', ' : ''}CR {c.statblock.cr}{/if}</span>{/if}
           <div class="creaturetools">
-            {#if tools}{@render tools(c)}{/if}
             {#if !ended}
               <button class="ctool eye" class:on={c.visible} aria-pressed={c.visible}
                       aria-label={c.visible ? `Hide ${c.name} from your players` : `Reveal ${c.name} to your players`}

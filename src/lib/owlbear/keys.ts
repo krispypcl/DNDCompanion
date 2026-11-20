@@ -1,13 +1,13 @@
 /**
  * Names the Owlbear Rodeo extension keeps its things under: in the room's and
- * items' metadata, and on the Supabase channel rolls travel on. Owlbear asks
+ * items' metadata, and in the popovers it opens. Owlbear asks
  * for keys in reverse-domain form so extensions never collide.
  */
 export const NS = 'com.dndcompanion';
-/** Room metadata: the DND Companion links added to this room (RoomLinks). */
+/** Room metadata: the room's campaign (links.ts roomValue). */
 export const ROOM_KEY = `${NS}/room`;
-/** Room metadata: the latest rolls made on the room's sheets (RollNote[]). */
-export const ROLLS_KEY = `${NS}/rolls`;
+/** Room metadata of old: a log of the latest rolls, cleared once a room is opened. */
+export const OLD_ROLLS_KEY = `${NS}/rolls`;
 /** Room metadata: the order the DM put the room's characters in (sheet ids). */
 export const ORDER_KEY = `${NS}/order`;
 /** A token's metadata: the sheet it stands for (TokenLink). */

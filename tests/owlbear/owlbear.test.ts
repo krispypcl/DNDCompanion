@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { addLink, campaignOf, orderSheets, parseLink, readLinks, removeLink } from '#lib/owlbear/links.ts';
+import { orderSheets, parseLink, readCampaign, roomValue } from '#lib/owlbear/links.ts';
 import { toHex } from '#lib/owlbear/color.ts';
-import { diceLine, headline, natural, noteOf, pushNote, readLog, ROLL_LOG_MAX } from '#lib/owlbear/rolls.ts';
+import { diceLine, headline, natural, noteOf, readNote } from '#lib/owlbear/rolls.ts';
 import { partsFor, sameParts, tokenBox } from '#lib/owlbear/layout.ts';
 import { blankDefinition, blankState } from '#lib/sample.ts';
 import type { Sheet } from '#lib/types.ts';
@@ -15,7 +15,7 @@ describe('parseLink', () => {
     [`https://krispypcl.github.io/DNDCompanion/s/${ID}#appearance`, 'sheet'],
     [`https://dndcompanion.krispypcl.workers.dev/DNDCompanion/c/${ID}`, 'campaign'],
     [`/DNDCompanion/c/${ID}/`, 'campaign'],
-    [ID.toUpperCase(), 'sheet']
+    [ID.toUpperCase(), 'campaign']
   ])('reads %s', (text, kind) => expect(parseLink(text)).toEqual({ kind, id: ID }));
 
   it.each(['', 'hello', 'https://example.com/', `https://x.com/join?code=abc`, `/s/not-an-id`])('refuses %s', (t) =>
@@ -23,21 +23,17 @@ describe('parseLink', () => {
   );
 });
 
-describe('room links', () => {
-  it('cleans what is stored and adds or removes without repeats', () => {
-    const a = { kind: 'sheet' as const, id: ID };
-    expect(readLinks([a, a, { kind: 'x', id: ID }, { kind: 'campaign', id: 'nope' }, null])).toEqual([a]);
-    expect(readLinks('nope')).toEqual([]);
-    expect(addLink([a], a)).toHaveLength(1);
-    expect(removeLink([a], a)).toEqual([]);
+describe('the room’s campaign', () => {
+  const c1 = '11111111-1111-4111-8111-111111111111';
+  const c2 = '22222222-2222-4222-8222-222222222222';
+  it('reads the latest campaign, leaving characters added on their own behind', () => {
+    expect(readCampaign([{ kind: 'campaign', id: c1 }, { kind: 'sheet', id: ID }, { kind: 'campaign', id: c2 }])).toBe(c2);
+    expect(readCampaign([{ kind: 'sheet', id: ID }, { kind: 'campaign', id: 'nope' }, null])).toBeNull();
+    expect(readCampaign('nope')).toBeNull();
   });
-  it('keeps one campaign: a new one takes the old one’s place, characters stay', () => {
-    const a = { kind: 'sheet' as const, id: ID };
-    const c1 = { kind: 'campaign' as const, id: '11111111-1111-4111-8111-111111111111' };
-    const c2 = { kind: 'campaign' as const, id: '22222222-2222-4222-8222-222222222222' };
-    expect(addLink([a, c1], c2)).toEqual([a, c2]);
-    expect(campaignOf(addLink([a, c1], c2))).toBe(c2.id);
-    expect(readLinks([c1, a, c2])).toEqual([a, c2]);
+  it('stores one campaign, in the shape rooms have always kept', () => {
+    expect(roomValue(c1)).toEqual([{ kind: 'campaign', id: c1 }]);
+    expect(readCampaign(roomValue(c1))).toBe(c1);
   });
   it('orders characters by the room, then the campaign, then by name', () => {
     const s = (id: string, name: string) => ({ id, name });
@@ -68,13 +64,11 @@ describe('roll notes', () => {
     expect(diceLine(n)).toBe('1d20+4 with advantage · 20 (7)');
     expect(natural({ ...n, dice: [{ s: 20, v: 1 }] })).toBe('fumble');
   });
-  it('keeps the log newest first, short, without repeats', () => {
-    let log = readLog([]);
-    for (let i = 0; i < ROLL_LOG_MAX + 5; i++) log = pushNote(log, noteOf({ ...roll, at: i }, ID, 'Loka'));
-    expect(log).toHaveLength(ROLL_LOG_MAX);
-    expect(log[0].at).toBe(ROLL_LOG_MAX + 4);
-    expect(pushNote(log, log[0])).toBe(log);
-    expect(readLog([{ nope: 1 }, log[0]])).toHaveLength(1);
+  it('reads a note off the wire, refusing anything else', () => {
+    const n = noteOf(roll, ID, 'Loka');
+    expect(readNote(JSON.parse(JSON.stringify(n)))).toEqual(n);
+    expect(readNote({ nope: 1 })).toBeNull();
+    expect(headline({ ...n, dice: [{ s: 20, v: 1 }] })).toBe('Loka rolled Stealth: 24 (natural 1!)');
   });
 });
 

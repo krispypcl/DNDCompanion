@@ -13,7 +13,7 @@ export function GET() {
   const site = String(import.meta.env.PUBLIC_SITE_URL ?? '').trim().replace(/\/+$/, '');
   const manifest = {
     name: 'DND Companion',
-    version: '1.3.0',
+    version: '1.4.0',
     manifest_version: 1,
     author: 'DND Companion',
     description: 'Your DND Companion table in the room: live hit points, tokens, rolls, initiative, monsters and NPCs.',

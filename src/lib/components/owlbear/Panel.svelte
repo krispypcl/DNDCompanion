@@ -1,56 +1,55 @@
 <script lang="ts">
   /**
    * The extension's panel in Owlbear Rodeo (its toolbar button): the room's
-   * characters, live from their sheets — hit points, AC, conditions — with a
-   * way to open each sheet, put its token on the map (wearing its portrait),
-   * and the latest rolls made on the sheets. A room has one campaign (pasted
-   * by its link, replaceable) and any characters added on their own; the DM
-   * (Owlbear's GM) puts them in order by picking them up.
+   * campaign and its characters, live from their sheets (hit points, AC,
+   * conditions), each with its sheet a press away and a token to put on the
+   * map wearing its portrait. A room has one campaign, pasted by its link and
+   * swapped from the header; the GM puts the characters in order by picking
+   * them up.
    *
    * Signed in as the campaign's DM, the panel also runs the fight: the
-   * initiative order (lib/initiative) and the monsters and NPCs (the same
-   * tracker as the campaign page), each placeable as a token. Players see
-   * the order while it runs and the creatures the DM has revealed. Signing
-   * in works with an email, Google or Discord (lib/owlbear/signin).
+   * initiative order (lib/initiative) and, below the characters, the DM's
+   * monsters and NPCs, each with its stat block (a popover beside the map)
+   * and its tokens. Players see the order while it runs and the creatures
+   * the DM has revealed. Everything follows changes as they land, wherever
+   * they are made. Signing in works with an email, Google or Discord
+   * (lib/owlbear/signin).
    */
   import { onMount, untrack } from 'svelte';
   import { flip } from 'svelte/animate';
-  import { fade, slide } from 'svelte/transition';
-  import { cubicOut, quintOut } from 'svelte/easing';
-  import { armorClass, classLine, mainClass } from '#lib/rules/derived.ts';
-  import ClassIcon from '../ClassIcon.svelte';
+  import { fade } from 'svelte/transition';
+  import { cubicOut } from 'svelte/easing';
+  import { armorClass, classLine, initiativeParts, mainClass } from '#lib/rules/derived.ts';
   import { vitalStatus } from '#lib/rules/hp.ts';
   import { lookOf } from '#lib/rules/conditions.ts';
   import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
   import { faceFamily, fontFace } from '#lib/rules/fonts.ts';
-  import { friendlyDate } from '#lib/rules/dates.ts';
   import { applyMode } from '#lib/stores/mode.ts';
   import { themeStyle } from '#lib/theme.ts';
   import { session } from '#lib/stores/session.ts';
   import { profile } from '#lib/stores/profile.ts';
   import { enabledProviders, PROVIDER_NAMES, profileOf, signIn, signOut, type OAuthProvider } from '#lib/data/session.ts';
   import { signInFromOwlbear } from '#lib/owlbear/signin.ts';
-  import { creatureRepo, type Creature, type Revealed } from '#lib/data/creatures.ts';
+  import { followRevealed, type Revealed } from '#lib/data/creatures.ts';
   import { CreatureTable } from '#lib/creatureTable.svelte.ts';
   import { LiveInitiative } from '#lib/initiative.svelte.ts';
-  import { initiativeParts } from '#lib/rules/derived.ts';
   import { advantageFrom } from '#lib/rules/equipment.ts';
-  import { initiativeBonus } from '#lib/rules/statblock.ts';
+  import { hpNow } from '#lib/rules/creatures.ts';
+  import { initiativeBonus, kindLine } from '#lib/rules/statblock.ts';
   import { next as nextTurn, previous as previousTurn, rollInitiative, settleAll, start as startTurns, unsettled, type InitiativeRow } from '#lib/rules/initiative.ts';
   import { campaignRepo, inviteCode, NO_INITIATIVE, type Campaign } from '#lib/data/campaigns.ts';
   import { prefersReducedMotion } from '#lib/motion.ts';
-  import { addLink, campaignOf, orderSheets, parseLink, removeLink, type RoomLink, type RoomLinks } from '#lib/owlbear/links.ts';
+  import { orderSheets, parseLink } from '#lib/owlbear/links.ts';
   import { reorder } from '#lib/reorder.ts';
   import { smoothHeight } from '#lib/smoothHeight.ts';
   import { followSheets } from '#lib/owlbear/live.ts';
-  import { diceLine, headline, natural, type RollNote } from '#lib/owlbear/rolls.ts';
-  import type { Sheet } from '#lib/types.ts';
+  import type { ConditionLook, Sheet } from '#lib/types.ts';
+  import ClassIcon from '../ClassIcon.svelte';
   import Logo from '../Logo.svelte';
   import ConditionRing from '../ConditionRing.svelte';
   import InfoTip from '../InfoTip.svelte';
+  import SectionHead from '../SectionHead.svelte';
   import HpBar from './HpBar.svelte';
-  import AreaSwitch from '../AreaSwitch.svelte';
-  import CampaignCreatures from '../CampaignCreatures.svelte';
   import RevealedCreatures from '../RevealedCreatures.svelte';
   import InitiativeTracker from '../InitiativeTracker.svelte';
   import ProviderIcon from '../ProviderIcon.svelte';
@@ -58,44 +57,26 @@
   type O = typeof import('#lib/owlbear/obr.ts');
   let obr = $state.raw<O | null>(null);
   let inOwlbear = $state(true);
-  let links = $state.raw<RoomLinks>([]);
+  /** The room's campaign (its id, from the room), and the campaign itself once read. */
+  let campaignId = $state<string | null>(null);
+  let campaign = $state.raw<Campaign | null>(null);
   let sheets = $state.raw<Sheet[]>([]);
   let loaded = $state(false);
-  let rolls = $state.raw<RollNote[]>([]);
   /** Which sheets have a token on the map: sheet id → token ids. */
   let onMap = $state.raw<Record<string, string[]>>({});
   /** The same for the DM's monsters and NPCs: creature id → token ids. */
   let creaturesOnMap = $state.raw<Record<string, string[]>>({});
-  let campaignNames = $state(new Map<string, string>());
-  /** The room's campaign (its name, songs and order), once read. */
-  let campaign = $state.raw<Campaign | null>(null);
-  /** The order the DM put the characters in, for this room. */
+  /** The order the GM put the characters in, for this room. */
   let roomOrder = $state.raw<string[]>([]);
-  let draft = $state('');
   let error = $state<string | null>(null);
   let busy = $state<string | null>(null);
   let role = $state<'GM' | 'PLAYER'>('PLAYER');
 
-  const ease = () => ({ duration: prefersReducedMotion() ? 0 : 240, easing: cubicOut });
+  const still = prefersReducedMotion();
+  const appear = (delay = 0) => ({ duration: still ? 0 : 200, delay: still ? 0 : delay, easing: cubicOut });
 
   onMount(() => {
     const stops: (() => void)[] = [];
-    let stopFollow = () => {};
-    let followKey = '';
-    const follow = (l: RoomLinks) => {
-      const f = { sheets: l.filter((x) => x.kind === 'sheet').map((x) => x.id), campaigns: l.filter((x) => x.kind === 'campaign').map((x) => x.id) };
-      const key = JSON.stringify(f);
-      if (key === followKey) return;
-      followKey = key;
-      stopFollow();
-      stopFollow = followSheets(f, (s) => {
-        sheets = s;
-        loaded = true;
-      }, () => {
-        error = 'The characters wouldn’t load! Check your connection and try again.';
-        loaded = true;
-      });
-    };
     void (async () => {
       const m = await import('#lib/owlbear/obr.ts');
       if (!m.OBR.isAvailable) {
@@ -111,13 +92,12 @@
       void m.OBR.action.setHeight(760).catch(() => {});
       stops.push(await m.followTheme(applyMode));
       role = await m.OBR.player.getRole();
-      links = await m.getLinks();
-      follow(links);
-      rolls = await m.getRolls();
+      stops.push(m.OBR.player.onChange((p) => (role = p.role)));
+      campaignId = await m.getCampaign();
+      if (!campaignId) loaded = true;
+      stops.push(m.onCampaign((id) => (campaignId = id)));
       roomOrder = await m.getOrder();
       stops.push(m.onOrder((o) => (roomOrder = o)));
-      stops.push(m.onLinks((l) => { links = l; follow(l); }));
-      stops.push(m.onRolls((r) => (rolls = r)));
       const readMap = (items: { id: string; metadata: Record<string, unknown> }[]) => {
         const next: Record<string, string[]> = {};
         const beasts: Record<string, string[]> = {};
@@ -134,20 +114,34 @@
       stops.push(m.OBR.scene.items.onChange(readMap));
       stops.push(m.OBR.scene.onReadyChange(async (ok) => readMap(ok ? await m.OBR.scene.items.getItems() : [])));
     })();
-    return () => {
-      stopFollow();
-      stops.forEach((s) => s());
-    };
+    return () => stops.forEach((s) => s());
   });
 
-  /**
-   * Adding: up front while the room has no campaign (one field), otherwise
-   * from the buttons under the rolls, which give way to the field while it
-   * is in use and come back once it is done with.
-   */
-  let adding = $state<'character' | 'campaign' | null>(null);
+  // The campaign's characters and the campaign itself, followed live.
+  $effect(() => {
+    const id = campaignId;
+    if (!id) return void (sheets = []);
+    return followSheets({ sheets: [], campaigns: [id] }, (s) => {
+      sheets = s;
+      loaded = true;
+    }, () => {
+      error = 'The characters wouldn’t load! Check your connection and try again.';
+      loaded = true;
+    });
+  });
+  $effect(() => {
+    const id = campaignId;
+    if (!id) return void (campaign = null);
+    return campaignRepo.follow(id, (c) => {
+      if (campaignId === id) campaign = c;
+    });
+  });
+
+  // ── The room's campaign: brought in first, swapped from the header ──
+  let draft = $state('');
+  let swapping = $state(false);
   let addBusy = $state(false);
-  async function add() {
+  async function bringIn() {
     let link = parseLink(draft);
     error = null;
     if (!link && /[?&]code=|^[a-z0-9]{4,12}$/i.test(draft.trim())) {
@@ -157,122 +151,55 @@
       addBusy = false;
       if (found) link = { kind: 'campaign', id: found.id };
     }
-    if (!link) {
-      error = adding === 'character'
-        ? 'That’s not a character’s link! Open their sheet in DND Companion and copy its link.'
-        : 'That’s not a campaign link! Paste the campaign page’s link, or its invite link.';
-      return;
-    }
-    draft = '';
-    adding = null;
-    await addToRoom(link);
-  }
-  function startAdding(kind: 'character' | 'campaign') {
-    draft = '';
-    error = null;
-    adding = kind;
-  }
-  function stopAdding() {
-    draft = '';
-    error = null;
-    adding = null;
-  }
-  async function addToRoom(link: RoomLink) {
+    if (link?.kind === 'sheet') return void (error = 'That’s a character’s link! Paste the campaign page’s link, or its invite link.');
+    if (!link) return void (error = 'That’s not a campaign link! Paste the campaign page’s link, or its invite link.');
     if (!obr) return;
-    const before = links;
-    const next = addLink(links, link);
-    links = next;
+    const before = campaignId;
+    campaignId = link.id;
     try {
-      await obr.setLinks(next);
+      await obr.setCampaign(link.id);
+      draft = '';
+      swapping = false;
     } catch (e) {
-      links = before;
+      campaignId = before;
       error = `The room wouldn’t take that! ${e instanceof Error ? e.message : 'Try again in a moment.'}`;
     }
   }
-  async function unlink(link: RoomLink) {
-    if (!obr) return;
-    const next = removeLink(links, link);
-    links = next;
-    await obr.setLinks(next).catch(() => (error = 'That one held on! Try again in a moment.'));
-  }
-  async function place(s: Sheet) {
-    if (!obr) return;
-    busy = s.id;
+  function toggleSwap() {
+    swapping = !swapping;
+    draft = '';
     error = null;
-    try {
-      await obr.placeToken(s);
-    } catch (e) {
-      error = e instanceof Error ? e.message : 'The token slipped off the table! Try again.';
-    } finally {
-      busy = null;
-    }
-  }
-  async function placeCreature(c: Creature) {
-    if (!obr) return;
-    busy = c.id;
-    error = null;
-    try {
-      await obr.placeCreatureToken(c);
-    } catch (e) {
-      error = e instanceof Error ? e.message : 'The token slipped off the table! Try again.';
-    } finally {
-      busy = null;
-    }
-  }
-  async function findTokens(ids: string[]) {
-    if (!obr || !ids.length) return;
-    await obr.OBR.player.select(ids, true);
-    const box = await obr.OBR.scene.items.getItemBounds(ids).catch(() => null);
-    if (box) await obr.OBR.viewport.animateToBounds({ ...box, min: { x: box.min.x - box.width, y: box.min.y - box.height }, max: { x: box.max.x + box.width, y: box.max.y + box.height }, width: box.width * 3, height: box.height * 3 });
-  }
-  async function find(s: Sheet) {
-    if (!obr) return;
-    const ids = onMap[s.id] ?? [];
-    if (!ids.length) return;
-    await obr.OBR.player.select(ids, true);
-    const box = await obr.OBR.scene.items.getItemBounds(ids).catch(() => null);
-    if (box) await obr.OBR.viewport.animateToBounds({ ...box, min: { x: box.min.x - box.width, y: box.min.y - box.height }, max: { x: box.max.x + box.width, y: box.max.y + box.height }, width: box.width * 3, height: box.height * 3 });
   }
 
-  const campaignId = $derived(campaignOf(links));
-  /** The room's characters, in the DM's order: the campaign's (not retired) and any added on their own. */
-  const direct = $derived(new Set(links.filter((l) => l.kind === 'sheet').map((l) => l.id)));
-  const characters = $derived(
-    orderSheets(
-      sheets.filter((s) => direct.has(s.id) || (s.campaign_id === campaignId && !s.retired)),
-      roomOrder,
-      campaign?.id === campaignId ? (campaign?.details.order ?? []) : []
-    )
-  );
-  /** While the DM drags a character, the order it would land in. */
+  // ── Tokens ──
+  async function place(key: string, put: () => Promise<unknown>) {
+    busy = key;
+    error = null;
+    try {
+      await put();
+    } catch (e) {
+      error = e instanceof Error ? e.message : 'The token slipped off the table! Try again.';
+    } finally {
+      busy = null;
+    }
+  }
+  const find = (ids: string[] | undefined) => void obr?.findTokens(ids ?? []).catch(() => {});
+
+  /** The campaign's characters (not retired), in the GM's order for the room. */
+  const characters = $derived(orderSheets(
+    sheets.filter((s) => s.campaign_id === campaignId && !s.retired),
+    roomOrder,
+    campaign?.id === campaignId ? (campaign?.details.order ?? []) : []
+  ));
+  /** While the GM drags a character, the order it would land in. */
   let preview = $state.raw<string[] | null>(null);
   const shown = $derived(preview ? preview.map((id) => characters.find((s) => s.id === id)!).filter(Boolean) : characters);
   const canArrange = $derived(role === 'GM' && characters.length > 1);
   async function arrange(ids: string[]) {
+    preview = null;
     roomOrder = ids;
     await obr?.setOrder(ids).catch(() => (error = 'That order didn’t stick! Try again in a moment.'));
   }
-
-  // The room's campaign, read again whenever it changes.
-  $effect(() => {
-    const id = campaignId;
-    if (!id) return void (campaign = null);
-    if (campaign?.id === id) return;
-    campaignRepo.get(id).then((c) => { if (campaignId === id) campaign = c; }).catch(() => {});
-  });
-  const askedNames = new Set<string>();
-  /** The names of the campaigns characters added on their own are in. */
-  $effect(() => {
-    const ids = [...new Set(sheets.map((s) => s.campaign_id ?? '').filter(Boolean))];
-    const missing = ids.filter((id) => !askedNames.has(id));
-    if (!missing.length) return;
-    missing.forEach((id) => askedNames.add(id));
-    campaignRepo
-      .byIds(missing)
-      .then((list) => (campaignNames = new Map([...campaignNames, ...list.map((c) => [c.id, c.name] as const)])))
-      .catch(() => {});
-  });
-  const directLink = (s: Sheet) => links.find((l) => l.kind === 'sheet' && l.id === s.id) ?? null;
   const faces = $derived([...new Set(sheets.map((s) => fontFace(s.definition?.identity?.nameFont)?.href).filter(Boolean) as string[])]);
 
   // ── The fight: the DM's creatures and the initiative order ──
@@ -281,6 +208,7 @@
   const dmKey = $derived(isDm ? campaignId : null);
   const table = $derived(dmKey ? new CreatureTable(dmKey) : null);
   $effect(() => void table?.load());
+  $effect(() => table?.follow());
   // What is still waiting to be saved goes before the page does.
   $effect(() => {
     const t = table;
@@ -292,26 +220,18 @@
       go();
     };
   });
-  /** Party or Monsters & NPCs, for the DM. */
-  let view = $state('Party');
-  /** The creatures a player can see (only those the DM revealed), looked at again every few seconds. */
+  /** The creatures a player can see (only those the DM revealed), live. */
   let revealed = $state.raw<Revealed[]>([]);
   $effect(() => {
     const id = campaignId;
     if (!id || !me || isDm) return void (revealed = []);
-    let on = true;
-    const look = () => creatureRepo.revealed(id).then((r) => { if (on) revealed = r; }).catch(() => {});
-    void look();
-    const t = setInterval(look, 12000);
-    return () => { on = false; clearInterval(t); };
+    return followRevealed(id, (r) => (revealed = r));
   });
-  /** The campaign's characters in the order (not those added on their own). */
-  const fighters = $derived(sheets.filter((s) => campaignId && s.campaign_id === campaignId && !s.retired));
   const live = $derived(campaignId ? new LiveInitiative(campaignId) : null);
   $effect(() => live?.start());
   const init = $derived(live?.state ?? NO_INITIATIVE);
   const combatants = $derived<InitiativeRow[]>([
-    ...fighters.map((s) => ({
+    ...characters.map((s) => ({
       key: `pc:${s.id}`, name: obr?.nameOf(s) ?? s.name, value: init.pcs[s.id] ?? null, tie: init.ties[`pc:${s.id}`],
       // Players roll on the campaign page (one place for the whole table); here they watch.
       dex: s.definition ? initiativeParts(s.definition).total : 0, side: 'pc' as const
@@ -322,6 +242,7 @@
   ]);
   const showOrder = $derived(Boolean(live && combatants.length && (isDm || init.turn || init.asking)));
   const orderFail = (e: unknown) => (error = e instanceof Error ? e.message : 'The order slipped! Try again.');
+  const rollFor = (s: Sheet) => rollInitiative(initiativeParts(s.definition).total, undefined, advantageFrom(s.definition, 'init').length > 0);
   function setInitiative(key: string, value: number | null) {
     const ref = key.slice(3);
     if (key.startsWith('cr:')) {
@@ -335,13 +256,13 @@
     }
   }
   function rollOne(key: string) {
-    const s = fighters.find((x) => `pc:${x.id}` === key);
-    if (s?.definition) setInitiative(key, rollInitiative(initiativeParts(s.definition).total, undefined, advantageFrom(s.definition, 'init').length > 0));
+    const s = characters.find((x) => `pc:${x.id}` === key);
+    if (s?.definition) setInitiative(key, rollFor(s));
   }
   function rollRest() {
     if (!live) return;
     const pcs = { ...init.pcs };
-    for (const s of fighters) if (pcs[s.id] === undefined && s.definition) pcs[s.id] = rollInitiative(initiativeParts(s.definition).total, undefined, advantageFrom(s.definition, 'init').length > 0);
+    for (const s of characters) if (pcs[s.id] === undefined && s.definition) pcs[s.id] = rollFor(s);
     live.patch({ pcs }).catch(orderFail);
     for (const c of table?.list.filter((x) => x.initiative === null) ?? []) void table!.change(c, { initiative: rollInitiative(initiativeBonus(c.statblock)) });
   }
@@ -365,6 +286,11 @@
     const ids = t.startsWith('pc:') ? onMap[t.slice(3)] ?? [] : creaturesOnMap[t.slice(3)] ?? [];
     if (ids.length) void obr?.OBR.player.select(ids, true).catch(() => {});
   });
+  const ringOf = (conditions: string[], looks: Record<string, ConditionLook> = {}) =>
+    conditions.flatMap((c) => {
+      const color = lookOf(c, looks)?.color;
+      return color ? [{ key: c.toLowerCase(), color }] : [];
+    });
 
   // ── Signing in, here inside Owlbear (it keeps its own sign-in) ──
   let signing = $state(false);
@@ -411,36 +337,59 @@
   function focusIf(node: HTMLInputElement, on: boolean) {
     if (on) requestAnimationFrame(() => node.focus({ preventScroll: true }));
   }
-
-  const ago = (at: number, _tick = 0) => {
-    const s = Math.round((Date.now() - at) / 1000);
-    if (s < 50) return 'just now';
-    if (s < 3600) return `${Math.round(s / 60)} min ago`;
-    return friendlyDate(new Date(at).toISOString());
-  };
-  let tickNow = $state(0);
-  onMount(() => {
-    const t = setInterval(() => (tickNow += 1), 30000);
-    return () => clearInterval(t);
-  });
 </script>
 
-{#snippet addForm(kind: 'character' | 'campaign', first: boolean)}
-  <form class="add" onsubmit={(e) => { e.preventDefault(); void add(); }}>
-    <input bind:value={draft} use:focusIf={!first} aria-label={kind === 'character' ? 'A character’s link' : 'A campaign’s link'}
-           placeholder={kind === 'character' ? 'Paste a character’s link' : 'Paste your campaign’s link'} />
-    <button class="go" disabled={!draft.trim() || addBusy}>{addBusy ? 'Adding' : 'Add'}</button>
-    {#if !first}<button type="button" class="smallbtn" onclick={stopAdding}>Cancel</button>{/if}
+{#snippet campaignForm(first: boolean)}
+  <form class="add" onsubmit={(e) => { e.preventDefault(); void bringIn(); }}>
+    <input bind:value={draft} use:focusIf={!first} aria-label="A campaign’s link" placeholder="Paste your campaign’s link"
+           onkeydown={(e) => { if (e.key === 'Escape' && !first) toggleSwap(); }} />
+    <button class="go" disabled={!draft.trim() || addBusy}>{addBusy ? 'Bringing it in' : first ? 'Bring in' : 'Swap'}</button>
+    {#if !first}<button type="button" class="smallbtn" onclick={toggleSwap}>Cancel</button>{/if}
     <InfoTip label="Where to find the link">
-      {#if kind === 'character'}
-        Open the character’s sheet in DND Companion and copy its link from the top of the sheet.
-      {:else}
-        On the campaign’s page, copy its link from the top of the page, or use its invite link. Every character in it
-        joins the room{#if !first}, in place of the campaign here now{/if}.
-      {/if}
+      On the campaign’s page, copy its link from the top of the page, or use its invite link. Every character in it
+      joins the room{#if !first}, in place of the campaign here now{/if}.
     </InfoTip>
   </form>
-  {#if error}<p class="err" role="alert">{error}</p>{/if}
+  {#if error}<p class="err" role="alert" transition:fade={appear()}>{error}</p>{/if}
+{/snippet}
+
+{#snippet portraitOf(pic: string, ring: { key: string; color: string }[], round: boolean, mark: 'npc' | 'monster' | null, cls: string | undefined | false)}
+  <span class="portrait" class:round class:ringed={ring.length > 0}>
+    {#if cls !== false}<ClassIcon {cls} />{/if}
+    {#if pic}
+      <img src={pic} alt="" draggable="false" loading="lazy" />
+    {:else if mark}
+      <svg class="mark" viewBox="0 0 24 24" aria-hidden="true">
+        {#if mark === 'npc'}<circle cx="12" cy="8.5" r="3.75" /><path d="M4.75 20c.6-3.9 3.6-6.25 7.25-6.25s6.65 2.35 7.25 6.25" />
+        {:else}<path d="M8.25 8.5 5 3.25l.75 6.25M15.75 8.5 19 3.25l-.75 6.25" /><circle cx="12" cy="14" r="6.25" /><path d="M9.75 13.5h.01M14.25 13.5h.01M10 17.25h4" />{/if}
+      </svg>
+    {/if}
+    <ConditionRing bands={ring} {round} />
+  </span>
+{/snippet}
+
+{#snippet conditionList(conds: string[], looks: Record<string, ConditionLook> = {})}
+  {#if conds.length}
+    <ul class="conds" aria-label="Conditions">
+      {#each conds as c (c)}
+        {@const look = lookOf(c, looks)}
+        <li style:--cc={look?.color} class:plain={!look} transition:fade={appear()}><span class="dot"></span>{c}</li>
+      {/each}
+    </ul>
+  {/if}
+{/snippet}
+
+{#snippet tokenButtons(key: string, ids: string[] | undefined, put: () => Promise<unknown>)}
+  {#if ids?.length}
+    <button class="btn" onclick={() => find(ids)} transition:fade={appear()}>
+      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="12" cy="12" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+      Find token
+    </button>
+  {/if}
+  <button class="btn" disabled={busy === key} onclick={() => place(key, put)}>
+    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="12" cy="10" r="5.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M12 15.5V21M9 21h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+    {busy === key ? 'Placing' : ids?.length ? 'Another token' : 'Place token'}
+  </button>
 {/snippet}
 
 <svelte:head>
@@ -452,181 +401,171 @@
   <header>
     <Logo size={22} />
     <span class="brandname">DND Companion</span>
+    {#if campaignId}
+      <div class="roomtools" in:fade={appear()}>
+        <a class="btn" href={obr?.campaignUrl(campaignId)} target="_blank" rel="noopener noreferrer" title={campaign?.name ? `Open ${campaign.name}` : 'Open the campaign page'}>
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          Campaign
+        </a>
+        <InfoTip label="About this room">
+          Campaign opens {campaign?.name ?? 'its page'}, and the button beside it swaps in another campaign.{#if role === 'GM'} Drag a
+          character to put them in order.{/if}{#if isDm} Signed in as the DM, you run the fight from here too: the initiative
+          order, and your monsters and NPCs.{/if}
+        </InfoTip>
+        <button class="iconbtn" class:on={swapping} aria-pressed={swapping} aria-label="Swap the room’s campaign" title="Swap the campaign" onclick={toggleSwap}>
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 8h13l-3.5-3.5M20 16H7l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </button>
+      </div>
+    {/if}
   </header>
 
   {#if !inOwlbear}
     <p class="note">This page is the DND Companion extension for Owlbear Rodeo. Add it in Owlbear (Extensions → Add custom extension) with this address:
       <code>{location.origin}{location.pathname.replace(/panel\/?$/, 'manifest.json')}</code></p>
   {:else}
+    <!-- Swapping the campaign: a field under the header that eases open, so nothing below jumps. -->
+    {#if campaignId}
+      <div class="swapbox smooth-height" use:smoothHeight>
+        <div class="swap-cell">
+          {#if swapping}
+            <div class="swapform" in:fade={appear(90)} out:fade={appear()}>{@render campaignForm(false)}</div>
+          {/if}
+        </div>
+      </div>
+    {/if}
+
     {#if !loaded}
       <ul class="chars partyskel" aria-busy="true" aria-label="Gathering the party">
         {#each [0, 1, 2] as i (i)}
-          <li class="char"><div class="top"><i class="skeleton skface"></i><span class="who"><i class="skeleton skname"></i><i class="skeleton skline"></i></span></div><i class="skeleton skbar"></i></li>
+          <li class="card"><div class="top"><i class="skeleton skface"></i><span class="who"><i class="skeleton skname"></i><i class="skeleton skline"></i></span></div><i class="skeleton skbar"></i></li>
         {/each}
       </ul>
     {:else if !campaignId}
-      <section class="start" in:fade={{ duration: 180 }}>
+      <section class="start" in:fade={appear()}>
         <h2 class="lead">Bring your campaign to the table</h2>
         <p class="note">Paste your campaign’s link and every character in it joins this room, live.</p>
-        {@render addForm('campaign', true)}
+        {@render campaignForm(true)}
       </section>
-    {/if}
-
-    {#if campaignId}
-      <div class="acts room" in:fade={{ duration: 180 }}>
-        <a class="btn" href={obr?.campaignUrl(campaignId)} target="_blank" rel="noopener noreferrer" title={campaign?.name ? `Open ${campaign.name}` : 'Open the campaign page'}>
-          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
-          Campaign
-        </a>
-        <InfoTip label="About these buttons">
-          Campaign opens its page.{#if role === 'GM'} Drag a character to put them in order.{/if}
-          {#if isDm} Signed in as the DM, you run the fight from here too: the initiative order, and your monsters and NPCs.{/if}
-        </InfoTip>
-      </div>
-    {/if}
-
-    {#if showOrder && live}
-      <div class="order" transition:slide={ease()}>
-        <InitiativeTracker {combatants} turn={init.turn} round={init.round} asking={init.asking} {isDm}
-                           onvalue={setInitiative} onrollone={rollOne} onask={() => live?.save({ ...NO_INITIATIVE, asking: true }).catch(orderFail)}
-                           onrollrest={isDm ? rollRest : undefined}
-                           onstart={() => live?.patch({ ...startTurns(combatants), asking: false, ties: settleAll(combatants) }).catch(orderFail)}
-                           onsettle={isDm ? (ties) => live?.settle(ties, true).catch(orderFail) : undefined}
-                           onnext={() => moveTurn(nextTurn(combatants, { turn: init.turn, round: init.round }))}
-                           onprevious={() => moveTurn(previousTurn(combatants, { turn: init.turn, round: init.round }))} onend={endFight} />
-      </div>
-    {/if}
-
-    {#if isDm && table}
-      <div class="viewswitch" in:fade={{ duration: 180 }}>
-        <AreaSwitch active={view} onchoose={(k) => (view = k)} sides={[
-          { key: 'Party', icon: 'person', count: characters.length },
-          { key: 'Monsters & NPCs', icon: 'monster', count: table.list.length }
-        ]} />
-      </div>
-    {/if}
-
-    {#snippet tokenTools(c: Creature)}
-      {#if creaturesOnMap[c.id]?.length}
-        <button class="ctoken" onclick={() => findTokens(creaturesOnMap[c.id] ?? [])} title="Find its token" aria-label="Find {c.name}’s token">
-          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="12" cy="12" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
-        </button>
-      {/if}
-      <button class="ctoken" disabled={busy === c.id} onclick={() => placeCreature(c)} title={creaturesOnMap[c.id]?.length ? 'Another token' : 'Place its token'} aria-label="Place a token for {c.name}">
-        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="12" cy="10" r="5.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M12 15.5V21M9 21h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
-      </button>
-    {/snippet}
-
-    {#if isDm && table && view === 'Monsters & NPCs'}
-      <div class="beasts" in:fade={{ duration: 200 }}>
-        <CampaignCreatures {table} tools={tokenTools} />
-      </div>
     {:else}
-    {#if loaded && campaignId && !characters.length}<p class="note">No characters in this campaign yet.</p>{/if}
-    {#if characters.length}
-      <ul class="chars cascade" class:can-reorder={canArrange}
-          use:reorder={{ enabled: canArrange, keys: characters.map((s) => s.id), onpreview: (k) => (preview = k), oncommit: arrange, scale: 1.02 }}>
-        {#each shown as s, i (s.id)}
-          {@const def = s.definition}
-          {@const max = Number(def?.combat?.hpMax) || 0}
-          {@const cur = Number(s.state?.hpCurrent) || 0}
-          {@const temp = Number(s.state?.hpTemp) || 0}
-          {@const v = vitalStatus(cur, max, s.state?.deathSaves)}
-          {@const portrait = resolveImageUrl(def?.identity?.portraitUrl).url}
-          {@const conds = s.state?.conditions ?? []}
-          {@const ring = conds.flatMap((c) => { const color = lookOf(c, def?.conditionLooks ?? {})?.color; return color ? [{ key: c.toLowerCase(), color }] : []; })}
-          {@const face = fontFace(def?.identity?.nameFont)}
-          <li class="char themed {v.vital}" data-key={s.id} style={themeStyle(def?.identity?.theme)} style:--i={i} animate:flip={{ duration: 280, easing: quintOut }}>
-            <div class="top">
-              <span class="portrait" class:ringed={ring.length > 0}>
-                {#if def}<ClassIcon cls={mainClass(def)} />{/if}
-                {#if portrait}<img src={portrait} alt="" draggable="false" />{/if}
-                <ConditionRing bands={ring} />
-              </span>
-              <span class="who">
-                <strong style:font-family={faceFamily(face)}>{obr?.nameOf(s) ?? s.name}</strong>
-                <span class="sub">{classLine(def) || 'No class yet'}</span>
-              </span>
-              <span class="ac" title="Armor Class"><b>{def ? armorClass(def).total : '—'}</b><small>AC</small></span>
-              {#if directLink(s)}
-                <button class="x" title="Take out of the room" aria-label="Take {obr?.nameOf(s)} out of the room" onclick={() => unlink(directLink(s)!)}>×</button>
-              {/if}
-            </div>
-            {#if max > 0}
-              <div title={v.label}><HpBar {cur} {max} {temp} vital={v.vital} /></div>
-            {/if}
-            {#if conds.length}
-              <ul class="conds" aria-label="Conditions">
-                {#each conds as c (c)}
-                  {@const look = lookOf(c, def?.conditionLooks ?? {})}
-                  <li style:--cc={look?.color} class:plain={!look} transition:fade={{ duration: 160 }}><span class="dot"></span>{c}</li>
+      <div class="body" in:fade={appear()}>
+        {#if showOrder && live}
+          <div class="order" transition:fade={appear()}>
+            <InitiativeTracker {combatants} turn={init.turn} round={init.round} asking={init.asking} {isDm}
+                               onvalue={setInitiative} onrollone={rollOne} onask={() => live?.save({ ...NO_INITIATIVE, asking: true }).catch(orderFail)}
+                               onrollrest={isDm ? rollRest : undefined}
+                               onstart={() => live?.patch({ ...startTurns(combatants), asking: false, ties: settleAll(combatants) }).catch(orderFail)}
+                               onsettle={isDm ? (ties) => live?.settle(ties, true).catch(orderFail) : undefined}
+                               onnext={() => moveTurn(nextTurn(combatants, { turn: init.turn, round: init.round }))}
+                               onprevious={() => moveTurn(previousTurn(combatants, { turn: init.turn, round: init.round }))} onend={endFight} />
+          </div>
+        {/if}
+
+        {#if error && !swapping}<p class="err" role="alert" transition:fade={appear()}>{error}</p>{/if}
+
+        <section class="group">
+          {#if isDm}
+            <SectionHead title="Characters">
+              {#snippet info()}The campaign’s characters, live from their sheets.{#if canArrange} Drag one to put them in order.{/if}{/snippet}
+            </SectionHead>
+          {/if}
+          {#if !characters.length}
+            <p class="note" in:fade={appear()}>No characters in this campaign yet.</p>
+          {:else}
+            <ul class="chars cascade" class:can-reorder={canArrange}
+                use:reorder={{ enabled: canArrange, keys: characters.map((s) => s.id), onpreview: (k) => (preview = k), oncommit: arrange, scale: 1.02 }}>
+              {#each shown as s, i (s.id)}
+                {@const def = s.definition}
+                {@const max = Number(def?.combat?.hpMax) || 0}
+                {@const cur = Number(s.state?.hpCurrent) || 0}
+                {@const v = vitalStatus(cur, max, s.state?.deathSaves)}
+                {@const conds = s.state?.conditions ?? []}
+                {@const face = fontFace(def?.identity?.nameFont)}
+                <li class="card themed {v.vital}" class:onturn={init.turn === `pc:${s.id}`} data-key={s.id} style={themeStyle(def?.identity?.theme)} style:--i={i}
+                    animate:flip={{ duration: still ? 0 : 280, easing: cubicOut }} out:fade={appear()}>
+                  <div class="top">
+                    {@render portraitOf(resolveImageUrl(def?.identity?.portraitUrl).url, ringOf(conds, def?.conditionLooks), false, null, def ? mainClass(def) : false)}
+                    <span class="who">
+                      <strong style:font-family={faceFamily(face)}>{obr?.nameOf(s) ?? s.name}</strong>
+                      <span class="sub">{classLine(def) || 'No class yet'}</span>
+                    </span>
+                    <span class="ac" title="Armor Class"><b>{def ? armorClass(def).total : '–'}</b><small>AC</small></span>
+                  </div>
+                  {#if max > 0}
+                    <div title={v.label}><HpBar {cur} {max} temp={Number(s.state?.hpTemp) || 0} vital={v.vital} /></div>
+                  {/if}
+                  {@render conditionList(conds, def?.conditionLooks)}
+                  <div class="acts">
+                    <a class="btn" href={obr?.sheetUrl(s.id)} target="_blank" rel="noopener noreferrer">
+                      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 3.5h9l3 3v14H6zM9 9h6M9 12.5h6M9 16h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      Open sheet
+                    </a>
+                    {@render tokenButtons(s.id, onMap[s.id], () => obr!.placeToken(s))}
+                  </div>
+                </li>
+              {/each}
+            </ul>
+          {/if}
+        </section>
+
+        {#if isDm && table}
+          <section class="group" in:fade={appear()}>
+            <SectionHead title="Monsters & NPCs">
+              {#snippet info()}Yours alone, live from the campaign page, where you add them and reveal them to your players. Change their hit points from a token’s right-click menu.{/snippet}
+            </SectionHead>
+            {#if table.loading}
+              <ul class="chars" aria-busy="true" aria-label="Gathering the monsters">
+                <li class="card"><div class="top"><i class="skeleton skface round"></i><span class="who"><i class="skeleton skname"></i><i class="skeleton skline"></i></span></div><i class="skeleton skbar"></i></li>
+              </ul>
+            {:else if !table.list.length}
+              <p class="note" in:fade={appear()}>No monsters or NPCs yet. Add them on the campaign page.</p>
+            {:else}
+              <ul class="chars cascade" in:fade={appear()}>
+                {#each table.list as c, i (c.id)}
+                  {@const max = c.hp_max ?? 0}
+                  {@const now = hpNow(c)}
+                  {@const v = vitalStatus(now, max)}
+                  {@const kind = kindLine(c.statblock ?? {})}
+                  <li class="card {v.vital}" class:onturn={init.turn === `cr:${c.id}`} style:--i={i}
+                      animate:flip={{ duration: still ? 0 : 280, easing: cubicOut }} out:fade={appear()}>
+                    <div class="top">
+                      {@render portraitOf(resolveImageUrl(c.portrait).url, ringOf(c.conditions, c.condition_looks), true, c.kind, false)}
+                      <span class="who">
+                        <strong>{c.name}</strong>
+                        <span class="sub">{c.kind === 'npc' ? 'NPC' : 'Monster'}{kind ? `, ${kind}` : ''}{c.statblock?.cr ? `, CR ${c.statblock.cr}` : ''}</span>
+                      </span>
+                      {#if !c.visible}
+                        <span class="hidden" role="img" aria-label="Hidden from your players" title="Hidden from your players" transition:fade={appear()}>
+                          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12zM4 4l16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                        </span>
+                      {/if}
+                      <span class="ac" title="Armor Class"><b>{c.ac ?? '–'}</b><small>AC</small></span>
+                    </div>
+                    {#if max > 0}
+                      <div title={v.label}><HpBar cur={now} {max} temp={c.hp_temp} vital={v.vital} /></div>
+                    {/if}
+                    {@render conditionList(c.conditions, c.condition_looks)}
+                    <div class="acts">
+                      <button class="btn" onclick={() => obr?.openStats(c.campaign_id, c.id)}>
+                        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 3.5h9l3 3v14H6zM9 9h6M9 12.5h6M9 16h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                        Stat block
+                      </button>
+                      {@render tokenButtons(c.id, creaturesOnMap[c.id], () => obr!.placeCreatureToken(c))}
+                    </div>
+                  </li>
                 {/each}
               </ul>
             {/if}
-            {#if s.campaign_id && s.campaign_id !== campaignId}
-              <!-- Added on its own, it may be in a campaign of its own. -->
-              <p class="camp">In <b>{campaignNames.get(s.campaign_id) ?? 'a campaign'}</b>
-                <a class="smallbtn" href={obr?.campaignUrl(s.campaign_id)} target="_blank" rel="noopener noreferrer">Open</a>
-                {#if !campaignId}
-                  <button class="smallbtn" onclick={() => addToRoom({ kind: 'campaign', id: s.campaign_id! })}>Add the campaign</button>
-                {/if}
-              </p>
-            {/if}
-            <div class="acts">
-              <a class="btn" href={obr?.sheetUrl(s.id)} target="_blank" rel="noopener noreferrer">Open sheet</a>
-              {#if onMap[s.id]?.length}
-                <button class="btn" onclick={() => find(s)}>Find token</button>
-              {/if}
-              <button class="btn" disabled={busy === s.id} onclick={() => place(s)}>{busy === s.id ? 'Placing' : onMap[s.id]?.length ? 'Another token' : 'Place token'}</button>
-            </div>
-          </li>
-        {/each}
-      </ul>
-    {/if}
-    {/if}
+          </section>
+        {/if}
 
-    {#if !isDm && revealed.length}<RevealedCreatures list={revealed} />{/if}
-
-    <section class="rolls">
-      <h2>Rolls
-        <InfoTip label="About rolls">Rolls made in a character’s dice tray on their sheet show up here and pop up for everyone in the room.</InfoTip>
-      </h2>
-      {#if rolls.length}
-        <ol>
-          {#each rolls as r (r.sheet + r.at)}
-            {@const nat = natural(r)}
-            <li class:crit={nat === 'crit'} class:fumble={nat === 'fumble'} animate:flip={{ duration: 260, easing: quintOut }} in:slide={ease()}>
-              <span class="head">{headline(r)}</span>
-              <span class="dice">{diceLine(r)} · {ago(r.at, tickNow)}</span>
-            </li>
-          {/each}
-        </ol>
-      {:else}
-        <p class="note">No rolls yet.</p>
-      {/if}
-    </section>
-
-    <!-- Adding more: two buttons that give way to a field, in one box that
-         eases to its new height so nothing below jumps. -->
-    {#if loaded && campaignId}
-      <section class="more smooth-height" use:smoothHeight>
-        <div class="swap-cell">
-          {#if adding}
-            <div in:fade={{ duration: 200, delay: 90 }} out:fade={{ duration: 120 }}>{@render addForm(adding, false)}</div>
-          {:else}
-            <div class="morebtns" in:fade={{ duration: 200, delay: 90 }} out:fade={{ duration: 120 }}>
-              <button class="smallbtn" onclick={() => startAdding('character')}>Add character</button>
-              <button class="smallbtn" onclick={() => startAdding('campaign')}>Replace campaign</button>
-            </div>
-          {/if}
-        </div>
-      </section>
+        {#if !isDm}<RevealedCreatures list={revealed} />{/if}
+      </div>
     {/if}
 
     <footer class="smooth-height" use:smoothHeight>
       <div class="swap-cell">
         {#if signing && !$session.user}
-          <div class="signin" in:fade={{ duration: 200, delay: 90 }} out:fade={{ duration: 120 }}>
+          <div class="signin" in:fade={appear(90)} out:fade={appear()}>
             {#if services.length && !withEmail}
               <div class="services">
                 {#each services as p (p)}
@@ -651,13 +590,13 @@
                 </div>
               </form>
             {/if}
-            {#if authError}<p class="err" role="alert">{authError}</p>{/if}
+            {#if authError}<p class="err" role="alert" transition:fade={appear()}>{authError}</p>{/if}
           </div>
         {:else}
-          <div class="who-row" in:fade={{ duration: 200, delay: 90 }} out:fade={{ duration: 120 }}>
+          <div class="who-row" in:fade={appear(90)} out:fade={appear()}>
             {#if $session.user}
               <span class="me">Signed in as {myName}
-                <InfoTip label="What signing in does">You can change hit points from a token’s right-click menu. As the campaign’s DM, you run the fight and your monsters and NPCs from this panel.</InfoTip>
+                <InfoTip label="What signing in does">You can change hit points from a token’s right-click menu. As the campaign’s DM, you run the fight and see your monsters and NPCs here.</InfoTip>
               </span>
               <button class="smallbtn" onclick={() => signOut()}>Sign out</button>
             {:else}
@@ -678,21 +617,28 @@
 <style>
   :global(html.in-owlbear), :global(html.in-owlbear body) { background: var(--bg); }
   .panel { padding: 1.125rem 1.125rem 1.5rem; font-size: 0.9375rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.125rem; }
-  header { display: flex; align-items: center; gap: 0.5rem; color: var(--text); }
-  header .brandname { font-size: 1.1875rem; }
+  /* The brand on the left; the room's campaign, its bubble and the swap on the right, on one line. */
+  header { display: flex; align-items: center; gap: 0.5rem; min-height: 2rem; color: var(--text); }
+  header .brandname { font-size: 1.1875rem; white-space: nowrap; }
+  .roomtools { margin-left: auto; display: flex; align-items: center; gap: 0.375rem; }
+  .roomtools .btn { display: inline-flex; align-items: center; gap: 0.375rem; height: 2rem; box-sizing: border-box; padding: 0 0.625rem; font-size: 0.8125rem; }
   .note { margin: 0; color: var(--dim); font-size: 0.875rem; line-height: 1.5; }
   .note code { display: block; margin-top: 0.375rem; word-break: break-all; color: var(--text); }
   .err { margin: 0; color: var(--bad); font-size: 0.8125rem; line-height: 1.4; }
+  .body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
+  .group { display: grid; gap: 0.75rem; }
+  .group :global(.sechead) { margin-bottom: 0; }
 
   .add { display: flex; gap: 0.5rem; align-items: center; }
+  .add input { width: 0; }
   .start {
     display: grid; gap: 0.625rem; padding: 1rem; border: 1px solid var(--a-edge); border-radius: var(--r);
-    background: color-mix(in oklch, var(--a) 6%, var(--surface));
+    background: color-mix(in oklab, var(--a) 6%, var(--surface));
   }
-  .start .lead { margin: 0; font-size: 1rem; letter-spacing: 0.01em; text-transform: none; color: var(--text); }
-  .more { display: grid; grid-template-columns: minmax(0, 1fr); }
-  .morebtns { display: flex; justify-content: center; flex-wrap: wrap; gap: 0.5rem; padding: 0.125rem 0; }
-  .add input { width: 0; }
+  .start .lead { margin: 0; font-size: 1rem; letter-spacing: 0.01em; color: var(--text); font-weight: 600; }
+  /* The swap field folds open under the header; shut, it takes no room (the panel's gap included). */
+  .swapbox { display: grid; grid-template-columns: minmax(0, 1fr); margin-top: -1.125rem; }
+  .swapform { display: grid; gap: 0.5rem; padding-top: 1.125rem; }
   input {
     flex: 1; min-width: 0; font: inherit; font-size: 0.875rem; padding: 0.5rem 0.6875rem; color: var(--text);
     border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface);
@@ -701,73 +647,62 @@
   input:hover { border-color: var(--a-edge); }
   input:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
   button, .btn { font: inherit; cursor: pointer; }
-  .go, .btn {
+  .go, .btn, .iconbtn {
     border: 1px solid var(--line); background: var(--raised); color: var(--text); border-radius: var(--r-sm);
     padding: 0.4375rem 0.75rem; font-size: 0.875rem; text-decoration: none; white-space: nowrap;
     transition: border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
   }
-  .go:hover:not(:disabled), .btn:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
-  .go:active:not(:disabled), .btn:active:not(:disabled) { transform: translateY(1px); }
-  .go:focus-visible, .btn:focus-visible, .x:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
+  .iconbtn { width: 2rem; height: 2rem; padding: 0; display: grid; place-items: center; flex: none; }
+  .iconbtn svg { transition: rotate 0.24s cubic-bezier(0.33, 1, 0.68, 1); }
+  .iconbtn.on { border-color: var(--a-edge); color: var(--a); }
+  .iconbtn.on svg { rotate: 180deg; }
+  .go:hover:not(:disabled), .btn:hover:not(:disabled), .iconbtn:hover { border-color: var(--a-edge); color: var(--a); }
+  .go:active:not(:disabled), .btn:active:not(:disabled), .iconbtn:active { transform: translateY(1px); }
+  .go:focus-visible, .btn:focus-visible, .iconbtn:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
   .go:disabled, .btn:disabled { opacity: 0.5; cursor: default; }
-  .x {
-    margin-left: auto; width: 1.75rem; height: 1.75rem; border: 0; background: none; color: var(--faint); border-radius: 50%;
-    font-size: 1rem; line-height: 1; padding: 0; display: grid; place-items: center; transition: color 0.15s ease, background-color 0.15s ease;
-  }
-  .x:hover { color: var(--danger, var(--bad)); background: var(--raised); }
-  .x:active { transform: translateY(1px); }
+  @media (prefers-reduced-motion: reduce) { .iconbtn svg { transition: none; } }
 
-  .group { display: grid; gap: 0.75rem; }
-  h2 {
-    margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; font-size: 0.75rem; letter-spacing: 0.12em;
-    text-transform: uppercase; color: var(--label); font-weight: 600;
-  }
-  .camp { margin: 0; font-size: 0.8125rem; color: var(--dim); display: flex; flex-wrap: wrap; gap: 0.375rem 0.5rem; align-items: center; }
-  .camp b { color: var(--text); font-weight: 600; }
   .chars { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
-  .char {
+  .card {
     border: 1px solid var(--line-soft); border-radius: var(--r); background: var(--surface); padding: 0.875rem 1rem;
-    display: grid; gap: 0.75rem; transition: border-color 0.3s ease;
+    display: grid; gap: 0.75rem; transition: border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
   }
-  .char:hover { border-color: var(--a-edge); }
-  .char.bloodied { border-color: color-mix(in oklab, var(--hurt-red) 45%, var(--line-soft)); }
-  .char.critical, .char.down { border-color: color-mix(in oklch, var(--hurt-red) 80%, transparent); }
-  .char.dead { opacity: 0.7; }
+  .card:hover { border-color: var(--a-edge); }
+  .card.bloodied { border-color: color-mix(in oklab, var(--hurt-red) 45%, var(--line-soft)); }
+  .card.critical, .card.down { border-color: color-mix(in oklab, var(--hurt-red) 80%, transparent); }
+  .card.dead { opacity: 0.7; }
+  /* Whose turn it is: the card glows in its own color. */
+  .card.onturn { border-color: var(--a); box-shadow: 0 0 0 1px var(--a), 0 0 18px color-mix(in oklab, var(--a) 28%, transparent); }
   .top { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
   .portrait {
     position: relative; flex: none; width: 3rem; height: 3rem; border-radius: var(--r-sm);
     border: 1px solid var(--a-edge); background: linear-gradient(150deg, var(--portrait-from, var(--raised)), var(--portrait-to, var(--surface)));
-    transition: border-color 0.35s ease;
+    display: grid; place-items: center; transition: border-color 0.35s ease;
   }
+  .portrait.round { border-radius: 50%; }
   .portrait.ringed { border-color: transparent; }
   .portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
-  .who { display: grid; min-width: 0; flex: 1; }
-  .who { gap: 0.125rem; }
+  .portrait .mark { width: 1.625rem; height: 1.625rem; fill: none; stroke: var(--dim); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .who { display: grid; gap: 0.125rem; min-width: 0; flex: 1; }
   .who strong { font-size: 1rem; overflow-wrap: anywhere; }
   .sub { font-size: 0.8125rem; color: var(--dim); overflow-wrap: anywhere; }
-  .ac { display: grid; justify-items: center; line-height: 1.1; padding: 0.3125rem 0.5625rem; border: 1px solid var(--line-soft); border-radius: var(--r-sm); background: var(--raised); }
+  .hidden { flex: none; display: grid; place-items: center; color: var(--faint); }
+  .ac { flex: none; display: grid; justify-items: center; line-height: 1.1; padding: 0.3125rem 0.5625rem; border: 1px solid var(--line-soft); border-radius: var(--r-sm); background: var(--raised); }
   .ac b { font-size: 1.0625rem; font-variant-numeric: tabular-nums; }
   .ac small { font-size: 0.5625rem; letter-spacing: 0.1em; color: var(--label); }
-
 
   .conds { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.375rem; }
   .conds li {
     display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.8125rem; padding: 0.125rem 0.5625rem;
-    border-radius: 999px; border: 1px solid color-mix(in oklch, var(--cc, var(--line)) 55%, transparent);
-    background: color-mix(in oklch, var(--cc, var(--raised)) 14%, transparent);
+    border-radius: 999px; border: 1px solid color-mix(in oklab, var(--cc, var(--line)) 55%, transparent);
+    background: color-mix(in oklab, var(--cc, var(--raised)) 14%, transparent);
   }
   .conds .dot { width: 0.4375rem; height: 0.4375rem; border-radius: 50%; background: var(--cc, var(--faint)); }
   .conds .plain .dot { background: none; border: 1px solid var(--faint); }
-  .acts { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-  .acts .btn { display: inline-flex; align-items: center; gap: 0.375rem; }
-  .acts.room { align-items: center; }
-
-  .rolls ol { list-style: none; margin: 0.625rem 0 0; padding: 0; display: grid; gap: 0.5rem; }
-  .rolls li { display: grid; gap: 0.125rem; padding: 0.5rem 0.75rem; border-radius: var(--r-sm); background: var(--surface); border: 1px solid var(--line-soft); }
-  .rolls li.crit { border-color: color-mix(in oklch, oklch(78% 0.15 80) 70%, transparent); }
-  .rolls li.fumble { border-color: color-mix(in oklch, var(--bad) 60%, transparent); }
-  .head { font-size: 0.875rem; }
-  .dice { font-size: 0.75rem; color: var(--faint); }
+  /* The card's buttons share its width in equal parts, on one line. */
+  .acts { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 0.5rem; }
+  .acts .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem; padding: 0.4375rem 0.5rem; font-size: 0.8125rem; }
+  .acts .btn svg { flex: none; }
 
   footer { font-size: 0.8125rem; color: var(--dim); border-top: 1px solid var(--line-soft); padding-top: 0.875rem; box-sizing: content-box; }
   /* Who is signed in on the left (with its bubble), the button on the right. */
@@ -776,21 +711,13 @@
   .signin { display: grid; gap: 0.5rem; }
   .services { display: grid; gap: 0.5rem; }
   .service { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.5625rem 0.75rem; }
+  .signin input { width: 100%; box-sizing: border-box; }
+  .signin .row { display: flex; gap: 0.5rem; align-items: center; }
   .order :global(.initiative) { margin-top: 0; }
-  .viewswitch { display: flex; justify-content: center; }
-  .ctoken {
-    width: 1.75rem; height: 1.75rem; display: grid; place-items: center; padding: 0; border-radius: var(--r-sm);
-    border: 1px solid transparent; background: none; color: var(--dim); transition: color 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
-  }
-  .ctoken:hover:not(:disabled) { color: var(--a); border-color: var(--a-edge); }
-  .ctoken:active:not(:disabled) { transform: translateY(1px); }
-  .ctoken:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
-  .ctoken:disabled { opacity: 0.5; }
-  .partyskel .char { min-height: 7rem; }
+  .partyskel .card { min-height: 7rem; }
   .skface { width: 3rem; height: 3rem; border-radius: var(--r-sm); flex: none; }
+  .skface.round { border-radius: 50%; }
   .skname { width: 8rem; height: 1rem; }
   .skline { width: 11rem; height: 0.75rem; }
   .skbar { height: 0.625rem; border-radius: 999px; }
-  .signin input { width: 100%; box-sizing: border-box; }
-  .signin .row { display: flex; gap: 0.5rem; align-items: center; }
 </style>

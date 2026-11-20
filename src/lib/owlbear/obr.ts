@@ -1,6 +1,7 @@
 /**
- * Everything that talks to Owlbear Rodeo itself: the room's links, the
- * tokens tied to sheets and what they carry, and the context menu entries.
+ * Everything that talks to Owlbear Rodeo itself: the room's campaign, the
+ * tokens tied to sheets and creatures and what they carry, the context menu
+ * entries and the stat block popover.
  * Only the /owlbear pages load this (they are the extension), so the rest of
  * the site never ships the SDK.
  */
@@ -10,11 +11,10 @@ import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
 import { siteRoot } from '#lib/rules/share.ts';
 import { crossfade } from '#lib/stores/mode.ts';
 import type { Sheet } from '#lib/types.ts';
-import { CREATURE_KEY, NS, ORDER_KEY, PART_KEY, ROLLS_KEY, ROOM_KEY, SHEET_KEY, type CreatureLink, type PartLink, type TokenLink } from './keys';
+import { CREATURE_KEY, NS, OLD_ROLLS_KEY, ORDER_KEY, PART_KEY, ROOM_KEY, SHEET_KEY, type CreatureLink, type PartLink, type TokenLink } from './keys';
 import type { Creature } from '#lib/data/creatures.ts';
-import { readLinks, type RoomLinks } from './links';
+import { readCampaign, roomValue } from './links';
 import { partsFor, partsForVitals, sameParts, tokenBox, vitalsOfCreature, type Part } from './layout';
-import { pushNote, readLog, type RollNote } from './rolls';
 
 export { OBR };
 
@@ -43,19 +43,15 @@ function portraitOf(sheet: Sheet): string {
 }
 export const nameOf = (s: Sheet) => s.definition?.identity?.name || s.name || 'Unnamed';
 
-// ── The room's links ──
-export async function getLinks(): Promise<RoomLinks> {
-  return readLinks((await OBR.room.getMetadata())[ROOM_KEY]);
+// ── The room's campaign ──
+export async function getCampaign(): Promise<string | null> {
+  return readCampaign((await OBR.room.getMetadata())[ROOM_KEY]);
 }
-/** Plain data only crosses to Owlbear: a page's reactive copies (Svelte's
-    proxies) cannot be posted, which once made every link after the first
-    fail to save. */
-const plain = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
-export async function setLinks(links: RoomLinks): Promise<void> {
-  await OBR.room.setMetadata({ [ROOM_KEY]: plain(links) });
+export async function setCampaign(id: string): Promise<void> {
+  await OBR.room.setMetadata({ [ROOM_KEY]: roomValue(id) });
 }
-export function onLinks(cb: (links: RoomLinks) => void): () => void {
-  return OBR.room.onMetadataChange((m) => cb(readLinks(m[ROOM_KEY])));
+export function onCampaign(cb: (id: string | null) => void): () => void {
+  return OBR.room.onMetadataChange((m) => cb(readCampaign(m[ROOM_KEY])));
 }
 // ── The order the DM put the characters in ──
 const readOrder = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
@@ -69,16 +65,9 @@ export function onOrder(cb: (ids: string[]) => void): () => void {
   return OBR.room.onMetadataChange((m) => cb(readOrder(m[ORDER_KEY])));
 }
 
-export async function getRolls(): Promise<RollNote[]> {
-  return readLog((await OBR.room.getMetadata())[ROLLS_KEY]);
-}
-export function onRolls(cb: (log: RollNote[]) => void): () => void {
-  return OBR.room.onMetadataChange((m) => cb(readLog(m[ROLLS_KEY])));
-}
-export async function logRoll(note: RollNote): Promise<void> {
-  const log = readLog((await OBR.room.getMetadata())[ROLLS_KEY]);
-  const next = pushNote(log, note);
-  if (next !== log) await OBR.room.setMetadata({ [ROLLS_KEY]: next });
+/** Rooms of old kept a log of rolls; it only takes up the room's 16 kB now. */
+export async function clearOldRolls(): Promise<void> {
+  if ((await OBR.room.getMetadata())[OLD_ROLLS_KEY] !== undefined) await OBR.room.setMetadata({ [OLD_ROLLS_KEY]: undefined });
 }
 
 /**
@@ -122,27 +111,28 @@ function imageInfo(url: string): Promise<{ width: number; height: number; mime: 
   });
 }
 
-/** A new token for a sheet, wearing its portrait, in the middle of the view. */
-export async function placeToken(sheet: Sheet): Promise<string> {
-  const url = portraitOf(sheet);
-  const info = await imageInfo(url);
+/** A token wearing this picture, its name as the label, in the middle of the view (snapped to the grid). */
+async function dropToken(img: { url: string; width: number; height: number; mime: string }, name: string, metadata: Record<string, unknown>): Promise<string> {
   const [w, h] = await Promise.all([OBR.viewport.getWidth(), OBR.viewport.getHeight()]);
   const center = await OBR.viewport.inverseTransformPoint({ x: w / 2, y: h / 2 });
   const at = await OBR.scene.grid.snapPosition(center);
-  const size = Math.min(info.width, info.height);
-  const token = buildImage(
-    { url, width: info.width, height: info.height, mime: info.mime },
-    { dpi: size, offset: { x: info.width / 2, y: info.height / 2 } }
-  )
-    .name(nameOf(sheet))
-    .plainText(nameOf(sheet))
+  const token = buildImage(img, { dpi: Math.min(img.width, img.height), offset: { x: img.width / 2, y: img.height / 2 } })
+    .name(name)
+    .plainText(name)
     .textItemType('LABEL')
     .layer('CHARACTER')
     .position(at)
-    .metadata({ [SHEET_KEY]: { id: sheet.id, portrait: url } satisfies TokenLink })
+    .metadata(metadata)
     .build();
   await OBR.scene.items.addItems([token]);
   return token.id;
+}
+
+/** A new token for a sheet, wearing its portrait. */
+export async function placeToken(sheet: Sheet): Promise<string> {
+  const url = portraitOf(sheet);
+  const info = await imageInfo(url);
+  return dropToken({ url, ...info }, nameOf(sheet), { [SHEET_KEY]: { id: sheet.id, portrait: url } satisfies TokenLink });
 }
 
 /**
@@ -151,26 +141,51 @@ export async function placeToken(sheet: Sheet): Promise<string> {
  * once the DM reveals it (layout: vitalsOfCreature).
  */
 export async function placeCreatureToken(c: Creature): Promise<string> {
-  const mark = `${siteRoot(location.origin, base)}/owlbear/${c.kind === 'npc' ? 'npc' : 'monster'}.png`;
   // Its portrait when the map can draw it (5e.tools' token art can), else the site's mark.
   const pic = resolveImageUrl(c.portrait ?? '').url;
   const info = pic ? await imageInfo(pic).catch(() => null) : null;
-  const img = info && pic ? { url: pic, ...info } : { url: mark, width: 512, height: 512, mime: 'image/png' };
-  const [w, h] = await Promise.all([OBR.viewport.getWidth(), OBR.viewport.getHeight()]);
-  const center = await OBR.viewport.inverseTransformPoint({ x: w / 2, y: h / 2 });
-  const at = await OBR.scene.grid.snapPosition(center);
-  const size = Math.min(img.width, img.height);
-  const token = buildImage(img, { dpi: size, offset: { x: img.width / 2, y: img.height / 2 } })
-    .name(c.name)
-    .plainText(c.name)
-    .textItemType('LABEL')
-    .layer('CHARACTER')
-    .position(at)
-    .metadata({ [CREATURE_KEY]: { id: c.id, campaign: c.campaign_id } satisfies CreatureLink })
-    .build();
-  await OBR.scene.items.addItems([token]);
-  return token.id;
+  const img = info && pic ? { url: pic, ...info } : { url: `${siteRoot(location.origin, base)}/owlbear/${c.kind === 'npc' ? 'npc' : 'monster'}.png`, width: 512, height: 512, mime: 'image/png' };
+  return dropToken(img, c.name, { [CREATURE_KEY]: { id: c.id, campaign: c.campaign_id } satisfies CreatureLink });
 }
+
+/** Picks these tokens out on the map and brings the view to them, with room around. */
+export async function findTokens(ids: string[]): Promise<void> {
+  if (!ids.length) return;
+  await OBR.player.select(ids, true);
+  const box = await OBR.scene.items.getItemBounds(ids).catch(() => null);
+  if (!box) return;
+  await OBR.viewport.animateToBounds({
+    ...box,
+    min: { x: box.min.x - box.width, y: box.min.y - box.height },
+    max: { x: box.max.x + box.width, y: box.max.y + box.height },
+    width: box.width * 3,
+    height: box.height * 3
+  });
+}
+
+// ── A creature's stat block, over the map ──
+const STATS_ID = `${NS}/stats`;
+/**
+ * The DM's creature's stat block, in a popover at the room's left edge that
+ * stays open while the map is used (× closes it). One at a time: another
+ * creature's takes its place.
+ */
+export async function openStats(campaignId: string, creatureId: string): Promise<void> {
+  const height = await OBR.viewport.getHeight().catch(() => 800);
+  await OBR.popover.open({
+    id: STATS_ID,
+    url: `${asset('stats')}?c=${encodeURIComponent(campaignId)}&id=${encodeURIComponent(creatureId)}`,
+    width: 400,
+    height: Math.max(320, Math.min(640, height - 96)),
+    anchorReference: 'POSITION',
+    anchorPosition: { left: 72, top: 72 },
+    anchorOrigin: { horizontal: 'LEFT', vertical: 'TOP' },
+    transformOrigin: { horizontal: 'LEFT', vertical: 'TOP' },
+    disableClickAway: true,
+    marginThreshold: 8
+  });
+}
+export const closeStats = () => OBR.popover.close(STATS_ID);
 
 /** Ties a token on the map to a sheet; it takes on the sheet's portrait. */
 export async function tieToken(itemId: string, sheet: Sheet): Promise<void> {
