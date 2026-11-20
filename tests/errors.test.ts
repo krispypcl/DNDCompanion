@@ -8,6 +8,7 @@ describe('friendlyError', () => {
   });
   it('names what went wrong when signing up, rather than "try again"', () => {
     expect(friendlyError(new Error('Error sending confirmation email'), 'x')).toMatch(/email didn’t send/);
+    expect(friendlyError(new Error('534 "5.7.9 Please log in with your web browser and then try again. - gsmtp"'), 'x')).toMatch(/email didn’t send/);
     expect(friendlyError(new Error('Password is known to be weak and easy to guess, please choose a different one.'), 'x')).toMatch(/leak/);
     expect(friendlyError(new Error('Email address "a@b" is invalid'), 'x')).toMatch(/typos/);
     expect(friendlyError(new Error('Signups not allowed for this instance'), 'x')).toMatch(/Sign-ups are off/);

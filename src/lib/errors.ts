@@ -14,7 +14,9 @@ const KNOWN: [RegExp, string][] = [
   [/user already registered|already been registered/i, 'That email already has an account! Try signing in instead.'],
   [/password should be at least/i, 'That password is too short! Use at least 8 characters.'],
   [/known to be weak|easy to guess|pwned|password should contain/i, 'That password has been seen in a leak somewhere! Pick one of your own making.'],
-  [/error sending .*email|sending.*(confirmation|magic link|recovery).*email/i, 'Our messenger raven got lost! The email didn’t send, so wait a few minutes and try again.'],
+  // The email server refusing (Gmail's "534 5.7.9 Please log in with your web browser" among them).
+  [/error sending .*email|sending.*(confirmation|magic link|recovery).*email|gsmtp|\b5\.7\.\d\b|\bsmtp\b/i,
+   'Our messenger raven got lost! The email didn’t send. Try again later, or sign in with Google meanwhile.'],
   [/email address .*(invalid|not authorized)|unable to validate email|invalid email|invalid format/i, 'That email doesn’t look deliverable! Check it for typos.'],
   [/signups? not allowed|signup.*disabled/i, 'The tavern is closed to new faces! Sign-ups are off for now, so try again later.'],
   [/database error saving new user|database error/i, 'The ledger wouldn’t take your name! Wait a moment, then try again.'],
