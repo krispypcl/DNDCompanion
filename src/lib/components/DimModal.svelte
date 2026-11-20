@@ -16,7 +16,14 @@
   import { prefersReducedMotion } from '#lib/motion.ts';
   import { phone } from '#lib/stores/phone.svelte.ts';
 
-  let { id, title, wide = false, onclose, children }: { id: string; title: string; wide?: boolean; onclose: () => void; children: Snippet } = $props();
+  let {
+    id, title, wide = false, broad = false, onclose, children
+  }: {
+    id: string; title: string; wide?: boolean;
+    /** Wider still, for a long form (a monster and its stat block). */
+    broad?: boolean;
+    onclose: () => void; children: Snippet;
+  } = $props();
 
   // Fixed for the window's life: a sheet stays a sheet if the phone turns.
   const asSheet = phone.current;
@@ -65,7 +72,7 @@
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 <div class="dimscrim" class:sheet={asSheet} use:portal transition:fade={{ duration: prefersReducedMotion() ? 0 : 200, easing: cubicOut }}
      use:backdrop={onclose}>
-  <div class="dimwindow themed-scroll" class:wide class:sheet={asSheet} class:pulling={pull > 0} role="dialog" aria-modal="true" aria-labelledby={id}
+  <div class="dimwindow themed-scroll" class:wide class:broad class:sheet={asSheet} class:pulling={pull > 0} role="dialog" aria-modal="true" aria-labelledby={id}
        use:movable={{ enabled: !asSheet }} use:focusFirst style:transform={pull ? `translateY(${pull}px)` : undefined}
        in:rise out:rise={{ out: true }}>
     {#if asSheet}
@@ -95,6 +102,7 @@
     background: var(--surface); border: 1px solid var(--line); box-shadow: 0 24px 60px rgb(0 0 0 / 0.5);
   }
   .dimwindow.wide { width: min(46rem, 100%); }
+  .dimwindow.broad { width: min(68rem, 100%); }
   h2 { margin: 0 0 0.875rem; font-size: 1rem; font-weight: 650; color: var(--a); overflow-wrap: anywhere; }
 
   /* A phone: a sheet from the bottom, the full width, its top rounded. */

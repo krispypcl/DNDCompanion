@@ -5,11 +5,11 @@
  */
 import { LOOKUP_BASE } from './lookup';
 
-/** Faces the DM can pick for a creature (or write their own): calm to about to flee. */
+/** Expressions the DM can pick for a creature (or write their own): calm to about to flee. */
 export const EXPRESSIONS = [
   'Calm', 'Curious', 'Wary', 'Smug', 'Grinning', 'Snarling', 'Furious', 'Pained', 'Frightened', 'Desperate', 'Pleading', 'About to flee'
 ] as const;
-/** A face as written: trimmed, one line, at most 40 characters (database/0023). */
+/** An expression as written: trimmed, one line, at most 40 characters (database/0023). */
 export const cleanExpression = (s: string) => s.replace(/\s+/g, ' ').trim().slice(0, 40);
 
 export type CreatureKind = 'monster' | 'npc';

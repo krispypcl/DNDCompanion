@@ -13,7 +13,7 @@
   const TOP: [keyof StatBlock, string, string][] = [
     ['type', 'Type', 'Fey (Goblinoid)'],
     ['alignment', 'Alignment', 'Chaotic Neutral'],
-    ['ac', 'Armour class', '17 (chain shirt, shield)'],
+    ['ac', 'Armor class', '17 (chain shirt, shield)'],
     ['hp', 'Hit points', '21 (6d6)'],
     ['speed', 'Speed', '30 ft., climb 30 ft.'],
     ['cr', 'Challenge', '1']

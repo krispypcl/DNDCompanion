@@ -30,7 +30,7 @@ export type Creature = {
   portrait: string;
   /** The colours of the DM's own conditions on it (the standard ones keep theirs), by lookKey. */
   condition_looks: Record<string, ConditionLook>;
-  /** What its face shows, for the players (database/0023): "Snarling", "About to flee". */
+  /** Its expression, for the players (database/0023): "Snarling", "About to flee". */
   expression: string;
   created_at: string;
   updated_at: string;
@@ -55,7 +55,7 @@ export type Revealed = {
   position: number;
   portrait?: string;
   condition_looks?: Record<string, ConditionLook>;
-  /** Its face, as the DM describes it (database/0023; absent before it ran). */
+  /** Its expression, as the DM describes it (database/0023). */
   expression?: string;
 };
 

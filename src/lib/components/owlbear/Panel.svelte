@@ -558,7 +558,7 @@
                 <strong style:font-family={faceFamily(face)}>{obr?.nameOf(s) ?? s.name}</strong>
                 <span class="sub">{classLine(def) || 'No class yet'}</span>
               </span>
-              <span class="ac" title="Armour Class"><b>{def ? armorClass(def).total : '—'}</b><small>AC</small></span>
+              <span class="ac" title="Armor Class"><b>{def ? armorClass(def).total : '—'}</b><small>AC</small></span>
               {#if directLink(s)}
                 <button class="x" title="Take out of the room" aria-label="Take {obr?.nameOf(s)} out of the room" onclick={() => unlink(directLink(s)!)}>×</button>
               {/if}

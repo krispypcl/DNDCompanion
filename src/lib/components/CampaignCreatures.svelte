@@ -3,7 +3,7 @@
   a card each, like a character's: its portrait (the DM's picture, or a
   5e.tools monster's token art) ringed by its conditions' colours, its hit
   points (damage and healing a press away), armour class, speed and
-  initiative, what its face shows (database/0023, for the players),
+  initiative, its expression (database/0023, for the players),
   conditions (the
   DM's own in colours they choose) and a short note; its stat block in a
   window of its own; whether the players can see it; and its place, moved
@@ -224,9 +224,9 @@
   function saveNote(c: Creature, value: string) {
     if (value !== c.notes) void table.change(c, { notes: value.slice(0, 4000) });
   }
-  function saveFace(c: Creature, value: string) {
-    const face = cleanExpression(value);
-    if (face !== (c.expression ?? '')) void table.change(c, { expression: face });
+  function saveExpression(c: Creature, value: string) {
+    const expression = cleanExpression(value);
+    if (expression !== (c.expression ?? '')) void table.change(c, { expression });
   }
   /** A portrait full screen, grown out of the card. */
   let viewing = $state<{ src: string; alt: string; from: Element | null } | null>(null);
@@ -235,7 +235,7 @@
 <SectionHead title="Monsters & NPCs" infoLabel="About monsters and NPCs">
   {#snippet info()}
     Only you see these, unless you reveal one with its eye: your players then see its name, portrait, conditions, its
-    face and how hurt it looks, never its numbers or notes. Drag a card by its grip to move it.
+    expression and how hurt it looks, never its numbers or notes. Drag a card by its grip to move it.
   {/snippet}
   {#if table.notice}<span class="creaturenotice" role="status" transition:fade={{ duration: still ? 0 : 160 }}>{table.notice}</span>{/if}
   {#snippet end()}
@@ -270,12 +270,7 @@
       <li class="creature hurtcard {v.vital}" class:revealed={c.visible} data-key={c.id}
           animate:flip={{ duration: still ? 0 : 240, easing: cubicOut }} transition:fade={{ duration: still ? 0 : 180 }}>
         <div class="creaturehead">
-          {#if !ended}
-            <span class="cgrip" role="button" tabindex="0" aria-label="Move {c.name}" title="Drag to move (or the arrow keys)">
-              <svg viewBox="0 0 10 16" width="8" height="14" aria-hidden="true"><circle cx="2.5" cy="3" r="1.25" /><circle cx="7.5" cy="3" r="1.25" /><circle cx="2.5" cy="8" r="1.25" /><circle cx="7.5" cy="8" r="1.25" /><circle cx="2.5" cy="13" r="1.25" /><circle cx="7.5" cy="13" r="1.25" /></svg>
-            </span>
-          {/if}
-          {#snippet face()}
+          {#snippet likeness()}
             {#if pic}<img src={pic} alt="" draggable="false" loading="lazy" />{:else}
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 {#if c.kind === 'npc'}<circle cx="12" cy="8.5" r="3.75" /><path d="M4.75 20c.6-3.9 3.6-6.25 7.25-6.25s6.65 2.35 7.25 6.25" />
@@ -286,15 +281,16 @@
           {/snippet}
           {#if pic}
             <button class="cportrait" class:ringed={ring.length > 0} class:npc={c.kind === 'npc'} aria-label="See {c.name}’s portrait" title="See it full screen"
-                    onclick={(e) => (viewing = { src: pic, alt: `Portrait of ${c.name}`, from: e.currentTarget })}>{@render face()}</button>
+                    onclick={(e) => (viewing = { src: pic, alt: `Portrait of ${c.name}`, from: e.currentTarget })}>{@render likeness()}</button>
           {:else}
-            <span class="cportrait" class:ringed={ring.length > 0} class:npc={c.kind === 'npc'}>{@render face()}</span>
+            <span class="cportrait" class:ringed={ring.length > 0} class:npc={c.kind === 'npc'}>{@render likeness()}</span>
           {/if}
           <div class="creaturename">
             <strong>{c.name}</strong>
             <span class="kindtag" class:npc={c.kind === 'npc'}>{c.kind === 'npc' ? 'NPC' : 'Monster'}</span>
-            {#if kind || c.statblock?.cr}<span class="creaturekind">{kind}{#if c.statblock?.cr}{kind ? ', ' : ''}CR {c.statblock.cr}{/if}</span>{/if}
           </div>
+          <!-- Under the name, and under the buttons too: it has the card's width. -->
+          {#if kind || c.statblock?.cr}<span class="creaturekind">{kind}{#if c.statblock?.cr}{kind ? ', ' : ''}CR {c.statblock.cr}{/if}</span>{/if}
           <div class="creaturetools">
             {#if tools}{@render tools(c)}{/if}
             {#if !ended}
@@ -324,6 +320,10 @@
               {:else}
                 <button class="ctool rm" aria-label="Remove {c.name}" title="Remove" onclick={() => (confirming = c.id)}>×</button>
               {/if}
+              <!-- The grip, top right as on the character cards: the only place a card is picked up by. -->
+              <span class="ctool cgrip" role="button" tabindex="0" aria-label="Move {c.name}" title="Drag to move (or the arrow keys)">
+                <svg viewBox="0 0 10 16" width="8" height="14" aria-hidden="true"><circle cx="2.5" cy="3" r="1.25" /><circle cx="7.5" cy="3" r="1.25" /><circle cx="2.5" cy="8" r="1.25" /><circle cx="7.5" cy="8" r="1.25" /><circle cx="2.5" cy="13" r="1.25" /><circle cx="7.5" cy="13" r="1.25" /></svg>
+              </span>
             {/if}
           </div>
         </div>
@@ -336,7 +336,7 @@
         {/if}
 
         <div class="creaturerow">
-          <div class="acbox" title="Armour class"><span class="k">AC</span><b>{c.ac ?? '–'}</b></div>
+          <div class="acbox" title="Armor class"><span class="k">AC</span><b>{c.ac ?? '–'}</b></div>
           <div class="acbox" title={c.statblock?.speed ? `Speed: ${c.statblock.speed}` : 'Speed'}><span class="k">SPEED</span><b>{speed ?? '–'}</b></div>
           <div class="acbox" title="Initiative"><span class="k">INIT</span><b>{c.initiative ?? '–'}</b></div>
           {#if !ended && c.hp_max !== null}
@@ -371,11 +371,11 @@
           {/if}
         </ul>
 
-        <label class="cface" title="What its face shows: your players see this when it's revealed">
+        <label class="cexpr" title="Its expression: your players see this when it's revealed">
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M9 10h.01M15 10h.01M9 15.5c1.8-1.4 4.2-1.4 6 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
-          <span class="k">FACE</span>
-          <input list="creature-faces" value={c.expression ?? ''} maxlength="40" readonly={ended} aria-label="{c.name}’s face, as your players see it"
-                 placeholder="Calm, Snarling, About to flee" onchange={(e) => saveFace(c, e.currentTarget.value)}
+          <span class="k">EXPRESSION</span>
+          <input list="creature-expressions" value={c.expression ?? ''} maxlength="40" readonly={ended} aria-label="{c.name}’s expression, as your players see it"
+                 placeholder="Calm, Snarling, About to flee" onchange={(e) => saveExpression(c, e.currentTarget.value)}
                  onkeydown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} />
         </label>
 
@@ -386,8 +386,8 @@
   </ul>
 {/if}
 
-<datalist id="creature-faces">
-  {#each EXPRESSIONS as face (face)}<option value={face}></option>{/each}
+<datalist id="creature-expressions">
+  {#each EXPRESSIONS as expression (expression)}<option value={expression}></option>{/each}
 </datalist>
 
 {#if viewing}
@@ -420,7 +420,7 @@
 
 {#if editing}
   {@const e = editing}
-  <DimModal id="creature-edit" wide onclose={() => (editing = null)}
+  <DimModal id="creature-edit" broad onclose={() => (editing = null)}
             title={e.id ? `Change ${e.draft.name || 'it'}` : e.homebrewId ? `Change ${e.draft.name || 'it'} in your homebrew` : 'Add a monster or NPC'}>
     {#if !e.id && !e.homebrewId}
       <div class="ways" role="tablist" aria-label="Where it comes from">
@@ -479,7 +479,7 @@
         </div>
         {#if !e.homebrewId}
           <label><span>Hit points</span><input class="numfield" type="number" min="0" inputmode="numeric" bind:value={e.draft.hp} placeholder="From its stat block" /></label>
-          <label><span>Armour class</span><input class="numfield" type="number" min="0" inputmode="numeric" bind:value={e.draft.ac} placeholder="From its stat block" /></label>
+          <label><span>Armor class</span><input class="numfield" type="number" min="0" inputmode="numeric" bind:value={e.draft.ac} placeholder="From its stat block" /></label>
           {#if !e.id}
             <label><span>How many</span><input class="numfield" type="number" min="1" max="20" inputmode="numeric" bind:value={e.draft.howMany} /></label>
           {/if}
@@ -533,8 +533,16 @@
   .sk-hp { width: 5rem; height: 1.75rem; }
   .sk-bar { height: 6px; }
   .sk-row { height: 2rem; }
-  .creaturehead { display: flex; align-items: flex-start; gap: 0.75rem; }
-  .creaturehead .creaturename { flex: 1; }
+  /* The portrait down the left; the name and the buttons on one line; the
+     kind under both, so a long one has the card's width. */
+  .creaturehead {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: 'pic name tools' 'pic kind kind';
+    column-gap: 0.75rem; row-gap: 0.25rem; align-items: center;
+  }
+  .creaturehead > .cportrait { grid-area: pic; align-self: start; }
+  .creaturehead > .creaturename { grid-area: name; }
+  .creaturehead > .creaturekind { grid-area: kind; align-self: start; }
+  .creaturehead > .creaturetools { grid-area: tools; }
   /* Round, as the 5e.tools tokens most portraits come from are. */
   .cportrait {
     position: relative; flex: none; width: 3.25rem; height: 3.25rem; border-radius: 50%; display: grid; place-items: center;
@@ -547,21 +555,16 @@
   button.cportrait:active { transform: scale(0.98); }
   button.cportrait:focus-visible { outline: 2px solid var(--a); outline-offset: 3px; }
   /* The grip: the only place a card is picked up by. */
-  .cgrip {
-    flex: none; align-self: center; display: grid; place-items: center; width: 1.125rem; height: 2.25rem; margin: 0 -0.375rem 0 -0.375rem;
-    border-radius: var(--r-sm); color: var(--faint); cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none;
-    transition: color 0.15s ease, background-color 0.15s ease;
-  }
+  /* The grip: the only place a card is picked up by. */
+  .cgrip { color: var(--faint); cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none; }
   .cgrip svg { fill: currentColor; }
-  .cgrip:hover { color: var(--a); background: var(--a-wash); }
-  .cgrip:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
-  .cface { display: flex; align-items: center; gap: 0.4375rem; color: var(--dim); min-width: 0; }
-  .cface .k { font-size: 0.5625rem; font-weight: 650; letter-spacing: 0.08em; color: var(--label); }
-  .cface input {
+  .cexpr { display: flex; align-items: center; gap: 0.4375rem; color: var(--dim); min-width: 0; }
+  .cexpr .k { font-size: 0.5625rem; font-weight: 650; letter-spacing: 0.08em; color: var(--label); }
+  .cexpr input {
     flex: 1; min-width: 0; font: inherit; font-size: 0.8125rem; padding: 0.3125rem 0.5rem; color: var(--text);
     border: 1px solid var(--line-soft); border-radius: var(--r-sm); background: var(--raised);
   }
-  .cface input:focus { outline: none; border-color: var(--a-edge); }
+  .cexpr input:focus { outline: none; border-color: var(--a-edge); }
   .cportrait.ringed { border-color: transparent; }
   .cportrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
   .cportrait svg { width: 1.625rem; height: 1.625rem; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
@@ -572,7 +575,7 @@
   .lookin { margin-top: 0.75rem; }
   .creaturename { display: flex; align-items: center; gap: 0.25rem 0.5rem; flex-wrap: wrap; min-width: 0; }
   .creaturename strong { font-size: 1.0625rem; overflow-wrap: anywhere; }
-  .creaturekind { flex-basis: 100%; font-size: 0.75rem; font-style: italic; color: var(--dim); }
+  .creaturekind { font-size: 0.75rem; font-style: italic; color: var(--dim); overflow-wrap: anywhere; }
   .kindtag {
     font-size: 0.625rem; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase;
     padding: 0.125rem 0.4375rem; border-radius: 999px; border: 1px solid color-mix(in oklab, oklch(62% 0.21 25) 45%, var(--line));
@@ -654,7 +657,7 @@
   .pickwords { display: flex; gap: 0.5rem; font-weight: 400; font-size: 0.75rem; color: var(--dim); }
   .pickbook { color: var(--faint); font-variant: all-small-caps; letter-spacing: 0.04em; }
   .picklist li.pickempty { color: var(--dim); font-size: 0.8125rem; justify-content: center; border-style: dashed; background: none; padding: 1rem; }
-  .cform { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
+  .cform { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(13rem, 100%), 1fr)); gap: 0.75rem; }
   .cform label { display: grid; gap: 0.3125rem; font-size: 0.75rem; color: var(--label); }
   .cform .wide { grid-column: 1 / -1; }
   .cform > label > input:not([type='checkbox']) {
