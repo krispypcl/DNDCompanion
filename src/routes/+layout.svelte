@@ -5,13 +5,38 @@
   import { onNavigate } from '$app/navigation';
   import Splash from '#lib/components/Splash.svelte';
   import ConnectionNotice from '#lib/components/ConnectionNotice.svelte';
-  import LookupPeek from '#lib/components/LookupPeek.svelte';
+  import { peek } from '#lib/stores/peek.svelte.ts';
+  import type { Component } from 'svelte';
   import { arrive, prefersReducedMotion } from '#lib/motion.ts';
   import { profile } from '#lib/stores/profile.ts';
   import { adoptAccountPrefs } from '#lib/prefs.ts';
   import { installSettle } from '#lib/settle.ts';
 
   let { children } = $props();
+
+  /*
+   * The 5e.tools peek (and the 5e.tools reader behind it) loads on its own,
+   * once the page has settled or the moment a name asks for it, so it never
+   * weighs on a page's first paint.
+   */
+  let LookupPeek = $state<Component | null>(null);
+  let peekLoading = false;
+  function loadPeek() {
+    if (peekLoading) return;
+    peekLoading = true;
+    import('#lib/components/LookupPeek.svelte').then(
+      (m) => (LookupPeek = m.default),
+      () => (peekLoading = false)
+    );
+  }
+  $effect(() => {
+    if (peek.target || peek.kept.length) loadPeek();
+  });
+  $effect(() => {
+    const idle = window.requestIdleCallback ?? ((f: () => void) => setTimeout(f, 1500));
+    const id = idle(loadPeek, { timeout: 4000 });
+    return () => (window.cancelIdleCallback ?? clearTimeout)(id as number);
+  });
 
   // Nothing that moves makes a scrollbar flash (lib/settle.ts).
   $effect(() => installSettle());
@@ -102,7 +127,7 @@
 
 <Splash />
 <ConnectionNotice />
-<LookupPeek />
+{#if LookupPeek}<LookupPeek />{/if}
 
 <!--
   Keyed on the path, so every route change — opening a sheet, coming back to
