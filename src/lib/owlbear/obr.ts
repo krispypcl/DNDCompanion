@@ -8,7 +8,7 @@ import OBR, { buildImage, buildShape, isImage, isShape, type Image, type Item, t
 import { base } from '#lib/base.ts';
 import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
 import { siteRoot } from '#lib/rules/share.ts';
-import { easeMode } from '#lib/stores/mode.ts';
+import { crossfade } from '#lib/stores/mode.ts';
 import type { Sheet } from '#lib/types.ts';
 import { CREATURE_KEY, NS, ORDER_KEY, PART_KEY, ROLLS_KEY, ROOM_KEY, SHEET_KEY, type CreatureLink, type PartLink, type TokenLink } from './keys';
 import type { Creature } from '#lib/data/creatures.ts';
@@ -359,10 +359,7 @@ export async function makeMenus(): Promise<void> {
 /** The page follows Owlbear's light or dark. */
 export async function followTheme(apply: (mode: 'light' | 'dark') => void): Promise<() => void> {
   apply((await OBR.theme.getTheme()).mode === 'LIGHT' ? 'light' : 'dark');
-  return OBR.theme.onChange((t) => {
-    easeMode();
-    apply(t.mode === 'LIGHT' ? 'light' : 'dark');
-  });
+  return OBR.theme.onChange((t) => crossfade(() => apply(t.mode === 'LIGHT' ? 'light' : 'dark')));
 }
 
 // ── The campaign's music and board, in the room ──

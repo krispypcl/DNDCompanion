@@ -150,9 +150,10 @@
 /* Light and dark fade into each other as one picture (ModeToggle); the page
    underneath switches at once, its own colour transitions held off. */
 :root.mode-snap *, :root.mode-snap *::before, :root.mode-snap *::after { transition: none !important; }
-:root.mode-fade::view-transition-old(root) { animation: mode-fade 0.26s cubic-bezier(0.33, 1, 0.68, 1) both; }
-:root.mode-fade::view-transition-new(root) { animation: none; }
-@keyframes mode-fade { to { opacity: 0; } }
+/* The new look is drawn over the old, so it is the new that fades in (the old waits beneath). */
+:root.mode-fade::view-transition-old(root) { animation: none; }
+:root.mode-fade::view-transition-new(root) { animation: mode-fade 0.35s cubic-bezier(0.33, 1, 0.68, 1) both; }
+@keyframes mode-fade { from { opacity: 0; } }
 
 /* Lets a height animate to and from `auto`, which the disclosure panels use. */
 :root { interpolate-size: allow-keywords; }
@@ -342,11 +343,6 @@ button, summary, label:has(> input:is([type='checkbox'], [type='radio'])), [role
 .closex:active { transform: translateY(1px); }
 .closex:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
 
-/* Light ↔ dark by hand: colours ease across (stores/mode.ts adds the class for a moment). */
-html.mode-easing, html.mode-easing *, html.mode-easing *::before, html.mode-easing *::after {
-  transition: background-color 0.35s ease, color 0.35s ease, border-color 0.35s ease, fill 0.35s ease, stroke 0.35s ease,
-    box-shadow 0.35s ease !important;
-}
 
 /* Folding sections (<details>) open and close smoothly where the browser can
    animate to "auto"; elsewhere they simply open. */

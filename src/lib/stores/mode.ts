@@ -7,6 +7,7 @@
  * marks the document, so a light-mode reader never sees a dark frame first.
  * This store is only for the toggle and for keeping the two in step.
  */
+import { tick } from 'svelte';
 import { writable } from 'svelte/store';
 
 export type Mode = 'dark' | 'light';
@@ -61,11 +62,12 @@ export function chooseMode(choice: ModeChoice) {
   } catch {
     // A private window can refuse. The choice still applies for this visit.
   }
-  easeMode();
   modeChoice.set(choice);
   const next = choice === 'system' ? systemMode() : choice;
-  mark(next);
-  mode.set(next);
+  crossfade(() => {
+    mark(next);
+    mode.set(next);
+  });
 }
 
 // Under System, the page follows the device as it changes (an evening switch).
@@ -90,23 +92,41 @@ export function applyMode(next: Mode) {
 }
 
 /**
- * Switching by hand eases the whole page across (colours fade over a third of
- * a second) instead of snapping; the class is only on for that moment, so it
- * never slows anything else down.
+ * Switching light and dark by hand: the new look fades in over the old as
+ * one picture (a view transition), so it costs the same on any page. Easing
+ * every element's colours instead made a full campaign page stutter. The
+ * page underneath switches at once (`.mode-snap` holds every element's own
+ * transitions off meanwhile). Without view transitions, or with reduced
+ * motion, it simply switches, as cheaply.
  */
-let easing: ReturnType<typeof setTimeout> | undefined;
-export function easeMode() {
-  if (typeof document === 'undefined' || typeof matchMedia !== 'function') return;
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  document.documentElement.classList.add('mode-easing');
-  clearTimeout(easing);
-  easing = setTimeout(() => document.documentElement.classList.remove('mode-easing'), 450);
+type Transitioning = Document & { startViewTransition?: (cb: () => Promise<void> | void) => { finished: Promise<void> } };
+export function crossfade(apply: () => void) {
+  if (typeof document === 'undefined') return apply();
+  const doc = document as Transitioning;
+  const root = document.documentElement;
+  const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  root.classList.add('mode-snap');
+  const done = () => requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('mode-snap', 'mode-fade')));
+  if (reduced || !doc.startViewTransition) {
+    apply();
+    return done();
+  }
+  root.classList.add('mode-fade');
+  doc
+    .startViewTransition(async () => {
+      apply();
+      // The components catch up (a frame can't be waited for here: the browser holds them back until this returns).
+      await tick();
+    })
+    .finished.catch(() => {})
+    .finally(done);
 }
 export function toggleMode() {
-  easeMode();
-  mode.update((current) => {
-    const next: Mode = current === 'dark' ? 'light' : 'dark';
-    applyMode(next);
-    return next;
-  });
+  crossfade(() =>
+    mode.update((current) => {
+      const next: Mode = current === 'dark' ? 'light' : 'dark';
+      applyMode(next);
+      return next;
+    })
+  );
 }
