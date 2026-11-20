@@ -38,7 +38,10 @@
   import D20Loader from '#lib/components/D20Loader.svelte';
   import PrintButton from '#lib/components/PrintButton.svelte';
   import { beforeNavigate, goto } from '$app/navigation';
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
+  import { phone } from '#lib/stores/phone.svelte.ts';
+  import PhoneBar, { type PhonePlace } from '#lib/components/PhoneBar.svelte';
+  import { vitalStatus } from '#lib/rules/hp.ts';
   import Flash from '#lib/components/Flash.svelte';
   import ShareButton from '#lib/components/ShareButton.svelte';
   import Tabs from '#lib/components/Tabs.svelte';
@@ -136,6 +139,7 @@
   let revealed = $state(false);
   let loadError = $state<string | null>(null);
   let activeTab = $state(TABS[0]);
+
   let editing = $state(false);
   let refilling = $state(false);
   let toast = $state<string | null>(null);
@@ -235,6 +239,55 @@
   const initAdv = $derived(definition ? advantageFrom(definition, 'init') : []);
   /** The spellcasting ability, and what the spell DC and attack are made of. */
   const castAb = $derived(definition?.spellcastingAbility);
+
+  /*
+   * A phone: the sheet in places, chosen on a bar at the bottom, in place of
+   * one long column. Play is the fight (hit points, defences, conditions,
+   * the Combat tab); Abilities the six and the skills; Spells and Gear their
+   * tabs; More the rest of the tabs. A slim strip keeps the name and hit
+   * points in sight wherever you are. The same parts as the desktop's,
+   * shown a place at a time.
+   */
+  type Place = 'play' | 'abilities' | 'spells' | 'gear' | 'more';
+  const MORE_TABS = ['Features', 'Trackers', 'Character', 'Notes', 'Backstory', 'Appearance'];
+  const phoneOn = $derived(phone.current);
+  let place = $state<Place>('play');
+  const placeOfTab = (tab: string): Place => (tab === 'Combat' ? 'play' : tab === 'Spells' ? 'spells' : tab === 'Equipment' ? 'gear' : 'more');
+  function goPlace(next: string) {
+    const p = next as Place;
+    if (p === 'play') activeTab = 'Combat';
+    else if (p === 'spells') activeTab = 'Spells';
+    else if (p === 'gear') activeTab = 'Equipment';
+    else if (p === 'more' && !MORE_TABS.includes(activeTab)) activeTab = 'Features';
+    place = p;
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
+  }
+  // A tab chosen some other way (a key, a link to #spells) takes its place along.
+  $effect(() => {
+    const tab = activeTab;
+    untrack(() => {
+      if (place !== 'abilities' && place !== placeOfTab(tab)) place = placeOfTab(tab);
+    });
+  });
+  const casts = $derived(Boolean(definition?.spellcastingAbility || (definition?.spells ?? []).length));
+  const phonePlaces = $derived<PhonePlace[]>([
+    { key: 'play', label: 'Play', icon: 'play' },
+    { key: 'abilities', label: 'Abilities', icon: 'abilities' },
+    ...(casts || place === 'spells' ? [{ key: 'spells', label: 'Spells', icon: 'spells' as const }] : []),
+    { key: 'gear', label: 'Gear', icon: 'gear' },
+    { key: 'more', label: 'More', icon: 'more' }
+  ]);
+  /** The full header scrolled away (or another place): the slim strip shows instead. */
+  let headerGone = $state(false);
+  let headerEl = $state<HTMLElement>();
+  $effect(() => {
+    if (!phoneOn || !headerEl || typeof IntersectionObserver === 'undefined') return;
+    const watch = new IntersectionObserver(([e]) => (headerGone = !e.isIntersecting), { rootMargin: '-40px 0px 0px 0px' });
+    watch.observe(headerEl);
+    return () => watch.disconnect();
+  });
+  const stripShown = $derived(phoneOn && (place !== 'play' || headerGone));
+  const phoneVital = $derived(sheetState && definition ? vitalStatus(sheetState.hpCurrent, definition.combat?.hpMax ?? 0, sheetState.deathSaves) : null);
   const castParts = $derived(definition && castAb
     ? [{ label: `${castAb.toUpperCase()} modifier`, value: modifierOf(definition, castAb) }, { label: 'Proficiency', value: proficiencyBonus(definition) }]
     : []);
@@ -717,9 +770,25 @@
 {:else if sheet && definition && sheetState}
   <!-- The theme is scoped here, not to :root, so a campaign view can later show
        several characters in their own colours at once. -->
-  <div class="sheet themed" class:entering class:bannered={banner} style={themeStyle(themePreview ?? definition.identity.theme)}>
+  <div class="sheet themed" class:entering class:bannered={banner} style={themeStyle(themePreview ?? definition.identity.theme)}
+       data-place={phoneOn ? place : undefined}>
+    {#if phoneOn}
+      <!-- Who, and how hurt, always in sight on a phone; its hit points lead to Play. -->
+      <div class="phonestrip" class:shown={stripShown} aria-hidden={!stripShown} inert={!stripShown}>
+        <span class="strippic">
+          <ClassIcon cls={mainClass(definition)} />
+          {#if portraitSrc}<img src={portraitSrc} alt="" />{/if}
+        </span>
+        <span class="stripname">{definition.identity.name || sheet.name || 'Unnamed'}</span>
+        <button class="hppill {phoneVital?.vital ?? ''}" onclick={() => goPlace('play')} aria-label="Hit points {sheetState.hpCurrent} of {definition.combat?.hpMax ?? 0}, {phoneVital?.label ?? ''}">
+          <b>{sheetState.hpCurrent}{#if sheetState.hpTemp}<span class="temp">+{sheetState.hpTemp}</span>{/if}<small> / {definition.combat?.hpMax ?? 0}</small></b>
+          <span class="pillbar"><i style:width="{Math.max(0, Math.min(100, ((sheetState.hpCurrent) / Math.max(1, definition.combat?.hpMax ?? 0)) * 100))}%"></i></span>
+        </button>
+      </div>
+      {#if place !== 'play'}<div class="striproom" aria-hidden="true"></div>{/if}
+    {/if}
     {#if banner}<Banner url={banner} />{/if}
-    <header class="identity">
+    <header class="identity" bind:this={headerEl}>
       <div class="portrait" class:has={Boolean(portraitSrc)} class:fallen={dead} use:parallax>
         <!-- The picture turns toward the pointer, inside its still frame. -->
         <span class="frame">
@@ -868,7 +937,7 @@
     {#if liveInit && sheet}<SheetInitiative live={liveInit} sheetId={sheet.id} />{/if}
 
     <div class="band">
-      <section class="panel hp" style:--i=0>
+      <section class="panel hp" style:--i=0 data-places="play">
         <HitPoints {definition} state={sheetState} editable={isOwner} editDefinition={editable}
                    onchange={setState} ondefinition={setDefinition}>
           {#snippet children()}
@@ -879,14 +948,14 @@
         </HitPoints>
       </section>
 
-      <section class="panel band-abilities" style:--i=1>
+      <section class="panel band-abilities" style:--i=1 data-places="abilities">
         <AbilityBand {definition} {editable} onchange={setDefinition}
                      onroll={isOwner ? rollSkill : undefined} />
       </section>
     </div>
 
     <div class="main">
-      <section class="panel rail-skills" style:--i=2>
+      <section class="panel rail-skills" style:--i=2 data-places="abilities">
         <SkillRail {definition} {editable} onchange={setDefinition}
                    onroll={isOwner ? rollSkill : undefined} />
         <div class="passives">
@@ -906,8 +975,8 @@
         </div>
       </section>
 
-      <section class="panel centre" style:--i=3>
-        <Tabs tabs={TABS} bind:active={activeTab} lit={litLevel ? 'Spells' : null}>
+      <section class="panel centre" style:--i=3 data-places="play spells gear more">
+        <Tabs tabs={phoneOn && place === 'more' ? MORE_TABS : TABS} bare={phoneOn && place !== 'more'} bind:active={activeTab} lit={litLevel ? 'Spells' : null}>
           {#snippet children(tab)}
             {#if tab === 'Combat'}
               <EntryTable
@@ -1131,7 +1200,10 @@
         </Tabs>
       </section>
 
-      <section class="panel rail-right" style:--i=4>
+      <section class="panel rail-right" style:--i=4 data-places="play gear more">
+        <!-- On a phone, Play keeps the conditions, trackers and defences; the
+             purse goes to Gear and the proficiencies to More. -->
+        <div class="railfight" data-places="play">
         <Conditions state={sheetState} editable={isOwner} onchange={setState}
                     looks={definition.conditionLooks ?? {}}
                     onlooks={(conditionLooks) => setDefinition({ ...definition, conditionLooks })} />
@@ -1218,7 +1290,9 @@
           </div>
         </div>
 
-        <div class="money">
+        </div>
+
+        <div class="money" data-places="gear">
           <h2 class="cap">Currency</h2>
           <Currency {definition} editable={editable} onchange={setDefinition} />
           <div class="carried">
@@ -1227,7 +1301,7 @@
           </div>
         </div>
 
-        <div class="profs" style:--rows={4}>
+        <div class="profs" style:--rows={4} data-places="more">
           <h2 class="cap">Proficiencies</h2>
           <EditableField
             value={definition.traits?.proficiencies ?? ''}
@@ -1245,7 +1319,7 @@
           />
         </div>
 
-        <div class="profs" style:--rows={2}>
+        <div class="profs" style:--rows={2} data-places="more">
           <h2 class="cap">Languages</h2>
           <EditableField
             value={definition.traits?.languages ?? ''}
@@ -1263,7 +1337,7 @@
           />
         </div>
 
-        <div class="profs" style:--rows={3}>
+        <div class="profs" style:--rows={3} data-places="more">
           <h2 class="cap">Senses</h2>
           <EditableField
             value={definition.senses ?? ''}
@@ -1330,6 +1404,7 @@
     <SaveAlert />
     <!-- Floating, so saying a word costs the header nothing. -->
     <SaveIndicator />
+    {#if phoneOn}<PhoneBar places={phonePlaces} active={place} onchoose={goPlace} />{/if}
   </div>
   <!-- Only the printer shows this. Private writing a visitor cannot read is
        not passed in, so it is never on their paper either. -->
@@ -1822,4 +1897,61 @@
     .identity .campaign a, .identity button.campaign { border-radius: var(--r-sm); padding: 0.1875rem 0.5rem; }
     .identity .musicslot, .identity .controls { grid-column: 1 / -1; margin-top: 0.75rem; }
   }
+
+  /* ── A phone's places: one at a time, each arriving with a short fade. ── */
+  .sheet[data-place='play'] [data-places]:not([data-places~='play']),
+  .sheet[data-place='abilities'] [data-places]:not([data-places~='abilities']),
+  .sheet[data-place='spells'] [data-places]:not([data-places~='spells']),
+  .sheet[data-place='gear'] [data-places]:not([data-places~='gear']),
+  .sheet[data-place='more'] [data-places]:not([data-places~='more']) { display: none; }
+  .sheet[data-place] [data-places] { animation: placeIn 0.24s cubic-bezier(0.33, 1, 0.68, 1); }
+  @keyframes placeIn { from { opacity: 0; } }
+  .railfight { display: contents; }
+  /* Gear and More: the rail's own heading spacing starts at its first part. */
+  .sheet[data-place='gear'] .rail-right .money, .sheet[data-place='more'] .rail-right .money + .profs { padding-top: 0; }
+  /* Play: the numbers and conditions first, then the attacks. */
+  .sheet[data-place='play'] .rail-right { order: -1; }
+  /* Away from Play the header steps aside (still there, so its music plays on). */
+  .sheet[data-place]:not([data-place='play']) .identity {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; pointer-events: none;
+  }
+  .sheet[data-place]:not([data-place='play']) :global(.sheetinit) { margin-top: 0.25rem; }
+  @media (prefers-reduced-motion: reduce) { .sheet[data-place] [data-places] { animation: none; } }
+
+  /* The slim strip: who, and how hurt. It slides down from the top. */
+  .phonestrip {
+    position: fixed; left: 0; right: 0; top: 0; z-index: 35; display: flex; align-items: center; gap: 0.625rem;
+    padding: calc(0.5rem + env(safe-area-inset-top, 0px)) max(0.875rem, env(safe-area-inset-right, 0px)) 0.5rem max(0.875rem, env(safe-area-inset-left, 0px));
+    transform: translateY(-110%); transition: transform 0.26s cubic-bezier(0.33, 1, 0.68, 1);
+  }
+  .phonestrip.shown { transform: none; }
+  .phonestrip::before {
+    content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    border-bottom: 1px solid color-mix(in oklch, var(--line) 80%, transparent);
+    /* Nearly solid, no frost: a phone redrawing a blur under it on every scroll is what stutters. */
+    background: color-mix(in oklch, var(--surface) 97%, transparent);
+  }
+  .striproom { height: calc(3.375rem + env(safe-area-inset-top, 0px)); }
+  .strippic {
+    position: relative; flex: none; width: 2.25rem; height: 2.25rem; border-radius: var(--r-sm); overflow: hidden;
+    display: grid; place-items: center; border: 1px solid var(--a-edge); background: var(--raised); color: var(--a);
+  }
+  .strippic :global(svg) { width: 1.25rem; height: 1.25rem; }
+  .strippic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .stripname { flex: 1; min-width: 0; font-weight: 650; font-size: 1rem; color: var(--a); overflow-wrap: anywhere; line-height: 1.2; }
+  .hppill {
+    flex: none; display: grid; justify-items: end; gap: 0.25rem; padding: 0.3125rem 0.625rem; font: inherit; color: var(--text); cursor: pointer;
+    border: 1px solid var(--line); border-radius: 0.625rem; background: var(--raised);
+    transition: border-color 0.15s ease, transform 0.08s ease;
+  }
+  .hppill:active { transform: translateY(1px); }
+  .hppill:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
+  .hppill b { font-size: 1rem; font-variant-numeric: tabular-nums; line-height: 1; }
+  .hppill small { font-size: 0.6875rem; font-weight: 500; color: var(--dim); }
+  .hppill .temp { font-size: 0.75rem; color: var(--dim); margin-left: 0.125rem; }
+  .pillbar { width: 4rem; height: 4px; border-radius: 2px; background: var(--track); overflow: hidden; }
+  .pillbar i { display: block; height: 100%; background: var(--a); transition: width 0.4s cubic-bezier(0.33, 1, 0.68, 1); }
+  .hppill:is(.bloodied, .critical, .down, .dead) { border-color: color-mix(in oklab, var(--hurt-red) 55%, var(--line)); }
+  .hppill:is(.bloodied, .critical, .down, .dead) b { color: var(--hurt-red); }
+  .hppill:is(.bloodied, .critical, .down, .dead) .pillbar i { background: var(--hurt-red); }
 </style>
