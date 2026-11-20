@@ -10,7 +10,7 @@
   import { fade, scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import { base } from '#lib/base.ts';
-  import { movable, portal } from '#lib/actions.ts';
+  import { backdrop, movable, portal } from '#lib/actions.ts';
   import { prefersReducedMotion } from '#lib/motion.ts';
   import { campaignMessage, campaignRepo, inviteCode, type Campaign } from '#lib/data/campaigns.ts';
   import Switch from './Switch.svelte';
@@ -124,7 +124,7 @@
 </script>
 
 <div class="scrim themed" style={themeCss} use:portal role="presentation" transition:fade={{ duration: still ? 0 : 140 }}
-     onclick={(e) => { if (e.target === e.currentTarget) onclose(); }}>
+     use:backdrop={onclose}>
   <div class="box" bind:this={box} use:movable role="dialog" aria-modal="true" aria-labelledby="campaign-title"
        transition:scale={{ start: 0.95, duration: still ? 0 : 180, easing: cubicOut }}>
     <h2 id="campaign-title">Campaign</h2>

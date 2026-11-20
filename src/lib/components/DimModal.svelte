@@ -8,7 +8,7 @@
   import type { Snippet } from 'svelte';
   import { fade } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { focusFirst, movable, portal } from '#lib/actions.ts';
+  import { backdrop, focusFirst, movable, portal } from '#lib/actions.ts';
   import { prefersReducedMotion } from '#lib/motion.ts';
 
   let { id, title, wide = false, onclose, children }: { id: string; title: string; wide?: boolean; onclose: () => void; children: Snippet } = $props();
@@ -28,7 +28,7 @@
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 <div class="dimscrim" use:portal transition:fade={{ duration: prefersReducedMotion() ? 0 : 200, easing: cubicOut }}
-     onclick={(e) => { if (e.target === e.currentTarget) onclose(); }}>
+     use:backdrop={onclose}>
   <div class="dimwindow themed-scroll" class:wide role="dialog" aria-modal="true" aria-labelledby={id} use:movable use:focusFirst
        in:rise out:rise={{ out: true }}>
     <h2 {id}>{title}</h2>

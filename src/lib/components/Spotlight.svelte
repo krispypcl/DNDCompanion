@@ -10,7 +10,7 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { portal } from '#lib/actions.ts';
+  import { backdrop, portal } from '#lib/actions.ts';
   import { prefersReducedMotion } from '#lib/motion.ts';
   import { peek, themeAt } from '#lib/stores/peek.svelte.ts';
   import { matchRank, search, type Hit, type IndexRow } from '#lib/rules/spotlight.ts';
@@ -123,7 +123,7 @@
 
 {#if open}
   <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-  <div class="spotscrim" use:portal transition:fade={{ duration: still ? 0 : 180 }} onclick={(e) => { if (e.target === e.currentTarget) close(); }}>
+  <div class="spotscrim" use:portal transition:fade={{ duration: still ? 0 : 180 }} use:backdrop={close}>
     <!-- Keys are heard by the whole box, so Esc still closes it after a result was pressed. -->
     <div class="spotbox" role="dialog" aria-modal="true" aria-label="Search 5e.tools" tabindex="-1" onkeydown={key}
          in:drop out:drop={{ out: true }}>

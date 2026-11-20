@@ -33,6 +33,32 @@ export function focusFirst(node: HTMLElement) {
   queueMicrotask(() => (node.querySelector('input, button') as HTMLElement | null)?.focus());
 }
 
+/**
+ * The dimmed page behind a window: pressed, it closes the window. Only a
+ * press that starts and ends on the backdrop counts, so selecting text in
+ * the window and letting go past its edge leaves the window open (a click
+ * goes to whatever both ends of the press share, which is the backdrop).
+ */
+export function backdrop(node: HTMLElement, onpress: () => void) {
+  let started = false;
+  const down = (e: PointerEvent) => (started = e.target === node);
+  const click = (e: MouseEvent) => {
+    if (started && e.target === node) onpress();
+    started = false;
+  };
+  node.addEventListener('pointerdown', down);
+  node.addEventListener('click', click);
+  return {
+    update(next: () => void) {
+      onpress = next;
+    },
+    destroy() {
+      node.removeEventListener('pointerdown', down);
+      node.removeEventListener('click', click);
+    }
+  };
+}
+
 /** A modifier as it is written: "+3", "-1", "+0". */
 export const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 

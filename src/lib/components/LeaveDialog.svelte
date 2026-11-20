@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { backdrop } from '#lib/actions.ts';
   /** Asked only when leaving would lose something: a change that could not be saved. */
   import { onMount } from 'svelte';
   import { fade, scale } from 'svelte/transition';
@@ -18,7 +19,7 @@
 </script>
 
 <div class="scrim" transition:fade={{ duration: still ? 0 : 160 }}
-     onclick={(e) => { if (e.target === e.currentTarget) onstay(); }} role="presentation">
+     use:backdrop={onstay} role="presentation">
   <div class="box" role="alertdialog" aria-modal="true" aria-labelledby="leave-title" aria-describedby="leave-text"
        transition:scale={{ start: 0.95, duration: still ? 0 : 200, easing: cubicOut }}>
     <h2 id="leave-title">Wait, your latest changes aren’t saved!</h2>

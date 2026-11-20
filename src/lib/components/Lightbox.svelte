@@ -6,7 +6,7 @@
    * Given the thumbnail it was opened from, it grows out of that thumbnail
    * and shrinks back into it on closing.
    */
-  import { portal } from '#lib/actions.ts';
+  import { backdrop, portal } from '#lib/actions.ts';
   import { onMount, tick, untrack } from 'svelte';
   import { fade, scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
@@ -90,7 +90,7 @@
   aria-label={alt || 'Picture'}
   tabindex="-1"
   transition:fade={{ duration: still ? 0 : 180 }}
-  onclick={(e) => { if (e.target === e.currentTarget) close(); }}
+  use:backdrop={close}
   onkeydown={() => {}}
 >
   <!-- As large as the screen allows, small pictures included, at their own
