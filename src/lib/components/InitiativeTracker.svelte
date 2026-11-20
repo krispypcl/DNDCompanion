@@ -3,14 +3,16 @@
   table, highest first, whose turn it is lit, and the round. The DM calls for
   initiative, the players roll (or write) their own characters' numbers, the
   DM rolls the rest, starts the fight and moves the turn on; everyone
-  follows it live.
+  follows it live. A tie is settled by dragging (rules/initiative): the DM
+  moves a monster or NPC, a player their own character among the characters.
 -->
 <script lang="ts">
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
   import { fade } from 'svelte/transition';
   import { prefersReducedMotion } from '#lib/motion.ts';
-  import { ordered, type InitiativeRow } from '#lib/rules/initiative.ts';
+  import { reorder } from '#lib/reorder.ts';
+  import { canSettle, ordered, settleOrder, settleScores, type InitiativeRow } from '#lib/rules/initiative.ts';
   import SectionHead from './SectionHead.svelte';
 
   let {
@@ -27,7 +29,8 @@
     onnext,
     onprevious,
     onend,
-    onrollrest
+    onrollrest,
+    onsettle
   }: {
     combatants: InitiativeRow[];
     turn: string | null;
@@ -48,9 +51,20 @@
     onend?: () => void;
     /** Rolls for everyone still without a number. */
     onrollrest?: () => void;
+    /** A tie settled by dragging: the scores to keep (rules/initiative settleScores). */
+    onsettle?: (ties: Record<string, number>) => void;
   } = $props();
 
-  const list = $derived(ordered(combatants) as InitiativeRow[]);
+  const list = $derived(ordered(combatants));
+  // ── Ties, settled by dragging (lib/reorder): shown as it moves, kept on letting go.
+  let preview = $state<string[] | null>(null);
+  let dragging = '';
+  const shown = $derived.by(() => {
+    if (!preview) return list;
+    const by = new Map(list.map((c) => [c.key, c]));
+    return preview.flatMap((k) => by.get(k) ?? []);
+  });
+  const settleable = (key: string) => Boolean(onsettle) && canSettle(combatants, key, isDm);
   const running = $derived(Boolean(turn));
   /** Whose turn it is is someone the players can't see. */
   const unseenTurn = $derived(running && !list.some((c) => c.key === turn));
@@ -95,9 +109,11 @@
       {#if isDm}
         Call for initiative and your players roll theirs here, on the campaign page. Write any number in yourself, or
         roll the rest. Start, then Next turn moves it on; your players see the order and whose turn it is, with only
-        the monsters and NPCs you’ve revealed.
+        the monsters and NPCs you’ve revealed. A tie goes to the higher Dexterity: drag a monster or NPC to settle it
+        your way. Your players settle ties among their own characters.
       {:else}
         Your DM runs the order. When they call for initiative, roll yours here, or write in what your own dice gave.
+        Tied with another character? Drag yours to settle who goes first.
       {/if}
     {/snippet}
     {#if running}<span class="round" in:fade={quick}>Round {round}</span>{/if}
@@ -133,10 +149,23 @@
   <div class="initfold" id="init-fold" class:folded inert={folded}
        style:height={isDm && (folded || foldInner) ? `${folded ? 0 : foldInner}px` : undefined}>
   <div bind:clientHeight={foldInner}>
-  <ol class="initlist">
-    {#each list as c (c.key)}
+  <ol class="initlist" use:reorder={{
+    enabled: Boolean(onsettle), keys: list.map((c) => c.key),
+    canLift: (k) => {
+      dragging = k;
+      return settleable(k);
+    },
+    shape: (k, order) => settleOrder(combatants, k, order, isDm),
+    onpreview: (keys) => (preview = keys),
+    oncommit: (keys) => {
+      preview = null;
+      onsettle?.(settleScores(combatants, dragging, keys, isDm));
+    }
+  }}>
+    {#each shown as c (c.key)}
       <li class="initrow" class:initcr={c.side === 'creature'} class:now={c.key === turn} class:waiting={c.value === null}
-          class:hiddenone={c.hidden} class:mine={c.mine}
+          class:hiddenone={c.hidden} class:mine={c.mine} class:tied={settleable(c.key)} data-key={c.key}
+          title={settleable(c.key) ? 'Tied: drag to settle who goes first' : undefined}
           animate:flip={{ duration: still ? 0 : 260, easing: cubicOut }} in:fade={{ duration: still ? 0 : 160 }}>
         {#if canWrite(c)}
           <input class="numfield" type="number" inputmode="numeric" aria-label="{c.name}’s initiative" value={c.value ?? ''} placeholder="–"
@@ -170,13 +199,16 @@
   .initfold { overflow: clip; overflow-clip-margin: 6px; transition: height 0.32s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.26s ease; }
   .initfold.folded { opacity: 0; }
   @media (prefers-reduced-motion: reduce) { .initfold { transition: none; } }
-  .initlist { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.375rem; }
+  .initlist { position: relative; list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.375rem; }
   .initrow {
     display: inline-flex; align-items: center; gap: 0.4375rem; padding: 0.25rem 0.625rem 0.25rem 0.25rem;
     border-radius: 999px; border: 1px solid var(--line-soft); background: var(--raised); font-size: 0.8125rem;
     transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
   }
   .initrow.initcr { border-style: dashed; }
+  /* A tie this viewer can settle: picked up and moved. */
+  .initrow.tied { cursor: grab; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  .initrow.tied:hover { border-color: var(--a-edge); }
   .initrow.waiting:not(.mine) { opacity: 0.6; }
   .initrow.mine { border-color: var(--a-edge); }
   .initrow.hiddenone .initname { color: var(--dim); }

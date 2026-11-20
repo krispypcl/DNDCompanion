@@ -470,7 +470,8 @@ create policy "The DM changes it" on public.campaigns for update using ((select 
 create policy "The DM deletes it" on public.campaigns for delete using ((select auth.uid()) = created_by);
 
 -- campaign_state: read by anyone; the music and the initiative order changed by
--- the DM (a player's own number goes through set_my_initiative).
+-- the DM (a player's own number goes through set_my_initiative, and a tie
+-- among characters through set_initiative_ties).
 create policy "Anyone reads" on public.campaign_state for select using (true);
 create policy "The DM changes the music" on public.campaign_state for update
   using (exists (select 1 from public.campaigns c where c.id = campaign_id and c.created_by = (select auth.uid())));
@@ -751,6 +752,53 @@ begin
 end;
 $$;
 
+-- Players settle a tie among characters in the initiative order: a score per
+-- "pc:<sheet id>" in initiative.ties, standing in for Dexterity (the DM saves
+-- the creatures' with the rest of the order).
+create or replace function private.set_initiative_ties(p_campaign uuid, p_ties jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  me uuid := (select auth.uid());
+  now_init jsonb;
+  k text;
+  v jsonb;
+  ids uuid[] := '{}';
+  vals integer[];
+begin
+  if me is null then raise exception 'Not signed in'; end if;
+  if p_ties is null or jsonb_typeof(p_ties) <> 'object' then raise exception 'Bad ties'; end if;
+  if (select count(*) from jsonb_object_keys(p_ties)) not between 2 and 30 then raise exception 'Bad ties'; end if;
+  for k, v in select * from jsonb_each(p_ties) loop
+    if k !~ '^pc:[0-9a-f-]{36}$' or jsonb_typeof(v) <> 'number' or abs(v::numeric) > 1000 then
+      raise exception 'Bad ties';
+    end if;
+    ids := ids || substr(k, 4)::uuid;
+  end loop;
+  -- Every one a character in this running campaign, one of them the caller's.
+  if (select count(*) from public.characters ch join public.campaigns c on c.id = ch.campaign_id
+        where ch.id = any(ids) and ch.campaign_id = p_campaign and not ch.retired and not c.archived) <> cardinality(ids)
+     or not exists (select 1 from public.characters ch where ch.id = any(ids) and ch.owner_id = me) then
+    raise exception 'Only the players of the tied characters can do that';
+  end if;
+  -- And all on one number: a tie.
+  select initiative into now_init from public.campaign_state where campaign_id = p_campaign for update;
+  select array_agg(distinct (now_init -> 'pcs' ->> id::text)::integer) into vals from unnest(ids) as id;
+  if vals is null or cardinality(vals) <> 1 or vals[1] is null then
+    raise exception 'Those characters aren''t tied';
+  end if;
+  update public.campaign_state s
+    set initiative = jsonb_set(coalesce(s.initiative, '{}'::jsonb), '{ties}',
+                               coalesce(s.initiative -> 'ties', '{}'::jsonb) || p_ties)
+    where s.campaign_id = p_campaign
+    returning s.initiative into now_init;
+  return now_init;
+end;
+$$;
+
 -- The DM chooses how a condition they give looks.
 create or replace function private.set_character_condition_look(p_character uuid, p_key text, p_look jsonb)
 returns timestamptz
@@ -968,6 +1016,10 @@ create or replace function public.set_my_initiative(p_character uuid, p_value in
 returns jsonb language sql security invoker set search_path = ''
 as $$ select private.set_my_initiative(p_character, p_value) $$;
 
+create or replace function public.set_initiative_ties(p_campaign uuid, p_ties jsonb)
+returns jsonb language sql security invoker set search_path = ''
+as $$ select private.set_initiative_ties(p_campaign, p_ties) $$;
+
 create or replace function public.set_character_condition_look(p_character uuid, p_key text, p_look jsonb)
 returns timestamptz language sql security invoker set search_path = ''
 as $$ select private.set_character_condition_look(p_character, p_key, p_look) $$;
@@ -1027,7 +1079,7 @@ begin
     'set_character_conditions(uuid, text[])', 'set_character_hp(uuid, integer, integer, text[], jsonb)',
     'set_character_condition_look(uuid, text, jsonb)', 'sync_shared_rows(uuid, jsonb)',
     'search_shared_rows(text, text, integer)', 'forget_shared_rows()', 'campaign_by_invite(text)',
-    'revealed_creatures(uuid)', 'set_my_initiative(uuid, integer)'
+    'revealed_creatures(uuid)', 'set_my_initiative(uuid, integer)', 'set_initiative_ties(uuid, jsonb)'
   ] loop
     execute format('revoke all on function public.%s from public, anon, authenticated', f);
     execute format('revoke all on function private.%s from public, anon, authenticated', f);

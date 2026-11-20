@@ -72,6 +72,19 @@ export class LiveInitiative {
     await this.save({ ...this.state, ...part });
   }
 
+  /** Ties settled by hand: the DM saves them with the order, a player through database/0022. */
+  async settle(ties: Record<string, number>, asDm: boolean): Promise<void> {
+    if (asDm) return this.patch({ ties: { ...this.state.ties, ...ties } });
+    const before = this.#confirmed;
+    this.state = { ...this.state, ties: { ...this.state.ties, ...ties } };
+    try {
+      this.state = this.#confirmed = await campaignRepo.settleTies(this.campaignId, ties);
+    } catch (e) {
+      this.state = before;
+      throw e;
+    }
+  }
+
   /** A player's own character's number (the DM's page writes it into the order instead). */
   async setMine(sheetId: string, value: number | null): Promise<void> {
     const before = this.#confirmed;

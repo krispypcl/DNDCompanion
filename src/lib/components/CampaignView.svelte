@@ -9,7 +9,7 @@
    * character, ending the campaign (it is archived, and can be reopened) and
    * deleting it, a banner like a sheet's, and a jukebox of their own music.
    */
-  import { onMount, tick } from 'svelte';
+  import { onMount, tick, untrack } from 'svelte';
   import { fade, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import { base } from '#lib/base.ts';
@@ -23,7 +23,7 @@
   import { advantageFrom } from '#lib/rules/equipment.ts';
   import { creatureRepo, type Revealed } from '#lib/data/creatures.ts';
   import { CreatureTable } from '#lib/creatureTable.svelte.ts';
-  import { next as nextTurn, previous as previousTurn, rollInitiative, start as startTurns, type InitiativeRow } from '#lib/rules/initiative.ts';
+  import { next as nextTurn, previous as previousTurn, rollInitiative, settleAll, start as startTurns, unsettled, type InitiativeRow } from '#lib/rules/initiative.ts';
   import { LiveInitiative } from '#lib/initiative.svelte.ts';
   import { initiativeBonus } from '#lib/rules/statblock.ts';
   import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
@@ -410,14 +410,15 @@
   const me = $derived($session.user?.id ?? null);
   const combatants = $derived<InitiativeRow[]>([
     ...active.map((s) => ({
-      key: `pc:${s.id}`, name: s.definition?.identity?.name || s.name, value: init.pcs[s.id] ?? null,
+      key: `pc:${s.id}`, name: s.definition?.identity?.name || s.name, value: init.pcs[s.id] ?? null, tie: init.ties[`pc:${s.id}`],
       dex: s.definition ? initiativeParts(s.definition).total : 0, side: 'pc' as const, mine: Boolean(me && s.owner_id === me)
     })),
     ...(table
       ? table.list.map((c) => ({
-          key: `cr:${c.id}`, name: c.name, value: c.initiative, dex: initiativeBonus(c.statblock), side: 'creature' as const, hidden: !c.visible
+          key: `cr:${c.id}`, name: c.name, value: c.initiative, dex: initiativeBonus(c.statblock), tie: init.ties[`cr:${c.id}`],
+          side: 'creature' as const, hidden: !c.visible
         }))
-      : revealed.map((c) => ({ key: `cr:${c.id}`, name: c.name, value: c.initiative, side: 'creature' as const })))
+      : revealed.map((c) => ({ key: `cr:${c.id}`, name: c.name, value: c.initiative, tie: init.ties[`cr:${c.id}`], side: 'creature' as const })))
   ]);
   const fighting = $derived(Boolean(init.turn));
   const turnNow = () => ({ turn: init.turn, round: init.round });
@@ -453,8 +454,18 @@
     for (const c of table?.list.filter((x) => x.initiative === null) ?? []) void table!.change(c, { initiative: rollInitiative(initiativeBonus(c.statblock)) });
   }
   const moveTurn = (t: { turn: string | null; round: number }) => live?.patch({ ...t, asking: false }).catch(initFail);
+  /** The fight starts: every tie as it stands is kept, so every page shows the same order. */
+  const startFight = () => live?.patch({ ...startTurns(combatants), asking: false, ties: settleAll(combatants) }).catch(initFail);
+  /** A tie settled by dragging. */
+  const settleTie = (ties: Record<string, number>) => live?.settle(ties, isDm).catch(initFail);
+  /** The DM's page numbers a fresh tie as it stands, so every page shows it the same way. */
+  $effect(() => {
+    if (!isDm || !live?.ready || !(init.asking || init.turn)) return;
+    const fresh = unsettled(combatants);
+    if (fresh) untrack(() => live.settle(fresh, true).catch(initFail));
+  });
   /** A fight is coming: the players roll theirs (a fresh order). */
-  const callForInitiative = () => live?.save({ pcs: {}, turn: null, round: 0, asking: true }).catch(initFail);
+  const callForInitiative = () => live?.save({ ...NO_INITIATIVE, asking: true }).catch(initFail);
   /** The fight is over, or the call for it is cancelled: the order is cleared for the next one. */
   function endFight() {
     live?.save(NO_INITIATIVE).catch(initFail);
@@ -661,7 +672,7 @@
         <InitiativeTracker {combatants} turn={init.turn} round={init.round} asking={init.asking} {isDm}
                            onvalue={setInitiative} onrollone={rollOne} onask={callForInitiative} oncancel={isDm ? endFight : undefined}
                            onrollrest={isDm ? rollRest : undefined}
-                           onstart={() => moveTurn(startTurns(combatants))} onnext={() => moveTurn(nextTurn(combatants, turnNow()))}
+                           onstart={startFight} onnext={() => moveTurn(nextTurn(combatants, turnNow()))} onsettle={settleTie}
                            onprevious={() => moveTurn(previousTurn(combatants, turnNow()))} onend={endFight} />
       </div>
     {/if}

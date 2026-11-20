@@ -37,8 +37,8 @@ describe('readInitiative', async () => {
     expect(readInitiative('x')).toEqual(NO_INITIATIVE);
   });
   it('keeps good parts and drops bad ones', () => {
-    expect(readInitiative({ pcs: { a: 12, b: 'x', c: Number.NaN }, turn: 'pc:a', round: 2.7, asking: 'yes' }))
-      .toEqual({ pcs: { a: 12 }, turn: 'pc:a', round: 2, asking: false });
-    expect(readInitiative({ turn: '', round: -1, asking: true })).toEqual({ pcs: {}, turn: null, round: 0, asking: true });
+    expect(readInitiative({ pcs: { a: 12, b: 'x', c: Number.NaN }, turn: 'pc:a', round: 2.7, asking: 'yes', ties: { 'pc:a': 2, 'cr:b': 'x' } }))
+      .toEqual({ pcs: { a: 12 }, turn: 'pc:a', round: 2, asking: false, ties: { 'pc:a': 2 } });
+    expect(readInitiative({ turn: '', round: -1, asking: true })).toEqual({ pcs: {}, turn: null, round: 0, asking: true, ties: {} });
   });
 });

@@ -22,6 +22,10 @@ export type ReorderOptions = {
   oncommit: (keys: string[]) => void;
   /** How much the picked-up item grows: chips a little, whole cards hardly. */
   scale?: number;
+  /** Which items can be picked up (all, when left out). */
+  canLift?: (key: string) => boolean;
+  /** Turns the order a move would make into the one allowed, or null to refuse it. */
+  shape?: (key: string, order: string[]) => string[] | null;
 };
 
 const HOLD = 280;
@@ -51,6 +55,7 @@ export function reorder(node: HTMLElement, options: ReorderOptions) {
     const el = target.closest<HTMLElement>('[data-key]');
     if (!el || el.parentElement !== node) return;
     if (target.closest('button, input, select, textarea, label')) return;
+    if (o.canLift && !o.canLift(el.dataset.key!)) return;
     const touch = e.pointerType !== 'mouse';
     pending = { key: el.dataset.key!, el, x: e.clientX, y: e.clientY, id: e.pointerId, touch };
     if (touch) pending.timer = setTimeout(() => lift(), HOLD);
@@ -102,7 +107,7 @@ export function reorder(node: HTMLElement, options: ReorderOptions) {
       // A row of chips is ordered across; a column of cards, down.
       const before = b.w > node.clientWidth * 0.6 ? py < b.top + b.h / 2 : px < b.left + b.w / 2;
       rest.splice(before ? at : at + 1, 0, drag.key);
-      next = rest;
+      next = o.shape ? o.shape(drag.key, rest) : rest;
       break;
     }
     if (next && next.join('\u0000') !== drag.order.join('\u0000')) {

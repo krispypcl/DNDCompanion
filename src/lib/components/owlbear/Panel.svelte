@@ -13,7 +13,7 @@
    * the order while it runs and the creatures the DM has revealed. Signing
    * in works with an email, Google or Discord (lib/owlbear/signin).
    */
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { flip } from 'svelte/animate';
   import { fade, slide } from 'svelte/transition';
   import { cubicOut, quintOut } from 'svelte/easing';
@@ -36,8 +36,8 @@
   import { initiativeParts } from '#lib/rules/derived.ts';
   import { advantageFrom } from '#lib/rules/equipment.ts';
   import { initiativeBonus } from '#lib/rules/statblock.ts';
-  import { next as nextTurn, previous as previousTurn, rollInitiative, start as startTurns, type InitiativeRow } from '#lib/rules/initiative.ts';
-  import { campaignRepo, inviteCode, type Campaign } from '#lib/data/campaigns.ts';
+  import { next as nextTurn, previous as previousTurn, rollInitiative, settleAll, start as startTurns, unsettled, type InitiativeRow } from '#lib/rules/initiative.ts';
+  import { campaignRepo, inviteCode, NO_INITIATIVE, type Campaign } from '#lib/data/campaigns.ts';
   import { prefersReducedMotion } from '#lib/motion.ts';
   import { addLink, campaignOf, orderSheets, parseLink, removeLink, type RoomLink, type RoomLinks } from '#lib/owlbear/links.ts';
   import { reorder } from '#lib/reorder.ts';
@@ -309,16 +309,16 @@
   const fighters = $derived(sheets.filter((s) => campaignId && s.campaign_id === campaignId && !s.retired));
   const live = $derived(campaignId ? new LiveInitiative(campaignId) : null);
   $effect(() => live?.start());
-  const init = $derived(live?.state ?? { pcs: {}, turn: null, round: 0, asking: false });
+  const init = $derived(live?.state ?? NO_INITIATIVE);
   const combatants = $derived<InitiativeRow[]>([
     ...fighters.map((s) => ({
-      key: `pc:${s.id}`, name: obr?.nameOf(s) ?? s.name, value: init.pcs[s.id] ?? null,
+      key: `pc:${s.id}`, name: obr?.nameOf(s) ?? s.name, value: init.pcs[s.id] ?? null, tie: init.ties[`pc:${s.id}`],
       // Players roll on the campaign page (one place for the whole table); here they watch.
       dex: s.definition ? initiativeParts(s.definition).total : 0, side: 'pc' as const
     })),
     ...(table
-      ? table.list.map((c) => ({ key: `cr:${c.id}`, name: c.name, value: c.initiative, dex: initiativeBonus(c.statblock), side: 'creature' as const, hidden: !c.visible }))
-      : revealed.map((c) => ({ key: `cr:${c.id}`, name: c.name, value: c.initiative, side: 'creature' as const })))
+      ? table.list.map((c) => ({ key: `cr:${c.id}`, name: c.name, value: c.initiative, dex: initiativeBonus(c.statblock), tie: init.ties[`cr:${c.id}`], side: 'creature' as const, hidden: !c.visible }))
+      : revealed.map((c) => ({ key: `cr:${c.id}`, name: c.name, value: c.initiative, tie: init.ties[`cr:${c.id}`], side: 'creature' as const })))
   ]);
   const showOrder = $derived(Boolean(live && combatants.length && (isDm || init.turn || init.asking)));
   const orderFail = (e: unknown) => (error = e instanceof Error ? e.message : 'The order slipped! Try again.');
@@ -346,8 +346,14 @@
     for (const c of table?.list.filter((x) => x.initiative === null) ?? []) void table!.change(c, { initiative: rollInitiative(initiativeBonus(c.statblock)) });
   }
   const moveTurn = (t: { turn: string | null; round: number }) => live?.patch({ ...t, asking: false }).catch(orderFail);
+  /** The DM's panel numbers a fresh tie as it stands, so every page shows it the same way (as the campaign page does). */
+  $effect(() => {
+    if (!isDm || !live?.ready || !(init.asking || init.turn)) return;
+    const fresh = unsettled(combatants);
+    if (fresh) untrack(() => live.settle(fresh, true).catch(orderFail));
+  });
   function endFight() {
-    live?.save({ pcs: {}, turn: null, round: 0, asking: false }).catch(orderFail);
+    live?.save(NO_INITIATIVE).catch(orderFail);
     for (const c of table?.list.filter((x) => x.initiative !== null) ?? []) void table!.change(c, { initiative: null });
   }
   /** Whose turn it is, picked out on the map for the DM (its token selected). */
@@ -493,9 +499,11 @@
     {#if showOrder && live}
       <div class="order" transition:slide={ease()}>
         <InitiativeTracker {combatants} turn={init.turn} round={init.round} asking={init.asking} {isDm}
-                           onvalue={setInitiative} onrollone={rollOne} onask={() => live?.save({ pcs: {}, turn: null, round: 0, asking: true }).catch(orderFail)}
+                           onvalue={setInitiative} onrollone={rollOne} onask={() => live?.save({ ...NO_INITIATIVE, asking: true }).catch(orderFail)}
                            onrollrest={isDm ? rollRest : undefined}
-                           onstart={() => moveTurn(startTurns(combatants))} onnext={() => moveTurn(nextTurn(combatants, { turn: init.turn, round: init.round }))}
+                           onstart={() => live?.patch({ ...startTurns(combatants), asking: false, ties: settleAll(combatants) }).catch(orderFail)}
+                           onsettle={isDm ? (ties) => live?.settle(ties, true).catch(orderFail) : undefined}
+                           onnext={() => moveTurn(nextTurn(combatants, { turn: init.turn, round: init.round }))}
                            onprevious={() => moveTurn(previousTurn(combatants, { turn: init.turn, round: init.round }))} onend={endFight} />
       </div>
     {/if}

@@ -30,12 +30,13 @@ export type CampaignDetails = {
  * The initiative order (database/0019, campaign_state.initiative; rules/
  * initiative): the characters' numbers by sheet id (the creatures keep their
  * own, database/0018), whose turn it is ("pc:<sheet id>" or "cr:<creature
- * id>"), the round, and whether the DM has called for initiative. Everyone
- * at the table follows it live; the DM changes it, a player only their own
- * character's number.
+ * id>"), the round, whether the DM has called for initiative, and the ties
+ * settled by hand (database/0022: a score per "pc:"/"cr:" key, rules/
+ * initiative). Everyone at the table follows it live; the DM changes it, a
+ * player only their own character's number and the ties among characters.
  */
-export type Initiative = { pcs: Record<string, number>; turn: string | null; round: number; asking: boolean };
-export const NO_INITIATIVE: Initiative = { pcs: {}, turn: null, round: 0, asking: false };
+export type Initiative = { pcs: Record<string, number>; turn: string | null; round: number; asking: boolean; ties: Record<string, number> };
+export const NO_INITIATIVE: Initiative = { pcs: {}, turn: null, round: 0, asking: false, ties: {} };
 /** Whatever was stored, as an Initiative (bad parts dropped). */
 export function readInitiative(v: unknown): Initiative {
   const o = v && typeof v === 'object' ? (v as Record<string, unknown>) : {};
@@ -43,11 +44,16 @@ export function readInitiative(v: unknown): Initiative {
   if (o.pcs && typeof o.pcs === 'object') {
     for (const [k, n] of Object.entries(o.pcs as Record<string, unknown>)) if (typeof n === 'number' && Number.isFinite(n)) pcs[k] = n;
   }
+  const ties: Record<string, number> = {};
+  if (o.ties && typeof o.ties === 'object') {
+    for (const [k, n] of Object.entries(o.ties as Record<string, unknown>)) if (typeof n === 'number' && Number.isFinite(n)) ties[k] = n;
+  }
   return {
     pcs,
     turn: typeof o.turn === 'string' && o.turn ? o.turn : null,
     round: typeof o.round === 'number' && o.round > 0 ? Math.floor(o.round) : 0,
-    asking: o.asking === true
+    asking: o.asking === true,
+    ties
   };
 }
 
@@ -306,6 +312,12 @@ function makeCampaignRepo(client: SupabaseClient) {
     /** A player writes their own character's number (null takes it back). */
     async setMyInitiative(sheetId: string, value: number | null): Promise<Initiative> {
       const { data, error } = await client.rpc('set_my_initiative', { p_character: sheetId, p_value: value });
+      if (error) throw refusal(error);
+      return readInitiative(data);
+    },
+    /** A player settles a tie among characters (database/0022). */
+    async settleTies(campaignId: string, ties: Record<string, number>): Promise<Initiative> {
+      const { data, error } = await client.rpc('set_initiative_ties', { p_campaign: campaignId, p_ties: ties });
       if (error) throw refusal(error);
       return readInitiative(data);
     },
