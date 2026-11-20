@@ -147,7 +147,9 @@
 /* Flipping modes recolours everything at once; without this it snaps. The
    class is on for a moment either side of the switch, so nothing carries a
    transition it does not need. */
-/* Light and dark fade into each other as one picture (ModeToggle). */
+/* Light and dark fade into each other as one picture (ModeToggle); the page
+   underneath switches at once, its own colour transitions held off. */
+:root.mode-snap *, :root.mode-snap *::before, :root.mode-snap *::after { transition: none !important; }
 :root.mode-fade::view-transition-old(root) { animation: mode-fade 0.26s cubic-bezier(0.33, 1, 0.68, 1) both; }
 :root.mode-fade::view-transition-new(root) { animation: none; }
 @keyframes mode-fade { to { opacity: 0; } }

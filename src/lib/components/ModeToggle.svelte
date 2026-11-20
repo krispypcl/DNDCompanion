@@ -10,20 +10,28 @@
    * The old look fades into the new as one picture (a view transition), so
    * the cost is the same however much is on the page. Easing every element's
    * colours at once, as before, made a full campaign page stutter: each frame
-   * restyled hundreds of elements and redrew every frosted layer. Without
-   * view transitions (or with reduced motion) it simply switches.
+   * restyled hundreds of elements and redrew every frosted layer. The page
+   * under the fade switches at once: every element's own colour transition
+   * is held off while it does (`.mode-snap`), or hundreds of them would
+   * still run. Without view transitions (or with reduced motion) it simply
+   * switches, as cheaply.
    */
   function flip() {
     const doc = document as Transitioning;
-    if (prefersReducedMotion() || !doc.startViewTransition) return toggleMode();
     const root = document.documentElement;
+    root.classList.add('mode-snap');
+    const done = () => requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('mode-snap', 'mode-fade')));
+    if (prefersReducedMotion() || !doc.startViewTransition) {
+      toggleMode();
+      return done();
+    }
     root.classList.add('mode-fade');
     doc
       .startViewTransition(async () => {
         toggleMode();
         await tick();
       })
-      .finished.finally(() => root.classList.remove('mode-fade'));
+      .finished.finally(done);
   }
 
   const next = $derived($mode === 'dark' ? 'light' : 'dark');
