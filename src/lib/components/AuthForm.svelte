@@ -86,7 +86,7 @@
       <!-- The same mark the splash shows, so arriving and signing in are
            plainly the same place. -->
       <div class="brand">
-        <Logo size={44} />
+        <Logo size={60} />
         <p>DND Companion</p>
       </div>
     {/if}
@@ -175,12 +175,12 @@
   .stack { width: 100%; max-width: 23rem; }
   .brand {
     animation: cardIn 0.32s cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
-    margin: 0 0 1rem;
-    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+    margin: 0 0 1.25rem;
+    display: flex; flex-direction: column; align-items: center; gap: 0.625rem;
   }
   .brand :global(.logo) { color: var(--text); }
   .brand p {
-    margin: 0; text-align: center; font-size: 1.375rem;
+    margin: 0; text-align: center; font-size: 2rem; line-height: 1.15;
     font-family: var(--font-brand); font-weight: 700; letter-spacing: 0.01em;
   }
   /* Its own page centres in the viewport; embedded, it sits in the flow. */

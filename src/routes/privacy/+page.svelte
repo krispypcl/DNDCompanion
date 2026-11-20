@@ -4,12 +4,18 @@
    * Linked from Google's sign-in screen, so it must stay true to the code.
    */
   import { base } from '#lib/base.ts';
+  import Logo from '#lib/components/Logo.svelte';
 </script>
 
 <svelte:head><title>Privacy | DND Companion</title></svelte:head>
 
 <main class="policy">
   <a class="smallbtn back" href="{base}/">Back</a>
+  <!-- The same mark as signing in, so it reads as the same place. -->
+  <div class="policybrand">
+    <Logo size={60} />
+    <span>DND Companion</span>
+  </div>
   <h1>Privacy</h1>
   <p class="dim">Last updated 16 November 2026.</p>
 
@@ -42,7 +48,11 @@
 
 <style>
   .policy { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; line-height: 1.6; }
-  h1 { margin: 1rem 0 0.25rem; font-size: 2rem; }
+  h1 { margin: 1.5rem 0 0.25rem; font-size: 2rem; }
+  .policybrand {
+    display: flex; flex-direction: column; align-items: center; gap: 0.625rem; margin: 0.5rem 0 0; color: var(--text);
+  }
+  .policybrand span { font-family: var(--font-brand); font-weight: 700; font-size: 2rem; line-height: 1.15; letter-spacing: 0.01em; text-align: center; }
   h2 { margin: 2rem 0 0.5rem; font-size: 1.0625rem; }
   .dim { color: var(--dim); margin-top: 0; font-size: 0.875rem; }
   ul { padding-left: 1.25rem; }
