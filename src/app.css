@@ -427,6 +427,39 @@ html[data-motion='reduce'] *, html[data-motion='reduce'] *::before, html[data-mo
   --ink-grey: oklch(52% 0.01 286);
 }
 
+/* A fixed red for hurt, as on the sheet's hit points: the theme's own
+   danger colour follows its hue, and a blue "Critical" reads as nothing. */
+:root { --hurt-red: oklch(66% 0.22 25); }
+:root[data-mode='light'] { --hurt-red: oklch(56% 0.21 25); }
+
+/*
+ * How hurt a character or creature is, on its card's edge (the campaign
+ * page's character cards, the DM's monsters and NPCs, and what the players
+ * see of them): redder the worse it is, beating like a pulse, slow when
+ * bloodied and quicker when it's bad. A card wears it with .hurtcard and its
+ * vital class (rules/hp vitalStatus); a shadow of the card's own (a revealed
+ * creature's mark) goes in --card-shadow, so the pulse keeps it. :root lifts
+ * these above each card's own border.
+ */
+:root .hurtcard.bloodied {
+  border-color: color-mix(in oklch, var(--hurt-red) 45%, var(--line-soft));
+  animation: hurtBeat 3.2s ease-in-out infinite;
+}
+:root .hurtcard:is(.critical, .down) {
+  border-color: color-mix(in oklch, var(--hurt-red) 80%, transparent);
+  box-shadow: var(--card-shadow, 0 0 #0000), 0 0 0 1px color-mix(in oklch, var(--hurt-red) 25%, transparent);
+  animation: hurtBeat 1.8s ease-in-out infinite;
+}
+:root .hurtcard.dead { opacity: 0.7; border-color: color-mix(in oklch, var(--hurt-red) 60%, var(--line-soft)); }
+@keyframes hurtBeat {
+  0%, 100% { box-shadow: var(--card-shadow, 0 0 #0000), 0 0 0 1px color-mix(in oklch, var(--hurt-red) 12%, transparent); }
+  50% {
+    box-shadow: var(--card-shadow, 0 0 #0000), 0 0 0 1px color-mix(in oklch, var(--hurt-red) 40%, transparent),
+      0 0 18px -4px color-mix(in oklch, var(--hurt-red) 45%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) { :root .hurtcard:is(.bloodied, .critical, .down) { animation: none; } }
+
 /* The d20 beside anything that rolls (DieMark.svelte): dim until what it
    marks is hovered or focused, then in the accent, with a turn. */
 .diemark {

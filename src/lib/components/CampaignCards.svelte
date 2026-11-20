@@ -189,7 +189,7 @@
     {@const portrait = resolveImageUrl(def?.identity?.portraitUrl).url}
     {@const conds = previews[s.id] ?? s.state?.conditions ?? []}
     {@const ring = ringOf(conds, def?.conditionLooks ?? {})}
-    <li class="card themed {v.vital}" class:lifted={drag?.id === s.id} class:present={here.has(s.owner_id)} class:sortable={isDm && cards.length > 1} bind:this={els[s.id]}
+    <li class="card hurtcard themed {v.vital}" class:lifted={drag?.id === s.id} class:present={here.has(s.owner_id)} class:sortable={isDm && cards.length > 1} bind:this={els[s.id]}
         style={themeStyle(def?.identity?.theme)} style:transform={shift(s.id)}
         animate:glideTo>
       {#if here.has(s.owner_id)}
@@ -310,33 +310,14 @@
     /* Wide enough for each stat's whole name (Passive Perception). */
     display: grid; grid-template-columns: repeat(auto-fill, minmax(min(25rem, 100%), 1fr)); gap: 0.875rem;
   }
-  /* A fixed red for hurt, as on the sheet's hit points: the theme's own
-     danger colour follows its hue, and a blue "Critical" reads as nothing. */
-  .card { --hurt-red: oklch(66% 0.22 25); }
-  :global([data-mode='light']) .card { --hurt-red: oklch(56% 0.21 25); }
   .card {
     position: relative; border: 1px solid var(--line-soft); border-radius: var(--r); background: var(--surface);
     padding: 0.875rem; display: flex; flex-direction: column;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
   .card:hover { border-color: var(--a-edge); }
-  /* Hurt shows on the card's edge, redder the worse it is. */
-  .card.bloodied { border-color: color-mix(in oklch, var(--hurt-red) 45%, var(--line-soft)); }
-  .card.critical, .card.down {
-    border-color: color-mix(in oklch, var(--hurt-red) 80%, transparent);
-    box-shadow: 0 0 0 1px color-mix(in oklch, var(--hurt-red) 25%, transparent);
-  }
-  .card.dead { opacity: 0.7; border-color: color-mix(in oklch, var(--hurt-red) 60%, var(--line-soft)); }
-  /* Pointed at, a hurt card still shows its own colour round it. */
+  /* Hurt shows on the card's edge (app.css .hurtcard); pointed at, a hurt card still shows its own colour round it. */
   .card:is(.bloodied, .critical, .down, .dead):hover { border-color: var(--a-edge); }
-  /* The hurt edge beats like a pulse: slow when bloodied, quicker when it's bad. */
-  .card.bloodied { animation: hurtBeat 3.2s ease-in-out infinite; }
-  .card.critical, .card.down { animation: hurtBeat 1.8s ease-in-out infinite; }
-  @keyframes hurtBeat {
-    0%, 100% { box-shadow: 0 0 0 1px color-mix(in oklch, var(--hurt-red) 12%, transparent); }
-    50% { box-shadow: 0 0 0 1px color-mix(in oklch, var(--hurt-red) 40%, transparent), 0 0 18px -4px color-mix(in oklch, var(--hurt-red) 45%, transparent); }
-  }
-  @media (prefers-reduced-motion: reduce) { .card.bloodied, .card.critical, .card.down { animation: none; } }
 
   /* Dragging: the others slide to make room; the lifted one rides above. */
   .dragging .card { transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.3, 1), border-color 0.3s ease; }

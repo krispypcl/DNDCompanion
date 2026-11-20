@@ -257,7 +257,7 @@
       {@const kind = kindLine(c.statblock ?? {})}
       {@const ring = ringOf(c)}
       {@const pic = resolveImageUrl(c.portrait).url}
-      <li class="creature {v.vital}" class:revealed={c.visible} data-key={c.id}
+      <li class="creature hurtcard {v.vital}" class:revealed={c.visible} data-key={c.id}
           animate:flip={{ duration: still ? 0 : 240, easing: cubicOut }} transition:fade={{ duration: still ? 0 : 180 }}>
         <div class="creaturehead">
           <span class="cportrait" class:ringed={ring.length > 0} class:npc={c.kind === 'npc'}>
@@ -481,8 +481,8 @@
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
   .creature:hover { border-color: var(--a-edge); }
-  .creature.revealed { box-shadow: inset 3px 0 0 color-mix(in oklch, var(--a) 70%, transparent); }
-  .creature:is(.critical, .down) { border-color: color-mix(in oklch, oklch(62% 0.21 25) 55%, var(--line)); }
+  /* Revealed: a mark down its left edge, kept while a hurt card's edge beats (app.css .hurtcard). */
+  .creature.revealed { --card-shadow: inset 3px 0 0 color-mix(in oklch, var(--a) 70%, transparent); box-shadow: var(--card-shadow); }
   .creature.skel { min-height: 11rem; }
   .sk-name { width: 9rem; height: 1rem; }
   .sk-hp { width: 5rem; height: 1.75rem; }
