@@ -39,6 +39,9 @@
   import D20Loader from './D20Loader.svelte';
   import ModeToggle from './ModeToggle.svelte';
   import Logo from './Logo.svelte';
+  import Crest from './Crest.svelte';
+  import Lightbox from './Lightbox.svelte';
+  import { hereText, webLink } from '#lib/rules/presence.ts';
   import NotFound from './NotFound.svelte';
   import CampaignSkeleton from './CampaignSkeleton.svelte';
   import CampaignCreatures from './CampaignCreatures.svelte';
@@ -152,7 +155,8 @@
     const from = box?.offsetHeight ?? 0;
     side = next;
     await tick();
-    if (!box || prefersReducedMotion()) return;
+    // A phone's place already fades in as a whole: no second motion.
+    if (!box || prefersReducedMotion() || phone.current) return;
     const to = box.offsetHeight;
     if (Math.abs(to - from) < 2) return;
     box.style.overflow = 'clip';
@@ -163,7 +167,7 @@
   /** A side slides in from the side it sits on in the switch. */
   function sideIn(_node: Element, { dir = 1 }: { dir?: number } = {}) {
     return {
-      duration: prefersReducedMotion() ? 0 : 260,
+      duration: prefersReducedMotion() || phone.current ? 0 : 260,
       easing: cubicOut,
       css: (t: number, u: number) => `opacity: ${t}; transform: translate3d(${u * 14 * dir}px, 0, 0);`
     };
@@ -374,6 +378,12 @@
   /** The banner and songs are saved together; the page shows the change at once. */
   /** The players with the page open (this one included); the DM is told apart. */
   const players = $derived([...music.present].filter((u) => u !== campaign?.created_by).length);
+  /** Who is here, in one line with one light, as in the main menu ("DM and 3 players here"). */
+  const hereLine = $derived(music.presenceKnown ? hereText(isDm || music.dmHere, players) : '');
+  const crestLink = $derived(resolveImageUrl(campaign?.details.crestUrl));
+  const owlbear = $derived(webLink(campaign?.details.owlbearUrl));
+  /** The crest full screen, grown out of the header. */
+  let crestOpen = $state<Element | null>(null);
   /** When the table next meets (set by the DM). */
   const next = $derived(sessionWhen(campaign?.details.nextSession));
 
@@ -539,9 +549,14 @@
     {#if bannerLink.url}<Banner url={bannerLink.url} />{/if}
     <header>
       <!-- The die, in the campaign's own colour: home to the list. -->
-      <a class="home" href="{base}/" title="Your characters"><Logo size={26} /></a>
+      {#if crestLink.url}
+        <!-- The campaign's crest in place of the die, turning toward the pointer as a sheet's portrait does. -->
+        <Crest src={crestLink.url} size={3.25} name={campaign.name} onopen={(from) => (crestOpen = from)} />
+      {:else}
+        <a class="home" href="{base}/" title="Your characters"><Logo size={26} /></a>
+      {/if}
       <div class="title">
-        <span class="eyebrow">Campaign{#if ended}<span class="sep">·</span>ended{/if}{#if isDm}<span class="sep">·</span>you’re the DM{/if}{#if music.presenceKnown && !isDm && music.dmHere}<span class="sep">·</span><span class="herenote"><i class="here-dot"></i>DM is here</span>{/if}{#if music.presenceKnown && players > 0}<span class="sep">·</span><span class="herenote"><i class="here-dot"></i>{players === 1 ? '1 player' : `${players} players`} here</span>{/if}</span>
+        <span class="eyebrow">Campaign{#if ended}<span class="sep">·</span>ended{/if}{#if isDm}<span class="sep">·</span>you’re the DM{/if}{#if hereLine}<span class="sep">·</span><span class="herenote"><i class="here-dot"></i>{hereLine}</span>{/if}</span>
         <h1 style:font-family={faceFamily(face)}>
           {campaign.name}
         </h1>
@@ -549,10 +564,22 @@
       <div class="tools">
         <a class="back" href="{base}/" title="Back to your characters and campaigns">Back</a>
         {#if isDm}
-          <button class="keys gear" onclick={() => (settingsOpen = true)} aria-label="Campaign settings" title="Campaign settings"
+          <!-- The cog turns a little on hover, and a quarter turn while its window is open. -->
+          <button class="keys gear" class:open={settingsOpen} onclick={() => (settingsOpen = true)} aria-label="Campaign settings" title="Campaign settings"
                   aria-haspopup="dialog" aria-expanded={settingsOpen}>
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></g></svg>
+            <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+              <path fill="currentColor" fill-rule="evenodd" d="M10.32 4.49 L10.28 2.15 A10 10 0 0 1 13.72 2.15 L13.68 4.49 A7.7 7.7 0 0 1 16.13 5.50 L16.13 5.50 L17.75 3.82 A10 10 0 0 1 20.18 6.25 L18.50 7.87 A7.7 7.7 0 0 1 19.51 10.32 L19.51 10.32 L21.85 10.28 A10 10 0 0 1 21.85 13.72 L19.51 13.68 A7.7 7.7 0 0 1 18.50 16.13 L18.50 16.13 L20.18 17.75 A10 10 0 0 1 17.75 20.18 L16.13 18.50 A7.7 7.7 0 0 1 13.68 19.51 L13.68 19.51 L13.72 21.85 A10 10 0 0 1 10.28 21.85 L10.32 19.51 A7.7 7.7 0 0 1 7.87 18.50 L7.87 18.50 L6.25 20.18 A10 10 0 0 1 3.82 17.75 L5.50 16.13 A7.7 7.7 0 0 1 4.49 13.68 L4.49 13.68 L2.15 13.72 A10 10 0 0 1 2.15 10.28 L4.49 10.32 A7.7 7.7 0 0 1 5.50 7.87 L5.50 7.87 L3.82 6.25 A10 10 0 0 1 6.25 3.82 L7.87 5.50 A7.7 7.7 0 0 1 10.32 4.49 Z M15.2 12 a3.2 3.2 0 1 0 -6.4 0 a3.2 3.2 0 1 0 6.4 0 Z" />
+            </svg>
           </button>
+        {/if}
+        {#if owlbear}
+          <!-- The table's Owlbear Rodeo room (set in Campaign settings), for everyone in it. -->
+          <a class="keys owlbtn" href={owlbear} target="_blank" rel="noopener noreferrer" aria-label="Open the table's Owlbear Rodeo room" title="Open the table's Owlbear Rodeo room">
+            <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 5.5 7.5 8M19 5.5 16.5 8M6 9.5c0-2.2 2.7-3.5 6-3.5s6 1.3 6 3.5V14c0 3.3-2.7 6-6 6s-6-2.7-6-6z" />
+              <circle cx="9.25" cy="11" r="1.6" /><circle cx="14.75" cy="11" r="1.6" /><path d="m11 14.2 1 1.3 1-1.3" />
+            </g></svg>
+          </a>
         {/if}
         <ShareButton link={pageLink} label="Copy link to this page (to watch, not join)"
                      oncopied={(ok) => { if (!ok) error = 'The clipboard said no! Copy the address from the bar above instead.'; }} />
@@ -588,7 +615,7 @@
         </div>
         <!-- One jukebox, capsule or whole: switching between them never stops the song. -->
         {#if showMusic}
-          <div class="musicslot" class:whole={!compactMusic} class:forplayers={!isDm} class:phoneaway={phoneOn && place !== (isDm ? 'music' : 'party')}>
+          <div class="musicslot" class:whole={!compactMusic} class:forplayers={!isDm} class:offstage={phoneOn && place !== (isDm ? 'music' : 'party')}>
             <CampaignMusic campaignId={campaign.id} songs={campaign.details.songs ?? []} editing={isDm && !ended}
                            lead={isDm} playback={music.table} away={music.away} onplayback={(p) => music.send(p)}
                            onchange={(songs) => saveDetails({ songs })} compact={compactMusic}
@@ -669,7 +696,7 @@
     {/if}
 
     {#if !isDm && revealed.length}
-      <section class="campsec" data-places="party fight"><RevealedCreatures list={revealed} /></section>
+      <section class="campsec" data-places="fight"><RevealedCreatures list={revealed} /></section>
     {/if}
 
     {#if retired.length}
@@ -714,6 +741,9 @@
       </PhoneBar>
     {/if}
 
+    {#if crestOpen && crestLink.url}
+      <Lightbox src={crestLink.url} alt="{campaign.name}’s crest" from={crestOpen} onclose={() => (crestOpen = null)} />
+    {/if}
     {#if settingsOpen && isDm}
       <CampaignSettings {campaign} {inviteLink} onrename={rename} onsave={saveDetails} onnewinvite={newInvite}
                         onended={setEnded} ondelete={destroy} onpreview={(hex) => (themePreview = hex)}
@@ -736,6 +766,12 @@
   .loading > :global(.cskel) { opacity: 0.45; }
   header { display: flex; align-items: center; gap: 0.875rem; }
   .home { display: grid; place-items: center; flex: none; color: var(--a); transition: color 0.3s ease; }
+  .gear svg, .owlbtn svg { transition: transform 0.45s cubic-bezier(0.33, 1, 0.68, 1); }
+  .gear:hover svg { transform: rotate(45deg); }
+  .gear.open svg { transform: rotate(90deg); }
+  .owlbtn { text-decoration: none; }
+  .owlbtn:hover svg { transform: translateY(-1px) rotate(-6deg); }
+  @media (prefers-reduced-motion: reduce) { .gear svg, .owlbtn svg { transition: none; } }
   .home:hover { color: var(--a-hi, var(--a)); }
   .title { flex: 1; min-width: 0; }
   .sep { margin: 0 0.375rem; }
@@ -789,19 +825,8 @@
     margin: 1.5rem 0 0; padding: 0.75rem 1rem; border: 1px solid var(--line-soft); border-radius: var(--r);
     background: var(--surface); color: var(--dim); font-size: 0.875rem; line-height: 1.45;
   }
-  /* ── A phone's places: one at a time, each arriving with a short fade. ── */
-  main[data-place='party'] [data-places]:not([data-places~='party']),
-  main[data-place='fight'] [data-places]:not([data-places~='fight']),
-  main[data-place='foes'] [data-places]:not([data-places~='foes']),
-  main[data-place='board'] [data-places]:not([data-places~='board']),
-  main[data-place='music'] [data-places]:not([data-places~='music']) { display: none; }
-  main[data-place] [data-places] { animation: placeIn 0.24s cubic-bezier(0.33, 1, 0.68, 1); }
-  @keyframes placeIn { from { opacity: 0; } }
-  @media (prefers-reduced-motion: reduce) { main[data-place] [data-places] { animation: none; } }
-  /* The music away from its place: out of sight, still playing. */
-  .musicslot.phoneaway {
-    position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; pointer-events: none; margin: 0;
-  }
+  /* ── A phone's places (the rules for showing one are in app.css) ── */
+  main[data-place] .creaturespane:not([hidden]) { animation: none; }
   main[data-place]:not([data-place='party']):not([data-place='music']) .tablewrap { margin-top: 0; }
   main[data-place='music'] .musicslot.whole { margin-top: 0.5rem; }
   /* The places' own first section sits under the header as every section does. */

@@ -27,6 +27,7 @@
   import AreaSwitch from '#lib/components/AreaSwitch.svelte';
   import PhoneBar from '#lib/components/PhoneBar.svelte';
   import { phone } from '#lib/stores/phone.svelte.ts';
+  import { hereText } from '#lib/rules/presence.ts';
   import Tabs from '#lib/components/Tabs.svelte';
   import ClassIcon from '#lib/components/ClassIcon.svelte';
   import { armorClass, characterLevel, classLine, mainClass } from '#lib/rules/derived.ts';
@@ -606,23 +607,24 @@
 {#snippet joinedcard(c: Campaign)}{@render campaigncard(c)}{/snippet}
 
 {#snippet campaigncard(c: Campaign)}
-  <!-- As tall as a character's card, laid out the same: the banner in the
-       square; the name, who you are there, the party's faces and how many,
+  <!-- As tall as a character's card, laid out the same: the crest (or else
+       the banner) in the square; the name, who you are there, the party's faces and how many,
        and when it started; at the right of a wide card, who is here and the
        next session. -->
   {@const banner = resolveImageUrl(c.details?.bannerUrl).url}
+  {@const crest = resolveImageUrl(c.details?.crestUrl).url}
   {@const mine = charactersIn(c).map(nameOf)}
   {@const members = party?.get(c.id) ?? []}
   {@const here = tables[c.id]}
   {@const players = (here?.users ?? []).filter((u) => u !== c.created_by).length}
-  {@const hereText = here && (here.dm || players) ? [here.dm ? 'DM' : '', players ? (players === 1 ? '1 player' : `${players} players`) : ''].filter(Boolean).join(' and ') + ' here' : ''}
+  {@const hereNow = here ? hereText(here.dm, players) : ''}
   {@const next = c.archived ? null : sessionWhen(c.details?.nextSession)}
   {@const upcoming = next && !next.past ? next : null}
   {@const last = lastSessionOf(c.details, now)}
   <a href="{base}/c/{c.id}" class="withface campcard">
     <span class="face campface">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V3.75M6 4.5h12l-2.5 4 2.5 4H6" /></svg>
-      {#if banner}<img src={banner} alt="" loading="lazy" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />{/if}
+      {#if crest || banner}<img src={crest || banner} alt="" loading="lazy" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />{/if}
     </span>
     <span class="cardtext">
       <span class="lines">
@@ -652,8 +654,8 @@
       </span></span>
     </span>
     <span class="cardfacts campfacts">
-      {#if hereText}
-        <span class="camphere" transition:fade={{ duration: 200 }}><i class="here-dot"></i>{hereText}</span>
+      {#if hereNow}
+        <span class="camphere" transition:fade={{ duration: 200 }}><i class="here-dot"></i>{hereNow}</span>
       {/if}
       {#if upcoming}
         <span class="campnext"><span class="k">Next session</span><span>{upcoming.when}</span><span class:soon={upcoming.until === 'today' || upcoming.until === 'now'}>{upcoming.until === 'now' ? 'happening now' : upcoming.until}</span></span>
@@ -950,9 +952,8 @@
                       title="Bring back a sheet saved with Export">
                 {importing ? 'Importing…' : 'Import'}
               </button>
-              <!-- On a phone, the new one is the bar's docked action. -->
-              {#if !phone.current}<button onclick={create} disabled={creating}>{creating ? 'Creating…' : 'New sheet'}</button>{/if}
-            {:else if !phone.current}
+              <button onclick={create} disabled={creating}>{creating ? 'Creating' : phone.current ? 'New character' : 'New sheet'}</button>
+            {:else}
               <button onclick={() => (naming = true)} disabled={naming}>New campaign</button>
             {/if}
           </div>
@@ -996,19 +997,11 @@
         </Tabs>
       </div>
       {#if phone.current}
-        <!-- A phone: characters and campaigns on the bar; the new one docked above it. -->
+        <!-- A phone: characters and campaigns on the bar. -->
         <PhoneBar active={area} onchoose={chooseArea} places={[
           { key: AREA_SHEETS, label: 'Characters', icon: 'person' },
           { key: AREA_CAMPAIGNS, label: 'Campaigns', icon: 'flag', badge: area !== AREA_CAMPAIGNS && atTables > 0 }
-        ]}>
-          {#snippet dock()}
-            {#if area === AREA_SHEETS}
-              <button class="smallbtn accent" onclick={create} disabled={creating}>{creating ? 'Creating' : 'New character'}</button>
-            {:else}
-              <button class="smallbtn accent" onclick={() => (naming = true)} disabled={naming}>New campaign</button>
-            {/if}
-          {/snippet}
-        </PhoneBar>
+        ]} />
       {/if}
     {/if}
   {/if}

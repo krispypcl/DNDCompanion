@@ -25,6 +25,10 @@ export type CampaignDetails = {
   nextSession?: string;
   /** When it last met: the session set before, kept once it had started. */
   lastSession?: string;
+  /** The campaign's crest: a picture link, shown in place of the die on its page and in the menu. */
+  crestUrl?: string;
+  /** The table's Owlbear Rodeo room, for everyone in the campaign to open. */
+  owlbearUrl?: string;
 };
 
 /**

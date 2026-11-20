@@ -2,12 +2,14 @@
   /**
    * The campaign's settings, the DM's alone, in one window over the dimmed
    * page (the gear beside Back): its name, the next session, the invite
-   * link, the banner, the name's font, the theme, and ending or deleting it.
+   * link, the crest, the banner, the Owlbear Rodeo room, the name's font,
+   * the theme, and ending or deleting it.
    * Each change is saved as it is made, as on the page before; Done closes.
    */
   import { setNextSession, type Campaign, type CampaignDetails } from '#lib/data/campaigns.ts';
   import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
   import { faceFamily, nameFont } from '#lib/rules/fonts.ts';
+  import { webLink } from '#lib/rules/presence.ts';
   import DimModal from './DimModal.svelte';
   import InfoTip from './InfoTip.svelte';
   import ThemePicker from './ThemePicker.svelte';
@@ -37,6 +39,8 @@
 
   const ended = $derived(campaign.archived);
   const bannerLink = $derived(resolveImageUrl(campaign.details.bannerUrl));
+  const crestLink = $derived(resolveImageUrl(campaign.details.crestUrl));
+  const owlbearBad = $derived(Boolean(campaign.details.owlbearUrl?.trim()) && !webLink(campaign.details.owlbearUrl));
   const font = $derived(nameFont(campaign.details.nameFont));
   const face = $derived(font && font !== 'bad' ? font : null);
   /** Which of the last two buttons is asking to be sure. */
@@ -103,10 +107,28 @@
     {/if}
 
     <div class="row">
+      <span class="label">Crest
+        <InfoTip label="About the crest">The campaign's own picture, in place of the die at the top of its page and on its card in everyone's menu. A square picture suits it best.</InfoTip>
+      </span>
+      <input value={campaign.details.crestUrl ?? ''} placeholder="Optional: a picture link" aria-label="Crest link"
+             onchange={(e) => onsave({ crestUrl: e.currentTarget.value.trim() })} />
+      {#if crestLink.note}<p class="hint" class:bad={crestLink.source === 'invalid'}>{crestLink.note}</p>{/if}
+    </div>
+
+    <div class="row">
       <label class="label" for="campaign-banner">Banner link</label>
       <input id="campaign-banner" value={campaign.details.bannerUrl ?? ''} placeholder="Optional: a wide picture link"
              onchange={(e) => onsave({ bannerUrl: e.currentTarget.value.trim() })} />
       {#if bannerLink.note}<p class="hint" class:bad={bannerLink.source === 'invalid'}>{bannerLink.note}</p>{/if}
+    </div>
+
+    <div class="row">
+      <span class="label">Owlbear Rodeo room
+        <InfoTip label="About the Owlbear Rodeo room">Your table's room on owlbear.rodeo. Everyone in the campaign gets a button for it at the top of this page.</InfoTip>
+      </span>
+      <input value={campaign.details.owlbearUrl ?? ''} placeholder="Optional: your room's link" aria-label="Owlbear Rodeo room link"
+             onchange={(e) => onsave({ owlbearUrl: e.currentTarget.value.trim() })} />
+      {#if owlbearBad}<p class="hint bad" role="status">That doesn't look like a link! Copy your room's address from Owlbear Rodeo.</p>{/if}
     </div>
 
     <div class="row">

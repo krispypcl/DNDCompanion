@@ -190,27 +190,27 @@
     <li class="card hurtcard themed {v.vital}" class:lifted={drag?.id === s.id} class:present={here.has(s.owner_id)} class:sortable={isDm && cards.length > 1} bind:this={els[s.id]}
         style={themeStyle(def?.identity?.theme)} style:transform={shift(s.id)}
         animate:glideTo>
-      {#if here.has(s.owner_id)}
-        <!-- Their player has the campaign open right now. -->
-        <span class="herebadge" role="img" aria-label="{nameOf(s)}’s player is here" title="{nameOf(s)}’s player is here" transition:fade={{ duration: 200 }}><i class="here-dot"></i></span>
-      {/if}
       <div class="cardhead">
         <!-- Conditions ring the portrait in their colours (the card's own edge
              is kept for being hurt), a band for each, all the way round. A
              picture opens full screen; the name opens the sheet. -->
-        {#snippet face()}
+        {#snippet likeness()}
           <!-- No portrait yet: the main class, drawn; a picture covers it. -->
           {#if def}<ClassIcon cls={mainClass(def)} />{/if}
           {#if portrait}<img src={portrait} alt="" />{/if}
           <ConditionRing bands={ring} />
           <span class="lvl">LV {characterLevel(def)}</span>
+          {#if here.has(s.owner_id)}
+            <!-- Their player has the campaign open right now: a light on the portrait's corner, so nothing else moves. -->
+            <span class="herebadge" role="img" aria-label="{nameOf(s)}’s player is here" title="{nameOf(s)}’s player is here" transition:fade={{ duration: 200 }}><i class="here-dot"></i></span>
+          {/if}
         {/snippet}
         {#if portrait}
           <button class="portrait" class:ringed={ring.length > 0} aria-label="See {nameOf(s)}’s portrait"
                   title={conds.length ? conds.map(cleanName).join(', ') : 'See it full screen'}
-                  onclick={(e) => (viewing = { src: portrait, alt: `Portrait of ${nameOf(s)}`, from: e.currentTarget })}>{@render face()}</button>
+                  onclick={(e) => (viewing = { src: portrait, alt: `Portrait of ${nameOf(s)}`, from: e.currentTarget })}>{@render likeness()}</button>
         {:else}
-          <span class="portrait" class:ringed={ring.length > 0} title={conds.length ? conds.map(cleanName).join(', ') : undefined}>{@render face()}</span>
+          <span class="portrait" class:ringed={ring.length > 0} title={conds.length ? conds.map(cleanName).join(', ') : undefined}>{@render likeness()}</span>
         {/if}
         <a class="open" href="{base}/s/{s.id}{s.campaign_id ? `?from=${s.campaign_id}` : ''}">
           <span class="who">
@@ -343,23 +343,28 @@
     transition: opacity 0.15s ease, color 0.15s ease, right 0.2s cubic-bezier(0.33, 1, 0.68, 1);
   }
   .card:hover .grip, .grip:focus-visible, .lifted .grip { opacity: 1; }
-  /* Here: a small green light alone in the card's top right corner, placed over
-     it so nothing in the card moves when it comes and goes (the name's
-     line always leaves it room). Beside the grip where there is one. */
+  /* Here: a small green light on the portrait's top right corner, ringed in
+     the card's colour, so nothing in the card moves when it comes and goes. */
   .herebadge {
-    position: absolute; top: 0.75rem; right: 0.75rem; z-index: 2;
-    display: inline-flex; align-items: center; gap: 0.3125rem;
-    font-size: 0.5625rem; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim);
+    position: absolute; top: -0.3125rem; right: -0.3125rem; z-index: 2;
+    display: grid; place-items: center; width: 1rem; height: 1rem; border-radius: 50%; background: var(--surface);
   }
-  /* The light keeps its corner; the grip moves aside for it. */
-  .card.present .grip { right: 1.625rem; }
   .grip:hover { color: var(--a); }
   @media (hover: none) { .grip { opacity: 0.8; } }
 
   .cardhead { display: flex; gap: 0.75rem; align-items: center; min-width: 0; padding-right: 3.25rem; }
   .card.sortable .cardhead { padding-right: 4rem; }
   .open { flex: 1; min-width: 0; color: inherit; text-decoration: none; border-radius: var(--r-sm); }
-  .open:hover strong { color: var(--a); }
+  /* An ink swipe: hovered, a stroke of the character's colour sweeps under the name from the left. */
+  .who strong {
+    justify-self: start;
+    background-image: linear-gradient(100deg, transparent 0 0.15em, color-mix(in oklab, var(--a) 34%, transparent) 0.4em calc(100% - 0.4em), transparent calc(100% - 0.15em));
+    background-repeat: no-repeat; background-position: 0 88%; background-size: 0% 0.55em;
+    -webkit-box-decoration-break: clone; box-decoration-break: clone;
+    transition: background-size 0.5s cubic-bezier(0.33, 1, 0.68, 1), color 0.2s ease;
+  }
+  .open:hover strong, .open:focus-visible strong { background-size: 100% 0.55em; }
+  @media (prefers-reduced-motion: reduce) { .who strong { transition: none; } }
   .open:focus-visible { outline: 2px solid var(--a); outline-offset: 3px; }
   button.portrait { padding: 0; font: inherit; color: inherit; cursor: zoom-in; transition: border-color 0.35s ease, transform 0.15s ease; }
   button.portrait:hover { transform: scale(1.04); }
@@ -399,8 +404,6 @@
      their own: an empty list takes none, and it eases in with the first. */
   .card > :global(*) + :global(*) { margin-top: 0.75rem; }
   .card > .condbox, .card > .x, .card > .grip { margin-top: 0; }
-  /* The Here tag floats on the edge: what follows it is still first in line. */
-  .card > .herebadge + :global(*) { margin-top: 0; }
   .conds { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.3125rem; align-items: center; }
   .conds:has(li) { padding-top: 0.75rem; }
 
