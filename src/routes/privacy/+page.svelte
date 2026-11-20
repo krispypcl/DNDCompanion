@@ -17,29 +17,29 @@
     <span>DND Companion</span>
   </div>
   <h1>Privacy</h1>
-  <p class="dim">Last updated 16 November 2026.</p>
+  <p class="dim">Last updated November 21, 2026.</p>
 
   <p>DND Companion is a free, hobby D&amp;D 5e character sheet. It keeps only what it needs to run your sheets and campaigns, and it never sells, rents or shares it for advertising.</p>
 
-  <h2>What it keeps</h2>
+  <h2>What It Keeps</h2>
   <ul>
     <li><b>Your account:</b> your email address, the display name you choose, and a profile picture if you add one. If you sign in with Google, it receives your name, email address and profile picture from Google, and nothing else from your Google account.</li>
-    <li><b>What you write:</b> your character sheets, notes, backstories, campaigns, and anything you put on a campaign's board.</li>
-    <li><b>Small settings in your browser:</b> such as light or dark mode, volume and shuffle, kept on your device.</li>
+    <li><b>What you write:</b> your character sheets, notes, backstories, campaigns (with their monsters and NPCs, and the links you give them), and anything you put on a campaign's board.</li>
+    <li><b>Small settings in your browser:</b> such as light or dark mode, the music's volume, shuffle and mute, kept on your device.</li>
   </ul>
 
-  <h2>Who can see it</h2>
+  <h2>Who Can See It</h2>
   <p>A sheet or campaign page can be opened by anyone who has its link. Private notes on a sheet can be read by you, and by the DM of a campaign the sheet is in. A campaign's board can be changed by the people in that campaign.</p>
   <p>The rows on your sheets (attacks, spells, items, features and trackers) are shared in a library that other players can pick from while they type, without your name. Only players you share a campaign with can see that you wrote one. You can turn this off on the <a href="{base}/account">Account</a> page, which takes your rows back out of it. A row another player has also put on their own sheet stays, as theirs, without your name.</p>
 
-  <h2>Where it is stored</h2>
-  <p>Accounts and sheets are stored with <a href="https://supabase.com/privacy" rel="noopener">Supabase</a>, which runs the database and sign-in. The site itself is served by GitHub Pages. Pictures and music you link to stay where they are: the page loads them from those sites (for example YouTube for music), and those sites' own policies apply. Fonts are loaded from Google Fonts. Looking up a spell, item or feature reads 5e.tools' published data from GitHub, which sees only that the file was asked for.</p>
+  <h2>Where It Is Stored</h2>
+  <p>Accounts and sheets are stored with <a href="https://supabase.com/privacy" rel="noopener">Supabase</a>, which runs the database and sign-in. The site itself is served by GitHub Pages, through Cloudflare. Pictures, music and the Owlbear Rodeo room you link to stay where they are: the page loads them from those sites (for example YouTube for music), and those sites' own policies apply. Fonts are loaded from Google Fonts. Searching and looking up a spell, item, feature or monster reads 5e.tools' published data (and its homebrew library) from GitHub, which sees only that the file was asked for.</p>
 
-  <h2>The code</h2>
+  <h2>The Code</h2>
   <p>DND Companion’s code is open for anyone to read, so you can see exactly what it does with what you give it.</p>
   <p><a class="smallbtn" href="https://github.com/krispypcl/DNDCompanion" target="_blank" rel="noopener noreferrer">GitHub repository</a></p>
 
-  <h2>Removing it</h2>
+  <h2>Removing It</h2>
   <p>You can delete any sheet or campaign yourself. Deleting your account on the <a href="{base}/account">Account</a> page removes the account and its sheets for good, along with their rows in the shared library. You can also remove the site's access to your Google account at <a href="https://myaccount.google.com/connections" rel="noopener">myaccount.google.com/connections</a>.</p>
 
   <h2>Questions</h2>
@@ -47,7 +47,9 @@
 </main>
 
 <style>
-  .policy { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; line-height: 1.6; }
+  /* Its buttons as tall as the campaign page's (app.css --btn-h). */
+  .policy { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; line-height: 1.6; --btn-h: 2.125rem; }
+  .policy .smallbtn { padding-inline: 0.875rem; }
   h1 { margin: 1.5rem 0 0.25rem; font-size: 2rem; }
   .policybrand {
     display: flex; flex-direction: column; align-items: center; gap: 0.625rem; margin: 0.5rem 0 0; color: var(--text);
