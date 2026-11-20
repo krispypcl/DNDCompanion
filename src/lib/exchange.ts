@@ -35,6 +35,8 @@ export const VERSION = 1;
 export const TITLE = 'DND Companion sheet';
 /** A character is a few kilobytes; this is for the file someone picked by mistake. */
 export const MAX_BYTES = 2 * 1024 * 1024;
+/** A sheet's PDF carries fonts and a portrait too (lib/pdf/backup); bigger than this, it is no sheet. */
+export const MAX_PDF_BYTES = 25 * 1024 * 1024;
 
 export type ExportInput = {
   definition: Definition;

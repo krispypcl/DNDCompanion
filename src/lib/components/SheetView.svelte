@@ -118,7 +118,7 @@
   import { sheetStore } from '#lib/stores/sheet.ts';
   import { canUndo, lastLabel, resetUndo, snapshot, undo } from '#lib/stores/undo.ts';
   import { ABILITIES } from '#lib/types.ts';
-  import type { TextKey } from '#lib/types.ts';
+  import type { SheetTexts, TextKey } from '#lib/types.ts';
   import type {
     Ability,
     Attack,
@@ -675,7 +675,13 @@
     makingPdf = true;
     try {
       const { sheetPdf } = await import('#lib/pdf/sheetPdf.ts');
-      const bytes = await sheetPdf(definition, sheetState, { base, notes: readable('notes') });
+      // The sheet rides inside the PDF, so Import can bring it back: only
+      // the writing this reader may see, as on the printed pages.
+      const texts = Object.fromEntries((['notes', 'backstory'] as const).map((k) => [k, {
+        body: readable(k), isPublic: !definition!.privateText?.[k], updatedAt: sheet?.texts?.[k].updatedAt ?? null
+      }])) as SheetTexts;
+      const backup = { name: exportFileName(definition), text: exportSheet({ definition, state: sheetState, texts }) };
+      const bytes = await sheetPdf(definition, sheetState, { base, notes: readable('notes'), backup });
       const name = (definition.identity?.name || 'Character').replace(/[\\/:*?"<>|]+/g, '').trim() || 'Character';
       downloadBlob(`${name}.pdf`, new Blob([bytes as BlobPart], { type: 'application/pdf' }));
       say('PDF saved');

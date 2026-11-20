@@ -27,6 +27,7 @@ import {
 } from '@cantoo/pdf-lib';
 import type { Definition, State } from '#lib/types.ts';
 import { sheetContent, type Paragraph, type SheetContent } from './content';
+import { BACKUP_NOTE } from './backup.ts';
 
 const W = 612;
 const H = 792;
@@ -725,12 +726,17 @@ async function loadFonts(doc: PDFDocument, get: FontLoader): Promise<Fonts> {
 
 /**
  * The finished PDF. `base` is where the site's files are (for the fonts);
- * `notes` only when the reader may see them.
+ * `notes` only when the reader may see them. `backup` is the sheet's
+ * export file (lib/exchange), attached so Import can bring the character
+ * back from the PDF (lib/pdf/backup).
  */
 export async function sheetPdf(
   def: Definition,
   state: State,
-  opts: { base?: string; notes?: string; loadFont?: FontLoader; picture?: { bytes: Uint8Array; png: boolean } | null }
+  opts: {
+    base?: string; notes?: string; loadFont?: FontLoader; picture?: { bytes: Uint8Array; png: boolean } | null;
+    backup?: { name: string; text: string };
+  }
 ): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
@@ -761,6 +767,13 @@ export async function sheetPdf(
   const faces = [fonts.regular, fonts.semibold, fonts.bold];
   acro.set(PDFName.of('DR'), doc.context.obj({ Font: Object.fromEntries(faces.map((f) => [f.name, f.ref])) }));
   acro.set(PDFName.of('DA'), PDFString.of(`/${fonts.regular.name} 8 Tf 0 g`));
+
+  if (opts.backup) {
+    const now = new Date();
+    await doc.attach(new TextEncoder().encode(opts.backup.text), opts.backup.name, {
+      mimeType: 'text/plain', description: BACKUP_NOTE, creationDate: now, modificationDate: now
+    });
+  }
 
   // Each field's look was drawn as it was placed, in its own type (bold
   // numbers, plain text); saving must not redraw them all in one font.

@@ -38,6 +38,10 @@ anyone read it.
 3. Share a character by copying its link from the sheet's header. Notes and
    backstory pages can each be kept private, or every sheet at once from the
    account page (Preferences → Keep my sheets private).
+   The PDF button saves a printable sheet with the character inside it:
+   **Import** in the main menu brings it back as a new sheet. Edits made in
+   the PDF itself don't come back, and saving the PDF again from another app
+   can leave the character out.
 4. **Campaigns:** the DM presses **New campaign** in the main menu's Campaigns
    area and sends the players the invite link (**Copy invite link**, beside
    the Characters title on the campaign page). Each player opens it and picks

@@ -92,3 +92,29 @@ describe('page count', () => {
     expect((doc.getForm().getField('SpellcastingAbility') as PDFTextField).getText()).toBe('INT');
   }, 60000);
 });
+
+describe('the sheet inside its PDF', () => {
+  it('rides along and comes back whole', async () => {
+    const { exportSheet, exportFileName, importSheet } = await import('#lib/exchange.ts');
+    const { readPdfBackup } = await import('#lib/pdf/backup.ts');
+    const { def, state } = hero();
+    const texts = { notes: { body: 'Owes Bramble 5 gp.', isPublic: true, updatedAt: null }, backstory: { body: 'Grew up in Neverwinter.', isPublic: false, updatedAt: null } };
+    const backup = { name: exportFileName(def), text: exportSheet({ definition: def, state, texts }) };
+    const bytes = await sheetPdf(def, state, { loadFont, picture: null, backup });
+    const text = await readPdfBackup(bytes);
+    expect(text).toBe(backup.text);
+    const back = importSheet(text!);
+    expect(back.ok).toBe(true);
+    if (!back.ok) return;
+    expect(back.value.definition.identity.name).toBe('Loka Sibbs');
+    expect(back.value.definition.features).toHaveLength(30);
+    expect(back.value.state.hpCurrent).toBe(33);
+    expect(back.value.texts.backstory).toEqual({ body: 'Grew up in Neverwinter.', isPublic: false });
+  }, 60000);
+
+  it('finds nothing in a PDF without it', async () => {
+    const { readPdfBackup } = await import('#lib/pdf/backup.ts');
+    expect(await readPdfBackup(await sheetPdf(blankDefinition('Nobody'), emptyState(), { loadFont, picture: null }))).toBeNull();
+    expect(await readPdfBackup(new TextEncoder().encode('not a pdf'))).toBeNull();
+  }, 60000);
+});

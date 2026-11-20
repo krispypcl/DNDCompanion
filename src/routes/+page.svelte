@@ -5,7 +5,7 @@
   import ModeToggle from '#lib/components/ModeToggle.svelte';
   import { sheetName, sheetRepo, type PartyMember } from '#lib/data/sheets.ts';
   import { campaignMessage, campaignRepo, lastSessionOf, type Campaign } from '#lib/data/campaigns.ts';
-  import { MAX_BYTES, importSheet } from '#lib/exchange.ts';
+  import { MAX_BYTES, MAX_PDF_BYTES, importSheet } from '#lib/exchange.ts';
   import { pinnedCampaignsOf, pinnedJoinedOf, pinnedOf, profileOf, savePinned, savePinnedCampaigns, savePinnedJoined, signIn, updateProfile } from '#lib/data/session.ts';
   import { fade, slide } from 'svelte/transition';
   import { tick } from 'svelte';
@@ -499,8 +499,9 @@
   }
 
   /**
-   * A file made by Export. It always becomes a new sheet: bringing a backup in
-   * never overwrites a character that is already here.
+   * A file made by Export, or a PDF from a sheet's PDF button (the same file
+   * rides inside it, lib/pdf/backup). It always becomes a new sheet: bringing
+   * a backup in never overwrites a character that is already here.
    */
   async function importFile(event: Event) {
     const input = event.currentTarget as HTMLInputElement;
@@ -510,13 +511,26 @@
     if (!file || !user) return;
     error = null;
     notice = null;
-    if (file.size > MAX_BYTES) {
+    const pdf = /\.pdf$/i.test(file.name) || file.type === 'application/pdf';
+    if (file.size > (pdf ? MAX_PDF_BYTES : MAX_BYTES)) {
       error = 'That file is far too heavy to be a character sheet!';
       return;
     }
     importing = true;
     try {
-      const result = importSheet(await file.text());
+      let text = '';
+      if (pdf) {
+        const { readPdfBackup } = await import('#lib/pdf/backup.ts');
+        const inside = await readPdfBackup(await file.arrayBuffer());
+        if (inside === null) {
+          error = 'That PDF has no sheet inside! Only a PDF saved from a sheet’s PDF button carries one, and saving it again from another app can strip it out.';
+          return;
+        }
+        text = inside;
+      } else {
+        text = await file.text();
+      }
+      const result = importSheet(text);
       if (!result.ok) {
         error = result.error;
         return;
@@ -921,7 +935,7 @@
       bind:this={picker}
       class="file"
       type="file"
-      accept=".txt,text/plain"
+      accept=".txt,.pdf,text/plain,application/pdf"
       aria-label="Import a sheet file"
       tabindex="-1"
       onchange={importFile}
@@ -951,7 +965,7 @@
           <div class="actions">
             {#if area === AREA_SHEETS}
               <button class="ghost" onclick={() => picker?.click()} disabled={importing}
-                      title="Bring back a sheet saved with Export">
+                      title="Bring back a character from its PDF or an Export file. Edits made in the PDF don’t come back, and a PDF saved again from another app may have lost the sheet.">
                 {importing ? 'Importing' : 'Import'}
               </button>
               <button onclick={create} disabled={creating}>{creating ? 'Creating' : phone.current ? 'New character' : 'New sheet'}</button>
