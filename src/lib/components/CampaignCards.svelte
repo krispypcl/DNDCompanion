@@ -355,15 +355,17 @@
   .cardhead { display: flex; gap: 0.75rem; align-items: center; min-width: 0; padding-right: 3.25rem; }
   .card.sortable .cardhead { padding-right: 4rem; }
   .open { flex: 1; min-width: 0; color: inherit; text-decoration: none; border-radius: var(--r-sm); }
-  /* An ink swipe: hovered, a stroke of the character's colour sweeps under the name from the left. */
+  /* A colour swipe: hovered, the character's colour runs through the name
+     from the left (the text painted with a two-colour band that slides). */
   .who strong {
-    justify-self: start;
-    background-image: linear-gradient(100deg, transparent 0 0.15em, color-mix(in oklab, var(--a) 34%, transparent) 0.4em calc(100% - 0.4em), transparent calc(100% - 0.15em));
-    background-repeat: no-repeat; background-position: 0 88%; background-size: 0% 0.55em;
+    justify-self: start; color: transparent;
+    background-image: linear-gradient(90deg, var(--a) 0 50%, var(--text) 50% 100%);
+    background-size: 200% 100%; background-position: 100% 0;
+    -webkit-background-clip: text; background-clip: text;
     -webkit-box-decoration-break: clone; box-decoration-break: clone;
-    transition: background-size 0.5s cubic-bezier(0.33, 1, 0.68, 1), color 0.2s ease;
+    transition: background-position 0.5s cubic-bezier(0.33, 1, 0.68, 1);
   }
-  .open:hover strong, .open:focus-visible strong { background-size: 100% 0.55em; }
+  .open:hover strong, .open:focus-visible strong { background-position: 0 0; }
   @media (prefers-reduced-motion: reduce) { .who strong { transition: none; } }
   .open:focus-visible { outline: 2px solid var(--a); outline-offset: 3px; }
   button.portrait { padding: 0; font: inherit; color: inherit; cursor: zoom-in; transition: border-color 0.35s ease, transform 0.15s ease; }

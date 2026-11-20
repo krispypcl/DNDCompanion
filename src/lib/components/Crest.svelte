@@ -1,12 +1,13 @@
 <!--
   A campaign's crest: its picture in a still frame washed in the campaign's
   colour, as a sheet's portrait is, turning toward the pointer like a coin
-  (motion.ts parallax). With no crest (or one that won't load), the die. A
-  crest that can be opened full screen is a button.
+  (motion.ts parallax). With no crest (or one that won't load), what a
+  character with no portrait shows: the d20, on the same wash. A crest that
+  can be opened full screen is a button.
 -->
 <script lang="ts">
   import { parallax } from '#lib/motion.ts';
-  import Logo from './Logo.svelte';
+  import ClassIcon from './ClassIcon.svelte';
 
   let {
     src = '',
@@ -37,7 +38,7 @@
     {#if shown}
       <img src={src} alt="" draggable="false" onerror={() => (broken = true)} />
     {:else}
-      <span class="crestdie"><Logo size={Math.round(size * 16 * 0.56)} /></span>
+      <ClassIcon />
     {/if}
   </span>
 {/snippet}
@@ -66,16 +67,15 @@
     background: linear-gradient(150deg, var(--portrait-from), var(--portrait-to));
     perspective: 320px;
   }
-  .crestframe > img, .crestframe > .crestdie {
+  .crestframe > img, .crestframe > :global(.class-icon) {
     transform: rotateY(calc(var(--px, 0) * 14deg)) rotateX(calc(var(--py, 0) * -14deg)) scale(calc(1 + var(--pz, 0) * 0.12));
     transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .crestframe > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .crestdie { display: grid; place-items: center; color: var(--a); }
   .crestframe::after {
     content: ''; position: absolute; inset: 0; pointer-events: none;
     background: radial-gradient(circle at calc(50% + var(--px, 0) * 45%) calc(50% + var(--py, 0) * 45%), rgb(255 255 255 / 0.28), transparent 60%);
     opacity: var(--pz, 0); transition: opacity 0.45s ease; mix-blend-mode: soft-light;
   }
-  @media (prefers-reduced-motion: reduce) { .crestframe > img, .crestframe > .crestdie { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .crestframe > img, .crestframe > :global(.class-icon) { transition: none; } }
 </style>

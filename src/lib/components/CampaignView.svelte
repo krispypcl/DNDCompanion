@@ -38,7 +38,6 @@
   import CampaignCards from './CampaignCards.svelte';
   import D20Loader from './D20Loader.svelte';
   import ModeToggle from './ModeToggle.svelte';
-  import Logo from './Logo.svelte';
   import Crest from './Crest.svelte';
   import Lightbox from './Lightbox.svelte';
   import { hereText, webLink } from '#lib/rules/presence.ts';
@@ -549,12 +548,9 @@
     {#if bannerLink.url}<Banner url={bannerLink.url} />{/if}
     <header>
       <!-- The die, in the campaign's own colour: home to the list. -->
-      {#if crestLink.url}
-        <!-- The campaign's crest in place of the die, turning toward the pointer as a sheet's portrait does. -->
-        <Crest src={crestLink.url} size={3.25} name={campaign.name} onopen={(from) => (crestOpen = from)} />
-      {:else}
-        <a class="home" href="{base}/" title="Your characters"><Logo size={26} /></a>
-      {/if}
+      <!-- The campaign's crest, turning toward the pointer as a sheet's portrait does; with none
+           set, the d20 a character with no portrait shows. -->
+      <Crest src={crestLink.url ?? ''} size={3.25} name={campaign.name} onopen={(from) => (crestOpen = from)} />
       <div class="title">
         <span class="eyebrow">Campaign{#if ended}<span class="sep">·</span>ended{/if}{#if isDm}<span class="sep">·</span>you’re the DM{/if}{#if hereLine}<span class="sep">·</span><span class="herenote"><i class="here-dot"></i>{hereLine}</span>{/if}</span>
         <h1 style:font-family={faceFamily(face)}>
@@ -572,8 +568,8 @@
             </svg>
           </button>
         {/if}
-        {#if owlbear}
-          <!-- The table's Owlbear Rodeo room (set in Campaign settings), for everyone in it. -->
+        {#if owlbear && isDm}
+          <!-- The table's Owlbear Rodeo room (set in Campaign settings); the players' is on the table's line. -->
           <a class="keys owlbtn" href={owlbear} target="_blank" rel="noopener noreferrer" aria-label="Open the table's Owlbear Rodeo room" title="Open the table's Owlbear Rodeo room">
             <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <path d="M5 5.5 7.5 8M19 5.5 16.5 8M6 9.5c0-2.2 2.7-3.5 6-3.5s6 1.3 6 3.5V14c0 3.3-2.7 6-6 6s-6-2.7-6-6z" />
@@ -586,7 +582,7 @@
         <button class="keys searchbtn" onclick={() => (searching = true)} aria-label="Search 5e.tools" title="Search 5e.tools (/)">
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
         </button>
-        <button class="keys" onclick={() => (showKeys = true)} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
+        <button class="keys kbd" onclick={() => (showKeys = true)} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
             <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <rect x="2.5" y="6" width="19" height="12" rx="2" />
@@ -602,10 +598,10 @@
          middle, as a capsule (all the players see of it, at the right for
          them); the DM's switch between the players and their monsters and
          NPCs at the right. The DM's whole jukebox takes its own row below. -->
-    {#if (next && !next.past) || isDm || showMusic}
+    {#if (next && !next.past) || isDm || showMusic || owlbear}
       <!-- Its height eases when the jukebox folds into the capsule or opens out of it. -->
       <div class="tablewrap smooth-height" use:smoothHeight transition:slide={unfold()}>
-      <div class="tablebar">
+      <div class="tablebar" class:forplayers={!isDm}>
         <div class="nextsession" data-places="party">
           {#if next && !next.past}
             <span class="nextlabel">Next session</span>
@@ -622,6 +618,17 @@
                            oncompact={isDm && !phoneOn ? () => setMusicCompact(true) : undefined}
                            onexpand={isDm ? () => setMusicCompact(false) : undefined} />
           </div>
+        {/if}
+        {#if !isDm && owlbear}
+          <!-- A player's line: the next session, the music in the middle, the table's Owlbear Rodeo room at the right. -->
+          <a class="smallbtn owlroom" href={owlbear} target="_blank" rel="noopener noreferrer" data-places="party"
+             title="Open the table's Owlbear Rodeo room">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 5.5 7.5 8M19 5.5 16.5 8M6 9.5c0-2.2 2.7-3.5 6-3.5s6 1.3 6 3.5V14c0 3.3-2.7 6-6 6s-6-2.7-6-6z" />
+              <circle cx="9.25" cy="11" r="1.6" /><circle cx="14.75" cy="11" r="1.6" /><path d="m11 14.2 1 1.3 1-1.3" />
+            </g></svg>
+            Owlbear Rodeo
+          </a>
         {/if}
         {#if isDm && !phoneOn}
           <div class="sideswitch">
@@ -765,14 +772,12 @@
   .loading { position: relative; min-height: 60vh; }
   .loading > :global(.cskel) { opacity: 0.45; }
   header { display: flex; align-items: center; gap: 0.875rem; }
-  .home { display: grid; place-items: center; flex: none; color: var(--a); transition: color 0.3s ease; }
   .gear svg, .owlbtn svg { transition: transform 0.45s cubic-bezier(0.33, 1, 0.68, 1); }
   .gear:hover svg { transform: rotate(45deg); }
   .gear.open svg { transform: rotate(90deg); }
   .owlbtn { text-decoration: none; }
   .owlbtn:hover svg { transform: translateY(-1px) rotate(-6deg); }
   @media (prefers-reduced-motion: reduce) { .gear svg, .owlbtn svg { transition: none; } }
-  .home:hover { color: var(--a-hi, var(--a)); }
   .title { flex: 1; min-width: 0; }
   .sep { margin: 0 0.375rem; }
   .eyebrow { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--a); }
@@ -795,6 +800,11 @@
   }
   .keys:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
   .keys:active { transform: translateY(1px); }
+  /* The magnifier leans in to look, the keyboard's keys lift, as the cog turns. */
+  .searchbtn svg, .kbd svg { transition: transform 0.4s cubic-bezier(0.33, 1, 0.68, 1); }
+  .searchbtn:hover svg { transform: rotate(-14deg) scale(1.1); }
+  .kbd:hover svg { transform: translateY(-1.5px) scale(1.06); }
+  @media (prefers-reduced-motion: reduce) { .searchbtn svg, .kbd svg { transition: none; } }
   @media (hover: hover) and (pointer: fine) { .keys { display: inline-grid; } }
   .keys.searchbtn, .keys.gear { display: inline-grid; }
 
@@ -811,7 +821,18 @@
   .nextsession { order: 1; }
   /* The capsule in the middle of the line (at its right for players); the whole jukebox on a row of its own below. */
   .musicslot { order: 2; flex: 1 1 auto; display: flex; justify-content: center; min-width: 0; }
-  .musicslot.forplayers { justify-content: flex-end; }
+  /* A player's line in three: the next session, the music in the very middle, the Owlbear room. */
+  .tablebar.forplayers { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+  .tablebar.forplayers > * { grid-row: 1; }
+  .tablebar.forplayers .nextsession { grid-column: 1; }
+  .tablebar.forplayers .musicslot { grid-column: 2; justify-content: center; }
+  .tablebar.forplayers .owlroom { grid-column: 3; justify-self: end; }
+  .owlroom { text-decoration: none; }
+  .owlroom svg { transition: transform 0.45s cubic-bezier(0.33, 1, 0.68, 1); }
+  .owlroom:hover svg { transform: translateY(-1px) rotate(-6deg); }
+  @media (max-width: 700px) {
+    .tablebar.forplayers { display: flex; }
+  }
   .musicslot.whole { order: 4; flex-basis: 100%; display: block; margin-top: 1.25rem; color: var(--text); font-size: 0.875rem; }
   /* The monsters' side slides in from the right, as the players' does from the left. */
   .creaturespane:not([hidden]) { animation: creaturesIn 0.26s cubic-bezier(0.33, 1, 0.68, 1); }

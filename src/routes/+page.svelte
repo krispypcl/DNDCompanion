@@ -623,7 +623,8 @@
   {@const last = lastSessionOf(c.details, now)}
   <a href="{base}/c/{c.id}" class="withface campcard">
     <span class="face campface">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V3.75M6 4.5h12l-2.5 4 2.5 4H6" /></svg>
+      <!-- No crest or banner: the d20 a character with no portrait shows. -->
+      <ClassIcon />
       {#if crest || banner}<img src={crest || banner} alt="" loading="lazy" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />{/if}
     </span>
     <span class="cardtext">
@@ -1140,7 +1141,6 @@
    * session in its dates.
    */
   .campface { display: grid; place-items: center; color: var(--a); }
-  .campface svg { width: 1.75rem; height: 1.75rem; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0.8; }
   .partyline { display: flex; align-items: center; flex-wrap: wrap; gap: 0.25rem 0.5rem; }
   .partyfaces { display: inline-flex; padding-left: 0.25rem; margin-block: -0.125rem; }
   .pface {
