@@ -196,7 +196,7 @@
       {/snippet}
       {#snippet end()}
         {#if oncompact}
-          <button class="smallbtn" onclick={oncompact} title="Fold it into a small capsule, as your players see it">Minimise</button>
+          <button class="smallbtn" onclick={oncompact} title="Fold it into a small capsule, as your players see it">Minimize</button>
         {/if}
       {/snippet}
     </SectionHead>

@@ -8,7 +8,7 @@
    * the music waits, paused; on, it plays at once, or at the first tap on
    * the page where the browser will not start sound by itself.
    *
-   * As a capsule (the campaign page's table music, minimised, and all the
+   * As a capsule (the campaign page's table music, minimized, and all the
    * players ever see of it): the title, scrolling when it outruns its line,
    * beside the dancing bars, and a speaker that mutes and opens a volume
    * slider. The YouTube player underneath is the same either way, so
@@ -681,7 +681,8 @@
 {#if playlist && capsule}
   {@render capsuleView(following && away ? 'The DM isn’t here yet' : status, true)}
 {:else if playlist}
-  <div class="music" class:playing role="group" aria-label="Music" transition:fade={{ duration: 200 }}>
+  <!-- Only fades in: folding it into the capsule must not leave it fading out beside the capsule. -->
+  <div class="music" class:playing role="group" aria-label="Music" in:fade={{ duration: 200 }}>
     <div class="title" title={title || undefined} aria-live="polite">
       <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
       {#key status}<span class="text" class:bad={failed} in:fade={{ duration: 220 }}>{status}</span>{/key}

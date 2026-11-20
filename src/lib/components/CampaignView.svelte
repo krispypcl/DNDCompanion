@@ -32,6 +32,7 @@
   import { friendlyError } from '#lib/errors.ts';
   import { popIn, prefersReducedMotion } from '#lib/motion.ts';
   import { glide } from '#lib/flip.ts';
+  import { smoothHeight } from '#lib/smoothHeight.ts';
   import Banner from './Banner.svelte';
   import CampaignMusic from './CampaignMusic.svelte';
   import SectionHead from './SectionHead.svelte';
@@ -572,7 +573,9 @@
          them); the DM's switch between the players and their monsters and
          NPCs at the right. The DM's whole jukebox takes its own row below. -->
     {#if (next && !next.past) || isDm || showMusic}
-      <div class="tablebar" transition:slide={unfold()}>
+      <!-- Its height eases when the jukebox folds into the capsule or opens out of it. -->
+      <div class="tablewrap smooth-height" use:smoothHeight transition:slide={unfold()}>
+      <div class="tablebar">
         <div class="nextsession">
           {#if isDm && editing}
             <label class="nextedit">
@@ -607,6 +610,7 @@
             ]} />
           </div>
         {/if}
+      </div>
       </div>
     {/if}
 
@@ -837,9 +841,10 @@
   .edit[aria-pressed='true'] { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
   .edit[aria-pressed='true']:hover { border-color: var(--a); background: var(--a-edge); color: var(--text); }
   /* Who is here, and the next session, in a line under the header. */
+  .tablewrap { margin-top: 1.25rem; }
   .tablebar {
     display: flex; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; flex-wrap: wrap;
-    margin-top: 1.25rem; font-size: 0.8125rem; color: var(--dim);
+    font-size: 0.8125rem; color: var(--dim);
   }
   .herenote { display: inline-flex; align-items: center; gap: 0.375rem; color: oklch(74% 0.17 150); }
   :global([data-mode='light']) .herenote { color: oklch(52% 0.15 150); }
