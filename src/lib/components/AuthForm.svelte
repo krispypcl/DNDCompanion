@@ -27,7 +27,7 @@
     submitLabel,
     onsubmit,
     validate,
-    busyLabel = 'Working…',
+    busyLabel = 'Working',
     standalone = true,
     children,
     google = false,

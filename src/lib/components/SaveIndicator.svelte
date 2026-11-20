@@ -19,7 +19,7 @@
 
   const LABELS: Record<string, string> = {
     idle: '',
-    saving: 'Saving…',
+    saving: 'Saving',
     saved: 'Saved',
     unsaved: 'Not saved',
     stale: 'Changed elsewhere',

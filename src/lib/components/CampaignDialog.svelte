@@ -138,7 +138,7 @@
           <InfoTip label="About the invite link">Anyone with it can bring a character in. Make a new one to stop the old one working.</InfoTip>
         </h3>
         <div class="row">
-          <input class="link" readonly value={inviteLink || 'Fetching…'} aria-label="Invite link"
+          <input class="link" readonly value={inviteLink || 'Fetching'} aria-label="Invite link"
                  onfocus={(e) => e.currentTarget.select()} />
           <button onclick={copy} disabled={!inviteLink} data-first="">{copied ? 'Copied!' : 'Copy'}</button>
         </div>

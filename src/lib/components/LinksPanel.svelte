@@ -234,7 +234,7 @@
             <div class="linkedit" data-flip-ghost="links:own:edit:{i}">
               <EditableField value={link.label} editable={true} label="Link name" placeholder="Name"
                              onchange={(v) => patchLink(i, { label: String(v) })} />
-              <EditableField value={link.url} editable={true} label="Link address" placeholder="https://…"
+              <EditableField value={link.url} editable={true} label="Link address" placeholder="https://"
                              onchange={(v) => patchLink(i, { url: cleanUrl(String(v)) })} />
               <button class="x" aria-label="Remove {link.label}" title="Remove" onclick={() => removeLink(i)}>×</button>
             </div>

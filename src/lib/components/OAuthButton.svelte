@@ -42,7 +42,7 @@
 
 <button type="button" class="oauth {provider}" class:compact onclick={go} disabled={busy}>
   {#if !bare}<ProviderIcon {provider} />{/if}
-  {busy ? `Opening ${name}…` : (label ?? (link ? `Connect ${name}` : `Continue with ${name}`))}
+  {busy ? `Opening ${name}` : (label ?? (link ? `Connect ${name}` : `Continue with ${name}`))}
 </button>
 {#if error}<p class="err" role="alert" transition:slide={{ duration: 200 }}>{error}</p>{/if}
 

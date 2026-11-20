@@ -37,7 +37,7 @@ describe('save indicator', () => {
     // accent is the character's own — a red character reporting a red
     // "saved" is worse than no indicator.
     for (const [status, word] of [
-      ['saving', 'Saving…'],
+      ['saving', 'Saving'],
       ['saved', 'Saved'],
       ['unsaved', 'Not saved'],
       ['stale', 'Changed elsewhere']

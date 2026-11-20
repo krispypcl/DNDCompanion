@@ -94,7 +94,7 @@
             <button onclick={() => join(s)} disabled={busy !== null || here}>
               <strong>{s.definition?.identity?.name || s.name}</strong>
               <span class="sub">{classLine(s.definition) || 'No class yet'} · level {characterLevel(s.definition)}</span>
-              <span class="tag">{here ? 'Already in' : busy === s.id ? 'Joining…' : s.campaign_id ? 'Moves here' : 'Join'}</span>
+              <span class="tag">{here ? 'Already in' : busy === s.id ? 'Joining' : s.campaign_id ? 'Moves here' : 'Join'}</span>
             </button>
           </li>
         {/each}

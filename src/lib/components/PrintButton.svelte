@@ -7,7 +7,7 @@
 </script>
 
 <button class="print" class:busy onclick={onprint} disabled={busy} aria-busy={busy}
-        aria-label="Save the sheet as a PDF" title={busy ? 'Making the PDF…' : 'Save as a PDF, to print or keep (P)'}>
+        aria-label="Save the sheet as a PDF" title={busy ? 'Making the PDF' : 'Save as a PDF, to print or keep (P)'}>
   <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
     <g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
       <path d="M7 9V4h10v5" />
