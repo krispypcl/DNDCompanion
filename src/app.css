@@ -147,15 +147,10 @@
 /* Flipping modes recolours everything at once; without this it snaps. The
    class is on for a moment either side of the switch, so nothing carries a
    transition it does not need. */
-:root.mode-shift,
-:root.mode-shift *,
-:root.mode-shift *::before,
-:root.mode-shift *::after {
-  transition:
-    background-color 0.22s ease,
-    border-color 0.22s ease,
-    color 0.22s ease !important;
-}
+/* Light and dark fade into each other as one picture (ModeToggle). */
+:root.mode-fade::view-transition-old(root) { animation: mode-fade 0.26s cubic-bezier(0.33, 1, 0.68, 1) both; }
+:root.mode-fade::view-transition-new(root) { animation: none; }
+@keyframes mode-fade { to { opacity: 0; } }
 
 /* Lets a height animate to and from `auto`, which the disclosure panels use. */
 :root { interpolate-size: allow-keywords; }

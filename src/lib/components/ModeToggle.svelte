@@ -1,19 +1,29 @@
 <script lang="ts">
   /** Light or dark, for this device. Sits with the other header controls. */
+  import { tick } from 'svelte';
   import { mode, toggleMode } from '#lib/stores/mode.ts';
   import { prefersReducedMotion } from '#lib/motion.ts';
 
-  let shifting = 0;
+  type Transitioning = Document & { startViewTransition?: (cb: () => Promise<void>) => { finished: Promise<void> } };
 
+  /**
+   * The old look fades into the new as one picture (a view transition), so
+   * the cost is the same however much is on the page. Easing every element's
+   * colours at once, as before, made a full campaign page stutter: each frame
+   * restyled hundreds of elements and redrew every frosted layer. Without
+   * view transitions (or with reduced motion) it simply switches.
+   */
   function flip() {
-    // Every colour in the app changes at once; without the class it snaps.
-    if (!prefersReducedMotion()) {
-      const root = document.documentElement;
-      root.classList.add('mode-shift');
-      clearTimeout(shifting);
-      shifting = window.setTimeout(() => root.classList.remove('mode-shift'), 280);
-    }
-    toggleMode();
+    const doc = document as Transitioning;
+    if (prefersReducedMotion() || !doc.startViewTransition) return toggleMode();
+    const root = document.documentElement;
+    root.classList.add('mode-fade');
+    doc
+      .startViewTransition(async () => {
+        toggleMode();
+        await tick();
+      })
+      .finished.finally(() => root.classList.remove('mode-fade'));
   }
 
   const next = $derived($mode === 'dark' ? 'light' : 'dark');
