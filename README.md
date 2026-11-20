@@ -26,7 +26,8 @@ from the bottom of the screen.
   the books. Ready-made trackers cover spell slots, class resources and
   exhaustion. Any class, species, background, feature, spell or item opens a
   pop-up straight from [5e.tools](https://5e.tools/), and a sheet exports to a
-  printable PDF.
+  printable PDF. Rolls, damage, healing, rests and death saves have their own
+  sounds, and each can be swapped for a recording of the player's choosing.
 - **Search** (<kbd>/</kbd>) finds anything on 5e.tools by name, from every
   book: spells, items, feats, species, classes and subclasses, monsters,
   deities, languages, rules and more, as well as the classes and subclasses
@@ -109,6 +110,9 @@ from the bottom of the screen.
 - The [Owlbear Rodeo SDK](https://docs.owlbear.rodeo/) for the extension
 - [5e.tools](https://5e.tools/) data, read in the browser, for the rules pop-ups,
   and a search index of it built by `npm run search-index`
+- Sound effects from CC0 packs by [Kenney](https://kenney.nl/) and
+  artisticdude, through [OpenGameArt](https://opengameart.org/) (credits in
+  `static/sounds/LICENSE.txt`)
 - [Vitest](https://vitest.dev/) and Testing Library for the tests
 
 ## Local Development

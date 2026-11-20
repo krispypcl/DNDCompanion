@@ -1,9 +1,16 @@
 /**
- * Sound effects, made on the spot with the Web Audio API: no files to load,
- * nothing to license. Always on (the music players have their own mute),
- * quiet, and only ever for a moment, except the heartbeat, which beats with
- * the screen for as long as a character is dying.
+ * Sound effects: recordings from a small sound bank (static/sounds, CC0
+ * packs by Kenney and artisticdude, see its LICENSE.txt), played through the
+ * Web Audio API. Always on (the music players have their own mute), quiet,
+ * and only ever for a moment, except the heartbeat, which beats with the
+ * screen for as long as a character is dying.
+ *
+ * The bank loads once a sheet or a dice tray is on screen (warmSounds), and
+ * the service worker keeps it after that. Until it has loaded, or where the
+ * browser can't read a file, each effect falls back to one made on the spot,
+ * so there is always a sound.
  */
+import { base } from './base.ts';
 import { loadYouTube, youtubeClip, type YTPlayer } from './music';
 
 /**
@@ -124,6 +131,86 @@ let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let noiseBuf: AudioBuffer | null = null;
 
+// ── The sound bank ──
+/** Each effect's recordings; one of several is picked at random, so repeats differ. */
+const BANK = {
+  shake: ['dice-shake-1.ogg', 'dice-shake-2.ogg'],
+  dice: ['dice-throw-1.ogg', 'dice-throw-2.ogg', 'dice-throw-3.ogg'],
+  die: ['die-throw-1.ogg', 'die-throw-2.ogg', 'die-throw-3.ogg'],
+  nat20: ['nat20.ogg'],
+  nat1: ['nat1.ogg'],
+  hit: ['hit.ogg'],
+  thud: ['thud.ogg'],
+  heal: ['heal.wav'],
+  shield: ['shield.wav'],
+  shortRest: ['short-rest.ogg'],
+  longRest: ['long-rest.ogg'],
+  dawn: ['dawn.ogg'],
+  save: ['save.ogg'],
+  bell: ['bell.ogg']
+} as const;
+type BankKey = keyof typeof BANK;
+const recordings = new Map<string, AudioBuffer>();
+let bankLoad: Promise<void> | null = null;
+
+/**
+ * Loads the bank, once. Decoded off screen (an OfflineAudioContext), so it
+ * needs no press first and never wakes the speakers.
+ */
+export function warmSounds(): Promise<void> {
+  if (bankLoad) return bankLoad;
+  if (typeof window === 'undefined' || typeof fetch !== 'function') return Promise.resolve();
+  const Offline = window.OfflineAudioContext ?? (window as unknown as { webkitOfflineAudioContext?: typeof OfflineAudioContext }).webkitOfflineAudioContext;
+  if (!Offline) return Promise.resolve();
+  const decoder = new Offline(1, 1, 44100);
+  bankLoad = Promise.all(
+    [...new Set(Object.values(BANK).flat())].map(async (file) => {
+      try {
+        const res = await fetch(`${base}/sounds/${file}`);
+        if (!res.ok) return;
+        recordings.set(file, await decoder.decodeAudioData(await res.arrayBuffer()));
+      } catch {
+        /* Not this one: its effect is made on the spot instead. */
+      }
+    })
+  ).then(() => {});
+  return bankLoad;
+}
+
+/**
+ * Plays a recording from the bank: `at` seconds from now, faster or slower
+ * (`rate`, which also shifts its pitch), louder or softer, and cut short
+ * with a quick fade (`length`). False when it isn't loaded, so the caller
+ * makes the sound itself.
+ */
+function recording(key: BankKey, { at = 0, rate = 1, gain = 1, length }: { at?: number; rate?: number; gain?: number; length?: number } = {}): boolean {
+  void warmSounds();
+  const list = BANK[key];
+  const start = Math.floor(Math.random() * list.length);
+  let buf: AudioBuffer | undefined;
+  for (let i = 0; i < list.length && !buf; i++) buf = recordings.get(list[(start + i) % list.length]);
+  if (!buf) return false;
+  const ac = ready();
+  if (!ac) return true;
+  const t = ac.currentTime + at;
+  const src = ac.createBufferSource();
+  src.buffer = buf;
+  src.playbackRate.value = rate;
+  const g = ac.createGain();
+  g.gain.setValueAtTime(gain, t);
+  if (length) {
+    g.gain.setValueAtTime(gain, Math.max(t, t + length - 0.08));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + length);
+    src.start(t, 0, length + 0.02);
+  } else {
+    src.start(t);
+  }
+  src.connect(g).connect(master!);
+  return true;
+}
+/** How many dice the last roll threw, for the sound of them landing. */
+let thrown = 1;
+
 /** The audio context, or null where there's no Web Audio. */
 function ready(): AudioContext | null {
   if (typeof window === 'undefined') return null;
@@ -179,9 +266,10 @@ function burst(ac: AudioContext, at: number, dur: number, gain: number, freq: nu
   src.start(at, Math.random() * 0.3, dur + 0.05);
 }
 
-/** Dice rattling across a table: one knock per die, a few bounces each. */
+/** Dice shaken while they tumble (made on the spot: one knock per die, a few bounces each). */
 export function clatter(dice = 1, ms = 420) {
-  if (own('dice')) return;
+  thrown = dice;
+  if (own('dice') || recording('shake', { gain: 1.3, length: ms / 1000 + 0.12 })) return;
   const ac = ready();
   if (!ac) return;
   const t0 = ac.currentTime;
@@ -192,9 +280,9 @@ export function clatter(dice = 1, ms = 420) {
   }
 }
 
-/** The dice come to rest. */
+/** The dice hit the table and come to rest. */
 export function land() {
-  if (own('land')) return;
+  if (own('land') || landed()) return;
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime;
@@ -202,9 +290,13 @@ export function land() {
   tone(ac, t, 220, 0.12, 0.18, 'sine', 140);
 }
 
-/** A natural 20: a bright rising chime. */
+/** The dice hitting the table, from the bank. */
+const landed = (gain = 1.2) => recording(thrown > 1 ? 'dice' : 'die', { gain });
+
+/** A natural 20: the dice land, and a bright run rises. */
 export function nat20() {
   if (own('nat20')) return;
+  if (recording('nat20', { at: 0.06, gain: 0.75 })) return void landed(0.8);
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime;
@@ -214,9 +306,10 @@ export function nat20() {
   });
 }
 
-/** A natural 1: a dull falling thud. */
+/** A natural 1: the dice land, and a run falls. */
 export function nat1() {
   if (own('nat1')) return;
+  if (recording('nat1', { at: 0.06, gain: 0.75 })) return void landed(0.8);
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime;
@@ -242,10 +335,12 @@ export function heartbeat(delay = 0, strength = 1) {
     louder from the first pip to the third. */
 export function deathSave(kind: 'save' | 'fail', level: number) {
   if (own('deathSave')) return;
+  const k = Math.max(1, Math.min(3, level)) / 3;
+  const step = Math.max(1, Math.min(3, level)) - 1;
+  if (kind === 'save' ? recording('save', { rate: 1 + step * 0.12, gain: 0.35 + k * 0.5 }) : recording('thud', { rate: 1 - step * 0.08, gain: 0.5 + k * 0.6 })) return;
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime;
-  const k = Math.max(1, Math.min(3, level)) / 3;
   if (kind === 'save') {
     tone(ac, t, 880 + level * 220, 0.35 + k * 0.4, 0.08 + k * 0.14, 'sine');
     tone(ac, t, (880 + level * 220) * 1.5, 0.25 + k * 0.3, 0.04 + k * 0.06, 'sine');
@@ -258,6 +353,8 @@ export function deathSave(kind: 'save' | 'fail', level: number) {
 /** Death: a low, slow bell. */
 export function deathBell() {
   if (own('deathBell')) return;
+  // A pot's ring, an octave down, is a slow bell.
+  if (recording('bell', { at: 0.25, rate: 0.5, gain: 1 })) return;
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime + 0.25;
@@ -270,17 +367,21 @@ export function deathBell() {
 /** Damage: a body blow, heavier and lower the harder the hit (0 to 1). */
 export function hit(severity = 0.3) {
   if (own('hit')) return;
+  const k = Math.max(0, Math.min(1, severity));
+  if (recording('hit', { rate: 1.15 - k * 0.4, gain: 0.5 + k * 0.5 })) {
+    if (k > 0.5) recording('thud', { rate: 0.9, gain: k * 0.8 });
+    return;
+  }
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime;
-  const k = Math.max(0, Math.min(1, severity));
   tone(ac, t, 190 - k * 90, 0.18 + k * 0.25, 0.28 + k * 0.3, 'sine', 55);
   burst(ac, t, 0.07 + k * 0.08, 0.25 + k * 0.2, 700 - k * 400, 1.1);
 }
 
 /** Healing: a soft rising shimmer. */
 export function heal() {
-  if (own('heal')) return;
+  if (own('heal') || recording('heal', { gain: 0.6 })) return;
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime;
@@ -290,7 +391,7 @@ export function heal() {
 
 /** Temporary hit points: a bright, metallic ring, like a shield raised. */
 export function shield() {
-  if (own('shield')) return;
+  if (own('shield') || recording('shield', { gain: 0.5 })) return;
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime;
@@ -298,9 +399,9 @@ export function shield() {
   burst(ac, t, 0.05, 0.12, 4200, 3);
 }
 
-/** A short rest: two soft, low notes, settling. */
+/** A short rest: two soft notes, settling. */
 export function shortRest() {
-  if (own('shortRest')) return;
+  if (own('shortRest') || recording('shortRest', { gain: 0.7 })) return;
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime;
@@ -308,9 +409,9 @@ export function shortRest() {
   tone(ac, t + 0.18, 329.63, 0.9, 0.09, 'triangle');
 }
 
-/** A long rest: a slow, warm chord, rolled upward. */
+/** A long rest: a slow phrase, winding down. */
 export function longRest() {
-  if (own('longRest')) return;
+  if (own('longRest') || recording('longRest', { gain: 0.7 })) return;
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime;
@@ -319,7 +420,7 @@ export function longRest() {
 
 /** Dawn: a bright rising call, the day starting. */
 export function dawn() {
-  if (own('dawn')) return;
+  if (own('dawn') || recording('dawn', { gain: 0.7 })) return;
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime;
@@ -366,4 +467,6 @@ export function _resetSound() {
   ctx = null;
   master = null;
   noiseBuf = null;
+  recordings.clear();
+  bankLoad = null;
 }

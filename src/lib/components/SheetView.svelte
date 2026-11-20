@@ -9,7 +9,7 @@
   import { base } from '#lib/base.ts';
   import AbilityBand from '#lib/components/AbilityBand.svelte';
   import ModeToggle from '#lib/components/ModeToggle.svelte';
-  import { setCustomSounds } from '#lib/sound.ts';
+  import { setCustomSounds, warmSounds } from '#lib/sound.ts';
   import { musicOn, setMusicOn } from '#lib/music.ts';
   import { get } from 'svelte/store';
   import MusicPlayer from '#lib/components/MusicPlayer.svelte';
@@ -333,7 +333,8 @@
       .finally(() => (loading = false));
   });
 
-  // The sheet's own sound effects, while it is on screen.
+  // The sheet's own sound effects, while it is on screen; the sound bank, loaded once.
+  $effect(() => void warmSounds());
   $effect(() => {
     setCustomSounds(definition?.sounds);
     return () => setCustomSounds(undefined);

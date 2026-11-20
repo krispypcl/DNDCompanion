@@ -1,0 +1,19 @@
+The sound effects in this folder are in the public domain (CC0 1.0,
+https://creativecommons.org/publicdomain/zero/1.0/). Credit is not required,
+but is given gladly.
+
+From Kenney (www.kenney.nl), through OpenGameArt:
+  Casino Audio      dice-shake-*, dice-throw-*, die-throw-*
+  RPG Audio         hit (chop), thud (dropLeather), bell (metalPot1)
+  Interface Sounds  save (glass_001)
+  Music Jingles     nat20 (PIZZA02), nat1 (PIZZA01), short-rest (PIZZA09),
+                    long-rest (PIZZA07), dawn (PIZZA10)
+
+From the RPG Sound Pack by artisticdude, through OpenGameArt:
+  heal (battle/magic1), shield (inventory/metal-ringing), made mono at 22.05 kHz
+
+https://opengameart.org/content/54-casino-sound-effects-cards-dice-chips
+https://opengameart.org/content/50-rpg-sound-effects
+https://opengameart.org/content/interface-sounds
+https://opengameart.org/content/85-short-music-jingles
+https://opengameart.org/content/rpg-sound-pack
