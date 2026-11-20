@@ -32,6 +32,9 @@
   <p>A sheet or campaign page can be opened by anyone who has its link. Private notes on a sheet can be read by you, and by the DM of a campaign the sheet is in. A campaign's board can be changed by the people in that campaign.</p>
   <p>The rows on your sheets (attacks, spells, items, features and trackers) are shared in a library that other players can pick from while they type, without your name. Only players you share a campaign with can see that you wrote one. You can turn this off on the <a href="{base}/account">Account</a> page, which takes your rows back out of it. A row another player has also put on their own sheet stays, as theirs, without your name.</p>
 
+  <h2>In Owlbear Rodeo</h2>
+  <p>The extension keeps its campaign's link and the order of its characters in the room, and a token placed or tied from it carries the character's or creature's id. Owlbear Rodeo stores these with the room, under its own privacy policy. Rolls made on a sheet are sent as they happen to the rooms its character is in, and aren't kept. A DM's monsters and NPCs are read only by that DM; players see a revealed one only as hurt as it looks.</p>
+
   <h2>Where It Is Stored</h2>
   <p>Accounts and sheets are stored with <a href="https://supabase.com/privacy" rel="noopener">Supabase</a>, which runs the database and sign-in. The site itself is served by GitHub Pages, through Cloudflare. Pictures, music and the Owlbear Rodeo room you link to stay where they are: the page loads them from those sites (for example YouTube for music), and those sites' own policies apply. Fonts are loaded from Google Fonts. Searching and looking up a spell, item, feature or monster reads 5e.tools' published data (and its homebrew library) from GitHub, which sees only that the file was asked for.</p>
 

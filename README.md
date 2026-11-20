@@ -45,10 +45,10 @@ from the bottom of the screen.
   DM keeps monsters and NPCs with their stat blocks (from 5e.tools or their
   own homebrew) and reveals them to the players when the party finds them:
   the players see how hurt each looks, and the expression the DM gives it.
-- **Owlbear Rodeo extension**: the same party in an Owlbear room, with live hit
-  points and conditions on the map's tokens, rolls from the sheets, the
-  initiative order, the DM's monsters and NPCs as tokens, the campaign's board
-  and its music.
+- **Owlbear Rodeo extension**: the campaign's party in an Owlbear room, live:
+  hit points and conditions on the map's tokens, rolls from the sheets as
+  pop-ups, the initiative order, and for the DM their monsters and NPCs with
+  stat blocks and tokens of their own.
 - **Progressive Web App**: install it on a phone's home screen or a computer
   and it opens like an app of its own. Pages update themselves after each new
   release.
@@ -83,20 +83,22 @@ from the bottom of the screen.
    the manifest link above.
 2. Open the DND Companion button in the toolbar and paste your campaign's link
    (or its invite link). Every character in it joins the room.
+   **Campaign**, at the top right beside the brand, opens its page; the swap
+   button next to it brings in another campaign in its place.
 3. **Place token** puts a character on the map wearing their portrait, or
    right-click any character token and **Tie to a character**. Its hit point
-   bar and condition dots follow the sheet.
+   bar and condition dots follow the sheet. **Find token** brings the view to
+   it. Rolls made on the sheets pop up for everyone in the room.
 4. **Sign in** inside the panel (email, Google or Discord) to change hit
-   points from a token's right-click menu and draw on the campaign's board.
-   Owlbear keeps its own sign-in; Google and Discord
-   open a small window, so allow pop-ups for owlbear.rodeo.
+   points from a token's right-click menu. Owlbear keeps its own sign-in;
+   Google and Discord open a small window, so allow pop-ups for owlbear.rodeo.
 5. **The DM**, signed in, runs the fight from the panel: the initiative order
-   (the token whose turn it is gets selected) and the monsters and NPCs, each
-   with **Place token**. Their bars show on the map only once revealed, and
-   only as hurt as they look.
-6. **Board** opens the campaign's board over the room; **Music** opens a
-   small player that follows the DM's table music. Browsers need one press of
-   play before they make sound, and phones don't play music inside Owlbear.
+   (the card and token whose turn it is light up) and, under the characters,
+   the monsters and NPCs, each with **Stat block** (beside the map),
+   **Find token** and **Place token**. Their bars show on the map only once
+   revealed, and only as hurt as they look.
+6. Everything in the panel follows changes as they happen, made in the room or
+   on the campaign page.
 
 ## Framework
 
