@@ -8,10 +8,12 @@
    * the music waits, paused; on, it plays at once, or at the first tap on
    * the page where the browser will not start sound by itself.
    *
-   * As a capsule (the campaign page's table music, minimized, and all the
-   * players ever see of it): the title, scrolling when it outruns its line,
-   * beside the dancing bars, and a speaker that mutes and opens a volume
-   * slider. The YouTube player underneath is the same either way, so
+   * As a capsule (the sheet's music; the campaign page's table music,
+   * minimized, and all the players ever see of it): the title, scrolling when
+   * it outruns its line, beside the dancing bars, play and pause, and a
+   * speaker that mutes and opens a volume slider. The sheet's capsule is
+   * longer, with shuffle and loop at its end; the DM's has a button back to
+   * the whole player there. The YouTube player underneath is the same either way, so
    * switching between the two never stops the song.
    *
    * The player is rebuilt only when the link itself changes. The parent hands
@@ -628,7 +630,8 @@
 <svelte:window onpointerdown={capsule ? closeVolOutside : undefined} />
 
 {#snippet capsuleView(text: string, live: boolean)}
-  <div class="capsule" class:playing={live && playing} role="group" aria-label="Table music" in:fade={{ duration: 200 }}>
+  <div class="capsule" class:playing={live && playing} class:long={place === 'sheet'} role="group"
+       aria-label={place === 'sheet' ? 'Music' : 'Table music'} in:fade={{ duration: 200 }}>
     <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
     <span class="capbox" class:rolling={capOver > 2} bind:clientWidth={capBox} title={text}>
       <span class="captext" class:bad={failed} bind:clientWidth={capText}
@@ -664,6 +667,25 @@
           </svg>
         </button>
       </div>
+    {/if}
+    {#if live && place === 'sheet' && !following && playlist}
+      <button class="capbtn toggle" aria-pressed={shuffle} disabled={!playlist.list}
+              aria-label={shuffle ? 'Shuffle on' : 'Shuffle off'}
+              title={!playlist.list ? 'One song: nothing to shuffle' : shuffle ? 'Shuffle on: a new order every visit' : 'Shuffle off'}
+              onclick={toggleShuffle}>
+      <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
+        <path d="M2 4.5h2.4c1.3 0 2.2.6 2.9 1.7l1.4 3.6c.7 1.1 1.6 1.7 2.9 1.7H14M2 11.5h2.4c1.3 0 2.2-.6 2.9-1.7M9.3 5.6c.6-.7 1.4-1.1 2.3-1.1H14M12 2.6l2 1.9-2 1.9M12 9.6l2 1.9-2 1.9"
+              fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      </button>
+      <button class="capbtn toggle" aria-pressed={looping} aria-label={looping ? 'Loop on' : 'Loop off'}
+              title={looping ? (playlist.list ? 'Loop on: the playlist starts over at its end' : 'Loop on: the song plays again') : 'Loop off: the music stops at the end'}
+              onclick={toggleLoop}>
+      <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
+        <path d="M3 7.2V6.4c0-1.1.9-2 2-2h7.2M10.6 2.6l1.9 1.8-1.9 1.8M13 8.8v.8c0 1.1-.9 2-2 2H3.8M5.4 13.4l-1.9-1.8 1.9-1.8"
+              fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      </button>
     {/if}
     {#if onexpand}
       <button class="capbtn" aria-label="Open the whole music player" title="Open the whole player" onclick={onexpand}>
@@ -850,6 +872,8 @@
     .capsule { backdrop-filter: none; -webkit-backdrop-filter: none; background: color-mix(in oklch, var(--surface) 88%, transparent); }
   }
   .capsule.playing { color: var(--text); }
+  /* The sheet's: longer, so its title has room. */
+  .capsule.long { width: min(30rem, 100%); max-width: 100%; }
   .capbox { flex: 1 1 auto; min-width: 3rem; overflow: clip; white-space: nowrap; }
   .capbox.rolling { mask-image: linear-gradient(to right, transparent 0, #000 0.625rem, #000 calc(100% - 0.625rem), transparent 100%); }
   .captext { display: inline-block; padding: 0 0.625rem 0 0; }
@@ -871,6 +895,8 @@
   .capbtn:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
   .capbtn:disabled { opacity: 0.4; cursor: default; }
   .capbtn[aria-pressed='true'] { color: var(--bad); }
+  /* Shuffle and loop: on is the accent, as on the whole player. */
+  .capbtn.toggle[aria-pressed='true'] { color: var(--a); background: var(--a-wash); }
   .capvol { flex: none; display: inline-flex; align-items: center; }
   .caprange {
     -webkit-appearance: none; appearance: none; width: 0; height: 4px; margin: 0; padding: 0; border-radius: 2px; opacity: 0;
