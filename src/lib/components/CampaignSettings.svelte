@@ -104,7 +104,7 @@
 
     <div class="row">
       <label class="label" for="campaign-banner">Banner link</label>
-      <input id="campaign-banner" value={campaign.details.bannerUrl ?? ''} placeholder="Optional: a wide picture shown behind the page"
+      <input id="campaign-banner" value={campaign.details.bannerUrl ?? ''} placeholder="Optional: a wide picture link"
              onchange={(e) => onsave({ bannerUrl: e.currentTarget.value.trim() })} />
       {#if bannerLink.note}<p class="hint" class:bad={bannerLink.source === 'invalid'}>{bannerLink.note}</p>{/if}
     </div>

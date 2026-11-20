@@ -52,6 +52,8 @@
   import RevealedCreatures from './RevealedCreatures.svelte';
   import CampaignSettings from './CampaignSettings.svelte';
   import { musicOn, setMusicOn } from '#lib/music.ts';
+  import { phone } from '#lib/stores/phone.svelte.ts';
+  import PhoneBar, { type PhonePlace } from './PhoneBar.svelte';
   import { get } from 'svelte/store';
   import type { ConditionLook, Sheet } from '#lib/types.ts';
 
@@ -89,7 +91,7 @@
       return false;
     }
   };
-  const compactMusic = $derived(!isDm || (musicChoice ?? storedCompact(musicKey)));
+  const compactMusic = $derived(!isDm || (!phone.current && (musicChoice ?? storedCompact(musicKey))));
   function setMusicCompact(on: boolean) {
     musicChoice = on;
     try {
@@ -165,6 +167,23 @@
       easing: cubicOut,
       css: (t: number, u: number) => `opacity: ${t}; transform: translate3d(${u * 14 * dir}px, 0, 0);`
     };
+  }
+
+  /*
+   * A phone: the page in places on a bar at the bottom: the party, the fight
+   * (initiative, and what is in sight), the DM's monsters and NPCs, the
+   * board, and the DM's music. The bar replaces the DM's side switch. The
+   * music keeps playing from whichever place you're in.
+   */
+  type Place = 'party' | 'fight' | 'foes' | 'board' | 'music';
+  const phoneOn = $derived(phone.current);
+  let place = $state<Place>('party');
+  function goPlace(next: string) {
+    const p = next as Place;
+    if (p === 'foes') void chooseSide(SIDE_CREATURES);
+    else if (p === 'party') void chooseSide(SIDE_PLAYERS);
+    place = p;
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
   }
 
   /** The table's music and who is here to lead it (lib/tableMusic). */
@@ -396,6 +415,15 @@
       : revealed.map((c) => ({ key: `cr:${c.id}`, name: c.name, value: c.initiative, tie: init.ties[`cr:${c.id}`], side: 'creature' as const })))
   ]);
   const fighting = $derived(Boolean(init.turn));
+  const myTurn = $derived(Boolean(me && init.turn && combatants.some((c) => c.key === init.turn && c.mine)));
+  const mineToRoll = $derived(combatants.filter((c) => c.mine && c.value === null));
+  const phonePlaces = $derived<PhonePlace[]>([
+    { key: 'party', label: 'Party', icon: 'party' },
+    { key: 'fight', label: 'Fight', icon: 'fight', badge: place !== 'fight' && (myTurn || (init.asking && mineToRoll.length > 0) || (isDm && fighting)) },
+    ...(isDm ? [{ key: 'foes', label: 'Foes', icon: 'foes' as const }] : []),
+    { key: 'board', label: 'Board', icon: 'board' },
+    ...(isDm ? [{ key: 'music', label: 'Music', icon: 'music' as const }] : [])
+  ]);
   const turnNow = () => ({ turn: init.turn, round: init.round });
   const initFail = (e: unknown) => (error = campaignMessage(e, 'The order slipped! Try again.'));
   function setInitiative(key: string, value: number | null) {
@@ -507,7 +535,7 @@
 {:else if error && !campaign}
   <NotFound tab="Campaign didn’t load" title="That’s a critical fail!" message={error} />
 {:else if campaign}
-  <main class="themed" style={themeCss} in:fade={{ duration: prefersReducedMotion() ? 0 : 200 }}>
+  <main class="themed" style={themeCss} in:fade={{ duration: prefersReducedMotion() ? 0 : 200 }} data-place={phoneOn ? place : undefined}>
     {#if bannerLink.url}<Banner url={bannerLink.url} />{/if}
     <header>
       <!-- The die, in the campaign's own colour: home to the list. -->
@@ -551,7 +579,7 @@
       <!-- Its height eases when the jukebox folds into the capsule or opens out of it. -->
       <div class="tablewrap smooth-height" use:smoothHeight transition:slide={unfold()}>
       <div class="tablebar">
-        <div class="nextsession">
+        <div class="nextsession" data-places="party">
           {#if next && !next.past}
             <span class="nextlabel">Next session</span>
             <span class="nextwhen">{next.when}</span>
@@ -560,15 +588,15 @@
         </div>
         <!-- One jukebox, capsule or whole: switching between them never stops the song. -->
         {#if showMusic}
-          <div class="musicslot" class:whole={!compactMusic} class:forplayers={!isDm}>
+          <div class="musicslot" class:whole={!compactMusic} class:forplayers={!isDm} class:phoneaway={phoneOn && place !== (isDm ? 'music' : 'party')}>
             <CampaignMusic campaignId={campaign.id} songs={campaign.details.songs ?? []} editing={isDm && !ended}
                            lead={isDm} playback={music.table} away={music.away} onplayback={(p) => music.send(p)}
                            onchange={(songs) => saveDetails({ songs })} compact={compactMusic}
-                           oncompact={isDm ? () => setMusicCompact(true) : undefined}
+                           oncompact={isDm && !phoneOn ? () => setMusicCompact(true) : undefined}
                            onexpand={isDm ? () => setMusicCompact(false) : undefined} />
           </div>
         {/if}
-        {#if isDm}
+        {#if isDm && !phoneOn}
           <div class="sideswitch">
             <AreaSwitch active={side} onchoose={(k) => void chooseSide(k)} sides={[
               { key: SIDE_PLAYERS, icon: 'person', count: active.length },
@@ -581,7 +609,7 @@
     {/if}
 
     {#if ended}
-      <p class="ended">This campaign has ended. Its characters stay here as the story left them{#if isDm}, and nobody new can join{/if}.</p>
+      <p class="ended" data-places="party">This campaign has ended. Its characters stay here as the story left them{#if isDm}, and nobody new can join{/if}.</p>
     {/if}
 
     {#if error}<p class="app-alert bad" role="alert">{error}</p>{/if}
@@ -590,7 +618,7 @@
          The players' cards, or (the DM's other side) the monsters and NPCs. The creatures stay mounted
          once opened, so their count and what was typed survive a switch back and forth. Switching
          sides eases the height between them, so the initiative order below moves smoothly. -->
-    <div class="sides" bind:this={sidesBox}>
+    <div class="sides" bind:this={sidesBox} data-places="party foes">
     {#if side === SIDE_PLAYERS}
       <div class="sidepane" in:sideIn={{ dir: -1 }}>
         <section class="campsec" aria-label="Characters">
@@ -631,21 +659,21 @@
     <!-- The initiative order, after either side and the same on both, so it stays put while the
          sides switch above it. The players see it while the DM calls for initiative or a fight runs. -->
     {#if !ended && combatants.length && (isDm || fighting || init.asking)}
-      <div class="campsec" transition:slide={unfold()}>
+      <div class="campsec" transition:slide={unfold()} data-places="fight">
         <InitiativeTracker {combatants} turn={init.turn} round={init.round} asking={init.asking} {isDm}
                            onvalue={setInitiative} onrollone={rollOne} onask={callForInitiative} oncancel={isDm ? endFight : undefined}
                            onrollrest={isDm ? rollRest : undefined}
-                           onstart={startFight} onnext={() => moveTurn(nextTurn(combatants, turnNow()))} onsettle={settleTie}
+                           onstart={startFight} onnext={() => moveTurn(nextTurn(combatants, turnNow()))} onsettle={settleTie} docked={phoneOn}
                            onprevious={() => moveTurn(previousTurn(combatants, turnNow()))} onend={endFight} />
       </div>
     {/if}
 
     {#if !isDm && revealed.length}
-      <section class="campsec"><RevealedCreatures list={revealed} /></section>
+      <section class="campsec" data-places="party fight"><RevealedCreatures list={revealed} /></section>
     {/if}
 
     {#if retired.length}
-      <section class="campsec retired" aria-label="Retired characters">
+      <section class="campsec retired" aria-label="Retired characters" data-places="party">
         <SectionHead title="Retired ({retired.length})" folded={!retiredOpen} ontoggle={() => (retiredOpen = !retiredOpen)} controls="retired-list">
           {#snippet info()}Characters their players retired from the campaign. Their sheets stay as the story left them.{/snippet}
         </SectionHead>
@@ -660,7 +688,31 @@
       </section>
     {/if}
 
-    <CampaignBoard campaignId={campaign.id} userId={$session.user?.id ?? null} canEdit={isMember && !ended} foldable />
+    <div class="boardslot" data-places="board">
+      <CampaignBoard campaignId={campaign.id} userId={$session.user?.id ?? null} canEdit={isMember && !ended} foldable={!phoneOn} />
+    </div>
+
+    {#if phoneOn && place === 'fight' && !(!ended && combatants.length && (isDm || fighting || init.asking)) && !(!isDm && revealed.length)}
+      <p class="phoneempty" in:fade={{ duration: 200 }}>No fight right now. When your DM calls for initiative, you roll yours here.</p>
+    {/if}
+    {#if phoneOn}
+      <PhoneBar places={phonePlaces} active={place} onchoose={goPlace}>
+        {#snippet dock()}
+          {#if place === 'fight' && !ended}
+            {#if isDm && fighting}
+              <button class="smallbtn" style="flex: 0 0 auto; padding-inline: 1.125rem" onclick={() => moveTurn(previousTurn(combatants, turnNow()))} aria-label="Previous turn">Back</button>
+              <button class="smallbtn accent" onclick={() => moveTurn(nextTurn(combatants, turnNow()))}>Next turn</button>
+            {:else if isDm && init.asking}
+              <button class="smallbtn accent" onclick={startFight} disabled={!combatants.some((c) => c.value !== null)}>Start the fight</button>
+            {:else if isDm && combatants.length}
+              <button class="smallbtn accent" onclick={callForInitiative}>Call for initiative</button>
+            {:else if !isDm && init.asking && mineToRoll.length}
+              <button class="smallbtn accent" onclick={() => rollOne(mineToRoll[0].key)}>Roll initiative{mineToRoll.length > 1 ? ` for ${mineToRoll[0].name}` : ''}</button>
+            {/if}
+          {/if}
+        {/snippet}
+      </PhoneBar>
+    {/if}
 
     {#if settingsOpen && isDm}
       <CampaignSettings {campaign} {inviteLink} onrename={rename} onsave={saveDetails} onnewinvite={newInvite}
@@ -736,6 +788,27 @@
   .ended {
     margin: 1.5rem 0 0; padding: 0.75rem 1rem; border: 1px solid var(--line-soft); border-radius: var(--r);
     background: var(--surface); color: var(--dim); font-size: 0.875rem; line-height: 1.45;
+  }
+  /* ── A phone's places: one at a time, each arriving with a short fade. ── */
+  main[data-place='party'] [data-places]:not([data-places~='party']),
+  main[data-place='fight'] [data-places]:not([data-places~='fight']),
+  main[data-place='foes'] [data-places]:not([data-places~='foes']),
+  main[data-place='board'] [data-places]:not([data-places~='board']),
+  main[data-place='music'] [data-places]:not([data-places~='music']) { display: none; }
+  main[data-place] [data-places] { animation: placeIn 0.24s cubic-bezier(0.33, 1, 0.68, 1); }
+  @keyframes placeIn { from { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { main[data-place] [data-places] { animation: none; } }
+  /* The music away from its place: out of sight, still playing. */
+  .musicslot.phoneaway {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; pointer-events: none; margin: 0;
+  }
+  main[data-place]:not([data-place='party']):not([data-place='music']) .tablewrap { margin-top: 0; }
+  main[data-place='music'] .musicslot.whole { margin-top: 0.5rem; }
+  /* The places' own first section sits under the header as every section does. */
+  main[data-place='board'] .boardslot :global(> *:first-child) { margin-top: 1.5rem; }
+  .phoneempty {
+    margin: 2rem 0 0; padding: 1.25rem 1rem; text-align: center; color: var(--dim); font-size: 0.9375rem; line-height: 1.5;
+    border: 1px dashed var(--line); border-radius: var(--r);
   }
   /* Every section the same distance apart, as the table board. */
   .campsec { margin-top: 2rem; }

@@ -30,7 +30,8 @@
     onprevious,
     onend,
     onrollrest,
-    onsettle
+    onsettle,
+    docked = false
   }: {
     combatants: InitiativeRow[];
     turn: string | null;
@@ -53,6 +54,8 @@
     onrollrest?: () => void;
     /** A tie settled by dragging: the scores to keep (rules/initiative settleScores). */
     onsettle?: (ties: Record<string, number>) => void;
+    /** A phone: Back and Next turn are docked at the bottom, so they leave the title row. */
+    docked?: boolean;
   } = $props();
 
   const list = $derived(ordered(combatants));
@@ -123,10 +126,12 @@
       {/if}
       {#if isDm}
         {#if running}
-          <button class="smallbtn" onclick={onprevious} aria-label="Previous turn" title="Previous turn">
-            <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M10 3.5 5.5 8l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
-          </button>
-          <button class="smallbtn accent" onclick={onnext}>Next turn</button>
+          {#if !docked}
+            <button class="smallbtn" onclick={onprevious} aria-label="Previous turn" title="Previous turn">
+              <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M10 3.5 5.5 8l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+            <button class="smallbtn accent" onclick={onnext}>Next turn</button>
+          {/if}
           <button class="smallbtn quiet" onclick={onend}>End</button>
         {:else if !asking}
           <button class="smallbtn" onclick={onask}>Call for initiative</button>
@@ -233,4 +238,13 @@
   .initroll:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
   .inittag { font-size: 0.625rem; color: var(--dim); letter-spacing: 0.06em; text-transform: uppercase; }
   .initnow { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--a); }
+  /* A phone: one row each, the width of the screen, easy to read and to tap. */
+  @media (max-width: 700px) {
+    .initlist { flex-direction: column; flex-wrap: nowrap; gap: 0.4375rem; }
+    .initrow { display: flex; width: 100%; min-height: 2.875rem; padding: 0.3125rem 0.875rem 0.3125rem 0.3125rem; font-size: 0.9375rem; }
+    .initrow .initname { flex: 1; min-width: 0; }
+    .initvalue { min-width: 3.25rem; font-size: 1rem; }
+    .initrow input { width: 3.25rem; padding: 0.3125rem 0.25rem; font-size: 0.9375rem; }
+    .initnow { font-size: 0.6875rem; }
+  }
 </style>
