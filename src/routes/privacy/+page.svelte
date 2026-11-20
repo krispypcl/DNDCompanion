@@ -25,7 +25,7 @@
   <ul>
     <li><b>Your account:</b> your email address, the display name you choose, and a profile picture if you add one. If you sign in with Google, it receives your name, email address and profile picture from Google, and nothing else from your Google account.</li>
     <li><b>What you write:</b> your character sheets, notes, backstories, campaigns (with their monsters and NPCs, and the links you give them), and anything you put on a campaign's board.</li>
-    <li><b>Small settings in your browser:</b> such as light or dark mode, the music's volume, shuffle and mute, kept on your device.</li>
+    <li><b>On your device:</b> small settings such as light or dark mode and the music's volume, shuffle and mute, and the app's own files (its code and sound effects) so it opens quickly.</li>
   </ul>
 
   <h2>Who Can See It</h2>
