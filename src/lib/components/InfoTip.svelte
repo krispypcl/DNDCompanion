@@ -101,7 +101,8 @@
   }
   .info:hover, .info.on { color: var(--a); background: var(--a-wash); }
   .note {
-    position: fixed; z-index: 50; max-width: min(20rem, calc(100vw - 24px));
+    /* Above every window it can sit in (DimModal 60, the 5e.tools windows 90). */
+    position: fixed; z-index: 120; max-width: min(20rem, calc(100vw - 24px));
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r); padding: 0.625rem 0.75rem;
     font-size: 0.8125rem; line-height: 1.5;

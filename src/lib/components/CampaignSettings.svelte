@@ -107,7 +107,7 @@
     {/if}
 
     <div class="row">
-      <span class="label">Crest
+      <span class="label">Crest link
         <InfoTip label="About the crest">The campaign's own picture, in place of the die at the top of its page and on its card in everyone's menu. A square picture suits it best.</InfoTip>
       </span>
       <input value={campaign.details.crestUrl ?? ''} placeholder="Optional: a picture link" aria-label="Crest link"
