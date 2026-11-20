@@ -403,15 +403,15 @@
     <span class="brandname">DND Companion</span>
     {#if campaignId}
       <div class="roomtools" in:fade={appear()}>
-        <a class="btn" href={obr?.campaignUrl(campaignId)} target="_blank" rel="noopener noreferrer" title={campaign?.name ? `Open ${campaign.name}` : 'Open the campaign page'}>
-          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
-          Campaign
-        </a>
         <InfoTip label="About this room">
           Campaign opens {campaign?.name ?? 'its page'}, and the button beside it swaps in another campaign.{#if role === 'GM'} Drag a
           character to put them in order.{/if}{#if isDm} Signed in as the DM, you run the fight from here too: the initiative
           order, and your monsters and NPCs.{/if}
         </InfoTip>
+        <a class="btn" href={obr?.campaignUrl(campaignId)} target="_blank" rel="noopener noreferrer" title={campaign?.name ? `Open ${campaign.name}` : 'Open the campaign page'}>
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          Campaign
+        </a>
         <button class="iconbtn" class:on={swapping} aria-pressed={swapping} aria-label="Swap the room’s campaign" title="Swap the campaign" onclick={toggleSwap}>
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 8h13l-3.5-3.5M20 16H7l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
         </button>
@@ -617,7 +617,7 @@
 <style>
   :global(html.in-owlbear), :global(html.in-owlbear body) { background: var(--bg); }
   .panel { padding: 1.125rem 1.125rem 1.5rem; font-size: 0.9375rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.125rem; }
-  /* The brand on the left; the room's campaign, its bubble and the swap on the right, on one line. */
+  /* The brand on the left; the bubble, the room's campaign and the swap on the right, on one line. */
   header { display: flex; align-items: center; gap: 0.5rem; min-height: 2rem; color: var(--text); }
   header .brandname { font-size: 1.1875rem; white-space: nowrap; }
   .roomtools { margin-left: auto; display: flex; align-items: center; gap: 0.375rem; }
