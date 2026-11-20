@@ -1,7 +1,8 @@
 <!--
   What the players see of the DM's monsters and NPCs (database/0018, 0020,
   revealed_creatures): only those the DM revealed, by name and portrait,
-  their conditions and how hurt they look, never their numbers or notes.
+  their conditions and how hurt they look (in words, and on the card's edge
+  as on every campaign card), never their numbers or notes.
 -->
 <script lang="ts">
   import { flip } from 'svelte/animate';
@@ -30,7 +31,7 @@
       {#each list as c (c.id)}
         {@const pic = resolveImageUrl(c.portrait ?? '').url}
         {@const ring = c.conditions.flatMap((n) => { const color = lookOf(n, c.condition_looks ?? {})?.color; return color ? [{ key: n.toLowerCase(), color }] : []; })}
-        <li class="foe {c.vital}" animate:flip={{ duration: still ? 0 : 240, easing: cubicOut }} transition:fade={{ duration: still ? 0 : 160 }}>
+        <li class="foe hurtcard {c.vital}" animate:flip={{ duration: still ? 0 : 240, easing: cubicOut }} transition:fade={{ duration: still ? 0 : 160 }}>
           <div class="foehead">
             {#if pic}
               <span class="foepic" class:ringed={ring.length > 0}><img src={pic} alt="" loading="lazy" /><ConditionRing bands={ring} round /></span>
@@ -61,10 +62,11 @@
     --vc: oklch(68% 0.15 150);
     display: grid; gap: 0.5rem; align-content: start; padding: 0.75rem 0.875rem; border-radius: var(--r);
     background: var(--surface); border: 1px solid var(--line-soft);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
   .foe.bloodied { --vc: oklch(72% 0.15 70); }
   .foe.critical { --vc: oklch(64% 0.2 35); }
-  .foe.down { --vc: oklch(58% 0.2 25); border-color: color-mix(in oklch, oklch(62% 0.21 25) 45%, var(--line)); }
+  .foe.down { --vc: oklch(58% 0.2 25); }
   .foe.unknown { --vc: var(--dim); }
   .foehead { display: flex; align-items: center; gap: 0.75rem; }
   .foename { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; min-width: 0; }
