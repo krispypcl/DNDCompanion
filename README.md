@@ -16,24 +16,34 @@
 An online D&D 5e character sheet for a group of friends. Each player has an
 account and their own characters; anyone with a sheet's link can read it
 (unless its player keeps their sheets private), and only its owner can change
-it. It works the same on a phone, a tablet and a laptop.
+it. It works on a phone, a tablet and a laptop; on a phone each page is laid
+out for the thumb, its parts on a bar at the bottom and its windows rising
+from the bottom of the screen.
 
 - **Sheets** work out what follows from other numbers (modifiers, saving
-  throws, armour class, spell save DC, exhaustion's penalties) and leave the
+  throws, armor class, spell save DC, exhaustion's penalties) and leave the
   rest to be written by hand, so homebrew is as easy to keep as anything from
   the books. Ready-made trackers cover spell slots, class resources and
   exhaustion. Any class, species, background, feature, spell or item opens a
   pop-up straight from [5e.tools](https://5e.tools/), and a sheet exports to a
   printable PDF.
+- **Search** (<kbd>/</kbd>) finds anything on 5e.tools by name, from every
+  book: spells, items, feats, species, classes and subclasses, monsters,
+  deities, languages, rules and more, as well as the classes and subclasses
+  of 5e.tools' homebrew library. Each opens in a window of its own.
 - **Campaigns** bring characters together: the DM sees the whole party's hit
-  points, armour class and conditions live, gives and takes conditions, plays
+  points, armor class and conditions live, gives and takes conditions, plays
   music for the table, sets the next session's date, and shares a board
-  everyone can draw and write on. Each card shows who has the campaign open.
+  everyone can draw and write on. Each campaign has its own crest, banner,
+  colour and name font, and can link the table's Owlbear Rodeo room. The
+  header says who is here ("DM and 3 players here"), and portraits open full
+  screen.
 - **Fights**: the DM calls for initiative and each player rolls their own
-  on the campaign page (their sheet points them there); the order and whose turn it is follow
-  live for everyone. The DM keeps monsters and NPCs with their stat blocks
-  (from 5e.tools or their own homebrew) and reveals them to the players when
-  the party finds them.
+  on the campaign page (their sheet points them there); the order and whose
+  turn it is follow live for everyone, and a tie is settled by dragging. The
+  DM keeps monsters and NPCs with their stat blocks (from 5e.tools or their
+  own homebrew) and reveals them to the players when the party finds them:
+  the players see how hurt each looks, and the expression the DM gives it.
 - **Owlbear Rodeo extension**: the same party in an Owlbear room, with live hit
   points and conditions on the map's tokens, rolls from the sheets, the
   initiative order, the DM's monsters and NPCs as tokens, the campaign's board
@@ -54,8 +64,11 @@ it. It works the same on a phone, a tablet and a laptop.
    backstory pages can each be kept private, or every sheet at once from the
    account page (Preferences → Keep my sheets private).
 4. **Campaigns:** the DM presses **New campaign** in the main menu's Campaigns
-   area and sends the players the invite link from the campaign page. Each
-   player opens it and picks which character joins.
+   area and sends the players the invite link (**Copy invite link**, beside
+   the Characters title on the campaign page). Each player opens it and picks
+   which character joins. The DM's cog, beside **Back**, opens the campaign's
+   settings: its name, next session, crest, banner, Owlbear Rodeo room, font
+   and colour, and ending or deleting it.
 5. **Your account:** a name and picture, connected sign-ins (Google, Discord),
    light, dark or your device's own look, reduced motion, the dice style, and
    a few statistics.
@@ -86,15 +99,16 @@ it. It works the same on a phone, a tablet and a laptop.
 
 ## Framework
 
-- [SvelteKit](https://svelte.dev/docs/kit) with Svelte 5, built as a static
-  site (`@sveltejs/adapter-static`) and written in TypeScript
+- [SvelteKit](https://svelte.dev/docs/kit) 3 with Svelte 5 and Vite, built as
+  a static site (`@sveltejs/adapter-static`) and written in TypeScript
 - [Supabase](https://supabase.com/): PostgreSQL with row-level security for
   the data, Supabase Auth for sign-in (email, Google, Discord) and Realtime for
   live updates and who is online
 - [GitHub Pages](https://pages.github.com/) for hosting, served through
   Cloudflare; every push to `main` is tested and deployed by GitHub Actions
 - The [Owlbear Rodeo SDK](https://docs.owlbear.rodeo/) for the extension
-- [5e.tools](https://5e.tools/) data, read in the browser, for the rules pop-ups
+- [5e.tools](https://5e.tools/) data, read in the browser, for the rules pop-ups,
+  and a search index of it built by `npm run search-index`
 - [Vitest](https://vitest.dev/) and Testing Library for the tests
 
 ## Local Development
@@ -113,7 +127,7 @@ live updates all come from one Supabase project.
    PUBLIC_SUPABASE_ANON_KEY=your-anon-key
    ```
 
-3. Install and start it:
+3. Install and start it (Node 24.15 or newer, or Node 26):
 
    ```bash
    npm install
@@ -121,5 +135,7 @@ live updates all come from one Supabase project.
    ```
 
 4. Check it: `npm test` runs the tests and `npm run check` the type checker.
-   `npm run build` makes the static site in `build/`; set `BASE_PATH` (for
-   example `/DNDCompanion`) when it will be served from a sub-folder.
+   `npm run build` makes the static site in `build/`. Set `PUBLIC_SITE_URL`
+   to the site's public address (it names the link previews), and
+   `BASE_PATH` (for example `/DNDCompanion`) when it will be served from a
+   sub-folder.
