@@ -3,10 +3,11 @@
   a card each, like a character's: its portrait (the DM's picture, or a
   5e.tools monster's token art) ringed by its conditions' colours, its hit
   points (damage and healing a press away), armour class, speed and
-  initiative, conditions (the
+  initiative, what its face shows (database/0023, for the players),
+  conditions (the
   DM's own in colours they choose) and a short note; its stat block in a
   window of its own; whether the players can see it; and its place, moved
-  by dragging the card. Added from 5e.tools, from the DM's own homebrew, or
+  by its grip. A portrait opens full screen. Added from 5e.tools, from the DM's own homebrew, or
   written new with a stat block, in a window over the dimmed page.
 -->
 <script lang="ts">
@@ -16,7 +17,7 @@
   import { fade } from 'svelte/transition';
   import type { Creature } from '#lib/data/creatures.ts';
   import type { CreatureTable } from '#lib/creatureTable.svelte.ts';
-  import { creatureUrl, damage, heal, hpNow, type CreatureKind } from '#lib/rules/creatures.ts';
+  import { cleanExpression, creatureUrl, damage, EXPRESSIONS, heal, hpNow, type CreatureKind } from '#lib/rules/creatures.ts';
   import { cleanName, defaultLook, isStandard, lookKey, lookOf } from '#lib/rules/conditions.ts';
   import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
   import type { ConditionLook } from '#lib/types.ts';
@@ -33,6 +34,7 @@
   import ConditionLookPicker from './ConditionLookPicker.svelte';
   import ConditionRing from './ConditionRing.svelte';
   import InfoTip from './InfoTip.svelte';
+  import Lightbox from './Lightbox.svelte';
   import SectionHead from './SectionHead.svelte';
   import StatBlockEditor from './StatBlockEditor.svelte';
   import StatWindow from './StatWindow.svelte';
@@ -222,12 +224,18 @@
   function saveNote(c: Creature, value: string) {
     if (value !== c.notes) void table.change(c, { notes: value.slice(0, 4000) });
   }
+  function saveFace(c: Creature, value: string) {
+    const face = cleanExpression(value);
+    if (face !== (c.expression ?? '')) void table.change(c, { expression: face });
+  }
+  /** A portrait full screen, grown out of the card. */
+  let viewing = $state<{ src: string; alt: string; from: Element | null } | null>(null);
 </script>
 
 <SectionHead title="Monsters & NPCs" infoLabel="About monsters and NPCs">
   {#snippet info()}
-    Only you see these, unless you reveal one with its eye: your players then see its name, portrait, conditions and how
-    hurt it looks, never its numbers or notes. Drag a card to move it.
+    Only you see these, unless you reveal one with its eye: your players then see its name, portrait, conditions, its
+    face and how hurt it looks, never its numbers or notes. Drag a card by its grip to move it.
   {/snippet}
   {#if table.notice}<span class="creaturenotice" role="status" transition:fade={{ duration: still ? 0 : 160 }}>{table.notice}</span>{/if}
   {#snippet end()}
@@ -247,7 +255,7 @@
   <p class="creatureempty">No monsters or NPCs yet. Add the goblins before the party finds them.</p>
 {:else}
   <ul class="creaturegrid" use:reorder={{
-    enabled: !ended, keys: table.list.map((c) => c.id), scale: 1.02,
+    enabled: !ended, keys: table.list.map((c) => c.id), scale: 1.02, handle: '.cgrip',
     onpreview: (keys) => (preview = keys),
     oncommit: (keys) => { preview = null; void table.reorder(keys); }
   }}>
@@ -262,7 +270,12 @@
       <li class="creature hurtcard {v.vital}" class:revealed={c.visible} data-key={c.id}
           animate:flip={{ duration: still ? 0 : 240, easing: cubicOut }} transition:fade={{ duration: still ? 0 : 180 }}>
         <div class="creaturehead">
-          <span class="cportrait" class:ringed={ring.length > 0} class:npc={c.kind === 'npc'}>
+          {#if !ended}
+            <span class="cgrip" role="button" tabindex="0" aria-label="Move {c.name}" title="Drag to move (or the arrow keys)">
+              <svg viewBox="0 0 10 16" width="8" height="14" aria-hidden="true"><circle cx="2.5" cy="3" r="1.25" /><circle cx="7.5" cy="3" r="1.25" /><circle cx="2.5" cy="8" r="1.25" /><circle cx="7.5" cy="8" r="1.25" /><circle cx="2.5" cy="13" r="1.25" /><circle cx="7.5" cy="13" r="1.25" /></svg>
+            </span>
+          {/if}
+          {#snippet face()}
             {#if pic}<img src={pic} alt="" draggable="false" loading="lazy" />{:else}
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 {#if c.kind === 'npc'}<circle cx="12" cy="8.5" r="3.75" /><path d="M4.75 20c.6-3.9 3.6-6.25 7.25-6.25s6.65 2.35 7.25 6.25" />
@@ -270,7 +283,13 @@
               </svg>
             {/if}
             <ConditionRing bands={ring} round />
-          </span>
+          {/snippet}
+          {#if pic}
+            <button class="cportrait" class:ringed={ring.length > 0} class:npc={c.kind === 'npc'} aria-label="See {c.name}’s portrait" title="See it full screen"
+                    onclick={(e) => (viewing = { src: pic, alt: `Portrait of ${c.name}`, from: e.currentTarget })}>{@render face()}</button>
+          {:else}
+            <span class="cportrait" class:ringed={ring.length > 0} class:npc={c.kind === 'npc'}>{@render face()}</span>
+          {/if}
           <div class="creaturename">
             <strong>{c.name}</strong>
             <span class="kindtag" class:npc={c.kind === 'npc'}>{c.kind === 'npc' ? 'NPC' : 'Monster'}</span>
@@ -352,11 +371,27 @@
           {/if}
         </ul>
 
+        <label class="cface" title="What its face shows: your players see this when it's revealed">
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M9 10h.01M15 10h.01M9 15.5c1.8-1.4 4.2-1.4 6 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+          <span class="k">FACE</span>
+          <input list="creature-faces" value={c.expression ?? ''} maxlength="40" readonly={ended} aria-label="{c.name}’s face, as your players see it"
+                 placeholder="Calm, Snarling, About to flee" onchange={(e) => saveFace(c, e.currentTarget.value)}
+                 onkeydown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} />
+        </label>
+
         <textarea class="cnote" rows="2" placeholder="A note: tactics, loot, what it wants" aria-label="Note on {c.name}"
                   readonly={ended} value={c.notes} onblur={(e) => saveNote(c, e.currentTarget.value)}></textarea>
       </li>
     {/each}
   </ul>
+{/if}
+
+<datalist id="creature-faces">
+  {#each EXPRESSIONS as face (face)}<option value={face}></option>{/each}
+</datalist>
+
+{#if viewing}
+  <Lightbox src={viewing.src} alt={viewing.alt} from={viewing.from} onclose={() => (viewing = null)} />
 {/if}
 
 {#each opened as { w, c, rank } (w.id)}
@@ -485,7 +520,7 @@
      head, hit points, numbers, conditions and note line up with its
      neighbours', however many lines a name, a kind or the conditions take. */
   .creature {
-    position: relative; display: grid; grid-row: span 5; grid-template-rows: subgrid; row-gap: 0.75rem; min-width: 0;
+    position: relative; display: grid; grid-row: span 6; grid-template-rows: subgrid; row-gap: 0.75rem; min-width: 0;
     padding: 0.875rem; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line-soft);
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
@@ -507,6 +542,26 @@
     transition: border-color 0.35s ease;
   }
   .cportrait.npc { border-color: var(--a-edge); }
+  button.cportrait { padding: 0; font: inherit; cursor: zoom-in; transition: border-color 0.35s ease, transform 0.15s ease; }
+  button.cportrait:hover { transform: scale(1.04); }
+  button.cportrait:active { transform: scale(0.98); }
+  button.cportrait:focus-visible { outline: 2px solid var(--a); outline-offset: 3px; }
+  /* The grip: the only place a card is picked up by. */
+  .cgrip {
+    flex: none; align-self: center; display: grid; place-items: center; width: 1.125rem; height: 2.25rem; margin: 0 -0.375rem 0 -0.375rem;
+    border-radius: var(--r-sm); color: var(--faint); cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none;
+    transition: color 0.15s ease, background-color 0.15s ease;
+  }
+  .cgrip svg { fill: currentColor; }
+  .cgrip:hover { color: var(--a); background: var(--a-wash); }
+  .cgrip:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
+  .cface { display: flex; align-items: center; gap: 0.4375rem; color: var(--dim); min-width: 0; }
+  .cface .k { font-size: 0.5625rem; font-weight: 650; letter-spacing: 0.08em; color: var(--label); }
+  .cface input {
+    flex: 1; min-width: 0; font: inherit; font-size: 0.8125rem; padding: 0.3125rem 0.5rem; color: var(--text);
+    border: 1px solid var(--line-soft); border-radius: var(--r-sm); background: var(--raised);
+  }
+  .cface input:focus { outline: none; border-color: var(--a-edge); }
   .cportrait.ringed { border-color: transparent; }
   .cportrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
   .cportrait svg { width: 1.625rem; height: 1.625rem; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }

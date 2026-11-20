@@ -30,15 +30,17 @@ export type Creature = {
   portrait: string;
   /** The colours of the DM's own conditions on it (the standard ones keep theirs), by lookKey. */
   condition_looks: Record<string, ConditionLook>;
+  /** What its face shows, for the players (database/0023): "Snarling", "About to flee". */
+  expression: string;
   created_at: string;
   updated_at: string;
 };
 export type CreatureFields = Partial<
-  Pick<Creature, 'kind' | 'name' | 'hp_max' | 'hp_current' | 'hp_temp' | 'ac' | 'conditions' | 'notes' | 'link' | 'position' | 'initiative' | 'visible' | 'statblock' | 'portrait' | 'condition_looks'>
+  Pick<Creature, 'kind' | 'name' | 'hp_max' | 'hp_current' | 'hp_temp' | 'ac' | 'conditions' | 'notes' | 'link' | 'position' | 'initiative' | 'visible' | 'statblock' | 'portrait' | 'condition_looks' | 'expression'>
 >;
 
 const COLUMNS =
-  'id, campaign_id, kind, name, hp_max, hp_current, hp_temp, ac, conditions, notes, link, position, initiative, visible, statblock, portrait, condition_looks, created_at, updated_at';
+  'id, campaign_id, kind, name, hp_max, hp_current, hp_temp, ac, conditions, notes, link, position, initiative, visible, statblock, portrait, condition_looks, expression, created_at, updated_at';
 
 /** A DM's own monster or NPC, kept to add to any campaign. */
 export type Homebrew = { id: string; kind: CreatureKind; name: string; statblock: StatBlock; portrait: string; updated_at: string };
@@ -53,6 +55,8 @@ export type Revealed = {
   position: number;
   portrait?: string;
   condition_looks?: Record<string, ConditionLook>;
+  /** Its face, as the DM describes it (database/0023; absent before it ran). */
+  expression?: string;
 };
 
 const HOMEBREW = 'id, kind, name, statblock, portrait, updated_at';

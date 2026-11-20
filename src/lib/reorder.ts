@@ -10,6 +10,10 @@
  *
  * The list element takes `use:reorder`; each chip is a direct child with
  * `data-key`. Buttons and fields inside a chip stay buttons and fields.
+ *
+ * With a `handle` (a selector), only that grip picks an item up: at once,
+ * on a touch screen too, since the grip says what a press there means. A
+ * focused grip also moves its item with the arrow keys.
  */
 import { tick } from 'svelte';
 import { prefersReducedMotion } from './motion';
@@ -26,6 +30,8 @@ export type ReorderOptions = {
   canLift?: (key: string) => boolean;
   /** Turns the order a move would make into the one allowed, or null to refuse it. */
   shape?: (key: string, order: string[]) => string[] | null;
+  /** Only this grip (a selector inside each item) picks it up. */
+  handle?: string;
 };
 
 const HOLD = 280;
@@ -54,9 +60,10 @@ export function reorder(node: HTMLElement, options: ReorderOptions) {
     const target = e.target as Element;
     const el = target.closest<HTMLElement>('[data-key]');
     if (!el || el.parentElement !== node) return;
-    if (target.closest('button, input, select, textarea, label')) return;
+    if (o.handle ? !target.closest(o.handle) : target.closest('button, input, select, textarea, label')) return;
     if (o.canLift && !o.canLift(el.dataset.key!)) return;
-    const touch = e.pointerType !== 'mouse';
+    // A grip is pressed on purpose: no hold needed, even on a touch screen.
+    const touch = e.pointerType !== 'mouse' && !o.handle;
     pending = { key: el.dataset.key!, el, x: e.clientX, y: e.clientY, id: e.pointerId, touch };
     if (touch) pending.timer = setTimeout(() => lift(), HOLD);
     window.addEventListener('pointermove', move, { passive: false });
@@ -205,10 +212,32 @@ export function reorder(node: HTMLElement, options: ReorderOptions) {
   const key = (e: KeyboardEvent) => {
     if (e.key === 'Escape' && drag) cancel();
   };
+  /** A focused grip moves its item one place with the arrow keys. */
+  const arrow = async (e: KeyboardEvent) => {
+    if (!o.handle || !o.enabled || drag) return;
+    const grip = (e.target as Element).closest?.(o.handle);
+    const el = grip?.closest<HTMLElement>('[data-key]');
+    if (!grip || !el || el.parentElement !== node) return;
+    const step = e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : 0;
+    if (!step) return;
+    e.preventDefault();
+    const order = [...o.keys];
+    const at = order.indexOf(el.dataset.key!);
+    const to = at + step;
+    if (at < 0 || to < 0 || to >= order.length) return;
+    order.splice(at, 1);
+    order.splice(to, 0, el.dataset.key!);
+    const shaped = o.shape ? o.shape(el.dataset.key!, order) : order;
+    if (!shaped) return;
+    o.oncommit(shaped);
+    await tick();
+    node.querySelector<HTMLElement>(`[data-key="${CSS.escape(el.dataset.key!)}"] ${o.handle}`)?.focus();
+  };
   const dragstart = (e: DragEvent) => {
     if ((e.target as Element).closest?.('[data-key]') && o.enabled) e.preventDefault();
   };
   node.addEventListener('pointerdown', down);
+  node.addEventListener('keydown', arrow);
   node.addEventListener('touchmove', touchmove, { passive: false });
   node.addEventListener('contextmenu', menu);
   node.addEventListener('dragstart', dragstart);
@@ -221,6 +250,7 @@ export function reorder(node: HTMLElement, options: ReorderOptions) {
     destroy() {
       cancel();
       node.removeEventListener('pointerdown', down);
+      node.removeEventListener('keydown', arrow);
       node.removeEventListener('touchmove', touchmove);
       node.removeEventListener('contextmenu', menu);
       node.removeEventListener('dragstart', dragstart);

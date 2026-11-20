@@ -120,6 +120,8 @@ create table if not exists public.campaign_creatures (
   portrait     text not null default '' constraint campaign_creatures_portrait_check check (char_length(portrait) <= 2000),
   condition_looks jsonb not null default '{}'::jsonb
                constraint campaign_creatures_condition_looks_size check (jsonb_typeof(condition_looks) = 'object' and octet_length(condition_looks::text) <= 4000),
+  -- What its face shows, for the players (0023).
+  expression   text not null default '' constraint campaign_creatures_expression_check check (char_length(expression) <= 40),
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );
@@ -906,7 +908,7 @@ drop function if exists public.revealed_creatures(uuid);
 drop function if exists private.revealed_creatures(uuid);
 create function private.revealed_creatures(p_campaign uuid)
 returns table (id uuid, name text, kind text, vital text, conditions text[], initiative integer, "position" integer,
-               portrait text, condition_looks jsonb)
+               portrait text, condition_looks jsonb, expression text)
 language sql
 stable
 security definer
@@ -918,7 +920,7 @@ as $$
               when coalesce(c.hp_current, c.hp_max)::numeric / c.hp_max <= 0.25 then 'critical'
               when coalesce(c.hp_current, c.hp_max)::numeric / c.hp_max <= 0.5 then 'bloodied'
               else 'healthy' end,
-         c.conditions, c.initiative, c.position, c.portrait, c.condition_looks
+         c.conditions, c.initiative, c.position, c.portrait, c.condition_looks, c.expression
   from public.campaign_creatures c
   where c.campaign_id = p_campaign and c.visible and private.is_campaign_member(p_campaign)
   order by c.position, c.created_at;
@@ -1030,7 +1032,7 @@ as $$ select private.sync_shared_rows(p_character, p_rows) $$;
 
 create function public.revealed_creatures(p_campaign uuid)
 returns table (id uuid, name text, kind text, vital text, conditions text[], initiative integer, "position" integer,
-               portrait text, condition_looks jsonb)
+               portrait text, condition_looks jsonb, expression text)
 language sql stable security invoker set search_path = ''
 as $$ select * from private.revealed_creatures(p_campaign) $$;
 
@@ -1058,9 +1060,9 @@ grant select on public.board_items to anon, authenticated;
 grant insert (campaign_id, kind, data, created_by), update (data), delete on public.board_items to authenticated;
 revoke all on public.campaign_creatures from anon, authenticated;
 grant select, delete on public.campaign_creatures to authenticated;
-grant insert (campaign_id, kind, name, hp_max, hp_current, hp_temp, ac, conditions, notes, link, position, initiative, visible, statblock, portrait, condition_looks)
+grant insert (campaign_id, kind, name, hp_max, hp_current, hp_temp, ac, conditions, notes, link, position, initiative, visible, statblock, portrait, condition_looks, expression)
   on public.campaign_creatures to authenticated;
-grant update (kind, name, hp_max, hp_current, hp_temp, ac, conditions, notes, link, position, initiative, visible, statblock, portrait, condition_looks)
+grant update (kind, name, hp_max, hp_current, hp_temp, ac, conditions, notes, link, position, initiative, visible, statblock, portrait, condition_looks, expression)
   on public.campaign_creatures to authenticated;
 revoke all on public.homebrew_creatures from anon, authenticated;
 grant select, delete on public.homebrew_creatures to authenticated;

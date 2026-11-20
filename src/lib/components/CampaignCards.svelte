@@ -24,6 +24,7 @@
   import { followHeight, glideTo, prefersReducedMotion } from '#lib/motion.ts';
   import CardHp from './CardHp.svelte';
   import ConditionRing from './ConditionRing.svelte';
+  import Lightbox from './Lightbox.svelte';
   import type { ConditionLook, Sheet } from '#lib/types.ts';
 
   let {
@@ -147,6 +148,8 @@
   /** While the DM moves a condition, the order it would land in, by sheet. */
   let previews = $state<Record<string, string[] | null>>({});
   let picking = $state<string | null>(null);
+  /** A portrait full screen, grown out of the card. */
+  let viewing = $state<{ src: string; alt: string; from: Element | null } | null>(null);
   const has = (list: string[], name: string) => list.some((c) => c.toLowerCase() === name.toLowerCase());
   function toggle(s: Sheet, name: string) {
     const list = s.state?.conditions ?? [];
@@ -196,22 +199,31 @@
         <!-- Their player has the campaign open right now. -->
         <span class="herebadge" role="img" aria-label="{nameOf(s)}’s player is here" title="{nameOf(s)}’s player is here" transition:fade={{ duration: 200 }}><i class="here-dot"></i></span>
       {/if}
-      <a class="open" href="{base}/s/{s.id}{s.campaign_id ? `?from=${s.campaign_id}` : ''}">
+      <div class="cardhead">
         <!-- Conditions ring the portrait in their colours (the card's own edge
-             is kept for being hurt), a band for each, all the way round. -->
-        <span class="portrait" class:ringed={ring.length > 0}
-              title={conds.length ? conds.map(cleanName).join(', ') : undefined}>
+             is kept for being hurt), a band for each, all the way round. A
+             picture opens full screen; the name opens the sheet. -->
+        {#snippet face()}
           <!-- No portrait yet: the main class, drawn; a picture covers it. -->
           {#if def}<ClassIcon cls={mainClass(def)} />{/if}
           {#if portrait}<img src={portrait} alt="" />{/if}
           <ConditionRing bands={ring} />
           <span class="lvl">LV {characterLevel(def)}</span>
-        </span>
-        <span class="who">
-          <strong style:font-family={faceOf(s) ? `'${faceOf(s)!.family}', system-ui, sans-serif` : undefined}>{nameOf(s)}</strong>
-          <span class="sub">{classLine(def) || 'No class yet'}</span>
-        </span>
-      </a>
+        {/snippet}
+        {#if portrait}
+          <button class="portrait" class:ringed={ring.length > 0} aria-label="See {nameOf(s)}’s portrait"
+                  title={conds.length ? conds.map(cleanName).join(', ') : 'See it full screen'}
+                  onclick={(e) => (viewing = { src: portrait, alt: `Portrait of ${nameOf(s)}`, from: e.currentTarget })}>{@render face()}</button>
+        {:else}
+          <span class="portrait" class:ringed={ring.length > 0} title={conds.length ? conds.map(cleanName).join(', ') : undefined}>{@render face()}</span>
+        {/if}
+        <a class="open" href="{base}/s/{s.id}{s.campaign_id ? `?from=${s.campaign_id}` : ''}">
+          <span class="who">
+            <strong style:font-family={faceOf(s) ? `'${faceOf(s)!.family}', system-ui, sans-serif` : undefined}>{nameOf(s)}</strong>
+            <span class="sub">{classLine(def) || 'No class yet'}</span>
+          </span>
+        </a>
+      </div>
       <CardHp cur={hp.cur} max={hp.max} temp={hp.temp} vital={v.vital} label={v.label} />
       <dl class="stats">
         <div><dt>AC</dt><dd>{def ? armorClass(def).total : '—'}</dd></div>
@@ -304,6 +316,10 @@
   {/each}
 </ul>
 
+{#if viewing}
+  <Lightbox src={viewing.src} alt={viewing.alt} from={viewing.from} onclose={() => (viewing = null)} />
+{/if}
+
 <style>
   .cards {
     list-style: none; padding: 0; margin: 0;
@@ -345,8 +361,15 @@
   .grip:hover { color: var(--a); }
   @media (hover: none) { .grip { opacity: 0.8; } }
 
-  .open { display: flex; gap: 0.75rem; align-items: center; color: inherit; text-decoration: none; min-width: 0; padding-right: 3.25rem; }
-  .card.sortable .open { padding-right: 4rem; }
+  .cardhead { display: flex; gap: 0.75rem; align-items: center; min-width: 0; padding-right: 3.25rem; }
+  .card.sortable .cardhead { padding-right: 4rem; }
+  .open { flex: 1; min-width: 0; color: inherit; text-decoration: none; border-radius: var(--r-sm); }
+  .open:hover strong { color: var(--a); }
+  .open:focus-visible { outline: 2px solid var(--a); outline-offset: 3px; }
+  button.portrait { padding: 0; font: inherit; color: inherit; cursor: zoom-in; transition: border-color 0.35s ease, transform 0.15s ease; }
+  button.portrait:hover { transform: scale(1.04); }
+  button.portrait:active { transform: scale(0.98); }
+  button.portrait:focus-visible { outline: 2px solid var(--a); outline-offset: 3px; }
   .portrait {
     position: relative; flex: none; width: 3.25rem; height: 3.25rem; border-radius: var(--r-sm);
     border: 1px solid var(--a-edge); background: linear-gradient(150deg, var(--portrait-from), var(--portrait-to));

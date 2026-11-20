@@ -1,8 +1,9 @@
 <!--
   What the players see of the DM's monsters and NPCs (database/0018, 0020,
   revealed_creatures): only those the DM revealed, by name and portrait,
-  their conditions and how hurt they look (in words, and on the card's edge
-  as on every campaign card), never their numbers or notes.
+  their conditions, their face as the DM describes it (database/0023) and
+  how hurt they look (in words, and on the card's edge as on every campaign
+  card), never their numbers or notes. A portrait opens full screen.
 -->
 <script lang="ts">
   import { flip } from 'svelte/animate';
@@ -12,6 +13,7 @@
   import { lookOf } from '#lib/rules/conditions.ts';
   import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
   import ConditionRing from './ConditionRing.svelte';
+  import Lightbox from './Lightbox.svelte';
   import { prefersReducedMotion } from '#lib/motion.ts';
   import SectionHead from './SectionHead.svelte';
 
@@ -20,12 +22,13 @@
   const LOOKS: Record<Revealed['vital'], string> = {
     healthy: 'Unhurt', bloodied: 'Bloodied', critical: 'Barely standing', down: 'Down', unknown: 'Hard to tell'
   };
+  let viewing = $state<{ src: string; alt: string; from: Element | null } | null>(null);
 </script>
 
 {#if list.length}
   <section class="foes" aria-label="Monsters and NPCs in sight" transition:fade={{ duration: still ? 0 : 180 }}>
     <SectionHead title="In sight" infoLabel="About these">
-      {#snippet info()}The monsters and NPCs your DM has shown you, and how hurt they look.{/snippet}
+      {#snippet info()}The monsters and NPCs your DM has shown you: their faces, and how hurt they look.{/snippet}
     </SectionHead>
     <ul>
       {#each list as c (c.id)}
@@ -34,7 +37,10 @@
         <li class="foe hurtcard {c.vital}" animate:flip={{ duration: still ? 0 : 240, easing: cubicOut }} transition:fade={{ duration: still ? 0 : 160 }}>
           <div class="foehead">
             {#if pic}
-              <span class="foepic" class:ringed={ring.length > 0}><img src={pic} alt="" loading="lazy" /><ConditionRing bands={ring} round /></span>
+              <button class="foepic" class:ringed={ring.length > 0} aria-label="See {c.name}’s portrait" title="See it full screen"
+                      onclick={(e) => (viewing = { src: pic, alt: `Portrait of ${c.name}`, from: e.currentTarget })}>
+                <img src={pic} alt="" loading="lazy" /><ConditionRing bands={ring} round />
+              </button>
             {/if}
             <span class="foename">
               <strong>{c.name}</strong>
@@ -42,6 +48,12 @@
             </span>
           </div>
           <span class="foelook"><i aria-hidden="true"></i>{LOOKS[c.vital]}</span>
+          {#if c.expression}
+            <span class="foeface" title="What its face shows">
+              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M9 10h.01M15 10h.01M9 15.5c1.8-1.4 4.2-1.4 6 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+              {c.expression}
+            </span>
+          {/if}
           {#if c.conditions.length}
             <ul class="foeconds">
               {#each c.conditions as name (name)}
@@ -53,6 +65,10 @@
       {/each}
     </ul>
   </section>
+{/if}
+
+{#if viewing}
+  <Lightbox src={viewing.src} alt={viewing.alt} from={viewing.from} onclose={() => (viewing = null)} />
 {/if}
 
 <style>
@@ -76,6 +92,12 @@
     border: 1px solid var(--line-soft); background: var(--raised); transition: border-color 0.35s ease;
   }
   .foepic.ringed { border-color: transparent; }
+  button.foepic { padding: 0; font: inherit; cursor: zoom-in; transition: border-color 0.35s ease, transform 0.15s ease; }
+  button.foepic:hover { transform: scale(1.05); }
+  button.foepic:active { transform: scale(0.98); }
+  button.foepic:focus-visible { outline: 2px solid var(--a); outline-offset: 3px; }
+  .foeface { display: inline-flex; align-items: center; gap: 0.4375rem; font-size: 0.8125rem; font-style: italic; color: var(--text); }
+  .foeface svg { flex: none; color: var(--dim); }
   .foepic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
   .foehead strong { overflow-wrap: anywhere; }
   .foekind {
