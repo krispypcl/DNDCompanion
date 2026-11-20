@@ -126,7 +126,7 @@
 
 <style>
   :global(html.in-owlbear), :global(html.in-owlbear body) { background: transparent !important; }
-  .hp { --hurt-red: oklch(66% 0.22 25); padding: 0.5rem 0.75rem 0.625rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.4375rem; font-size: 0.8125rem; }
+  .hp { padding: 0.5rem 0.75rem 0.625rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.4375rem; font-size: 0.8125rem; }
   .row { display: flex; align-items: center; gap: 0.375rem; }
   .head strong { flex: 1; min-width: 0; font-size: 0.875rem; overflow-wrap: anywhere; }
   .head .smallbtn { padding: 0.1875rem 0.5rem; font-size: 0.75rem; }

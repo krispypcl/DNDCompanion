@@ -729,7 +729,6 @@
   .camp b { color: var(--text); font-weight: 600; }
   .chars { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
   .char {
-    --hurt-red: oklch(66% 0.22 25);
     border: 1px solid var(--line-soft); border-radius: var(--r); background: var(--surface); padding: 0.875rem 1rem;
     display: grid; gap: 0.75rem; transition: border-color 0.3s ease;
   }
