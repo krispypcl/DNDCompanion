@@ -175,7 +175,7 @@
 
   /** The keys, as on a sheet: E edits, M plays or pauses the music, ? lists them. */
   let showKeys = $state(false);
-  /** The search (Ctrl K, / or its button): 5e.tools entries in pop-ups, and monsters for the DM to add. */
+  /** The search (/ or its button): 5e.tools entries in pop-ups, and monsters for the DM to add. */
   let searching = $state(false);
   function onKey(e: KeyboardEvent) {
     if (!campaign || showKeys || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -531,7 +531,7 @@
         {/if}
         <ShareButton link={pageLink} label="Copy link to this page (to watch, not join)"
                      oncopied={(ok) => { if (!ok) error = 'The clipboard said no! Copy the address from the bar above instead.'; }} />
-        <button class="keys searchbtn" onclick={() => (searching = true)} aria-label="Search 5e.tools" title="Search 5e.tools (Ctrl K or /)">
+        <button class="keys searchbtn" onclick={() => (searching = true)} aria-label="Search 5e.tools" title="Search 5e.tools (/)">
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
         </button>
         <button class="keys" onclick={() => (showKeys = true)} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">

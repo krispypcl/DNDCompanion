@@ -1,5 +1,5 @@
 /**
- * The search (Ctrl K): finding 5e.tools entries by name in the search index
+ * The search (/): finding 5e.tools entries by name in the search index
  * (scripts/search-index.mjs), best matches first, one row per entry (the
  * newest book's when an entry is in several), and the 5e.tools link each
  * one opens in a pop-up.

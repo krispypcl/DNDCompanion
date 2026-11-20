@@ -1,4 +1,4 @@
-// Writes src/lib/data/search-index.json: every entry the search (Ctrl K)
+// Writes src/lib/data/search-index.json: every entry the search (/)
 // can find on 5e.tools, by its proper name: spells, items, feats, optional
 // features, species, backgrounds, classes, conditions and monsters, each
 // with its book and a few words on what it is ("Level 3 Evocation",

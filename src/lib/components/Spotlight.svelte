@@ -1,11 +1,11 @@
 <!--
-  The search: Ctrl K (⌘K on a Mac), or /, on a sheet or a campaign page, or
-  its button in the header. Type a name; every spell, item, feat, option,
-  species, background, class, condition and monster on 5e.tools is there,
-  best matches first. Enter (or a press) opens one in a pop-up of its own,
-  and the search stays for the next (on a phone it steps aside, and its ×
-  stands in for Esc). On the campaign page the DM can also
-  put a monster, or one of their own homebrew creatures, on the table.
+  The search: / on a sheet or a campaign page, or its button in the header.
+  Type a name; every spell, item, feat, option, species, background, class,
+  subclass, condition and monster on 5e.tools is there, best matches first.
+  Enter (or a press) opens one in a pop-up of its own, and the search stays
+  for the next, its field still ready to type in (on a phone it steps aside,
+  and its × stands in for Esc). On the campaign page the DM can also put a
+  monster, or one of their own homebrew creatures, on the table.
 -->
 <script lang="ts">
   import { fade } from 'svelte/transition';
@@ -82,13 +82,15 @@
     }
     const theme = themeAt(document.querySelector('.themed') ?? document.body);
     peek.open({ name: r.hit.name, url: r.hit.url, anchor: new DOMRect(), ...theme });
+    // The field keeps the keyboard, so Esc, the arrows and typing still work.
+    input?.focus();
   }
   function key(e: KeyboardEvent) {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
       at = Math.max(0, Math.min(results.length - 1, at + (e.key === 'ArrowDown' ? 1 : -1)));
       queueMicrotask(() => list?.querySelector<HTMLElement>(`[data-i="${at}"]`)?.scrollIntoView({ block: 'nearest' }));
-    } else if (e.key === 'Enter') {
+    } else if (e.key === 'Enter' && e.target === input) {
       e.preventDefault();
       choose(results[at], e.shiftKey);
     } else if (e.key === 'Escape') {
@@ -98,14 +100,11 @@
     }
   }
 
-  /** Ctrl K or ⌘K anywhere; / where nothing is being typed. */
+  /** / opens it, wherever nothing is being typed. */
   function global(e: KeyboardEvent) {
     const t = e.target as HTMLElement | null;
     const typing = Boolean(t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)));
-    if ((e.key === 'k' || e.key === 'K') && (e.ctrlKey || e.metaKey) && !e.altKey) {
-      e.preventDefault();
-      open = !open;
-    } else if (e.key === '/' && !typing && !e.ctrlKey && !e.metaKey && !open) {
+    if (e.key === '/' && !typing && !e.ctrlKey && !e.metaKey && !e.altKey && !open) {
       e.preventDefault();
       open = true;
     }
@@ -125,10 +124,12 @@
 {#if open}
   <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
   <div class="spotscrim" use:portal transition:fade={{ duration: still ? 0 : 180 }} onclick={(e) => { if (e.target === e.currentTarget) close(); }}>
-    <div class="spotbox" role="dialog" aria-modal="true" aria-label="Search 5e.tools" in:drop out:drop={{ out: true }}>
+    <!-- Keys are heard by the whole box, so Esc still closes it after a result was pressed. -->
+    <div class="spotbox" role="dialog" aria-modal="true" aria-label="Search 5e.tools" tabindex="-1" onkeydown={key}
+         in:drop out:drop={{ out: true }}>
       <div class="spotfield">
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
-        <input bind:this={input} bind:value={query} onkeydown={key} placeholder="Search spells, items, monsters and more"
+        <input bind:this={input} bind:value={query} placeholder="Search spells, items, monsters and more"
                aria-label="Search 5e.tools" aria-controls="spot-results" aria-activedescendant={results.length ? `spot-${at}` : undefined}
                autocomplete="off" spellcheck="false" />
         <kbd class="spotesc">Esc</kbd>
@@ -139,7 +140,8 @@
           {#each results as r, i (r.kind === 'homebrew' ? `h${r.brew.id}` : r.hit.url)}
             <li id="spot-{i}" data-i={i} role="option" aria-selected={i === at} class:at={i === at}
                 onpointermove={() => (at = i)}>
-              <button class="spotopen" tabindex="-1" onclick={() => choose(r)}>
+              <!-- A mouse press opens it without taking the keyboard from the field. -->
+              <button class="spotopen" tabindex="-1" onmousedown={(e) => e.preventDefault()} onclick={() => choose(r)}>
                 <span class="spotname">{r.kind === 'homebrew' ? r.brew.name : r.hit.name}</span>
                 <span class="spotwords">
                   {#if r.kind === 'homebrew'}Your homebrew {r.brew.kind === 'npc' ? 'NPC' : 'monster'}
@@ -147,7 +149,7 @@
                 </span>
               </button>
               {#if r.kind === 'homebrew' || (onadd && r.hit.kind === 'm')}
-                <button class="smallbtn accent spotadd" tabindex="-1" onclick={() => choose(r, true)}
+                <button class="smallbtn accent spotadd" tabindex="-1" onmousedown={(e) => e.preventDefault()} onclick={() => choose(r, true)}
                         title={r.kind === 'homebrew' ? 'Add to the table' : 'Add to the table (Shift Enter)'}>Add to table</button>
               {/if}
             </li>
@@ -165,6 +167,7 @@
     position: fixed; inset: 0; z-index: 65; display: flex; justify-content: center; align-items: flex-start;
     padding: 12vh 1rem 1rem; background: rgb(0 0 0 / 0.55); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
   }
+  .spotbox:focus { outline: none; }
   .spotbox {
     width: min(40rem, 100%); max-height: 70vh; display: flex; flex-direction: column; overflow: hidden;
     border-radius: calc(var(--r) + 4px); border: 1px solid var(--line); background: var(--surface);

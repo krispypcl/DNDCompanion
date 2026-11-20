@@ -530,7 +530,7 @@
 
   /** Keyboard shortcuts, for a computer; none while typing in a field. */
   let showKeys = $state(false);
-  /** The search (Ctrl K, / or its button): 5e.tools entries in pop-ups. */
+  /** The search (/ or its button): 5e.tools entries in pop-ups. */
   let searching = $state(false);
   function onkey(e: KeyboardEvent) {
     if (!definition || showKeys || leaving) return;
@@ -850,7 +850,7 @@
         <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
         <PrintButton onprint={makePdf} busy={makingPdf} />
         {#if isOwner}<DownloadButton ondownload={exportNow} />{/if}
-        <button class="keys searchbtn" onclick={() => (searching = true)} aria-label="Search 5e.tools" title="Search 5e.tools (Ctrl K or /)">
+        <button class="keys searchbtn" onclick={() => (searching = true)} aria-label="Search 5e.tools" title="Search 5e.tools (/)">
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
         </button>
         <button class="keys" onclick={() => (showKeys = true)} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
