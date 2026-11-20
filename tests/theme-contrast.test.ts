@@ -12,7 +12,8 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { THEMES } from '$lib/theme';
 
-const css = readFileSync('src/app.css', 'utf8');
+// A Windows checkout may give the file CRLF line endings; the selectors below use LF.
+const css = readFileSync('src/app.css', 'utf8').replace(/\r\n/g, '\n');
 
 /** Every (hue, chroma) an accent can take: the presets, and a custom colour
     picked at the top of the scale. */
