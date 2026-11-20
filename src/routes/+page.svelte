@@ -25,6 +25,8 @@
   import PageTurn from '#lib/components/PageTurn.svelte';
   import MenuGreeting from '#lib/components/MenuGreeting.svelte';
   import AreaSwitch from '#lib/components/AreaSwitch.svelte';
+  import PhoneBar from '#lib/components/PhoneBar.svelte';
+  import { phone } from '#lib/stores/phone.svelte.ts';
   import Tabs from '#lib/components/Tabs.svelte';
   import ClassIcon from '#lib/components/ClassIcon.svelte';
   import { armorClass, characterLevel, classLine, mainClass } from '#lib/rules/derived.ts';
@@ -948,15 +950,18 @@
                       title="Bring back a sheet saved with Export">
                 {importing ? 'Importing…' : 'Import'}
               </button>
-              <button onclick={create} disabled={creating}>{creating ? 'Creating…' : 'New sheet'}</button>
-            {:else}
+              <!-- On a phone, the new one is the bar's docked action. -->
+              {#if !phone.current}<button onclick={create} disabled={creating}>{creating ? 'Creating…' : 'New sheet'}</button>{/if}
+            {:else if !phone.current}
               <button onclick={() => (naming = true)} disabled={naming}>New campaign</button>
             {/if}
           </div>
-          <AreaSwitch active={area} onchoose={chooseArea} sides={[
-            { key: AREA_SHEETS, icon: 'person', count: sheets.length },
-            { key: AREA_CAMPAIGNS, icon: 'flag', count: running.length + joined.length, live: atTables }
-          ]} />
+          {#if !phone.current}
+            <AreaSwitch active={area} onchoose={chooseArea} sides={[
+              { key: AREA_SHEETS, icon: 'person', count: sheets.length },
+              { key: AREA_CAMPAIGNS, icon: 'flag', count: running.length + joined.length, live: atTables }
+            ]} />
+          {/if}
         </div>
       </div>
       <div class="areas">
@@ -990,6 +995,21 @@
           {/snippet}
         </Tabs>
       </div>
+      {#if phone.current}
+        <!-- A phone: characters and campaigns on the bar; the new one docked above it. -->
+        <PhoneBar active={area} onchoose={chooseArea} places={[
+          { key: AREA_SHEETS, label: 'Characters', icon: 'person' },
+          { key: AREA_CAMPAIGNS, label: 'Campaigns', icon: 'flag', badge: area !== AREA_CAMPAIGNS && atTables > 0 }
+        ]}>
+          {#snippet dock()}
+            {#if area === AREA_SHEETS}
+              <button class="smallbtn accent" onclick={create} disabled={creating}>{creating ? 'Creating' : 'New character'}</button>
+            {:else}
+              <button class="smallbtn accent" onclick={() => (naming = true)} disabled={naming}>New campaign</button>
+            {/if}
+          {/snippet}
+        </PhoneBar>
+      {/if}
     {/if}
   {/if}
 </main>
