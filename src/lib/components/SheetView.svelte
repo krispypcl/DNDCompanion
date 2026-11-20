@@ -1720,7 +1720,7 @@
   }
   .trk { padding-top: 1.25rem; }
   /* Conditions and trackers lead the rail: whatever comes first starts flush. */
-  .rail-right > :global(:first-child) { padding-top: 0; }
+  .rail-right > :global(:first-child), .rail-right > .railfight > :global(:first-child) { padding-top: 0; }
   .defs-h { padding-top: 1.25rem; }
   .trk .cap { margin-bottom: 0.625rem; }
   /* Directly below the trackers. With equal-height rails the slack falls to
