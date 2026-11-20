@@ -1,20 +1,20 @@
 <script lang="ts">
   /**
-   * The sheet's music, top centre: the song playing, then back, play/pause and
-   * next, over a YouTube player kept out of sight. It plays
-   * a YouTube (or YouTube Music) playlist, or a single video's sound, once or on loop.
+   * The music player (a sheet's, top centre, and the campaign's table music):
+   * the song playing, its timeline, and its controls, over a YouTube player
+   * kept out of sight. It plays a YouTube (or YouTube Music) playlist, or a
+   * single video's sound, once or on loop.
    *
-   * The speaker beside the light/dark switch is its mute: off (the default),
-   * the music waits, paused; on, it plays at once, or at the first tap on
-   * the page where the browser will not start sound by itself.
+   * Its speaker is its mute (music.ts musicOn): off (the default), the music
+   * waits, paused; on, it plays at once, or at the first tap on the page
+   * where the browser will not start sound by itself.
    *
-   * As a capsule (the sheet's music; the campaign page's table music,
-   * minimized, and all the players ever see of it): the title, scrolling when
-   * it outruns its line, beside the dancing bars, play and pause, and a
-   * speaker that mutes and opens a volume slider. The sheet's capsule is
-   * longer, with shuffle and loop at its end; the DM's has a button back to
-   * the whole player there. The YouTube player underneath is the same either way, so
-   * switching between the two never stops the song.
+   * As a capsule (the campaign page's table music, minimized, and all the
+   * players ever see of it): the dancing bars, the title, scrolling when it
+   * outruns its line, a speaker that mutes and opens a volume slider, play
+   * and pause, and for the DM a button back to the whole player. The YouTube
+   * player underneath is the same either way, so switching between the two
+   * never stops the song.
    *
    * The player is rebuilt only when the link itself changes. The parent hands
    * in a new sheet on every edit, so everything here hangs off the link as a
@@ -42,12 +42,15 @@
     away = false,
     idle = '',
     capsule = false,
-    onexpand
+    onexpand,
+    oncompact
   }: {
     /** Drawn as the little capsule (see above). */
     capsule?: boolean;
     /** The DM's capsule: back to the whole player. */
     onexpand?: () => void;
+    /** The DM's whole player: folded into the capsule (an icon beside the song's name). */
+    oncompact?: () => void;
     url: string;
     /** With no music to play yet: the player drawn still, saying this. */
     idle?: string;
@@ -600,20 +603,20 @@
           ? 'Tap anywhere to start the music'
           : title || (playing ? 'Playing' : 'Paused')
   );
-  // ── The capsule ──
+  // ── The title and the speaker ──
   /** How far the title outruns its line; past it, the title scrolls back and forth. */
   let capBox = $state(0);
   let capText = $state(0);
   const capOver = $derived(Math.max(0, capText - capBox));
   /** On a touch screen the first tap on the speaker opens the slider; the next mutes. */
   let skipMute = false;
-  function capSpeakerDown(e: PointerEvent) {
+  function speakerDown(e: PointerEvent) {
     if (e.pointerType !== 'mouse' && !volOpen) {
       volOpen = true;
       skipMute = true;
     }
   }
-  function capSpeaker() {
+  function speaker() {
     if (skipMute) {
       skipMute = false;
       return;
@@ -626,27 +629,42 @@
   }
 </script>
 
-<svelte:window onpointerdown={capsule ? closeVolOutside : undefined} />
+<svelte:window onpointerdown={closeVolOutside} />
+
+{#snippet speakerIcon()}
+  <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
+    <path d="M2.5 6.2h2.3l3-2.6v8.8l-3-2.6H2.5z" fill="currentColor" />
+    {#if !$musicOn || volume === 0}
+      <path d="M10.5 6.2l3.4 3.6M13.9 6.2l-3.4 3.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+    {:else}
+      <path d="M10.4 6a2.8 2.8 0 0 1 0 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+      {#if volume > 50}<path d="M12.3 4.2a5.4 5.4 0 0 1 0 7.6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />{/if}
+    {/if}
+  </svg>
+{/snippet}
+
+{#snippet playIcon(size: number)}
+  {#if playing}
+    <svg viewBox="0 0 16 16" width={size} height={size} aria-hidden="true"><path d="M4.5 3h2.2v10H4.5zM9.3 3h2.2v10H9.3z" fill="currentColor" /></svg>
+  {:else}
+    <svg viewBox="0 0 16 16" width={size} height={size} aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z" fill="currentColor" /></svg>
+  {/if}
+{/snippet}
+
+<!-- The song's name on one line: past its room it scrolls back and forth. -->
+{#snippet scroller(text: string)}
+  <span class="capbox" class:rolling={capOver > 2} bind:clientWidth={capBox} title={text}>
+    <span class="captext" class:bad={failed} bind:clientWidth={capText}
+          style:--shift="-{capOver}px" style:--dur="{Math.max(7, 4 + capOver / 22)}s">{text}</span>
+  </span>
+{/snippet}
 
 {#snippet capsuleView(text: string, live: boolean)}
-  <div class="capsule" class:playing={live && playing} class:long={place === 'sheet'} role="group"
-       aria-label={place === 'sheet' ? 'Music' : 'Table music'} in:fade={{ duration: 200 }}>
+  <div class="capsule" class:playing={live && playing} role="group" aria-label="Table music" in:fade={{ duration: 200 }}>
     <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
-    <span class="capbox" class:rolling={capOver > 2} bind:clientWidth={capBox} title={text}>
-      <span class="captext" class:bad={failed} bind:clientWidth={capText}
-            style:--shift="-{capOver}px" style:--dur="{Math.max(7, 4 + capOver / 22)}s">{text}</span>
-    </span>
+    {@render scroller(text)}
     {#if live}
-      {#if !following}
-        <button class="capbtn" aria-label={playing ? 'Pause' : 'Play'} title={playing ? 'Pause' : 'Play'} disabled={!ready || failed} onclick={toggle}>
-          {#if playing}
-            <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4.5 3h2.2v10H4.5zM9.3 3h2.2v10H9.3z" fill="currentColor" /></svg>
-          {:else}
-            <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z" fill="currentColor" /></svg>
-          {/if}
-        </button>
-      {/if}
-      <!-- The speaker mutes; hovered (or tapped once on a touch screen), the volume slides out beside it. -->
+      <!-- Volume before play: its slider slides out to the left, so play never moves. -->
       <div class="capvol" class:open={volOpen} bind:this={capVol} role="group" aria-label="Volume"
            onmouseenter={() => { clearTimeout(volTimer); volOpen = true; }}
            onmouseleave={() => { clearTimeout(volTimer); volTimer = setTimeout(() => (volOpen = false), 450); }}
@@ -654,43 +672,123 @@
         <input class="caprange" type="range" min="0" max="100" step="1" value={volume} aria-label="Volume"
                style:--v="{volume}%" tabindex={volOpen ? 0 : -1} oninput={(e) => setVol(Number(e.currentTarget.value))} />
         <button class="capbtn" aria-pressed={!$musicOn} aria-label={$musicOn ? 'Mute the music' : 'Unmute the music'}
-                title={$musicOn ? `Mute (volume ${volume}%)` : 'Unmute'} onpointerdown={capSpeakerDown} onclick={capSpeaker}>
-          <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
-            <path d="M2.5 6.2h2.3l3-2.6v8.8l-3-2.6H2.5z" fill="currentColor" />
-            {#if !$musicOn || volume === 0}
-              <path d="M10.5 6.2l3.4 3.6M13.9 6.2l-3.4 3.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
-            {:else}
-              <path d="M10.4 6a2.8 2.8 0 0 1 0 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
-              {#if volume > 50}<path d="M12.3 4.2a5.4 5.4 0 0 1 0 7.6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />{/if}
-            {/if}
-          </svg>
+                title={$musicOn ? `Mute (volume ${volume}%)` : 'Unmute'} onpointerdown={speakerDown} onclick={speaker}>
+          {@render speakerIcon()}
         </button>
       </div>
-    {/if}
-    {#if live && place === 'sheet' && !following && playlist}
-      <button class="capbtn toggle" aria-pressed={shuffle} disabled={!playlist.list}
-              aria-label={shuffle ? 'Shuffle on' : 'Shuffle off'}
-              title={!playlist.list ? 'One song: nothing to shuffle' : shuffle ? 'Shuffle on: a new order every visit' : 'Shuffle off'}
-              onclick={toggleShuffle}>
-      <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
-        <path d="M2 4.5h2.4c1.3 0 2.2.6 2.9 1.7l1.4 3.6c.7 1.1 1.6 1.7 2.9 1.7H14M2 11.5h2.4c1.3 0 2.2-.6 2.9-1.7M9.3 5.6c.6-.7 1.4-1.1 2.3-1.1H14M12 2.6l2 1.9-2 1.9M12 9.6l2 1.9-2 1.9"
-              fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
-      </button>
-      <button class="capbtn toggle" aria-pressed={looping} aria-label={looping ? 'Loop on' : 'Loop off'}
-              title={looping ? (playlist.list ? 'Loop on: the playlist starts over at its end' : 'Loop on: the song plays again') : 'Loop off: the music stops at the end'}
-              onclick={toggleLoop}>
-      <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
-        <path d="M3 7.2V6.4c0-1.1.9-2 2-2h7.2M10.6 2.6l1.9 1.8-1.9 1.8M13 8.8v.8c0 1.1-.9 2-2 2H3.8M5.4 13.4l-1.9-1.8 1.9-1.8"
-              fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
-      </button>
+      {#if !following}
+        <button class="capbtn" aria-label={playing ? 'Pause' : 'Play'} title={playing ? 'Pause' : 'Play'} disabled={!ready || failed} onclick={toggle}>
+          {@render playIcon(12)}
+        </button>
+      {/if}
     {/if}
     {#if onexpand}
       <button class="capbtn" aria-label="Open the whole music player" title="Open the whole player" onclick={onexpand}>
         <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M9.5 2.5h4v4M6.5 13.5h-4v-4M13.5 2.5 9 7M2.5 13.5 7 9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
       </button>
     {/if}
+  </div>
+{/snippet}
+
+<!--
+  The whole player: the bars, the song's name (centred) and, for the DM,
+  Minimize, on one line; the timeline; then one row of controls on a single
+  middle line: shuffle and loop on the left, back, play and next in the
+  centre, the speaker on the right. At rest (no song yet) it is the same
+  player, still, so nothing changes size when a song arrives.
+-->
+{#snippet wholeView(text: string, live: boolean)}
+  <div class="music" class:playing={live && playing} class:idle={!live} role="group" aria-label="Music" in:fade={{ duration: 200 }}>
+    <div class="title" aria-live="polite">
+      <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
+      {@render scroller(text)}
+      {#if oncompact}
+        <button class="capbtn" aria-label="Minimize the music player" title="Minimize" onclick={oncompact}>
+          <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M13.5 6.5h-4v-4M2.5 9.5h4v4M9.5 6.5 14 2M6.5 9.5 2 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </button>
+      {:else}
+        <span class="titlepad" aria-hidden="true"></span>
+      {/if}
+    </div>
+    <!-- The song's timeline: dragged or tapped with a mouse or a finger. -->
+    <div class="time">
+      <span class="t">{clock(live ? at : 0)}</span>
+      <input type="range" min="0" max={Math.max(1, length)} step="0.5" value={live ? Math.min(at, length || 1) : 0}
+             aria-label="Song position" aria-valuetext="{clock(at)} of {clock(length)}"
+             disabled={!live || !ready || failed || !length || following}
+             style:--p="{live && length ? (Math.min(at, length) / length) * 100 : 0}%"
+             onpointerdown={() => (scrubbing = true)}
+             onpointerup={() => (scrubbing = false)}
+             onpointercancel={() => (scrubbing = false)}
+             oninput={(e) => { scrubbing = true; scrubTo(Number(e.currentTarget.value)); }}
+             onchange={(e) => seek(Number(e.currentTarget.value))} />
+      <span class="t">−{clock(live ? Math.max(0, length - at) : 0)}</span>
+    </div>
+    <div class="row">
+      <div class="side">
+        {#if live && !following && playlist}
+          <button class="capbtn toggle" aria-pressed={shuffle} disabled={!playlist.list}
+                  aria-label={shuffle ? 'Shuffle on' : 'Shuffle off'}
+                  title={!playlist.list ? 'One song: nothing to shuffle' : shuffle ? 'Shuffle on: a new order every visit' : 'Shuffle off'}
+                  onclick={toggleShuffle}>
+            <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
+              <path d="M2 4.5h2.4c1.3 0 2.2.6 2.9 1.7l1.4 3.6c.7 1.1 1.6 1.7 2.9 1.7H14M2 11.5h2.4c1.3 0 2.2-.6 2.9-1.7M9.3 5.6c.6-.7 1.4-1.1 2.3-1.1H14M12 2.6l2 1.9-2 1.9M12 9.6l2 1.9-2 1.9"
+                    fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <button class="capbtn toggle" aria-pressed={looping} aria-label={looping ? 'Loop on' : 'Loop off'}
+                  title={looping
+                    ? (playlist.list ? 'Loop on: the playlist starts over at its end' : 'Loop on: the song plays again')
+                    : place === 'campaign' ? 'Loop off: the next song on the list follows' : 'Loop off: the music stops at the end'}
+                  onclick={toggleLoop}>
+            <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
+              <path d="M3 7.2V6.4c0-1.1.9-2 2-2h7.2M10.6 2.6l1.9 1.8-1.9 1.8M13 8.8v.8c0 1.1-.9 2-2 2H3.8M5.4 13.4l-1.9-1.8 1.9-1.8"
+                    fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+        {/if}
+      </div>
+      {#if following}
+        <!-- A player's page: the DM plays; they have only the speaker. -->
+        {#key away ? 'away' : follow?.playing}
+          <span class="by" in:fade={{ duration: 200 }}>{away ? 'The DM isn’t here yet' : follow?.playing ? 'The DM is playing' : 'The DM has paused'}</span>
+        {/key}
+      {:else}
+        <div class="mid">
+          <button class="ctl" aria-label="Previous song" title="Previous" disabled={!live || !ready || failed || !playlist?.list}
+                  onclick={() => fadeThen(() => yt?.previousVideo())}>
+            <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M3.5 3v10M13 3.2v9.6L5.6 8z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" /></svg>
+          </button>
+          <button class="ctl play" aria-label={playing ? 'Pause' : 'Play'} title={playing ? 'Pause' : 'Play'}
+                  disabled={!live || !ready || failed} onclick={toggle}>
+            {@render playIcon(14)}
+          </button>
+          <button class="ctl" aria-label="Next song" title="Next" disabled={!live || !ready || failed || !playlist?.list}
+                  onclick={() => fadeThen(() => yt?.nextVideo())}>
+            <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M12.5 3v10M3 3.2v9.6L10.4 8z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" /></svg>
+          </button>
+        </div>
+      {/if}
+      <div class="side end">
+        {#if live}
+          <!-- The speaker mutes; hovered (or tapped once on a touch screen), the volume rises above it. -->
+          <div class="vol" class:open={volOpen} bind:this={capVol} role="group" aria-label="Volume"
+               onmouseenter={() => { clearTimeout(volTimer); volOpen = true; }}
+               onmouseleave={() => { clearTimeout(volTimer); volTimer = setTimeout(() => (volOpen = false), 450); }}
+               onfocusin={() => (volOpen = true)}>
+            <div class="pop">
+              <input type="range" min="0" max="100" step="1" value={volume} aria-label="Volume"
+                     style:--v="{volume}%" tabindex={volOpen ? 0 : -1}
+                     oninput={(e) => setVol(Number(e.currentTarget.value))} />
+            </div>
+            <button class="capbtn" aria-pressed={!$musicOn} aria-label={$musicOn ? 'Mute the music' : 'Unmute the music'}
+                    title={$musicOn ? `Mute (volume ${volume}%)` : 'Unmute'} onpointerdown={speakerDown} onclick={speaker}>
+              {@render speakerIcon()}
+            </button>
+          </div>
+        {/if}
+      </div>
+    </div>
   </div>
 {/snippet}
 
@@ -702,111 +800,12 @@
 {#if playlist && capsule}
   {@render capsuleView(following && away ? 'The DM isn’t here yet' : status, true)}
 {:else if playlist}
-  <!-- Only fades in: folding it into the capsule must not leave it fading out beside the capsule. -->
-  <div class="music" class:playing role="group" aria-label="Music" in:fade={{ duration: 200 }}>
-    <div class="title" title={title || undefined} aria-live="polite">
-      <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
-      {#key status}<span class="text" class:bad={failed} in:fade={{ duration: 220 }}>{status}</span>{/key}
-    </div>
-    <!-- The song's timeline: dragged or tapped with a mouse or a finger. -->
-    <div class="time">
-      <span class="t">{clock(at)}</span>
-      <input type="range" min="0" max={Math.max(1, length)} step="0.5" value={Math.min(at, length || 1)}
-             aria-label="Song position" aria-valuetext="{clock(at)} of {clock(length)}"
-             disabled={!ready || failed || !length || following}
-             style:--p="{length ? (Math.min(at, length) / length) * 100 : 0}%"
-             onpointerdown={() => (scrubbing = true)}
-             onpointerup={() => (scrubbing = false)}
-             onpointercancel={() => (scrubbing = false)}
-             oninput={(e) => { scrubbing = true; scrubTo(Number(e.currentTarget.value)); }}
-             onchange={(e) => seek(Number(e.currentTarget.value))} />
-      <span class="t">−{clock(Math.max(0, length - at))}</span>
-    </div>
-    {#if following}
-      <!-- A player's page: the DM plays; the speaker up top turns the sound on or off. -->
-      <div class="row follow">
-        {#key away ? 'away' : follow?.playing}
-          <span class="by" in:fade={{ duration: 200 }}>{away ? 'The DM isn’t here yet' : follow?.playing ? 'The DM is playing' : 'The DM has paused'}</span>
-        {/key}
-      </div>
-    {:else}
-    <div class="row">
-      <button class="ctl" aria-label="Previous song" title="Previous" disabled={!ready || failed || !playlist.list}
-              onclick={() => fadeThen(() => yt?.previousVideo())}>
-        <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M3.5 3v10M13 3.2v9.6L5.6 8z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" /></svg>
-      </button>
-      <button class="ctl play" aria-label={playing ? 'Pause' : 'Play'} title={playing ? 'Pause' : 'Play'}
-              disabled={!ready || failed} onclick={toggle}>
-        {#if playing}
-          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4.5 3h2.2v10H4.5zM9.3 3h2.2v10H9.3z" fill="currentColor" /></svg>
-        {:else}
-          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z" fill="currentColor" /></svg>
-        {/if}
-      </button>
-      <button class="ctl" aria-label="Next song" title="Next" disabled={!ready || failed || !playlist.list}
-              onclick={() => fadeThen(() => yt?.nextVideo())}>
-        <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M12.5 3v10M3 3.2v9.6L10.4 8z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" /></svg>
-      </button>
-    </div>
-    {/if}
-    {#if !following}
-    <!-- Shuffle and loop, in the other bottom corner. -->
-    <button class="shuf" class:on={shuffle} aria-pressed={shuffle} disabled={!playlist.list}
-            aria-label={shuffle ? 'Shuffle on' : 'Shuffle off'}
-            title={!playlist.list ? 'One song: nothing to shuffle' : shuffle ? 'Shuffle on: a new order every visit' : 'Shuffle off'}
-            onclick={toggleShuffle}>
-      <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
-        <path d="M2 4.5h2.4c1.3 0 2.2.6 2.9 1.7l1.4 3.6c.7 1.1 1.6 1.7 2.9 1.7H14M2 11.5h2.4c1.3 0 2.2-.6 2.9-1.7M9.3 5.6c.6-.7 1.4-1.1 2.3-1.1H14M12 2.6l2 1.9-2 1.9M12 9.6l2 1.9-2 1.9"
-              fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
-    </button>
-    <button class="loop" class:on={looping} aria-pressed={looping}
-            aria-label={looping ? 'Loop on' : 'Loop off'}
-            title={looping
-              ? (playlist.list ? 'Loop on: the playlist starts over at its end' : 'Loop on: the song plays again')
-              : place === 'campaign' ? 'Loop off: the next song on the list follows' : 'Loop off: the music stops at the end'}
-            onclick={toggleLoop}>
-      <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
-        <path d="M3 7.2V6.4c0-1.1.9-2 2-2h7.2M10.6 2.6l1.9 1.8-1.9 1.8M13 8.8v.8c0 1.1-.9 2-2 2H3.8M5.4 13.4l-1.9-1.8 1.9-1.8"
-              fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
-    </button>
-    {/if}
-    <!-- Volume: a speaker in the bottom corner. Hovered, focused or tapped, a
-         slider slides out beside it over the module's edge, so the module's
-         layout and size never change. -->
-    <div class="vol" class:open={volOpen} role="group" aria-label="Volume"
-         onmouseenter={() => clearTimeout(volTimer)}
-         onmouseleave={() => { clearTimeout(volTimer); volTimer = setTimeout(() => (volOpen = false), 450); }}>
-      <!-- Rises above the speaker when wanted, over the module rather than in it. -->
-      <div class="pop">
-        <input type="range" min="0" max="100" step="1" value={volume} aria-label="Volume"
-               style:--v="{volume}%" tabindex={volOpen ? 0 : -1}
-               oninput={(e) => setVol(Number(e.currentTarget.value))} />
-      </div>
-      <button class="volbtn" aria-label="Volume {volume}%" aria-expanded={volOpen} title="Volume {volume}%"
-              onclick={() => (volOpen = !volOpen)} onmouseenter={() => (volOpen = true)}>
-        <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
-          <path d="M2.5 6.2h2.3l3-2.6v8.8l-3-2.6H2.5z" fill="currentColor" />
-          {#if volume > 0}<path d="M10.4 6a2.8 2.8 0 0 1 0 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />{/if}
-          {#if volume > 50}<path d="M12.3 4.2a5.4 5.4 0 0 1 0 7.6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />{/if}
-          {#if volume === 0}<path d="M10.5 6.2l3.4 3.6M13.9 6.2l-3.4 3.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />{/if}
-        </svg>
-      </button>
-    </div>
-  </div>
+  <!-- Each look only fades in: folding one into the other never leaves the old one fading out beside it. -->
+  {@render wholeView(status, true)}
 {:else if idle && capsule}
   {@render capsuleView(idle, false)}
 {:else if idle}
-  <!-- Nothing to play yet: the same player, at rest, waiting. -->
-  <div class="music idle" role="group" aria-label="Music" in:fade={{ duration: 200 }}>
-    <div class="title" aria-live="polite"><span class="text">{idle}</span></div>
-    <div class="time">
-      <span class="t">0:00</span>
-      <input type="range" min="0" max="1" value="0" aria-label="Song position" disabled style:--p="0%" />
-      <span class="t">−0:00</span>
-    </div>
-  </div>
+  {@render wholeView(idle, false)}
 {/if}
 
 <style>
@@ -819,26 +818,13 @@
     backdrop-filter: blur(16px) saturate(1.1); -webkit-backdrop-filter: blur(16px) saturate(1.1);
     padding: 0.4375rem 0.75rem 0.5rem;
   }
-  .idle .title .text { color: var(--dim); }
+  .idle .captext { color: var(--dim); }
   /* As with the modules, no frost on a phone: it is costly to keep redrawing. */
   @media (max-width: 720px), (pointer: coarse) {
     .music { backdrop-filter: none; -webkit-backdrop-filter: none; background: color-mix(in oklch, var(--surface) 82%, transparent); }
   }
-  .vol { position: absolute; right: 0.5rem; bottom: 0.5rem; z-index: 2; }
-  .shuf, .loop {
-    position: absolute; left: 0.5rem; bottom: 0.5rem; z-index: 2;
-    width: 1.75rem; height: 1.75rem; border-radius: 50%; display: grid; place-items: center; padding: 0;
-    border: 0; background: none; color: var(--dim); cursor: pointer; transition: color 0.15s ease, background-color 0.15s ease;
-  }
-  .loop { left: 2.375rem; }
-  .shuf:hover:not(:disabled), .loop:hover { color: var(--a); }
-  .shuf.on, .loop.on { color: var(--a); background: var(--a-wash); }
-  .shuf:disabled { opacity: 0.35; cursor: default; }
-  .volbtn {
-    width: 1.75rem; height: 1.75rem; border-radius: 50%; display: grid; place-items: center; padding: 0;
-    border: 0; background: none; color: var(--dim); cursor: pointer; transition: color 0.15s ease;
-  }
-  .volbtn:hover, .vol.open .volbtn { color: var(--a); }
+  /* The speaker, its slider rising above it over the module rather than in it. */
+  .vol { position: relative; z-index: 2; display: inline-flex; }
   /* A narrow upright pill above the speaker, holding a slider turned on end. */
   .pop {
     position: absolute; left: 50%; bottom: calc(100% + 0.25rem); width: 1.625rem; height: 4.25rem;
@@ -871,8 +857,6 @@
     .capsule { backdrop-filter: none; -webkit-backdrop-filter: none; background: color-mix(in oklch, var(--surface) 88%, transparent); }
   }
   .capsule.playing { color: var(--text); }
-  /* The sheet's: longer, so its title has room. */
-  .capsule.long { width: min(30rem, 100%); max-width: 100%; }
   .capbox { flex: 1 1 auto; min-width: 3rem; overflow: clip; white-space: nowrap; }
   .capbox.rolling { mask-image: linear-gradient(to right, transparent 0, #000 0.625rem, #000 calc(100% - 0.625rem), transparent 100%); }
   .captext { display: inline-block; padding: 0 0.625rem 0 0; }
@@ -889,7 +873,7 @@
     flex: none; width: 1.75rem; height: 1.75rem; border-radius: 50%; display: grid; place-items: center; padding: 0;
     border: 0; background: none; color: var(--dim); cursor: pointer; transition: color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
   }
-  .capbtn:hover:not(:disabled), .capvol.open .capbtn { color: var(--a); background: var(--a-wash); }
+  .capbtn:hover:not(:disabled), .capvol.open .capbtn, .vol.open > .capbtn { color: var(--a); background: var(--a-wash); }
   .capbtn:active:not(:disabled) { transform: translateY(1px); }
   .capbtn:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
   .capbtn:disabled { opacity: 0.4; cursor: default; }
@@ -906,13 +890,17 @@
   .caprange::-webkit-slider-thumb { -webkit-appearance: none; width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--a); border: 0; }
   .caprange::-moz-range-thumb { width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--a); border: 0; }
   .ythost { position: fixed; left: -10000px; top: 0; width: 200px; height: 200px; opacity: 0; pointer-events: none; }
+  /* The bars on the left, the name centred, Minimize (or its room) on the right. */
   .title {
-    max-width: 100%; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 0.4375rem;
-    font-size: 0.8125rem; color: var(--dim);
+    width: 100%; min-width: 0; display: grid; grid-template-columns: 1.75rem minmax(0, 1fr) 1.75rem; align-items: center;
+    gap: 0.25rem; font-size: 0.8125rem; color: var(--dim);
   }
+  .title .eq { justify-self: start; margin-left: 0.125rem; }
+  .title .capbox { text-align: center; }
+  .title .captext { padding: 0; }
+  .title .rolling { text-align: left; }
+  .title .rolling .captext { padding: 0 0.625rem; }
   .playing .title { color: var(--text); }
-  .text { min-width: 0; overflow-wrap: anywhere; }
-  .text.bad { color: var(--bad); white-space: normal; text-align: center; }
   /* Three small bars that dance while it plays and rest while it doesn't. */
   .eq { flex: none; display: inline-flex; align-items: flex-end; gap: 2px; height: 0.75rem; }
   .eq i { width: 2px; height: 30%; background: var(--a); border-radius: 1px; transform-origin: bottom; }
@@ -940,7 +928,11 @@
   }
   .time input:hover::-webkit-slider-thumb, .time input:active::-webkit-slider-thumb { transform: scale(1.1); }
   .time input::-moz-range-thumb { width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--a); border: 0; }
-  .row { display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+  /* One line of controls: shuffle and loop, back, play and next, the speaker. */
+  .row { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 0.25rem; }
+  .side { display: flex; align-items: center; gap: 0.125rem; min-width: 0; }
+  .side.end { justify-content: flex-end; }
+  .mid { display: flex; align-items: center; gap: 0.5rem; }
   .ctl {
     flex: none; width: 1.875rem; height: 1.875rem; border-radius: 50%; display: grid; place-items: center;
     padding: 0; border: 1px solid transparent; background: none; color: var(--text); cursor: pointer;
@@ -950,7 +942,6 @@
   .ctl:active:not(:disabled) { transform: scale(0.92); }
   .ctl:disabled { opacity: 0.4; cursor: default; }
   .ctl.play { width: 2.125rem; height: 2.125rem; background: var(--a-wash); color: var(--a); border-color: var(--a-edge); }
-  .row.follow { gap: 0.625rem; }
-  .by { font-size: 0.75rem; color: var(--dim); }
+  .by { font-size: 0.75rem; color: var(--dim); text-align: center; }
   @media (prefers-reduced-motion: reduce) { .playing .eq i { animation: none; } }
 </style>

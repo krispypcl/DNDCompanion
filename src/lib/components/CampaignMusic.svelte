@@ -7,10 +7,13 @@
    * song. When one ends, the next follows unless the DM's loop is on. Adding
    * and removing songs is for edit mode.
    *
-   * Compact, it is the little capsule (MusicPlayer's): the song playing, a
-   * mute and a volume slider. The players only ever see that; the DM can fold
-   * the whole jukebox into it and open it again. The same player plays
-   * underneath either way, so the music never stops for the switch.
+   * Whole, it is the player beside the list of songs (the list in a frosted
+   * box as tall as the player, the field to add one under it). Compact, it is
+   * the little capsule (MusicPlayer's): the song playing, a mute and a volume
+   * slider. The players only ever see that; the DM folds the jukebox into it
+   * with the icon beside the song's name and opens it again, in view or edit
+   * mode alike. The same player plays underneath either way, so the music
+   * never stops for the switch.
    */
   import { fade, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
@@ -193,27 +196,27 @@
         You play the table’s music here and everyone on the campaign page hears it, each at their own volume. Your players
         only see the song playing, in a small capsule. Add songs and playlists in edit mode.
       {/snippet}
-      {#snippet end()}
-        {#if oncompact}
-          <button class="smallbtn" onclick={oncompact} title="Fold it into a small capsule, as your players see it">Minimize</button>
-        {/if}
-      {/snippet}
     </SectionHead>
   {/if}
   <div class="body" class:solo={room && !lead}>
     <div class="player">
       {#if playingSong}
-        <MusicPlayer url={playingSong.url} place="campaign" onended={next} ontitle={learnTitle} capsule={compact} onexpand={compact ? onexpand : undefined}
+        <MusicPlayer url={playingSong.url} place="campaign" onended={next} ontitle={learnTitle} capsule={compact}
+                     onexpand={compact ? onexpand : undefined} oncompact={compact ? undefined : oncompact}
                      lead={lead ? told : undefined} follow={followMoment} resume={resumeMoment} {away} />
-      {:else if lead && !compact}
-        <p class="none" in:fade={{ duration: 160 }}>Add a song or a playlist and it plays here, for the whole table.</p>
       {:else}
-        <MusicPlayer url="" idle={lead ? 'No song playing' : 'Waiting for the DM to play music'} capsule={compact} onexpand={compact ? onexpand : undefined} />
+        <MusicPlayer url="" idle={lead ? 'No song playing' : 'Waiting for the DM to play music'} capsule={compact}
+                     onexpand={compact ? onexpand : undefined} oncompact={compact ? undefined : oncompact} />
       {/if}
     </div>
     {#if !(room && !lead) && !compact}
     <div class="list">
-      <ol>
+      <!-- Only the songs are in the box; it is as tall as the player beside it, and scrolls. -->
+      <div class="songbox">
+      {#if !songs.length}
+        <p class="none" in:fade={{ duration: 160 }}>{editing ? 'Paste a song or a playlist below and it plays here, for the whole table.' : 'No songs yet. Add a song or a playlist in edit mode.'}</p>
+      {/if}
+      <ol class:empty={!songs.length}>
         {#each songs as song, i (song.url)}
           <li class:on={playingSong === song} transition:foldRow>
             <button class="pick" class:still={!lead} onclick={() => choose(i)} aria-current={playingSong === song ? 'true' : undefined}
@@ -228,6 +231,7 @@
           </li>
         {/each}
       </ol>
+      </div>
       {#if editing}
         <div class="adder" transition:slide={motion()}>
           <div class="add">
@@ -252,17 +256,28 @@
 </section>
 
 <style>
-  /* The title sits above, like every section's; the jukebox itself is frosted
+  /* The title sits above, like every section's; the songs sit in frosted
      glass, the banner and the page behind it showing through, softened. */
-  .jukebox:not(.room):not(.compact) .body {
-    padding: 0.875rem 1rem; border-radius: var(--r);
+  .jukebox:not(.room) .songbox {
+    padding: 0.375rem; border-radius: var(--r);
     border: 1px solid color-mix(in oklch, var(--line) 70%, transparent);
     background: color-mix(in oklch, var(--surface) 55%, transparent);
     backdrop-filter: blur(18px) saturate(1.15); -webkit-backdrop-filter: blur(18px) saturate(1.15);
     box-shadow: inset 0 1px 0 color-mix(in oklch, white 6%, transparent);
   }
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .jukebox:not(.room):not(.compact) .body { background: color-mix(in oklch, var(--surface) 92%, transparent); }
+    .jukebox:not(.room) .songbox { background: color-mix(in oklch, var(--surface) 92%, transparent); }
+  }
+  /* Beside the player, the box takes the player's height, never its songs': it
+     has no size of its own, so the row is the player's, and the list scrolls.
+     The field to add a song sits on the row below, under the box. */
+  @media (min-width: 701px) {
+    .jukebox:not(.room) .body { align-items: stretch; row-gap: 0.5rem; }
+    .jukebox:not(.room) .player { grid-column: 1; grid-row: 1; }
+    .jukebox:not(.room) .list { display: contents; }
+    .jukebox:not(.room) .songbox { grid-column: 2; grid-row: 1; contain: size; display: grid; grid-template-rows: minmax(0, 1fr); }
+    .jukebox:not(.room) .songbox ol { max-height: none; }
+    .jukebox:not(.room) .adder { grid-column: 2; grid-row: 2; padding-top: 0; }
   }
   .jukebox.compact { min-width: 0; max-width: min(24rem, 100%); }
   .compact .body { display: flex; margin: 0; }
@@ -271,9 +286,9 @@
   .room .list ol { max-height: 9rem; }
   .body.solo { display: block; }
   .body { display: grid; grid-template-columns: minmax(0, 19rem) minmax(0, 1fr); gap: 1rem; align-items: start; }
-  /* The player sits in the middle of the row, however long the list. */
-  .player { display: grid; justify-items: center; align-self: center; }
-  .none { margin: 0; color: var(--dim); font-size: 0.8125rem; line-height: 1.45; align-self: center; }
+  .player { display: grid; justify-items: center; align-self: start; }
+  .none { margin: 0; padding: 0.375rem 0.5rem; color: var(--dim); font-size: 0.8125rem; line-height: 1.45; }
+  ol.empty { display: none; }
   /* No gap between rows: a row folding away takes its own room with it. */
   ol {
     list-style: none; margin: 0; padding: 0; max-height: 13rem; overflow-y: auto;
@@ -306,7 +321,7 @@
   li:hover .x, .x:focus-visible { opacity: 1; }
   .x:hover { color: var(--bad); }
   @media (hover: none) { .x { opacity: 1; } }
-  .adder { padding-top: 0.375rem; }
+  .adder { padding-top: 0.5rem; }
   .add { display: flex; gap: 0.5rem; }
   .add button { white-space: nowrap; }
   .progress { height: 3px; border-radius: 2px; background: var(--line-soft); margin-top: 0.5rem; overflow: hidden; }

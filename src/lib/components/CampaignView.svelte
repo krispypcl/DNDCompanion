@@ -89,7 +89,7 @@
   /** In the campaign: its DM, or a player with a character in it. They may see the invite. */
   const isMember = $derived(isDm || Boolean($session.user && sheets.some((s) => s.owner_id === $session.user!.id)));
   const hasMusic = $derived(Boolean(campaign?.details.songs?.length));
-  /** The table's music: the players always see the capsule; the DM chooses (remembered on the device), and edits in the whole jukebox. */
+  /** The table's music: the players always see the capsule; the DM chooses (remembered on the device), and it stays so in view and edit mode. */
   const musicKey = $derived(campaign ? `dndcompanion:musicCompact:${campaign.id}` : '');
   let musicChoice = $state<boolean | null>(null);
   const storedCompact = (key: string) => {
@@ -99,7 +99,7 @@
       return false;
     }
   };
-  const compactMusic = $derived(!isDm || (!editing && (musicChoice ?? storedCompact(musicKey))));
+  const compactMusic = $derived(!isDm || (musicChoice ?? storedCompact(musicKey)));
   function setMusicCompact(on: boolean) {
     musicChoice = on;
     try {
@@ -596,7 +596,7 @@
             <CampaignMusic campaignId={campaign.id} songs={campaign.details.songs ?? []} editing={isDm && editing}
                            lead={isDm} playback={music.table} away={music.away} onplayback={(p) => music.send(p)}
                            onchange={(songs) => saveDetails({ songs })} compact={compactMusic}
-                           oncompact={isDm && !editing ? () => setMusicCompact(true) : undefined}
+                           oncompact={isDm ? () => setMusicCompact(true) : undefined}
                            onexpand={isDm ? () => setMusicCompact(false) : undefined} />
           </div>
         {/if}

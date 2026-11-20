@@ -812,8 +812,8 @@
       </div>
 
       {#if definition.identity.playlistUrl?.trim()}
-        <!-- Top centre: the sheet's music, as a capsule. -->
-        <div class="musicslot" data-flip="identity:music"><MusicPlayer url={definition.identity.playlistUrl} capsule /></div>
+        <!-- Top centre: the sheet's music, the same player as the table's. -->
+        <div class="musicslot" data-flip="identity:music"><MusicPlayer url={definition.identity.playlistUrl} /></div>
       {/if}
 
       <!-- One group, so they wrap together: loose in the header the status
@@ -1476,7 +1476,7 @@
      under the header, full width. */
   @media (max-width: 1100px) {
     .musicslot { order: 5; flex: 1 1 100%; min-width: 0; }
-    .musicslot :global(.capsule) { width: 100%; }
+    .musicslot :global(.music) { width: 100%; }
     .identity:has(.musicslot) .who { flex: 1 1 auto; }
   }
   .who h1 { margin: 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.015em; }
