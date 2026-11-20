@@ -3,7 +3,7 @@
    * The main menu's hello, and under it when the table next meets, counted
    * down, with the campaign's name (or one plain line when nothing is set).
    */
-  import type { Campaign } from '$lib/data/campaigns';
+  import type { Campaign } from '#lib/data/campaigns.ts';
 
   let {
     name,

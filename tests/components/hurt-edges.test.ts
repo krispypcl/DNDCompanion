@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/svelte';
-import HurtEdges from '$lib/components/HurtEdges.svelte';
+import HurtEdges from '#lib/components/HurtEdges.svelte';
 
 const hurt = (current: number, max: number) => {
   const { container } = render(HurtEdges, { props: { current, max } });

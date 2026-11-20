@@ -1,7 +1,7 @@
 /** The tick column and row order, which every list on the sheet now shares. */
 import { fireEvent, render, screen } from '@testing-library/svelte';
 import { describe, expect, it, vi } from 'vitest';
-import EntryTable from '$lib/components/EntryTable.svelte';
+import EntryTable from '#lib/components/EntryTable.svelte';
 
 const columns = [
   { key: 'name', label: 'Name', width: '70%', placeholder: 'Shield' },

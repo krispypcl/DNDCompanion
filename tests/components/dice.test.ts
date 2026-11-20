@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
-import DiceRoller from '$lib/components/DiceRoller.svelte';
+import DiceRoller from '#lib/components/DiceRoller.svelte';
 
 describe('DiceRoller', () => {
   it('builds a pool from the dice buttons and the modifier', async () => {
@@ -36,9 +36,9 @@ describe('DiceRoller', () => {
   });
 });
 
-import { requestRoll } from '$lib/stores/dice';
-import EntryTable from '$lib/components/EntryTable.svelte';
-import { parseRoll } from '$lib/rules/dice';
+import { requestRoll } from '#lib/stores/dice.ts';
+import EntryTable from '#lib/components/EntryTable.svelte';
+import { parseRoll } from '#lib/rules/dice.ts';
 import { vi } from 'vitest';
 
 describe('rolling from the attacks table', () => {
@@ -75,8 +75,8 @@ describe('rolling from the attacks table', () => {
   });
 });
 
-import SkillRail from '$lib/components/SkillRail.svelte';
-import { diceRequest } from '$lib/stores/dice';
+import SkillRail from '#lib/components/SkillRail.svelte';
+import { diceRequest } from '#lib/stores/dice.ts';
 import { get } from 'svelte/store';
 
 describe('rolling a skill', () => {

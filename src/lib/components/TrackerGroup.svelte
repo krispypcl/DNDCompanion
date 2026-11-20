@@ -1,9 +1,9 @@
 <script lang="ts">
   import Tracker from './Tracker.svelte';
-  import type { FormulaContext } from '$lib/rules/formula';
-  import type { Tracker as TrackerT } from '$lib/types';
-  import { trackerMax } from '$lib/rules/tracker';
-  import { slotLevel } from '$lib/rules/print';
+  import type { FormulaContext } from '#lib/rules/formula.ts';
+  import type { Tracker as TrackerT } from '#lib/types.ts';
+  import { trackerMax } from '#lib/rules/tracker.ts';
+  import { slotLevel } from '#lib/rules/print.ts';
 
   let {
     trackers,

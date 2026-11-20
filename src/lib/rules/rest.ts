@@ -2,7 +2,7 @@ import { evaluateFormula } from './formula';
 import { formulaContext, modifierOf } from './derived';
 import type { Pool } from './dice';
 import { clampSpent, trackerMax } from './tracker';
-import type { Definition, RestKind, State } from '$lib/types';
+import type { Definition, RestKind, State } from '#lib/types.ts';
 
 /**
  * Rests are the one moment the whole sheet moves at once. Pure here so the

@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
-import EntryTable from '$lib/components/EntryTable.svelte';
+import EntryTable from '#lib/components/EntryTable.svelte';
 
 const items = [
   { name: 'Sword', attuned: true },

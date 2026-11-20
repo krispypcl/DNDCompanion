@@ -1,6 +1,6 @@
 <script lang="ts">
   import InfoTip from './InfoTip.svelte';
-  import { siteRoot } from '$lib/rules/share';
+  import { siteRoot } from '#lib/rules/share.ts';
   /**
    * A sheet's campaign, from its header in edit mode: join one with an invite,
    * start one (and run it as its DM), leave, or retire the character. A DM
@@ -9,10 +9,10 @@
   import { onMount, untrack } from 'svelte';
   import { fade, scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { base } from '$app/paths';
-  import { movable, portal } from '$lib/actions';
-  import { prefersReducedMotion } from '$lib/motion';
-  import { campaignMessage, campaignRepo, inviteCode, type Campaign } from '$lib/data/campaigns';
+  import { base } from '#lib/base.ts';
+  import { movable, portal } from '#lib/actions.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { campaignMessage, campaignRepo, inviteCode, type Campaign } from '#lib/data/campaigns.ts';
   import Switch from './Switch.svelte';
 
   let {

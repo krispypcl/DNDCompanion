@@ -1,7 +1,7 @@
 <script lang="ts">
   /** A sign-in service's own mark: Google's G, Discord's symbol (from its brand kit). */
-  import { base } from '$app/paths';
-  import type { OAuthProvider } from '$lib/data/session';
+  import { base } from '#lib/base.ts';
+  import type { OAuthProvider } from '#lib/data/session.ts';
 
   let { provider, size = 16 }: { provider: OAuthProvider; size?: number } = $props();
 </script>

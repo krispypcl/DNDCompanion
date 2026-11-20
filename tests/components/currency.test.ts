@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/svelte';
-import Currency from '$lib/components/Currency.svelte';
+import Currency from '#lib/components/Currency.svelte';
 
 describe('Currency', () => {
   it('runs copper to platinum, left to right, with no electrum', () => {

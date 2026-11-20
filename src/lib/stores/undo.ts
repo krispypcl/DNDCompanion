@@ -1,5 +1,5 @@
 import { derived, writable } from 'svelte/store';
-import type { State } from '$lib/types';
+import type { State } from '#lib/types.ts';
 
 /**
  * Session-local undo for the misclick: a long rest taken by accident should

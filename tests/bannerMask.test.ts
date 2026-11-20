@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DESKTOP_SLASH, FALLBACK_MASK, PHONE_SLASH, slashMask } from '$lib/bannerMask';
+import { DESKTOP_SLASH, FALLBACK_MASK, PHONE_SLASH, slashMask } from '#lib/bannerMask.ts';
 
 const parse = (mask: string) => {
   const angle = Number(mask.match(/linear-gradient\(([\d.]+)deg/)![1]);

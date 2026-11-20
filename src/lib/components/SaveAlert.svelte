@@ -9,8 +9,8 @@
    * the banner and is therefore a stacking context of its own: an alert
    * inside one cannot rise over the modules whatever z-index it asks for.
    */
-  import { sheetStore } from '$lib/stores/sheet';
-  import { online } from '$lib/stores/online';
+  import { sheetStore } from '#lib/stores/sheet.ts';
+  import { online } from '#lib/stores/online.ts';
 
   // `unsaved` is also the ordinary "queued" state; only the one carrying a
   // message is a failure.

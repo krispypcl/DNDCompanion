@@ -6,7 +6,7 @@
  * on the Gunslinger page as Second Wind does on the Fighter's.
  */
 import { writable } from 'svelte/store';
-import BREW_CLASS_FILES from '$lib/data/brew-class-files.json';
+import BREW_CLASS_FILES from '#lib/data/brew-class-files.json';
 import { knowsClass, registerClassData, registerEntryIndex, sourceId } from './lookup';
 
 const REPO = 'https://raw.githubusercontent.com/TheGiddyLimit/homebrew/master/';
@@ -90,7 +90,7 @@ export async function ensureEntryIndex() {
   if (entriesAsked) return;
   entriesAsked = true;
   try {
-    const { default: index } = await import('$lib/data/entry-index.json');
+    const { default: index } = await import('#lib/data/entry-index.json');
     registerEntryIndex(index as Parameters<typeof registerEntryIndex>[0]);
     brewLoaded.update((n) => n + 1);
   } catch {

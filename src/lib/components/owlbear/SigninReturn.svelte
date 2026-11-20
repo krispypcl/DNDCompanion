@@ -6,8 +6,8 @@
    */
   import { onMount } from 'svelte';
   import { fade } from 'svelte/transition';
-  import { supabase } from '$lib/supabase';
-  import { SIGNIN_EVENT, signinChannel } from '$lib/owlbear/signin';
+  import { supabase } from '#lib/supabase.ts';
+  import { SIGNIN_EVENT, signinChannel } from '#lib/owlbear/signin.ts';
   import Logo from '../Logo.svelte';
 
   let step = $state<'sending' | 'done' | 'failed' | 'lost'>('sending');

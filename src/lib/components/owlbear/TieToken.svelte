@@ -5,10 +5,10 @@
    * portrait and from then on carries their hit points and conditions.
    */
   import { onMount } from 'svelte';
-  import { joinRoom, type Obr } from '$lib/owlbear/frame';
-  import { resolveImageUrl } from '$lib/rules/imageUrl';
-  import { readSheets } from '$lib/owlbear/live';
-  import type { Sheet } from '$lib/types';
+  import { joinRoom, type Obr } from '#lib/owlbear/frame.ts';
+  import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
+  import { readSheets } from '#lib/owlbear/live.ts';
+  import type { Sheet } from '#lib/types.ts';
 
   let obr = $state.raw<Obr | null>(null);
   let itemId = $state<string | null>(null);

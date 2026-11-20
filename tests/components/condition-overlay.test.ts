@@ -1,6 +1,6 @@
 import { render } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
-import ConditionOverlay from '$lib/components/ConditionOverlay.svelte';
+import ConditionOverlay from '#lib/components/ConditionOverlay.svelte';
 
 describe('ConditionOverlay', () => {
   it('tints for the standard conditions only, once each', () => {

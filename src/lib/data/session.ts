@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
-import { supabase, supabaseKey, supabaseUrl } from '$lib/supabase';
-import { profile, saveProfile, savePreferences, type ProfileRow } from '$lib/stores/profile';
+import { supabase, supabaseKey, supabaseUrl } from '#lib/supabase.ts';
+import { profile, saveProfile, savePreferences, type ProfileRow } from '#lib/stores/profile.ts';
 
 /** Thin wrappers over Supabase Auth. Errors are thrown with Supabase's own
  *  message so the UI can show something specific rather than "failed". */

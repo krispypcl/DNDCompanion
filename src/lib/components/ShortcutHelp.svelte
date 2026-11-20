@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { movable } from '$lib/actions';
+  import { movable } from '#lib/actions.ts';
   import InfoTip from './InfoTip.svelte';
   /** The keyboard shortcuts, opened with ? or the keyboard button on a sheet or a campaign. */
   import { onMount } from 'svelte';
   import { fade, scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { prefersReducedMotion } from '$lib/motion';
+  import { prefersReducedMotion } from '#lib/motion.ts';
 
   let {
     owner,

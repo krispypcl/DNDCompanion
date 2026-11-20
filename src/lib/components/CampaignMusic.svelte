@@ -14,10 +14,10 @@
    */
   import { fade, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { inBatches, parsePlaylist, playlistSongs, youtubeTitle } from '$lib/music';
-  import { foldRow, prefersReducedMotion } from '$lib/motion';
-  import { setSound } from '$lib/sound';
-  import type { Playback, Song } from '$lib/data/campaigns';
+  import { inBatches, parsePlaylist, playlistSongs, youtubeTitle } from '#lib/music.ts';
+  import { foldRow, prefersReducedMotion } from '#lib/motion.ts';
+  import { setSound } from '#lib/sound.ts';
+  import type { Playback, Song } from '#lib/data/campaigns.ts';
   import MusicPlayer from './MusicPlayer.svelte';
   import SectionHead from './SectionHead.svelte';
 

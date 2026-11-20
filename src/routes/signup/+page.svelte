@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { base } from '$app/paths';
-  import AuthForm from '$lib/components/AuthForm.svelte';
-  import { signUp } from '$lib/data/session';
-  import { passwordStrength } from '$lib/rules/password';
+  import { base } from '#lib/base.ts';
+  import AuthForm from '#lib/components/AuthForm.svelte';
+  import { signUp } from '#lib/data/session.ts';
+  import { passwordStrength } from '#lib/rules/password.ts';
 
   /** Supabase accepts six; a typo here means a locked-out account, so ask for more. */
   const MIN_PASSWORD = 8;

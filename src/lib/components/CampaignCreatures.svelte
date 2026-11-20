@@ -13,19 +13,19 @@
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
   import { fade } from 'svelte/transition';
-  import type { Creature } from '$lib/data/creatures';
-  import type { CreatureTable } from '$lib/creatureTable.svelte';
-  import { creatureUrl, damage, heal, hpNow, type CreatureKind } from '$lib/rules/creatures';
-  import { cleanName, defaultLook, isStandard, lookKey, lookOf } from '$lib/rules/conditions';
-  import { resolveImageUrl } from '$lib/rules/imageUrl';
-  import type { ConditionLook } from '$lib/types';
-  import { vitalStatus } from '$lib/rules/hp';
-  import { peekTarget } from '$lib/rules/peek';
-  import { cleanStatBlock, kindLine, leadingNumber, type StatBlock } from '$lib/rules/statblock';
-  import { search, type IndexRow } from '$lib/rules/spotlight';
-  import { peek, themeAt } from '$lib/stores/peek.svelte';
-  import { prefersReducedMotion } from '$lib/motion';
-  import { reorder } from '$lib/reorder';
+  import type { Creature } from '#lib/data/creatures.ts';
+  import type { CreatureTable } from '#lib/creatureTable.svelte.ts';
+  import { creatureUrl, damage, heal, hpNow, type CreatureKind } from '#lib/rules/creatures.ts';
+  import { cleanName, defaultLook, isStandard, lookKey, lookOf } from '#lib/rules/conditions.ts';
+  import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
+  import type { ConditionLook } from '#lib/types.ts';
+  import { vitalStatus } from '#lib/rules/hp.ts';
+  import { peekTarget } from '#lib/rules/peek.ts';
+  import { cleanStatBlock, kindLine, leadingNumber, type StatBlock } from '#lib/rules/statblock.ts';
+  import { search, type IndexRow } from '#lib/rules/spotlight.ts';
+  import { peek, themeAt } from '#lib/stores/peek.svelte.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { reorder } from '#lib/reorder.ts';
   import CardHp from './CardHp.svelte';
   import DimModal from './DimModal.svelte';
   import ConditionGiver from './ConditionGiver.svelte';
@@ -200,7 +200,7 @@
   let howMany = $state<string | number>(1);
   let adding = $state<string | null>(null);
   $effect(() => {
-    if (editing?.way === 'book' && !index) import('$lib/data/search-index.json').then((m) => (index = m.default as IndexRow[]));
+    if (editing?.way === 'book' && !index) import('#lib/data/search-index.json').then((m) => (index = m.default as IndexRow[]));
   });
   const bookHits = $derived(index ? search(index, bookQuery, 20, ['m']) : []);
   async function addBook(name: string, source: string) {

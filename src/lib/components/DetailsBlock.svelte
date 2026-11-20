@@ -1,14 +1,14 @@
 <script lang="ts">
   import EntryLink from './EntryLink.svelte';
   import InfoTip from './InfoTip.svelte';
-  import { walkingSpeed } from '$lib/rules/derived';
+  import { walkingSpeed } from '#lib/rules/derived.ts';
   /**
    * Who the character is, as opposed to what they can do: the one-line details
    * and the long-form writing. Spellcasting lives on the Spells tab, since it
    * is about casting rather than about the person.
    */
   import EditableField from './EditableField.svelte';
-  import type { Definition, Traits } from '$lib/types';
+  import type { Definition, Traits } from '#lib/types.ts';
 
   let {
     definition,

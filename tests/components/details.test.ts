@@ -2,8 +2,8 @@
 import { readFileSync } from 'node:fs';
 import { render, screen } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
-import DetailsBlock from '$lib/components/DetailsBlock.svelte';
-import type { Definition } from '$lib/types';
+import DetailsBlock from '#lib/components/DetailsBlock.svelte';
+import type { Definition } from '#lib/types.ts';
 
 const definition = (identity: Partial<Definition['identity']> = {}): Definition => ({
   identity: { name: 'Loka', level: 5, ...identity },
@@ -74,7 +74,7 @@ describe('DetailsBlock', () => {
 });
 
 import { render as renderDetails, screen as detailsScreen } from '@testing-library/svelte';
-import DetailsBlockForOrigin from '$lib/components/DetailsBlock.svelte';
+import DetailsBlockForOrigin from '#lib/components/DetailsBlock.svelte';
 describe('origin row', () => {
   it('has species, species source, background, background source and walking speed, in that order', () => {
     const def = {

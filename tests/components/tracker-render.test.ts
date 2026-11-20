@@ -4,9 +4,9 @@
  */
 import { render, screen } from '@testing-library/svelte';
 import { describe, expect, it, vi } from 'vitest';
-import Tracker from '$lib/components/Tracker.svelte';
-import type { FormulaContext } from '$lib/rules/formula';
-import type { Tracker as TrackerDef } from '$lib/types';
+import Tracker from '#lib/components/Tracker.svelte';
+import type { FormulaContext } from '#lib/rules/formula.ts';
+import type { Tracker as TrackerDef } from '#lib/types.ts';
 
 const ctx: FormulaContext = { level: 5, classlevel: 5, prof: 3, str: 0, dex: 4, con: 2, int: 0, wis: 1, cha: 4 };
 

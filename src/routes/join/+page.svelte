@@ -5,18 +5,18 @@
    * pick which of their characters joins.
    */
   import { goto } from '$app/navigation';
-  import { base } from '$app/paths';
+  import { base } from '#lib/base.ts';
   import { page } from '$app/state';
   import { fade } from 'svelte/transition';
-  import { campaignMessage, campaignRepo, inviteCode } from '$lib/data/campaigns';
-  import { sheetRepo } from '$lib/data/sheets';
-  import { session } from '$lib/stores/session';
-  import { characterLevel, classLine } from '$lib/rules/derived';
-  import D20Loader from '$lib/components/D20Loader.svelte';
-  import Logo from '$lib/components/Logo.svelte';
-  import NotFound from '$lib/components/NotFound.svelte';
-  import { pageTitle } from '$lib/title';
-  import type { Sheet } from '$lib/types';
+  import { campaignMessage, campaignRepo, inviteCode } from '#lib/data/campaigns.ts';
+  import { sheetRepo } from '#lib/data/sheets.ts';
+  import { session } from '#lib/stores/session.ts';
+  import { characterLevel, classLine } from '#lib/rules/derived.ts';
+  import D20Loader from '#lib/components/D20Loader.svelte';
+  import Logo from '#lib/components/Logo.svelte';
+  import NotFound from '#lib/components/NotFound.svelte';
+  import { pageTitle } from '#lib/title.ts';
+  import type { Sheet } from '#lib/types.ts';
 
   const code = $derived(inviteCode(page.url.searchParams.get('code') ?? ''));
   let target = $state<{ id: string; name: string } | null>(null);

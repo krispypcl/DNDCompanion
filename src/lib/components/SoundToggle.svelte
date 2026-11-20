@@ -1,7 +1,7 @@
 <script lang="ts">
   /** Sound on or off, for this device: the effects, and the sheet's music
       (off pauses it). Beside the light/dark switch. */
-  import { setSound, soundOn } from '$lib/sound';
+  import { setSound, soundOn } from '#lib/sound.ts';
 </script>
 
 <button class="sound" class:on={$soundOn} onclick={() => setSound(!$soundOn)} aria-pressed={$soundOn}

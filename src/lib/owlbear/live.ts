@@ -5,9 +5,9 @@
  * Supabase Realtime and are followed by a fresh read (debounced), the way the
  * campaign page does it.
  */
-import { isConfigured, supabase } from '$lib/supabase';
-import { blankDefinition } from '$lib/sample';
-import { emptyState, type Sheet } from '$lib/types';
+import { isConfigured, supabase } from '#lib/supabase.ts';
+import { blankDefinition } from '#lib/sample.ts';
+import { emptyState, type Sheet } from '#lib/types.ts';
 
 /**
  * A sheet as stored can be missing parts a newer version of the app adds

@@ -6,8 +6,8 @@
    * says otherwise). It names the tab too (`tab`), so the tab says what
    * happened rather than the page that isn't there.
    */
-  import { base } from '$app/paths';
-  import { pageTitle } from '$lib/title';
+  import { base } from '#lib/base.ts';
+  import { pageTitle } from '#lib/title.ts';
   import D20Loader from './D20Loader.svelte';
 
   let {

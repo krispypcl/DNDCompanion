@@ -35,7 +35,7 @@ const BASE = 'https://raw.githubusercontent.com/5etools-mirror-3/5etools-src/mai
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type Raw = Record<string, any>;
 
-import CLASS_FEATURES from '$lib/data/class-features.json';
+import CLASS_FEATURES from '#lib/data/class-features.json';
 
 /** Homebrew lives in its own repository, which 5e.tools reads too. */
 const BREW = 'https://raw.githubusercontent.com/TheGiddyLimit/homebrew/master/';
@@ -250,7 +250,7 @@ export async function findMonster(name: string, source: string, depth = 0): Prom
   let order = [...new Set([...(source ? books.filter((b) => same(b, source)) : []), ...MONSTERS_FIRST])].filter((b) => index[b]);
   if (!source) {
     // Which books have it, from the search index (bundled, loaded only now).
-    const rows = ((await import('$lib/data/search-index.json')).default as [string, string, string, string][])
+    const rows = ((await import('#lib/data/search-index.json')).default as [string, string, string, string][])
       .filter(([n, k]) => k === 'm' && same(n, name))
       .map(([, , b]) => books.find((x) => same(x, b)))
       .filter((b): b is string => Boolean(b));

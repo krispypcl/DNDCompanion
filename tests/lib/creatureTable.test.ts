@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const update = vi.fn();
-vi.mock('$lib/data/creatures', () => ({
+vi.mock('#lib/data/creatures.ts', () => ({
   creatureRepo: {
     list: vi.fn(async () => [{ id: 'a', campaign_id: 'c', kind: 'monster', name: 'Goblin', hp_max: 10, hp_current: 10, hp_temp: 0, ac: 15, conditions: [], notes: '', link: '', position: 0, initiative: null, visible: false, statblock: {}, created_at: '', updated_at: '' }]),
     update: (...a: unknown[]) => update(...a),
@@ -9,7 +9,7 @@ vi.mock('$lib/data/creatures', () => ({
   }
 }));
 
-const { CreatureTable } = await import('$lib/creatureTable.svelte');
+const { CreatureTable } = await import('#lib/creatureTable.svelte.ts');
 
 describe('CreatureTable saves', () => {
   beforeEach(() => {

@@ -5,13 +5,13 @@
  * the site never ships the SDK.
  */
 import OBR, { buildImage, buildShape, isImage, isShape, type Image, type Item, type Shape } from '@owlbear-rodeo/sdk';
-import { base } from '$app/paths';
-import { resolveImageUrl } from '$lib/rules/imageUrl';
-import { siteRoot } from '$lib/rules/share';
-import { easeMode } from '$lib/stores/mode';
-import type { Sheet } from '$lib/types';
+import { base } from '#lib/base.ts';
+import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
+import { siteRoot } from '#lib/rules/share.ts';
+import { easeMode } from '#lib/stores/mode.ts';
+import type { Sheet } from '#lib/types.ts';
 import { CREATURE_KEY, NS, ORDER_KEY, PART_KEY, ROLLS_KEY, ROOM_KEY, SHEET_KEY, type CreatureLink, type PartLink, type TokenLink } from './keys';
-import type { Creature } from '$lib/data/creatures';
+import type { Creature } from '#lib/data/creatures.ts';
 import { readLinks, type RoomLinks } from './links';
 import { partsFor, partsForVitals, sameParts, tokenBox, vitalsOfCreature, type Part } from './layout';
 import { pushNote, readLog, type RollNote } from './rolls';

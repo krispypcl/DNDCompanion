@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { isHomebrew, lookupUrl, type LookupCategory } from '$lib/rules/lookup';
-  import { peekTarget } from '$lib/rules/peek';
-  import { peek, themeAt } from '$lib/stores/peek.svelte';
+  import { isHomebrew, lookupUrl, type LookupCategory } from '#lib/rules/lookup.ts';
+  import { peekTarget } from '#lib/rules/peek.ts';
+  import { peek, themeAt } from '#lib/stores/peek.svelte.ts';
 
   let {
     name,

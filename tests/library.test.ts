@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { differences, fillRow, libraryRow, sheetLibraryRows, summary } from '$lib/library';
-import { blankDefinition } from '$lib/sample';
+import { differences, fillRow, libraryRow, sheetLibraryRows, summary } from '#lib/library.ts';
+import { blankDefinition } from '#lib/sample.ts';
 
 describe('shared library rows', () => {
   it('keeps the entry and leaves out what is the character’s own', () => {

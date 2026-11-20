@@ -6,7 +6,7 @@
  * table, the same as everywhere else on the sheet; the list below exists so
  * the common ones are one pick away, not so the app can apply them.
  */
-import type { ConditionLook, ConditionMotion, State } from '$lib/types';
+import type { ConditionLook, ConditionMotion, State } from '#lib/types.ts';
 
 export const STANDARD_CONDITIONS = [
   'Blinded',

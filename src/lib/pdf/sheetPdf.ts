@@ -25,7 +25,7 @@ import {
   rgb,
   type RGB
 } from '@cantoo/pdf-lib';
-import type { Definition, State } from '$lib/types';
+import type { Definition, State } from '#lib/types.ts';
 import { sheetContent, type Paragraph, type SheetContent } from './content';
 
 const W = 612;

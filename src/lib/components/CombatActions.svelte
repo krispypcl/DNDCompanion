@@ -4,7 +4,7 @@
    * play when nobody can remember whether Disengage is an action. Collapsed by
    * default, since it is a reference rather than part of the sheet.
    */
-  import { actionsOpen } from '$lib/stores/tray';
+  import { actionsOpen } from '#lib/stores/tray.ts';
   import Fold from './Fold.svelte';
   import InfoTip from './InfoTip.svelte';
 

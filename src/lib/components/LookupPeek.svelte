@@ -6,10 +6,10 @@
   (PeekWindow) and the next name opens a new peek, so several can be open.
 -->
 <script lang="ts">
-  import { movable } from '$lib/actions';
+  import { movable } from '#lib/actions.ts';
   import { onMount } from 'svelte';
   import { afterNavigate } from '$app/navigation';
-  import { peek } from '$lib/stores/peek.svelte';
+  import { peek } from '#lib/stores/peek.svelte.ts';
   import PeekContent from './PeekContent.svelte';
   import PeekWindow from './PeekWindow.svelte';
 

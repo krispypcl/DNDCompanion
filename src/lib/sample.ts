@@ -1,4 +1,4 @@
-import { emptyState, type Definition, type State } from '$lib/types';
+import { emptyState, type Definition, type State } from '#lib/types.ts';
 
 /** The shape a new sheet starts in. Empty, not an example character. */
 export function blankDefinition(name = 'New character'): Definition {

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { PDFDocument, PDFTextField } from '@cantoo/pdf-lib';
-import { sheetPdf } from '$lib/pdf/sheetPdf';
-import { plainText, sheetContent } from '$lib/pdf/content';
-import { emptyState, type Definition, type State } from '$lib/types';
-import { blankDefinition } from '$lib/sample';
+import { sheetPdf } from '#lib/pdf/sheetPdf.ts';
+import { plainText, sheetContent } from '#lib/pdf/content.ts';
+import { emptyState, type Definition, type State } from '#lib/types.ts';
+import { blankDefinition } from '#lib/sample.ts';
 
 const loadFont = async (file: string) => new Uint8Array(readFileSync(`static/pdf/${file}`));
 
@@ -72,7 +72,7 @@ describe('sheet PDF', () => {
 
 describe('group titles', () => {
   it('names feature groups the way the sheet does', async () => {
-    const { groupTitle } = await import('$lib/pdf/content');
+    const { groupTitle } = await import('#lib/pdf/content.ts');
     expect(groupTitle('Class')).toBe('CLASS FEATURES');
     expect(groupTitle('Feat')).toBe('FEATS');
     expect(groupTitle('Weapon Mastery')).toBe('WEAPON MASTERIES');

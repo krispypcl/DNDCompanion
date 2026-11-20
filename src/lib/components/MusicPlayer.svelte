@@ -21,14 +21,14 @@
   import { onDestroy, untrack } from 'svelte';
   import { fade } from 'svelte/transition';
   import { get } from 'svelte/store';
-  import { setSound, soundOn } from '$lib/sound';
+  import { setSound, soundOn } from '#lib/sound.ts';
   import {
     clock, loadYouTube, parsePlaylist, storeLoop, storeShuffle, storedLoop, storeVolume, storedShuffle, storedVolume,
     type Playlist, type YTPlayer
-  } from '$lib/music';
-  import { session } from '$lib/stores/session';
-  import { loopOf, saveLoop, saveShuffle, shuffleOf, type MusicPlace } from '$lib/data/session';
-  import { profile } from '$lib/stores/profile';
+  } from '#lib/music.ts';
+  import { session } from '#lib/stores/session.ts';
+  import { loopOf, saveLoop, saveShuffle, shuffleOf, type MusicPlace } from '#lib/data/session.ts';
+  import { profile } from '#lib/stores/profile.ts';
 
   let {
     url,

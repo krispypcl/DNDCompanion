@@ -7,7 +7,7 @@
    * character gets a card each and their total under them.
    */
   import EntryLink from './EntryLink.svelte';
-  import type { ClassEntry } from '$lib/types';
+  import type { ClassEntry } from '#lib/types.ts';
 
   let { classes }: { classes: ClassEntry[] } = $props();
 

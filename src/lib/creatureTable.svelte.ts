@@ -9,12 +9,12 @@
  * and one creature never has two saves in flight, so they can't land out of
  * order.
  */
-import { creatureRepo, type Creature, type CreatureFields, type Homebrew } from '$lib/data/creatures';
-import { friendlyError } from '$lib/errors';
-import { findMonster } from '$lib/rules/fiveData';
-import { fromFiveTools, leadingNumber, monsterArt, type StatBlock } from '$lib/rules/statblock';
-import { numberedNames, type CreatureKind } from '$lib/rules/creatures';
-import { entryUrl } from '$lib/rules/spotlight';
+import { creatureRepo, type Creature, type CreatureFields, type Homebrew } from '#lib/data/creatures.ts';
+import { friendlyError } from '#lib/errors.ts';
+import { findMonster } from '#lib/rules/fiveData.ts';
+import { fromFiveTools, leadingNumber, monsterArt, type StatBlock } from '#lib/rules/statblock.ts';
+import { numberedNames, type CreatureKind } from '#lib/rules/creatures.ts';
+import { entryUrl } from '#lib/rules/spotlight.ts';
 
 export class CreatureTable {
   list = $state<Creature[]>([]);

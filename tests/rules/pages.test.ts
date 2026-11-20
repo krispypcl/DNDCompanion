@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PAGE_BREAK, addPage, isBlank, joinPages, removePage, setPage, splitPages } from '$lib/rules/pages';
+import { PAGE_BREAK, addPage, isBlank, joinPages, removePage, setPage, splitPages } from '#lib/rules/pages.ts';
 
 describe('pages', () => {
   it('reads writing from before pages as one page', () => {

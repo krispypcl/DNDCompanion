@@ -1,6 +1,6 @@
 <script lang="ts">
   /** A player's picture, or their initial when there is none (or it fails). */
-  import { resolveImageUrl } from '$lib/rules/imageUrl';
+  import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
 
   let { url, name, size = 32 }: { url: string; name: string; size?: number } = $props();
   const src = $derived(resolveImageUrl(url).url);

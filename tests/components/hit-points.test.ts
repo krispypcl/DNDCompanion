@@ -2,8 +2,8 @@
     maximum becoming editable in edit mode. AC moved to the defense rail. */
 import { render, screen } from '@testing-library/svelte';
 import { describe, expect, it, vi } from 'vitest';
-import HitPoints from '$lib/components/HitPoints.svelte';
-import { emptyState, type Definition } from '$lib/types';
+import HitPoints from '#lib/components/HitPoints.svelte';
+import { emptyState, type Definition } from '#lib/types.ts';
 
 const definition = (): Definition => ({
   identity: { name: 'Loka', level: 5 },

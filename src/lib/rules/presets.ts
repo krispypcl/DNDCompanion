@@ -7,7 +7,7 @@
  * Numbers follow the 2024 Player's Handbook. Where a die or a rest changes
  * with level, it is set for the level the character has when it is added.
  */
-import type { Tracker } from '$lib/types';
+import type { Tracker } from '#lib/types.ts';
 import { ordinal } from './spells';
 
 export type Preset = {

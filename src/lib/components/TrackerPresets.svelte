@@ -7,10 +7,10 @@
   import { slide } from 'svelte/transition';
   import InfoTip from './InfoTip.svelte';
   import { cubicOut } from 'svelte/easing';
-  import { classLevels, classList } from '$lib/rules/derived';
-  import { buildPreset, presetsFor, type Preset } from '$lib/rules/presets';
-  import { prefersReducedMotion } from '$lib/motion';
-  import type { Definition, Tracker } from '$lib/types';
+  import { classLevels, classList } from '#lib/rules/derived.ts';
+  import { buildPreset, presetsFor, type Preset } from '#lib/rules/presets.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
+  import type { Definition, Tracker } from '#lib/types.ts';
 
   let {
     definition,

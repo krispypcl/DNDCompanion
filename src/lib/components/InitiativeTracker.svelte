@@ -9,8 +9,8 @@
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
   import { fade, slide } from 'svelte/transition';
-  import { prefersReducedMotion } from '$lib/motion';
-  import { ordered, type InitiativeRow } from '$lib/rules/initiative';
+  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { ordered, type InitiativeRow } from '#lib/rules/initiative.ts';
   import SectionHead from './SectionHead.svelte';
 
   let {

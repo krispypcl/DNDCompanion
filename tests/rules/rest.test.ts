@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { applyRest } from '$lib/rules/rest';
-import { emptyState, type Definition, type State, type Tracker } from '$lib/types';
+import { applyRest } from '#lib/rules/rest.ts';
+import { emptyState, type Definition, type State, type Tracker } from '#lib/types.ts';
 
 const tracker = (over: Partial<Tracker> & { id: string }): Tracker => ({
   label: over.id,

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { nameFont } from '$lib/rules/fonts';
+  import { nameFont } from '#lib/rules/fonts.ts';
   /**
    * The campaign's character cards: hit points, AC, passive Perception and
    * Insight, and conditions, each tinted as it tints the player's own
@@ -10,21 +10,21 @@
   import { fade, scale, slide } from 'svelte/transition';
   import { cubicOut, quintOut } from 'svelte/easing';
   import { flip } from 'svelte/animate';
-  import { reorder } from '$lib/reorder';
-  import { base } from '$app/paths';
-  import { armorClass, characterLevel, classLine, mainClass, passiveScore } from '$lib/rules/derived';
+  import { reorder } from '#lib/reorder.ts';
+  import { base } from '#lib/base.ts';
+  import { armorClass, characterLevel, classLine, mainClass, passiveScore } from '#lib/rules/derived.ts';
   import ClassIcon from './ClassIcon.svelte';
-  import { vitalStatus } from '$lib/rules/hp';
-  import { resolveImageUrl } from '$lib/rules/imageUrl';
-  import { cleanName, defaultLook, isStandard, lookKey, lookOf } from '$lib/rules/conditions';
+  import { vitalStatus } from '#lib/rules/hp.ts';
+  import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
+  import { cleanName, defaultLook, isStandard, lookKey, lookOf } from '#lib/rules/conditions.ts';
   import ConditionLookPicker from './ConditionLookPicker.svelte';
   import DimModal from './DimModal.svelte';
   import ConditionGiver from './ConditionGiver.svelte';
-  import { themeStyle } from '$lib/theme';
-  import { followHeight, glideTo, prefersReducedMotion } from '$lib/motion';
+  import { themeStyle } from '#lib/theme.ts';
+  import { followHeight, glideTo, prefersReducedMotion } from '#lib/motion.ts';
   import CardHp from './CardHp.svelte';
   import ConditionRing from './ConditionRing.svelte';
-  import type { ConditionLook, Sheet } from '$lib/types';
+  import type { ConditionLook, Sheet } from '#lib/types.ts';
 
   let {
     sheets,

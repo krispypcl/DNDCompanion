@@ -5,65 +5,65 @@
    * second is a real page on the host, so a link pasted into Discord or
    * Messenger is answered with a preview card rather than "not found".
    */
-  import { signed as sign } from '$lib/actions';
-  import { base } from '$app/paths';
-  import AbilityBand from '$lib/components/AbilityBand.svelte';
-  import ModeToggle from '$lib/components/ModeToggle.svelte';
-  import SoundToggle from '$lib/components/SoundToggle.svelte';
-  import { setCustomSounds, setSound, soundOn } from '$lib/sound';
+  import { signed as sign } from '#lib/actions.ts';
+  import { base } from '#lib/base.ts';
+  import AbilityBand from '#lib/components/AbilityBand.svelte';
+  import ModeToggle from '#lib/components/ModeToggle.svelte';
+  import SoundToggle from '#lib/components/SoundToggle.svelte';
+  import { setCustomSounds, setSound, soundOn } from '#lib/sound.ts';
   import { get } from 'svelte/store';
-  import MusicPlayer from '$lib/components/MusicPlayer.svelte';
-  import Banner from '$lib/components/Banner.svelte';
-  import CombatActions from '$lib/components/CombatActions.svelte';
-  import CombatFeatures from '$lib/components/CombatFeatures.svelte';
-  import Conditions from '$lib/components/Conditions.svelte';
-  import Currency from '$lib/components/Currency.svelte';
-  import DetailsBlock from '$lib/components/DetailsBlock.svelte';
-  import DiceRoller from '$lib/components/DiceRoller.svelte';
-  import EditableField from '$lib/components/EditableField.svelte';
-  import EntryLink from '$lib/components/EntryLink.svelte';
-  import ClassIcon from '$lib/components/ClassIcon.svelte';
-  import HitPoints from '$lib/components/HitPoints.svelte';
-  import HurtEdges from '$lib/components/HurtEdges.svelte';
-  import RestButtons from '$lib/components/RestButtons.svelte';
-  import SaveIndicator from '$lib/components/SaveIndicator.svelte';
-  import SaveAlert from '$lib/components/SaveAlert.svelte';
-  import SkillRail from '$lib/components/SkillRail.svelte';
-  import EntryTable from '$lib/components/EntryTable.svelte';
-  import DownloadButton from '$lib/components/DownloadButton.svelte';
-  import LeaveDialog from '$lib/components/LeaveDialog.svelte';
-  import NotFound from '$lib/components/NotFound.svelte';
-  import { pageTitle } from '$lib/title';
-  import SheetSkeleton from '$lib/components/SheetSkeleton.svelte';
-  import D20Loader from '$lib/components/D20Loader.svelte';
-  import PrintButton from '$lib/components/PrintButton.svelte';
+  import MusicPlayer from '#lib/components/MusicPlayer.svelte';
+  import Banner from '#lib/components/Banner.svelte';
+  import CombatActions from '#lib/components/CombatActions.svelte';
+  import CombatFeatures from '#lib/components/CombatFeatures.svelte';
+  import Conditions from '#lib/components/Conditions.svelte';
+  import Currency from '#lib/components/Currency.svelte';
+  import DetailsBlock from '#lib/components/DetailsBlock.svelte';
+  import DiceRoller from '#lib/components/DiceRoller.svelte';
+  import EditableField from '#lib/components/EditableField.svelte';
+  import EntryLink from '#lib/components/EntryLink.svelte';
+  import ClassIcon from '#lib/components/ClassIcon.svelte';
+  import HitPoints from '#lib/components/HitPoints.svelte';
+  import HurtEdges from '#lib/components/HurtEdges.svelte';
+  import RestButtons from '#lib/components/RestButtons.svelte';
+  import SaveIndicator from '#lib/components/SaveIndicator.svelte';
+  import SaveAlert from '#lib/components/SaveAlert.svelte';
+  import SkillRail from '#lib/components/SkillRail.svelte';
+  import EntryTable from '#lib/components/EntryTable.svelte';
+  import DownloadButton from '#lib/components/DownloadButton.svelte';
+  import LeaveDialog from '#lib/components/LeaveDialog.svelte';
+  import NotFound from '#lib/components/NotFound.svelte';
+  import { pageTitle } from '#lib/title.ts';
+  import SheetSkeleton from '#lib/components/SheetSkeleton.svelte';
+  import D20Loader from '#lib/components/D20Loader.svelte';
+  import PrintButton from '#lib/components/PrintButton.svelte';
   import { beforeNavigate, goto } from '$app/navigation';
   import { onMount } from 'svelte';
-  import Flash from '$lib/components/Flash.svelte';
-  import ShareButton from '$lib/components/ShareButton.svelte';
-  import Tabs from '$lib/components/Tabs.svelte';
-  import TrackerGroup from '$lib/components/TrackerGroup.svelte';
-  import TrackerPresets from '$lib/components/TrackerPresets.svelte';
-  import { resetTray } from '$lib/stores/tray';
-  import TextPanel from '$lib/components/TextPanel.svelte';
+  import Flash from '#lib/components/Flash.svelte';
+  import ShareButton from '#lib/components/ShareButton.svelte';
+  import Tabs from '#lib/components/Tabs.svelte';
+  import TrackerGroup from '#lib/components/TrackerGroup.svelte';
+  import TrackerPresets from '#lib/components/TrackerPresets.svelte';
+  import { resetTray } from '#lib/stores/tray.ts';
+  import TextPanel from '#lib/components/TextPanel.svelte';
   import { page } from '$app/state';
-  import ClassCards from '$lib/components/ClassCards.svelte';
-  import DieMark from '$lib/components/DieMark.svelte';
-  import LinksPanel from '$lib/components/LinksPanel.svelte';
-  import UndoToast from '$lib/components/UndoToast.svelte';
-  import { sheetRepo } from '$lib/data/sheets';
-  import { isConfigured, supabase } from '$lib/supabase';
-  import { shareSheet, sheetLibraryRows } from '$lib/library';
+  import ClassCards from '#lib/components/ClassCards.svelte';
+  import DieMark from '#lib/components/DieMark.svelte';
+  import LinksPanel from '#lib/components/LinksPanel.svelte';
+  import UndoToast from '#lib/components/UndoToast.svelte';
+  import { sheetRepo } from '#lib/data/sheets.ts';
+  import { isConfigured, supabase } from '#lib/supabase.ts';
+  import { shareSheet, sheetLibraryRows } from '#lib/library.ts';
   import {
     ATTACK_COLUMNS, ATTUNE_SLOTS, CLASS_COLUMNS, FEATURE_COLUMNS, FEATURE_KINDS, ITEM_COLUMNS,
     PASSIVES, SPELL_COLUMNS, TABS, TRACKER_COLUMNS, kindOf
-  } from '$lib/sheet/columns';
+  } from '#lib/sheet/columns.ts';
   import {
     blankTracker, newId, trackerRows, withClasses, withTrackerRows, withoutTrackers, type TrackerRow
-  } from '$lib/sheet/edits';
-  import { slotsByLevel, spellAttack, spellDc } from '$lib/rules/casting';
-  import { featureUrl } from '$lib/rules/lookup';
-  import { brewLoaded, ensureBrewClasses, ensureEntryIndex } from '$lib/rules/brewClasses';
+  } from '#lib/sheet/edits.ts';
+  import { slotsByLevel, spellAttack, spellDc } from '#lib/rules/casting.ts';
+  import { featureUrl } from '#lib/rules/lookup.ts';
+  import { brewLoaded, ensureBrewClasses, ensureEntryIndex } from '#lib/rules/brewClasses.ts';
   import {
     characterLevel,
     classLine,
@@ -80,41 +80,41 @@
     spellSaveDC,
     weightCarried,
     mainClass
-  } from '$lib/rules/derived';
-  import Why from '$lib/components/Why.svelte';
-  import EquipDialog from '$lib/components/EquipDialog.svelte';
-  import { advantageFrom } from '$lib/rules/equipment';
-  import { faceFamily, fontFace, nameFont } from '$lib/rules/fonts';
-  import { shareRoll } from '$lib/owlbear/channel';
-  import { downloadBlob, downloadText } from '$lib/download';
-  import { parseRoll, type Pool, type Roll } from '$lib/rules/dice';
-  import { d20Penalty, requestRoll } from '$lib/stores/dice';
-  import { conditionsFor, d20Penalty as d20PenaltyOf, exhaustionLevel, exhaustionTracker } from '$lib/rules/exhaustion';
-  import { friendlyDate, latest } from '$lib/rules/dates';
-  import { exportFileName, exportSheet } from '$lib/exchange';
-  import { resolveImageUrl } from '$lib/rules/imageUrl';
-  import { needsConcentration, ordinal, spellGroup, spellLevel, spellRank } from '$lib/rules/spells';
-  import { spellDamage } from '$lib/rules/spellroll';
-  import CastPicker from '$lib/components/CastPicker.svelte';
-  import CampaignDialog from '$lib/components/CampaignDialog.svelte';
-  import { campaignRepo, type Campaign } from '$lib/data/campaigns';
-  import { slotLevel } from '$lib/rules/print';
-  import { themeStyle } from '$lib/theme';
-  import { bump, glow, parallax, popIn, sparkle } from '$lib/motion';
-  import { glide } from '$lib/flip';
-  import { isDead } from '$lib/rules/hp';
-  import ConditionOverlay from '$lib/components/ConditionOverlay.svelte';
-  import DownScreen from '$lib/components/DownScreen.svelte';
-  import ShortcutHelp from '$lib/components/ShortcutHelp.svelte';
-  import SheetInitiative from '$lib/components/SheetInitiative.svelte';
-  import { LiveInitiative } from '$lib/initiative.svelte';
-  import Spotlight from '$lib/components/Spotlight.svelte';
-  import { friendlyError } from '$lib/errors';
-  import { session } from '$lib/stores/session';
-  import { sheetStore } from '$lib/stores/sheet';
-  import { canUndo, lastLabel, resetUndo, snapshot, undo } from '$lib/stores/undo';
-  import { ABILITIES } from '$lib/types';
-  import type { TextKey } from '$lib/types';
+  } from '#lib/rules/derived.ts';
+  import Why from '#lib/components/Why.svelte';
+  import EquipDialog from '#lib/components/EquipDialog.svelte';
+  import { advantageFrom } from '#lib/rules/equipment.ts';
+  import { faceFamily, fontFace, nameFont } from '#lib/rules/fonts.ts';
+  import { shareRoll } from '#lib/owlbear/channel.ts';
+  import { downloadBlob, downloadText } from '#lib/download.ts';
+  import { parseRoll, type Pool, type Roll } from '#lib/rules/dice.ts';
+  import { d20Penalty, requestRoll } from '#lib/stores/dice.ts';
+  import { conditionsFor, d20Penalty as d20PenaltyOf, exhaustionLevel, exhaustionTracker } from '#lib/rules/exhaustion.ts';
+  import { friendlyDate, latest } from '#lib/rules/dates.ts';
+  import { exportFileName, exportSheet } from '#lib/exchange.ts';
+  import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
+  import { needsConcentration, ordinal, spellGroup, spellLevel, spellRank } from '#lib/rules/spells.ts';
+  import { spellDamage } from '#lib/rules/spellroll.ts';
+  import CastPicker from '#lib/components/CastPicker.svelte';
+  import CampaignDialog from '#lib/components/CampaignDialog.svelte';
+  import { campaignRepo, type Campaign } from '#lib/data/campaigns.ts';
+  import { slotLevel } from '#lib/rules/print.ts';
+  import { themeStyle } from '#lib/theme.ts';
+  import { bump, glow, parallax, popIn, sparkle } from '#lib/motion.ts';
+  import { glide } from '#lib/flip.ts';
+  import { isDead } from '#lib/rules/hp.ts';
+  import ConditionOverlay from '#lib/components/ConditionOverlay.svelte';
+  import DownScreen from '#lib/components/DownScreen.svelte';
+  import ShortcutHelp from '#lib/components/ShortcutHelp.svelte';
+  import SheetInitiative from '#lib/components/SheetInitiative.svelte';
+  import { LiveInitiative } from '#lib/initiative.svelte.ts';
+  import Spotlight from '#lib/components/Spotlight.svelte';
+  import { friendlyError } from '#lib/errors.ts';
+  import { session } from '#lib/stores/session.ts';
+  import { sheetStore } from '#lib/stores/sheet.ts';
+  import { canUndo, lastLabel, resetUndo, snapshot, undo } from '#lib/stores/undo.ts';
+  import { ABILITIES } from '#lib/types.ts';
+  import type { TextKey } from '#lib/types.ts';
   import type {
     Ability,
     Attack,
@@ -126,7 +126,7 @@
     Spell,
     State,
     Tracker
-  } from '$lib/types';
+  } from '#lib/types.ts';
 
 
   let { id }: { id: string } = $props();
@@ -363,7 +363,8 @@
     sheetStore.retry().then(() => {
       if (!sheetStore.hasUnsaved()) {
         letGo = true;
-        goto(target);
+        // goto refuses a path that is no route (a file under static/); load it plainly.
+        goto(target).catch(() => location.assign(target));
       } else {
         leaving = target;
       }
@@ -604,7 +605,7 @@
     if (!definition || !sheetState || makingPdf) return;
     makingPdf = true;
     try {
-      const { sheetPdf } = await import('$lib/pdf/sheetPdf');
+      const { sheetPdf } = await import('#lib/pdf/sheetPdf.ts');
       const bytes = await sheetPdf(definition, sheetState, { base, notes: readable('notes') });
       const name = (definition.identity?.name || 'Character').replace(/[\\/:*?"<>|]+/g, '').trim() || 'Character';
       downloadBlob(`${name}.pdf`, new Blob([bytes as BlobPart], { type: 'application/pdf' }));
@@ -1288,7 +1289,7 @@
     <Flash message={flash} />
     {#if leaving}
       <LeaveDialog onstay={() => (leaving = null)}
-                   onleave={() => { const t = leaving; leaving = null; letGo = true; if (t) goto(t); }} />
+                   onleave={() => { const t = leaving; leaving = null; letGo = true; if (t) goto(t).catch(() => location.assign(t)); }} />
     {/if}
     {#if campaignOpen && isOwner}
       <CampaignDialog sheetId={sheet.id} {campaign} isDm={campaignIsMine} retired={sheet.retired}

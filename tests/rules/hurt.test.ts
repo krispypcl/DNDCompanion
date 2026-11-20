@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hitSeverity, hurtLevel, vitalStatus } from '$lib/rules/hp';
+import { hitSeverity, hurtLevel, vitalStatus } from '#lib/rules/hp.ts';
 
 describe('hurtLevel', () => {
   it('is nothing at half health or better', () => {

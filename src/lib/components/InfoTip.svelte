@@ -7,8 +7,8 @@
    * The note is placed against the window, not inside the panel, so a narrow
    * phone column or a scrolling table cannot cut it off.
    */
-  import { portal } from '$lib/actions';
-  import { prefersReducedMotion } from '$lib/motion';
+  import { portal } from '#lib/actions.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
   import { onMount, tick } from 'svelte';
   import { fade } from 'svelte/transition';
 

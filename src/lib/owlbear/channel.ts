@@ -5,8 +5,8 @@
  * simply misses the roll.
  */
 import type { RealtimeChannel } from '@supabase/supabase-js';
-import { isConfigured, supabase } from '$lib/supabase';
-import type { Roll } from '$lib/rules/dice';
+import { isConfigured, supabase } from '#lib/supabase.ts';
+import type { Roll } from '#lib/rules/dice.ts';
 import { noteOf, readNote, type RollNote } from './rolls';
 
 const rollChannelName = (sheet: string) => `dndc-rolls:${sheet}`;

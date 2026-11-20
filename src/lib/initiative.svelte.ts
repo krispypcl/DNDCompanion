@@ -9,7 +9,7 @@
  * order waits to follow it, so the table always ends on the last press.
  * Echoes of the DM's own saves are ignored until the last one has landed.
  */
-import { campaignRepo, NO_INITIATIVE, type Initiative } from '$lib/data/campaigns';
+import { campaignRepo, NO_INITIATIVE, type Initiative } from '#lib/data/campaigns.ts';
 
 export class LiveInitiative {
   state = $state<Initiative>(NO_INITIATIVE);

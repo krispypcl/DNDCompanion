@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { base } from '$app/paths';
+  import { base } from '#lib/base.ts';
   import OAuthButton from './OAuthButton.svelte';
   import { slide } from 'svelte/transition';
-  import { enabledProviders } from '$lib/data/session';
+  import { enabledProviders } from '#lib/data/session.ts';
   import Logo from './Logo.svelte';
-  import { friendlyError } from '$lib/errors';
+  import { friendlyError } from '#lib/errors.ts';
   import type { FullAutoFill } from 'svelte/elements';
-  import { passwordStrength } from '$lib/rules/password';
+  import { passwordStrength } from '#lib/rules/password.ts';
 
   type Field = {
     id: string;

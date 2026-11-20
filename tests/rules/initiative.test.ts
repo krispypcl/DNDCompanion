@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { next, ordered, previous, rollInitiative, start, type Combatant } from '$lib/rules/initiative';
+import { next, ordered, previous, rollInitiative, start, type Combatant } from '#lib/rules/initiative.ts';
 
 const c = (key: string, value: number | null, dex = 0): Combatant => ({ key, name: key, value, dex, side: key.startsWith('pc') ? 'pc' : 'creature' });
 const list = [c('cr:goblin', 12, 2), c('pc:loka', 17), c('pc:nyx', 12, 3), c('cr:boss', null)];

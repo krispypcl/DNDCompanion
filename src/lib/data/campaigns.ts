@@ -5,9 +5,9 @@
  * campaigns section); these are the calls.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { supabase } from '$lib/supabase';
-import { friendlyError } from '$lib/errors';
-import type { ConditionLook } from '$lib/types';
+import { supabase } from '#lib/supabase.ts';
+import { friendlyError } from '#lib/errors.ts';
+import type { ConditionLook } from '#lib/types.ts';
 
 /** A song on the DM's list: a YouTube link, and what to call it. */
 export type Song = { url: string; name?: string };

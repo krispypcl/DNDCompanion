@@ -3,7 +3,7 @@
  * same Realtime presence the campaign page joins (TableMusic, channel
  * table-<id>), only listened to. The menu does not count as being there.
  */
-import { supabase, isConfigured } from '$lib/supabase';
+import { supabase, isConfigured } from '#lib/supabase.ts';
 
 export type Here = { dm: boolean; users: string[] };
 

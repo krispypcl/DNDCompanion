@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { trackerRows, withClasses, withTrackerRows, withoutTrackers } from '$lib/sheet/edits';
-import { slotsByLevel, spellAttack, spellDc } from '$lib/rules/casting';
+import { trackerRows, withClasses, withTrackerRows, withoutTrackers } from '#lib/sheet/edits.ts';
+import { slotsByLevel, spellAttack, spellDc } from '#lib/rules/casting.ts';
 
 const def = (over: Record<string, unknown> = {}) => ({
   identity: { name: 'X', level: 5 }, abilities: { str: 10, dex: 10, con: 10, int: 18, wis: 10, cha: 10 },

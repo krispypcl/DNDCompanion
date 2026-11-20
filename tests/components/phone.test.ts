@@ -7,7 +7,7 @@
 import { render } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import EntryTable from '$lib/components/EntryTable.svelte';
+import EntryTable from '#lib/components/EntryTable.svelte';
 
 const columns = [
   { key: 'name', label: 'Name', width: '60%' },

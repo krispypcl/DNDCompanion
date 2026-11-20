@@ -1,8 +1,8 @@
-import { proficiencyBonus } from '$lib/rules/derived';
-import { friendlyError } from '$lib/errors';
+import { proficiencyBonus } from '#lib/rules/derived.ts';
+import { friendlyError } from '#lib/errors.ts';
 import { get, writable, type Readable } from 'svelte/store';
-import { StaleWriteError, sheetRepo } from '$lib/data/sheets';
-import { TEXT_KEYS, type Definition, type Sheet, type State, type TextKey } from '$lib/types';
+import { StaleWriteError, sheetRepo } from '#lib/data/sheets.ts';
+import { TEXT_KEYS, type Definition, type Sheet, type State, type TextKey } from '#lib/types.ts';
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'unsaved' | 'stale' | 'error';
 

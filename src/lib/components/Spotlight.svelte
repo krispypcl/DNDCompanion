@@ -10,10 +10,10 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { portal } from '$lib/actions';
-  import { prefersReducedMotion } from '$lib/motion';
-  import { peek, themeAt } from '$lib/stores/peek.svelte';
-  import { matchRank, search, type Hit, type IndexRow } from '$lib/rules/spotlight';
+  import { portal } from '#lib/actions.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { peek, themeAt } from '#lib/stores/peek.svelte.ts';
+  import { matchRank, search, type Hit, type IndexRow } from '#lib/rules/spotlight.ts';
 
   type Homebrew = { id: string; name: string; kind: string };
   let {
@@ -40,7 +40,7 @@
   // The index is big: loaded the first time the search opens, then kept.
   $effect(() => {
     if (!open || rows || failed) return;
-    import('$lib/data/search-index.json')
+    import('#lib/data/search-index.json')
       .then((m) => (rows = m.default as IndexRow[]))
       .catch(() => (failed = true));
   });

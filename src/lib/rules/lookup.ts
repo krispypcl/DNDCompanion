@@ -21,9 +21,9 @@
  * book's: "(+1)", "+2", "x3", "[attuned]".
  */
 
-import BREW_SOURCES from '$lib/data/brew-sources.json';
-import SUBCLASS_SHORT from '$lib/data/subclass-short.json';
-import CLASS_FEATURES from '$lib/data/class-features.json';
+import BREW_SOURCES from '#lib/data/brew-sources.json';
+import SUBCLASS_SHORT from '#lib/data/subclass-short.json';
+import CLASS_FEATURES from '#lib/data/class-features.json';
 
 export const LOOKUP_BASE = 'https://5e.tools';
 

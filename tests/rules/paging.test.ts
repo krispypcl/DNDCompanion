@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { paginate } from '$lib/rules/paging';
+import { paginate } from '#lib/rules/paging.ts';
 
 const group = (key: string, n: number, label = key) => ({ key, label, items: Array.from({ length: n }, (_, i) => `${key}${i}`) });
 const shape = (pages: { key: string; items: string[] }[][]) => pages.map((p) => p.map((g) => `${g.key}:${g.items.length}`).join(' '));

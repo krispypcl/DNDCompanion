@@ -10,19 +10,19 @@
    * On a phone the table stops being a table: each entry is a card, whether
    * reading or editing, so nothing is ever wider than the screen.
    */
-  import { flipKey } from '$lib/flip';
+  import { flipKey } from '#lib/flip.ts';
   import DieMark from './DieMark.svelte';
   import Why from './Why.svelte';
-  import { describeEffects } from '$lib/rules/equipment';
-  import type { ItemEffect } from '$lib/types';
+  import { describeEffects } from '#lib/rules/equipment.ts';
+  import type { ItemEffect } from '#lib/types.ts';
   import EntryLink from './EntryLink.svelte';
   import InfoTip from './InfoTip.svelte';
   import { onDestroy, tick, untrack } from 'svelte';
   import { cubicOut } from 'svelte/easing';
-  import { prefersReducedMotion } from '$lib/motion';
-  import type { LookupCategory } from '$lib/rules/lookup';
+  import { prefersReducedMotion } from '#lib/motion.ts';
+  import type { LookupCategory } from '#lib/rules/lookup.ts';
   import LibraryMenu from './LibraryMenu.svelte';
-  import { fillRow, type LibraryKind, type Suggestion } from '$lib/library';
+  import { fillRow, type LibraryKind, type Suggestion } from '#lib/library.ts';
 
   type Column = {
     key: string;
@@ -137,7 +137,7 @@
     library?: LibraryKind;
   } = $props();
 
-  /** Keys for gliding between reading and editing; see $lib/flip. */
+  /** Keys for gliding between reading and editing; see #lib/flip. */
   const tk = flipKey('t');
   const fk = (row: { key: unknown }, col: string) => `${tk}:${String(row.key)}:${col}`;
 

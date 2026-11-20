@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CUSTOM, UNLEVELLED, spellGroup, spellLevel, spellRank } from '$lib/rules/spells';
+import { CUSTOM, UNLEVELLED, spellGroup, spellLevel, spellRank } from '#lib/rules/spells.ts';
 
 describe('spell types', () => {
   it('reads a level however it was written', () => {
@@ -32,7 +32,7 @@ describe('spell types', () => {
 
 });
 
-import { needsConcentration } from '$lib/rules/spells';
+import { needsConcentration } from '#lib/rules/spells.ts';
 
 describe('needsConcentration', () => {
   it.each([

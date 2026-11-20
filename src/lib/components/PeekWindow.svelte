@@ -5,9 +5,9 @@
 -->
 <script lang="ts">
   import { fade } from 'svelte/transition';
-  import { movable } from '$lib/actions';
-  import { prefersReducedMotion } from '$lib/motion';
-  import { peek, type KeptPeek } from '$lib/stores/peek.svelte';
+  import { movable } from '#lib/actions.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { peek, type KeptPeek } from '#lib/stores/peek.svelte.ts';
   import PeekContent from './PeekContent.svelte';
 
   let { kept }: { kept: KeptPeek } = $props();

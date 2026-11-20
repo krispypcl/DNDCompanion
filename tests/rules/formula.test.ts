@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { FormulaError, evaluateFormula, type FormulaContext } from '$lib/rules/formula';
+import { FormulaError, evaluateFormula, type FormulaContext } from '#lib/rules/formula.ts';
 
 // Loka at level 5: proficiency +3, DEX 18 (+4), CHA 18 (+4), INT 9 (-1).
 const ctx: FormulaContext = {

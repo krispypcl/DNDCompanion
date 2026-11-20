@@ -14,10 +14,10 @@
    * The vignette's beat is driven from here rather than by CSS, so that the
    * heartbeat sound (when sound is on) lands on exactly the same moment.
    */
-  import { isDead } from '$lib/rules/hp';
-  import { prefersReducedMotion } from '$lib/motion';
-  import type { State } from '$lib/types';
-  import { deathBell, deathSave, heartbeat } from '$lib/sound';
+  import { isDead } from '#lib/rules/hp.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
+  import type { State } from '#lib/types.ts';
+  import { deathBell, deathSave, heartbeat } from '#lib/sound.ts';
 
   let { state: sheetState, hpMax }: { state: State; hpMax: number } = $props();
 

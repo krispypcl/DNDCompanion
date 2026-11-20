@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { addLink, campaignOf, orderSheets, parseLink, readLinks, removeLink } from '$lib/owlbear/links';
-import { toHex } from '$lib/owlbear/colour';
-import { diceLine, headline, natural, noteOf, pushNote, readLog, ROLL_LOG_MAX } from '$lib/owlbear/rolls';
-import { partsFor, sameParts, tokenBox } from '$lib/owlbear/layout';
-import { blankDefinition, blankState } from '$lib/sample';
-import type { Sheet } from '$lib/types';
+import { addLink, campaignOf, orderSheets, parseLink, readLinks, removeLink } from '#lib/owlbear/links.ts';
+import { toHex } from '#lib/owlbear/colour.ts';
+import { diceLine, headline, natural, noteOf, pushNote, readLog, ROLL_LOG_MAX } from '#lib/owlbear/rolls.ts';
+import { partsFor, sameParts, tokenBox } from '#lib/owlbear/layout.ts';
+import { blankDefinition, blankState } from '#lib/sample.ts';
+import type { Sheet } from '#lib/types.ts';
 
 const ID = '5d56a019-eee3-48b6-98e1-b086f585ec30';
 
@@ -107,7 +107,7 @@ describe('token parts', () => {
 });
 
 describe('creature tokens', async () => {
-  const { partsForVitals, vitalsOfCreature } = await import('$lib/owlbear/layout');
+  const { partsForVitals, vitalsOfCreature } = await import('#lib/owlbear/layout.ts');
   const box = { x: 0, y: 0, w: 100, h: 100 };
   const c = (over: Record<string, unknown> = {}) => ({ visible: true, hp_max: 20, hp_current: 20, conditions: [] as string[], ...over });
   it('shows nothing until the DM reveals it', () => {

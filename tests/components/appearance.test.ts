@@ -1,7 +1,7 @@
 /** The Appearance tab: pictures to look at when reading, not links. */
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
-import LinksPanel from '$lib/components/LinksPanel.svelte';
+import LinksPanel from '#lib/components/LinksPanel.svelte';
 
 const definition = (identity: Record<string, unknown> = {}) => ({
   identity: { name: 'Loka', level: 5, ...identity },

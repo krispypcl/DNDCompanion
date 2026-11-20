@@ -4,8 +4,8 @@
  * changed here first and then saved, so the page answers at once.
  */
 import { get, writable } from 'svelte/store';
-import { supabase } from '$lib/supabase';
-import { session } from '$lib/stores/session';
+import { supabase } from '#lib/supabase.ts';
+import { session } from '#lib/stores/session.ts';
 
 export type ProfileRow = {
   id: string;

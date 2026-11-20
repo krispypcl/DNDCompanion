@@ -13,9 +13,9 @@ import {
   saveExtra,
   spellSaveDC,
   weightCarried
-} from '$lib/rules/derived';
-import { trackerMax } from '$lib/rules/tracker';
-import type { Definition } from '$lib/types';
+} from '#lib/rules/derived.ts';
+import { trackerMax } from '#lib/rules/tracker.ts';
+import type { Definition } from '#lib/types.ts';
 
 /** Loka Sibbs at level 5, taken from the real sheet. */
 const loka: Definition = {

@@ -3,10 +3,10 @@
  * Only the DM can read or change them; the database enforces it.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { supabase } from '$lib/supabase';
-import type { CreatureKind } from '$lib/rules/creatures';
-import type { StatBlock } from '$lib/rules/statblock';
-import type { ConditionLook } from '$lib/types';
+import { supabase } from '#lib/supabase.ts';
+import type { CreatureKind } from '#lib/rules/creatures.ts';
+import type { StatBlock } from '#lib/rules/statblock.ts';
+import type { ConditionLook } from '#lib/types.ts';
 
 export type Creature = {
   id: string;

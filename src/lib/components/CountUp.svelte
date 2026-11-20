@@ -5,7 +5,7 @@
   let { value, duration = 320 }: { value: number; duration?: number } = $props();
 
   import { untrack } from 'svelte';
-  import { prefersReducedMotion } from '$lib/motion';
+  import { prefersReducedMotion } from '#lib/motion.ts';
 
   // Starts at the first value with no tween; later values count up to.
   const display = tweened(untrack(() => value), { easing: cubicOut });

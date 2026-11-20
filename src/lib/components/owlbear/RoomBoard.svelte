@@ -5,11 +5,11 @@
    * DND Companion panel) draw and write on it; anyone else in the room reads.
    */
   import { onMount } from 'svelte';
-  import { joinRoom, type Obr } from '$lib/owlbear/frame';
+  import { joinRoom, type Obr } from '#lib/owlbear/frame.ts';
   import { fade } from 'svelte/transition';
-  import { session } from '$lib/stores/session';
-  import { campaignRepo, type Campaign } from '$lib/data/campaigns';
-  import { sheetRepo } from '$lib/data/sheets';
+  import { session } from '#lib/stores/session.ts';
+  import { campaignRepo, type Campaign } from '#lib/data/campaigns.ts';
+  import { sheetRepo } from '#lib/data/sheets.ts';
   import CampaignBoard from '../CampaignBoard.svelte';
   import InfoTip from '../InfoTip.svelte';
 

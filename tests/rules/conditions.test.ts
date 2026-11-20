@@ -5,8 +5,8 @@ import {
   conditionUrl,
   hasCondition,
   removeCondition
-} from '$lib/rules/conditions';
-import { emptyState } from '$lib/types';
+} from '#lib/rules/conditions.ts';
+import { emptyState } from '#lib/types.ts';
 
 describe('conditions', () => {
   it('adds a name, trimmed and with its spaces squeezed', () => {
@@ -55,13 +55,13 @@ describe('conditions', () => {
 
 describe('condition looks', () => {
   it('knows the standard ones, with or without a level', async () => {
-    const { isStandard, lookOf } = await import('$lib/rules/conditions');
+    const { isStandard, lookOf } = await import('#lib/rules/conditions.ts');
     expect(isStandard('Exhaustion 2')).toBe(true);
     expect(isStandard('Bless')).toBe(false);
     expect(lookOf('Charmed')?.motion).toBe('pulse');
   });
   it('uses a chosen look for one written in, and none for a blank colour', async () => {
-    const { lookOf } = await import('$lib/rules/conditions');
+    const { lookOf } = await import('#lib/rules/conditions.ts');
     expect(lookOf('Bless', { bless: { color: '#ffcc00', motion: 'shimmer' } })).toEqual({ color: '#ffcc00', motion: 'shimmer' });
     expect(lookOf('Bless', { bless: { color: '', motion: 'pulse' } })).toBeNull();
     expect(lookOf('Bless')).toBeNull();

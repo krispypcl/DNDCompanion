@@ -8,7 +8,7 @@
    * colour is kept when the input settles. Saving on every movement wrote the
    * whole sheet, and an undo step, dozens of times a second, which lagged.
    */
-  import { THEMES, THEME_NAMES, isHexColor, isThemeName, seedHex, swatchColor } from '$lib/theme';
+  import { THEMES, THEME_NAMES, isHexColor, isThemeName, seedHex, swatchColor } from '#lib/theme.ts';
 
   let {
     value,

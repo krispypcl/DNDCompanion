@@ -5,7 +5,7 @@
   or take from. For a homebrew monster or NPC, or to change one from a book.
 -->
 <script lang="ts">
-  import { ABILITIES, SECTIONS, modifier, signedMod, type Section, type StatBlock } from '$lib/rules/statblock';
+  import { ABILITIES, SECTIONS, modifier, signedMod, type Section, type StatBlock } from '#lib/rules/statblock.ts';
 
   let { value = $bindable() }: { value: StatBlock } = $props();
 

@@ -9,10 +9,10 @@
  * If the library can't be reached, typing and saving go on as normal.
  */
 import { get } from 'svelte/store';
-import { profile, saveProfile, type ProfileRow } from '$lib/stores/profile';
-import { supabase } from '$lib/supabase';
-import { trackerRows, type TrackerRow } from '$lib/sheet/edits';
-import type { Definition } from '$lib/types';
+import { profile, saveProfile, type ProfileRow } from '#lib/stores/profile.ts';
+import { supabase } from '#lib/supabase.ts';
+import { trackerRows, type TrackerRow } from '#lib/sheet/edits.ts';
+import type { Definition } from '#lib/types.ts';
 
 export type LibraryKind = 'attacks' | 'spells' | 'items' | 'features' | 'trackers';
 

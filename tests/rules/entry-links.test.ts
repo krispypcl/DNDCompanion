@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import index from '$lib/data/entry-index.json';
-import { entryUrl, registerEntryIndex, trackerUrl } from '$lib/rules/lookup';
+import index from '#lib/data/entry-index.json';
+import { entryUrl, registerEntryIndex, trackerUrl } from '#lib/rules/lookup.ts';
 
 registerEntryIndex(index as never);
 
@@ -25,7 +25,7 @@ describe('trackers named for something on 5e.tools', () => {
 
 describe('walking speed from the species', () => {
   it('knows a Wood Elf walks 35 ft. and a 2014 dwarf 25', async () => {
-    const { speciesWalk } = await import('$lib/rules/lookup');
+    const { speciesWalk } = await import('#lib/rules/lookup.ts');
     expect(speciesWalk('Wood Elf')).toBe(35);
     expect(speciesWalk('Elf (Wood)')).toBe(35);
     expect(speciesWalk('Dwarf', 'phb')).toBe(25);

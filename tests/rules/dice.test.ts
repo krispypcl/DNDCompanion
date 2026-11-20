@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_DICE, addDie, fairRng, formula, parseRoll, roll, type Pool } from '$lib/rules/dice';
+import { MAX_DICE, addDie, fairRng, formula, parseRoll, roll, type Pool } from '#lib/rules/dice.ts';
 
 const empty = (): Pool => ({ dice: {}, modifier: 0, mode: 'normal' });
 /** Hands out the given faces in order. */

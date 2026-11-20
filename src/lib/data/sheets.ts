@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { supabase } from '$lib/supabase';
+import { supabase } from '#lib/supabase.ts';
 import {
   TEXT_KEYS,
   blankTexts,
@@ -9,7 +9,7 @@ import {
   type SheetTexts,
   type State,
   type TextKey
-} from '$lib/types';
+} from '#lib/types.ts';
 
 /**
  * Raised when a write's `updated_at` guard did not match — the row moved under

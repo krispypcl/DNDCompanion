@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { armorClass, initiativeParts, modifierOf, saveBonus, speedParts } from '$lib/rules/derived';
-import { advantageFrom, guessEffects } from '$lib/rules/equipment';
+import { armorClass, initiativeParts, modifierOf, saveBonus, speedParts } from '#lib/rules/derived.ts';
+import { advantageFrom, guessEffects } from '#lib/rules/equipment.ts';
 
 const def = (equipment: unknown[] = [], over: Record<string, unknown> = {}) => ({
   identity: { name: 'X', level: 5 }, abilities: { str: 10, dex: 16, con: 10, int: 10, wis: 10, cha: 10 },

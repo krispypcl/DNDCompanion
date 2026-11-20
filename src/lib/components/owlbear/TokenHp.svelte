@@ -8,13 +8,13 @@
    * background and stays small.
    */
   import { onMount, tick } from 'svelte';
-  import { joinRoom } from '$lib/owlbear/frame';
-  import { vitalStatus } from '$lib/rules/hp';
-  import { followSheets } from '$lib/owlbear/live';
-  import { changeHp, type HpChange } from '$lib/owlbear/hp';
-  import type { Sheet } from '$lib/types';
-  import { creatureRepo, type Creature } from '$lib/data/creatures';
-  import { damage, heal, hpNow } from '$lib/rules/creatures';
+  import { joinRoom } from '#lib/owlbear/frame.ts';
+  import { vitalStatus } from '#lib/rules/hp.ts';
+  import { followSheets } from '#lib/owlbear/live.ts';
+  import { changeHp, type HpChange } from '#lib/owlbear/hp.ts';
+  import type { Sheet } from '#lib/types.ts';
+  import { creatureRepo, type Creature } from '#lib/data/creatures.ts';
+  import { damage, heal, hpNow } from '#lib/rules/creatures.ts';
   import HpBar from './HpBar.svelte';
 
   let sheet = $state.raw<Sheet | null>(null);

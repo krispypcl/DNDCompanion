@@ -1,5 +1,5 @@
 import { evaluateFormula, type FormulaContext } from './formula';
-import type { Tracker } from '$lib/types';
+import type { Tracker } from '#lib/types.ts';
 
 /**
  * Tracker arithmetic. A tracker's maximum may be a formula so it follows the

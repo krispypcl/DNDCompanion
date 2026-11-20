@@ -6,7 +6,7 @@
 import { formulaContext, spellAttackBonus, spellSaveDC } from './derived';
 import { slotLevel } from './print';
 import { trackerMax } from './tracker';
-import type { Definition, State } from '$lib/types';
+import type { Definition, State } from '#lib/types.ts';
 
 /** Always worked out from the spellcasting ability: modifier + proficiency. */
 export function spellAttack(definition: Definition | undefined): number | null {

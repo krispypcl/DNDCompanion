@@ -7,11 +7,11 @@
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
   import { fade } from 'svelte/transition';
-  import type { Revealed } from '$lib/data/creatures';
-  import { lookOf } from '$lib/rules/conditions';
-  import { resolveImageUrl } from '$lib/rules/imageUrl';
+  import type { Revealed } from '#lib/data/creatures.ts';
+  import { lookOf } from '#lib/rules/conditions.ts';
+  import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
   import ConditionRing from './ConditionRing.svelte';
-  import { prefersReducedMotion } from '$lib/motion';
+  import { prefersReducedMotion } from '#lib/motion.ts';
   import SectionHead from './SectionHead.svelte';
 
   let { list }: { list: Revealed[] } = $props();

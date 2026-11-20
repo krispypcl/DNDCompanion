@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { base } from '$app/paths';
-  import AuthForm from '$lib/components/AuthForm.svelte';
-  import { requestReset } from '$lib/data/session';
+  import { base } from '#lib/base.ts';
+  import AuthForm from '#lib/components/AuthForm.svelte';
+  import { requestReset } from '#lib/data/session.ts';
 </script>
 
 <svelte:head><title>Reset your password | DND Companion</title></svelte:head>

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
-import { clampSpent, trackerMax, trackerRemaining } from '$lib/rules/tracker';
-import type { FormulaContext } from '$lib/rules/formula';
-import type { Tracker } from '$lib/types';
+import { clampSpent, trackerMax, trackerRemaining } from '#lib/rules/tracker.ts';
+import type { FormulaContext } from '#lib/rules/formula.ts';
+import type { Tracker } from '#lib/types.ts';
 
 const ctx: FormulaContext = { level: 5, classlevel: 5, prof: 3, str: 1, dex: 4, con: 3, int: -1, wis: 2, cha: 4 };
 

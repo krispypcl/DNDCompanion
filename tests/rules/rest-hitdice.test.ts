@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { healFromHitDice, hitDiceLeft, hitDiceOf, hitDicePool } from '$lib/rules/rest';
+import { healFromHitDice, hitDiceLeft, hitDiceOf, hitDicePool } from '#lib/rules/rest.ts';
 
 const def = (hitDice: string, con = 14) => ({
   identity: { name: 'X', level: 7 }, abilities: { str: 10, dex: 10, con, int: 10, wis: 10, cha: 10 },

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { conditionsFor, d20Penalty, exhaustionLevel, exhaustionTracker, speedPenalty } from '$lib/rules/exhaustion';
-import { speedParts } from '$lib/rules/derived';
-import { PRESETS, presetsFor } from '$lib/rules/presets';
-import { requestRoll, diceRequest, d20Penalty as penaltyStore } from '$lib/stores/dice';
+import { conditionsFor, d20Penalty, exhaustionLevel, exhaustionTracker, speedPenalty } from '#lib/rules/exhaustion.ts';
+import { speedParts } from '#lib/rules/derived.ts';
+import { PRESETS, presetsFor } from '#lib/rules/presets.ts';
+import { requestRoll, diceRequest, d20Penalty as penaltyStore } from '#lib/stores/dice.ts';
 import { get } from 'svelte/store';
 
 const def = (trackers: unknown[] = []) => ({

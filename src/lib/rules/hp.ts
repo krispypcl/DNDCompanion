@@ -1,4 +1,4 @@
-import type { State } from '$lib/types';
+import type { State } from '#lib/types.ts';
 import { addCondition, hasCondition, removeCondition } from './conditions';
 
 /**

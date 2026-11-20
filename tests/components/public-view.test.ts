@@ -2,10 +2,10 @@
 import { render, screen } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import HitPoints from '$lib/components/HitPoints.svelte';
-import RestButtons from '$lib/components/RestButtons.svelte';
-import { blankDefinition } from '$lib/sample';
-import { emptyState } from '$lib/types';
+import HitPoints from '#lib/components/HitPoints.svelte';
+import RestButtons from '#lib/components/RestButtons.svelte';
+import { blankDefinition } from '#lib/sample.ts';
+import { emptyState } from '#lib/types.ts';
 
 const def = { ...blankDefinition('Visitor'), combat: { ac: 10, speed: 30, hpMax: 20, hitDice: '3d8' } };
 const sheet = readFileSync('src/lib/components/SheetView.svelte', 'utf8');

@@ -2,8 +2,8 @@
 import { render, screen } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import AbilityBand from '$lib/components/AbilityBand.svelte';
-import type { Definition } from '$lib/types';
+import AbilityBand from '#lib/components/AbilityBand.svelte';
+import type { Definition } from '#lib/types.ts';
 
 const definition = (over: Partial<Definition> = {}): Definition => ({
   identity: { name: 'Loka', level: 7 },

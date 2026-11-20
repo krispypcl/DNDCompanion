@@ -1,6 +1,6 @@
 <script lang="ts">
   import { cubicOut } from 'svelte/easing';
-  import { prefersReducedMotion } from '$lib/motion';
+  import { prefersReducedMotion } from '#lib/motion.ts';
 
   let {
     tabs,

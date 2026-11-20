@@ -11,9 +11,9 @@
  * in it: every field is checked and copied over a blank sheet, and anything
  * that is the wrong shape is left out and counted rather than let through.
  */
-import { blankDefinition } from '$lib/sample';
-import { armorClass } from '$lib/rules/derived';
-import { PAGE_BREAK, joinPages, splitPages } from '$lib/rules/pages';
+import { blankDefinition } from '#lib/sample.ts';
+import { armorClass } from '#lib/rules/derived.ts';
+import { PAGE_BREAK, joinPages, splitPages } from '#lib/rules/pages.ts';
 import {
   ABILITIES,
   SKILLS,
@@ -28,7 +28,7 @@ import {
   type State,
   type TextKey,
   type Tracker
-} from '$lib/types';
+} from '#lib/types.ts';
 
 export const FORMAT = 'dndcompanion-sheet';
 export const VERSION = 1;

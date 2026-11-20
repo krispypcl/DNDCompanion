@@ -2,9 +2,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   FORMAT, TITLE, VERSION, exportFileName, exportSheet, importSheet, readDefinition, readState
-} from '$lib/exchange';
-import { blankDefinition } from '$lib/sample';
-import { blankTexts, emptyState, type Definition, type State } from '$lib/types';
+} from '#lib/exchange.ts';
+import { blankDefinition } from '#lib/sample.ts';
+import { blankTexts, emptyState, type Definition, type State } from '#lib/types.ts';
 
 const character = (): Definition => ({
   ...blankDefinition('Loka Sibbs'),

@@ -4,14 +4,14 @@
    * the owner changes it from the sheet without entering edit mode, and it can
    * be undone. A viewer sees it only when there is something to see.
    */
-  import { STANDARD_CONDITIONS, defaultLook, addCondition, cleanName, conditionUrl, isStandard, lookKey, lookOf, removeCondition } from '$lib/rules/conditions';
-  import { snapshot } from '$lib/stores/undo';
+  import { STANDARD_CONDITIONS, defaultLook, addCondition, cleanName, conditionUrl, isStandard, lookKey, lookOf, removeCondition } from '#lib/rules/conditions.ts';
+  import { snapshot } from '#lib/stores/undo.ts';
   import { flip } from 'svelte/animate';
   import { scale } from 'svelte/transition';
   import { cubicOut, quintOut } from 'svelte/easing';
-  import { reorder } from '$lib/reorder';
+  import { reorder } from '#lib/reorder.ts';
   import ConditionLookPicker from './ConditionLookPicker.svelte';
-  import type { ConditionLook, State } from '$lib/types';
+  import type { ConditionLook, State } from '#lib/types.ts';
 
   let {
     state: sheetState,

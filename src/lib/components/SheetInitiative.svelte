@@ -8,9 +8,9 @@
 <script lang="ts">
   import { slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { base } from '$app/paths';
-  import type { LiveInitiative } from '$lib/initiative.svelte';
-  import { prefersReducedMotion } from '$lib/motion';
+  import { base } from '#lib/base.ts';
+  import type { LiveInitiative } from '#lib/initiative.svelte.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
   import InfoTip from './InfoTip.svelte';
 
   let { live, sheetId }: { live: LiveInitiative; sheetId: string } = $props();

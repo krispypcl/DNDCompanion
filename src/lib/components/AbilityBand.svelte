@@ -1,14 +1,14 @@
 <script lang="ts">
-  import { advantageFrom } from '$lib/rules/equipment';
+  import { advantageFrom } from '#lib/rules/equipment.ts';
   /** Abilities and saving throws. The modifier is the hero number and the
       score sits under it, because the modifier is what you use every round. */
-  import { signed as sign } from '$lib/actions';
+  import { signed as sign } from '#lib/actions.ts';
   import EditableField from './EditableField.svelte';
-  import { modifierOf, saveBonus, saveExtra, saveParts } from '$lib/rules/derived';
-  import { abilityScoreParts } from '$lib/rules/equipment';
+  import { modifierOf, saveBonus, saveExtra, saveParts } from '#lib/rules/derived.ts';
+  import { abilityScoreParts } from '#lib/rules/equipment.ts';
   import Why from './Why.svelte';
-  import { ABILITIES, type Ability, type Definition } from '$lib/types';
-  import { bump } from '$lib/motion';
+  import { ABILITIES, type Ability, type Definition } from '#lib/types.ts';
+  import { bump } from '#lib/motion.ts';
 
   let {
     definition,

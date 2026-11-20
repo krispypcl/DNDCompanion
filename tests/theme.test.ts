@@ -11,7 +11,7 @@ import {
   swatchColor,
   themeOf,
   themeStyle
-} from '$lib/theme';
+} from '#lib/theme.ts';
 
 describe('themes', () => {
   it('falls back to the default for anything unrecognised', () => {

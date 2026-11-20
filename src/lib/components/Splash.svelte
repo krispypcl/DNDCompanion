@@ -7,7 +7,7 @@
    * stays put across navigation.
    */
   import { onMount } from 'svelte';
-  import { prefersReducedMotion } from '$lib/motion';
+  import { prefersReducedMotion } from '#lib/motion.ts';
 
   const HOLD = 560;
   const FADE = 420;

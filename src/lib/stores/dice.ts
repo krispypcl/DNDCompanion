@@ -5,7 +5,7 @@
  * appears later (switching back to the Combat tab) does not roll it again.
  */
 import { get, writable } from 'svelte/store';
-import type { Pool, Roll } from '$lib/rules/dice';
+import type { Pool, Roll } from '#lib/rules/dice.ts';
 
 /** mode: 'keep' leaves the tray's advantage as chosen, 'normal' rolls plainly,
     'pool' rolls as the pool says (a save with advantage from a feature).

@@ -83,5 +83,5 @@ if (typeof window !== 'undefined' && !('PointerEvent' in window)) {
 
 // The dice tray remembers itself while a sheet is open; each test is a fresh sheet.
 import { beforeEach as beforeEachTest } from 'vitest';
-import { resetTray } from '$lib/stores/tray';
+import { resetTray } from '#lib/stores/tray.ts';
 beforeEachTest(() => resetTray());

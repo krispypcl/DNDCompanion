@@ -2,10 +2,10 @@
   import DieMark from './DieMark.svelte';
   /** Skills grouped under the ability they are scored off, in the same order as
       the ability band, each group headed by that ability's modifier. */
-  import { signed as sign } from '$lib/actions';
-  import { modifierOf, skillTotal } from '$lib/rules/derived';
-  import { ABILITIES, SKILLS, type Ability, type Definition, type SkillName } from '$lib/types';
-  import { bump } from '$lib/motion';
+  import { signed as sign } from '#lib/actions.ts';
+  import { modifierOf, skillTotal } from '#lib/rules/derived.ts';
+  import { ABILITIES, SKILLS, type Ability, type Definition, type SkillName } from '#lib/types.ts';
+  import { bump } from '#lib/motion.ts';
 
   let {
     definition,

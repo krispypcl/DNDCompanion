@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { entryUrl, matchRank, search, type IndexRow } from '$lib/rules/spotlight';
-import { peekTarget } from '$lib/rules/peek';
+import { entryUrl, matchRank, search, type IndexRow } from '#lib/rules/spotlight.ts';
+import { peekTarget } from '#lib/rules/peek.ts';
 
 const rows: IndexRow[] = [
   ['Fireball', 's', 'PHB', 'Level 3 Evocation'],

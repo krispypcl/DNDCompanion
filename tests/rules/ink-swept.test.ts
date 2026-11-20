@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { swept } from '$lib/rules/ink';
+import { swept } from '#lib/rules/ink.ts';
 
 describe('swept', () => {
   const lines = [

@@ -7,7 +7,7 @@
 import { render } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import Banner from '$lib/components/Banner.svelte';
+import Banner from '#lib/components/Banner.svelte';
 
 const source = readFileSync('src/lib/components/Banner.svelte', 'utf8');
 const sheet = readFileSync('src/lib/components/SheetView.svelte', 'utf8');

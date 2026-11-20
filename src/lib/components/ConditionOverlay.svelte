@@ -11,10 +11,10 @@
    * colours take turns.
    */
   import { onDestroy } from 'svelte';
-  import { prefersReducedMotion } from '$lib/motion';
-  import { hurtLevel } from '$lib/rules/hp';
-  import { lookKey, lookOf } from '$lib/rules/conditions';
-  import type { ConditionLook } from '$lib/types';
+  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { hurtLevel } from '#lib/rules/hp.ts';
+  import { lookKey, lookOf } from '#lib/rules/conditions.ts';
+  import type { ConditionLook } from '#lib/types.ts';
 
   let {
     conditions,

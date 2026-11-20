@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { _resetSound, clatter, deathBell, deathSave, heartbeat, land, nat1, nat20, setSound, soundOn } from '$lib/sound';
+import { _resetSound, clatter, deathBell, deathSave, heartbeat, land, nat1, nat20, setSound, soundOn } from '#lib/sound.ts';
 
 /** Enough of the Web Audio API to count what would be played. */
 function fakeAudio() {

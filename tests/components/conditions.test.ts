@@ -1,10 +1,10 @@
 /** The owner moves conditions from the sheet itself; a viewer only reads them. */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
-import Conditions from '$lib/components/Conditions.svelte';
-import { canUndo, resetUndo } from '$lib/stores/undo';
+import Conditions from '#lib/components/Conditions.svelte';
+import { canUndo, resetUndo } from '#lib/stores/undo.ts';
 import { get } from 'svelte/store';
-import { emptyState } from '$lib/types';
+import { emptyState } from '#lib/types.ts';
 
 describe('Conditions', () => {
   beforeEach(() => resetUndo());

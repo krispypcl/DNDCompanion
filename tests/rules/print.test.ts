@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { countedForPrint, slotLevel, spellBlocks } from '$lib/rules/print';
-import { blankDefinition } from '$lib/sample';
-import { emptyState, type Tracker } from '$lib/types';
+import { countedForPrint, slotLevel, spellBlocks } from '#lib/rules/print.ts';
+import { blankDefinition } from '#lib/sample.ts';
+import { emptyState, type Tracker } from '#lib/types.ts';
 
 const tracker = (over: Partial<Tracker>): Tracker => ({
   id: 't', label: '', max: 1, type: 'pips', direction: 'spend', reset: { on: 'long', amount: 'full' }, ...over

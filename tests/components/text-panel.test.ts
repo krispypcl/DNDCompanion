@@ -1,7 +1,7 @@
 /** Notes and backstory: who may read them, and their pages. */
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
-import TextPanel from '$lib/components/TextPanel.svelte';
+import TextPanel from '#lib/components/TextPanel.svelte';
 
 const mount = (over: Record<string, unknown> = {}) => {
   const props = {

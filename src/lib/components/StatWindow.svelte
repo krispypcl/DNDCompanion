@@ -7,9 +7,9 @@
 -->
 <script lang="ts">
   import { fade } from 'svelte/transition';
-  import { movable, portal } from '$lib/actions';
-  import { prefersReducedMotion } from '$lib/motion';
-  import { isEmpty, kindLine, statBlockHtml, type StatBlock } from '$lib/rules/statblock';
+  import { movable, portal } from '#lib/actions.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { isEmpty, kindLine, statBlockHtml, type StatBlock } from '#lib/rules/statblock.ts';
 
   let {
     name,

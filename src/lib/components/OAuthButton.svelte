@@ -4,10 +4,10 @@
    * back to `next` signed in (a new account is made the first time). Or, with
    * `link`, connects the service to the account already signed in.
    */
-  import { base } from '$app/paths';
+  import { base } from '#lib/base.ts';
   import ProviderIcon from './ProviderIcon.svelte';
   import { slide } from 'svelte/transition';
-  import { linkProvider, PROVIDER_NAMES, signInWithProvider, type OAuthProvider } from '$lib/data/session';
+  import { linkProvider, PROVIDER_NAMES, signInWithProvider, type OAuthProvider } from '#lib/data/session.ts';
 
   let {
     provider = 'google',

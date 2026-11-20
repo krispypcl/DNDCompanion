@@ -10,17 +10,17 @@ const repo = vi.hoisted(() => ({
   loadRow: vi.fn(async () => null as unknown),
   rowStamp: vi.fn(async () => null as unknown)
 }));
-vi.mock('$lib/data/sheets', () => {
+vi.mock('#lib/data/sheets.ts', () => {
   class StaleWriteError extends Error {
     constructor() { super('This sheet was changed somewhere else.'); this.name = 'StaleWriteError'; }
   }
   return { sheetRepo: repo, StaleWriteError };
 });
 
-import { StaleWriteError } from '$lib/data/sheets';
-import { onlyVitalsChanged, scrubText, sheetStore } from '$lib/stores/sheet';
-import { blankDefinition } from '$lib/sample';
-import { blankTexts, emptyState, type Definition, type Sheet, type SheetTexts } from '$lib/types';
+import { StaleWriteError } from '#lib/data/sheets.ts';
+import { onlyVitalsChanged, scrubText, sheetStore } from '#lib/stores/sheet.ts';
+import { blankDefinition } from '#lib/sample.ts';
+import { blankTexts, emptyState, type Definition, type Sheet, type SheetTexts } from '#lib/types.ts';
 
 function sheet(over: { definition?: Partial<Definition>; texts?: SheetTexts | null } = {}): Sheet {
   return {

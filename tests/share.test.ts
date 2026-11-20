@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
-import { sheetLink } from '$lib/rules/share';
-import { copyText } from '$lib/clipboard';
-import ShareButton from '$lib/components/ShareButton.svelte';
+import { sheetLink } from '#lib/rules/share.ts';
+import { copyText } from '#lib/clipboard.ts';
+import ShareButton from '#lib/components/ShareButton.svelte';
 
 describe('sheetLink', () => {
   it('joins origin, base path and id', () => {

@@ -2,8 +2,8 @@
   /** Bold, italic and the rest, for the page being written. */
   import { scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { MARKS, type Format, type MarkKind } from '$lib/rules/richtext';
-  import { prefersReducedMotion } from '$lib/motion';
+  import { MARKS, type Format, type MarkKind } from '#lib/rules/richtext.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
 
   let {
     active,

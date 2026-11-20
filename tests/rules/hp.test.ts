@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { applyDamage, applyHealing, setTempHp } from '$lib/rules/hp';
-import { emptyState, type State } from '$lib/types';
+import { applyDamage, applyHealing, setTempHp } from '#lib/rules/hp.ts';
+import { emptyState, type State } from '#lib/types.ts';
 
 const at = (hpCurrent: number, hpTemp = 0): State => ({ ...emptyState(), hpCurrent, hpTemp });
 const MAX = 40;

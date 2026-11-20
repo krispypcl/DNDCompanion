@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
-import ThemePicker from '$lib/components/ThemePicker.svelte';
+import ThemePicker from '#lib/components/ThemePicker.svelte';
 
 describe('ThemePicker', () => {
   it('keeps a hex typed into the box, with or without the #', async () => {

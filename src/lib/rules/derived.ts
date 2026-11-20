@@ -14,7 +14,7 @@ import {
   type ClassEntry,
   type Definition,
   type SkillName
-} from '$lib/types';
+} from '#lib/types.ts';
 
 export function abilityModifier(score: number): number {
   return Math.floor((score - 10) / 2);

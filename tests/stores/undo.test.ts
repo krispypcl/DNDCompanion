@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { get } from 'svelte/store';
-import { canUndo, lastLabel, resetUndo, snapshot, undo } from '$lib/stores/undo';
-import { emptyState, type State } from '$lib/types';
+import { canUndo, lastLabel, resetUndo, snapshot, undo } from '#lib/stores/undo.ts';
+import { emptyState, type State } from '#lib/types.ts';
 
 const stateWithHp = (hp: number): State => ({ ...emptyState(), hpCurrent: hp });
 

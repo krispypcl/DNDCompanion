@@ -4,9 +4,9 @@
  * it for temporary hit points), and a dot for each coloured condition along
  * its top. Pure: the background page turns these into Owlbear shapes.
  */
-import { vitalStatus } from '$lib/rules/hp';
-import { lookOf } from '$lib/rules/conditions';
-import type { ConditionLook, Sheet, State } from '$lib/types';
+import { vitalStatus } from '#lib/rules/hp.ts';
+import { lookOf } from '#lib/rules/conditions.ts';
+import type { ConditionLook, Sheet, State } from '#lib/types.ts';
 import { toHex } from './colour';
 import type { PartKind } from './keys';
 

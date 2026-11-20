@@ -6,15 +6,15 @@
    * attack roll, if the spell has no save, and the damage or healing roll.
    * The slot is spent once, by whichever is rolled first.
    */
-  import { movable, portal } from '$lib/actions';
+  import { movable, portal } from '#lib/actions.ts';
   import { onMount } from 'svelte';
   import { fade, scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { prefersReducedMotion } from '$lib/motion';
-  import { formula } from '$lib/rules/dice';
-  import { ordinal, spellLevel } from '$lib/rules/spells';
-  import { spellDamage } from '$lib/rules/spellroll';
-  import type { Spell } from '$lib/types';
+  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { formula } from '#lib/rules/dice.ts';
+  import { ordinal, spellLevel } from '#lib/rules/spells.ts';
+  import { spellDamage } from '#lib/rules/spellroll.ts';
+  import type { Spell } from '#lib/types.ts';
 
   let {
     spell,

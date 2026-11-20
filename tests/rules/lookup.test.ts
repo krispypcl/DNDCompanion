@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { lookupName, lookupUrl, sourceId } from '$lib/rules/lookup';
+import { lookupName, lookupUrl, sourceId } from '#lib/rules/lookup.ts';
 
 const query = (url: string | null) => {
   const u = new URL(url!);

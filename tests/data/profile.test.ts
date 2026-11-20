@@ -6,11 +6,11 @@ const rpc = vi.fn(async () => ({ error: null as null | { code?: string; message:
 /** What the last profiles update sent, and the answer it gets. */
 const update = vi.fn((_patch: unknown) => ({ eq: vi.fn(async () => ({ error: null as null | { message: string } })) }));
 const from = vi.fn(() => ({ update }));
-vi.mock('$lib/supabase', () => ({ supabase: { auth: { signOut, onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }), getSession: async () => ({ data: { session: null } }) }, rpc, from } }));
+vi.mock('#lib/supabase.ts', () => ({ supabase: { auth: { signOut, onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }), getSession: async () => ({ data: { session: null } }) }, rpc, from } }));
 
-const session = await import('$lib/data/session');
-const { profile } = await import('$lib/stores/profile');
-import type { ProfileRow } from '$lib/stores/profile';
+const session = await import('#lib/data/session.ts');
+const { profile } = await import('#lib/stores/profile.ts');
+import type { ProfileRow } from '#lib/stores/profile.ts';
 
 const row = (over: Partial<ProfileRow> = {}): ProfileRow => ({
   id: 'u1', display_name: '', picture_url: null, share_rows: true, private_sheets: false, preferences: {},

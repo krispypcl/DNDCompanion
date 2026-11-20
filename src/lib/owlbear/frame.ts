@@ -3,7 +3,7 @@
  * pages ever do), wait for Owlbear, and follow its light or dark. The way
  * to stop following goes onto `stops`, for the page's cleanup.
  */
-import { applyMode } from '$lib/stores/mode';
+import { applyMode } from '#lib/stores/mode.ts';
 
 export type Obr = typeof import('./obr');
 

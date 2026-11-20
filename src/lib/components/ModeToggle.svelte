@@ -1,7 +1,7 @@
 <script lang="ts">
   /** Light or dark, for this device. Sits with the other header controls. */
-  import { mode, toggleMode } from '$lib/stores/mode';
-  import { prefersReducedMotion } from '$lib/motion';
+  import { mode, toggleMode } from '#lib/stores/mode.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
 
   let shifting = 0;
 

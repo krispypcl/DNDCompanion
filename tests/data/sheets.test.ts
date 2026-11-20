@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { StaleWriteError, makeSheetRepo } from '$lib/data/sheets';
-import { emptyState, type Definition } from '$lib/types';
+import { StaleWriteError, makeSheetRepo } from '#lib/data/sheets.ts';
+import { emptyState, type Definition } from '#lib/types.ts';
 
 /** A fake just large enough for the calls the repo makes. */
 function fakeClient(opts: { updateRows?: unknown[]; selectRow?: unknown; error?: unknown } = {}) {

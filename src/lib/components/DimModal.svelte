@@ -8,8 +8,8 @@
   import type { Snippet } from 'svelte';
   import { fade } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { focusFirst, movable, portal } from '$lib/actions';
-  import { prefersReducedMotion } from '$lib/motion';
+  import { focusFirst, movable, portal } from '#lib/actions.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
 
   let { id, title, wide = false, onclose, children }: { id: string; title: string; wide?: boolean; onclose: () => void; children: Snippet } = $props();
 

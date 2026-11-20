@@ -7,8 +7,8 @@
  * - They are also saved on the account (profiles.preferences), so a
  *   device that has never chosen starts with them.
  */
-import { chooseMode, choiceKept, type ModeChoice } from '$lib/stores/mode';
-import { savePreferences, type ProfileRow } from '$lib/stores/profile';
+import { chooseMode, choiceKept, type ModeChoice } from '#lib/stores/mode.ts';
+import { savePreferences, type ProfileRow } from '#lib/stores/profile.ts';
 
 const MOTION_KEY = 'dndcompanion:motion';
 const DICE_KEY = 'dndcompanion:dice';

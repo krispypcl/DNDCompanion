@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fromHtml, toHtml } from '$lib/rules/richtext';
+import { fromHtml, toHtml } from '#lib/rules/richtext.ts';
 
 const back = (text: string) => {
   const el = document.createElement('div');
@@ -117,7 +117,7 @@ describe('colour, highlight and size', () => {
   });
 });
 
-import { joinInk, splitInk } from '$lib/rules/ink';
+import { joinInk, splitInk } from '#lib/rules/ink.ts';
 describe('a page’s drawing', () => {
   it('rides on its own last line and comes back off it', () => {
     const ink = { paper: 'grid' as const, s: [{ c: 'red', w: 4, p: [1, 2, 30.4, 40.6] }] };

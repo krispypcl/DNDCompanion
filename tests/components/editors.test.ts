@@ -5,7 +5,7 @@
  */
 import { render, screen } from '@testing-library/svelte';
 import { describe, expect, it, vi } from 'vitest';
-import ListEditor from '$lib/components/ListEditor.svelte';
+import ListEditor from '#lib/components/ListEditor.svelte';
 
 const columns = [
   { key: 'label', label: 'Label', placeholder: 'Risk Dice' },

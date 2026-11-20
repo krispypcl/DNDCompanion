@@ -6,9 +6,9 @@
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { portal } from '$lib/actions';
+  import { portal } from '#lib/actions.ts';
   import InfoTip from './InfoTip.svelte';
-  import { differences, FIELD_LABELS, searchLibrary, summary, type LibraryKind, type Suggestion } from '$lib/library';
+  import { differences, FIELD_LABELS, searchLibrary, summary, type LibraryKind, type Suggestion } from '#lib/library.ts';
 
   let {
     kind,

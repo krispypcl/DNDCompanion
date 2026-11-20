@@ -6,11 +6,11 @@
    * Given the thumbnail it was opened from, it grows out of that thumbnail
    * and shrinks back into it on closing.
    */
-  import { portal } from '$lib/actions';
+  import { portal } from '#lib/actions.ts';
   import { onMount, tick, untrack } from 'svelte';
   import { fade, scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { prefersReducedMotion } from '$lib/motion';
+  import { prefersReducedMotion } from '#lib/motion.ts';
 
   let {
     src,

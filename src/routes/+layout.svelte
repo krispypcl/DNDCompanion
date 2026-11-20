@@ -1,15 +1,15 @@
 <script lang="ts">
   import '../app.css';
   import { page, updated } from '$app/state';
-  import { sheetStore } from '$lib/stores/sheet';
+  import { sheetStore } from '#lib/stores/sheet.ts';
   import { onNavigate } from '$app/navigation';
-  import Splash from '$lib/components/Splash.svelte';
-  import ConnectionNotice from '$lib/components/ConnectionNotice.svelte';
-  import LookupPeek from '$lib/components/LookupPeek.svelte';
-  import { arrive, prefersReducedMotion } from '$lib/motion';
-  import { profile } from '$lib/stores/profile';
-  import { adoptAccountPrefs } from '$lib/prefs';
-  import { installSettle } from '$lib/settle';
+  import Splash from '#lib/components/Splash.svelte';
+  import ConnectionNotice from '#lib/components/ConnectionNotice.svelte';
+  import LookupPeek from '#lib/components/LookupPeek.svelte';
+  import { arrive, prefersReducedMotion } from '#lib/motion.ts';
+  import { profile } from '#lib/stores/profile.ts';
+  import { adoptAccountPrefs } from '#lib/prefs.ts';
+  import { installSettle } from '#lib/settle.ts';
 
   let { children } = $props();
 

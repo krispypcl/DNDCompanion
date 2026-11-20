@@ -7,8 +7,8 @@
    * a hit jolts the bar as hard as it was.
    */
   import { cubicOut } from 'svelte/easing';
-  import { hitSeverity, type Vital } from '$lib/rules/hp';
-  import { prefersReducedMotion } from '$lib/motion';
+  import { hitSeverity, type Vital } from '#lib/rules/hp.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
   import CountUp from './CountUp.svelte';
 
   let { cur, max, temp, vital, label }: { cur: number; max: number; temp: number; vital: Vital; label: string } = $props();

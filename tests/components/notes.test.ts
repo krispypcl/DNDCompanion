@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { render } from '@testing-library/svelte';
-import EditableField from '$lib/components/EditableField.svelte';
+import EditableField from '#lib/components/EditableField.svelte';
 
 const LONG_TEXT = 'word '.repeat(4000).trim(); // ~20,000 characters
 const LONG_WORD = 'x'.repeat(5000);

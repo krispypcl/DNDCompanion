@@ -5,10 +5,10 @@
  * step with their sheets, registers the right-click entries, and passes on
  * rolls made on the sheets as notifications and into the room's roll log.
  */
-import type { Sheet } from '$lib/types';
-import { supabase } from '$lib/supabase';
-import { campaignRepo } from '$lib/data/campaigns';
-import { creatureRepo, type Creature } from '$lib/data/creatures';
+import type { Sheet } from '#lib/types.ts';
+import { supabase } from '#lib/supabase.ts';
+import { campaignRepo } from '#lib/data/campaigns.ts';
+import { creatureRepo, type Creature } from '#lib/data/creatures.ts';
 import { campaignOf } from './links';
 import { followSheets } from './live';
 import { hearRolls } from './channel';

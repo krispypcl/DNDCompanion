@@ -5,7 +5,7 @@
   (rules/fiveRender). The live peek and every peek moved aside share it.
 -->
 <script lang="ts" module>
-  import type { Rendered } from '$lib/rules/fiveRender';
+  import type { Rendered } from '#lib/rules/fiveRender.ts';
   type Shown = { state: 'loading' } | { state: 'found'; entry: Rendered } | { state: 'missing' } | { state: 'offline' };
   /** Entries already looked up this visit: a peek moved aside, or opened again, shows at once. */
   const seen = new Map<string, Shown>();
@@ -13,9 +13,9 @@
 
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import { peekTarget } from '$lib/rules/peek';
-  import { findEntry } from '$lib/rules/fiveData';
-  import { render } from '$lib/rules/fiveRender';
+  import { peekTarget } from '#lib/rules/peek.ts';
+  import { findEntry } from '#lib/rules/fiveData.ts';
+  import { render } from '#lib/rules/fiveRender.ts';
 
   let { name, url, tools }: { name: string; url: string; tools: Snippet } = $props();
 

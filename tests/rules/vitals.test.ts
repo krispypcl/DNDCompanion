@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { applyDamage, applyHealing, isDead, setDeathSave, withVitals } from '$lib/rules/hp';
-import { emptyState, type State } from '$lib/types';
+import { applyDamage, applyHealing, isDead, setDeathSave, withVitals } from '#lib/rules/hp.ts';
+import { emptyState, type State } from '#lib/types.ts';
 
 const at = (hp: number, over: Partial<State> = {}): State => ({ ...emptyState(), hpCurrent: hp, ...over });
 const step = (before: State, after: State) => withVitals(before, after, 20);

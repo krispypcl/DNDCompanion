@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CampaignError, campaignMessage, inviteCode, lastSessionOf, setNextSession } from '$lib/data/campaigns';
+import { CampaignError, campaignMessage, inviteCode, lastSessionOf, setNextSession } from '#lib/data/campaigns.ts';
 
 describe('campaign helpers', () => {
   it('reads an invite pasted as a code or as the whole link', () => {
@@ -31,7 +31,7 @@ describe('last session', () => {
 });
 
 describe('readInitiative', async () => {
-  const { readInitiative, NO_INITIATIVE } = await import('$lib/data/campaigns');
+  const { readInitiative, NO_INITIATIVE } = await import('#lib/data/campaigns.ts');
   it('reads nothing as no fight', () => {
     expect(readInitiative(null)).toEqual(NO_INITIATIVE);
     expect(readInitiative('x')).toEqual(NO_INITIATIVE);

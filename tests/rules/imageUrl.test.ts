@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveImageUrl } from '$lib/rules/imageUrl';
+import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
 
 describe('resolveImageUrl', () => {
   it('says nothing for nothing', () => {

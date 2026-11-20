@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { friendlyError } from '$lib/errors';
+import { friendlyError } from '#lib/errors.ts';
 
 describe('friendlyError', () => {
   it('turns what Supabase and the browser say into something friendlier', () => {

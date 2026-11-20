@@ -3,9 +3,9 @@
  * widths, placeholders and what can be pressed. Plain data, so the sheet's
  * component keeps to behaviour and layout.
  */
-import { parseRoll } from '$lib/rules/dice';
-import { spellDamage } from '$lib/rules/spellroll';
-import type { Feature } from '$lib/types';
+import { parseRoll } from '#lib/rules/dice.ts';
+import { spellDamage } from '#lib/rules/spellroll.ts';
+import type { Feature } from '#lib/types.ts';
 
 export const TABS = ['Combat', 'Equipment', 'Spells', 'Features', 'Trackers', 'Character', 'Notes', 'Backstory', 'Appearance'];
 

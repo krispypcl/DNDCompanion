@@ -3,7 +3,7 @@
   import { onMount } from 'svelte';
   import { fade, scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { prefersReducedMotion } from '$lib/motion';
+  import { prefersReducedMotion } from '#lib/motion.ts';
 
   let { onstay, onleave }: { onstay: () => void; onleave: () => void } = $props();
   const still = prefersReducedMotion();

@@ -1,12 +1,12 @@
 <script lang="ts">
   import EntryLink from './EntryLink.svelte';
-  import { trackerUrl } from '$lib/rules/lookup';
-  import { brewLoaded } from '$lib/rules/brewClasses';
-  import { clampSpent, trackerMax } from '$lib/rules/tracker';
-  import { FormulaError } from '$lib/rules/formula';
-  import type { FormulaContext } from '$lib/rules/formula';
-  import type { Tracker } from '$lib/types';
-  import { parseRoll } from '$lib/rules/dice';
+  import { trackerUrl } from '#lib/rules/lookup.ts';
+  import { brewLoaded } from '#lib/rules/brewClasses.ts';
+  import { clampSpent, trackerMax } from '#lib/rules/tracker.ts';
+  import { FormulaError } from '#lib/rules/formula.ts';
+  import type { FormulaContext } from '#lib/rules/formula.ts';
+  import type { Tracker } from '#lib/types.ts';
+  import { parseRoll } from '#lib/rules/dice.ts';
   import { fade, slide } from 'svelte/transition';
 
   let {

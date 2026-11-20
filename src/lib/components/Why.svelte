@@ -8,9 +8,9 @@
   import type { Snippet } from 'svelte';
   import { scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { portal } from '$lib/actions';
-  import { prefersReducedMotion } from '$lib/motion';
-  import type { Part } from '$lib/rules/equipment';
+  import { portal } from '#lib/actions.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
+  import type { Part } from '#lib/rules/equipment.ts';
 
   let {
     title,

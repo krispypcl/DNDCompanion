@@ -12,8 +12,8 @@
  *   page waits for that to be settled (`settled`, at most 3.5 s) before
  *   showing a player that could start from a moment that no longer holds.
  */
-import { supabase, isConfigured } from '$lib/supabase';
-import { campaignRepo, type CampaignLive, type Playback } from '$lib/data/campaigns';
+import { supabase, isConfigured } from '#lib/supabase.ts';
+import { campaignRepo, type CampaignLive, type Playback } from '#lib/data/campaigns.ts';
 
 type Presence = Record<string, { dm?: boolean; user?: string }[]>;
 

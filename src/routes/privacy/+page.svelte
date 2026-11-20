@@ -3,7 +3,7 @@
    * The privacy policy: what the site keeps, where, and how to remove it.
    * Linked from Google's sign-in screen, so it must stay true to the code.
    */
-  import { base } from '$app/paths';
+  import { base } from '#lib/base.ts';
 </script>
 
 <svelte:head><title>Privacy | DND Companion</title></svelte:head>

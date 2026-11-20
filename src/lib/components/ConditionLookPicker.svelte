@@ -7,9 +7,9 @@
    */
   import { slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { prefersReducedMotion } from '$lib/motion';
-  import { CONDITION_MOTIONS as MOTIONS, CONDITION_SWATCHES as SWATCHES } from '$lib/rules/conditions';
-  import type { ConditionLook } from '$lib/types';
+  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { CONDITION_MOTIONS as MOTIONS, CONDITION_SWATCHES as SWATCHES } from '#lib/rules/conditions.ts';
+  import type { ConditionLook } from '#lib/types.ts';
 
   let {
     name,

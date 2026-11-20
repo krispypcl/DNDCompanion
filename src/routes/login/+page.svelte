@@ -1,8 +1,8 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { base } from '$app/paths';
-  import AuthForm from '$lib/components/AuthForm.svelte';
-  import { signIn } from '$lib/data/session';
+  import { base } from '#lib/base.ts';
+  import AuthForm from '#lib/components/AuthForm.svelte';
+  import { signIn } from '#lib/data/session.ts';
   import { page } from '$app/state';
 
   /** Where to go after: back to the page that sent here (an invite), if it is ours. */
@@ -29,7 +29,9 @@
   ]}
   onsubmit={async (v) => {
     await signIn(v.email, v.password);
-    await goto(next());
+    // goto refuses a ?next= that is no route; load it plainly rather than fail the sign-in.
+    const to = next();
+    await goto(to).catch(() => location.assign(to));
   }}
 >
   <a class="smallbtn" href="{base}/signup">Create an account</a>

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
-import CastPicker from '$lib/components/CastPicker.svelte';
+import CastPicker from '#lib/components/CastPicker.svelte';
 
 const fireball = { name: 'Fireball', level: '3', save: 'DEX', damage: '8d6 +1d6/level' } as never;
 const bolt = { name: 'Guiding Bolt', level: '1', damage: '4d6 +1d6/level' } as never;

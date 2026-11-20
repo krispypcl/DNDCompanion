@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cantripTier, spellDamage, splitUpcast } from '$lib/rules/spellroll';
+import { cantripTier, spellDamage, splitUpcast } from '#lib/rules/spellroll.ts';
 
 describe('spell rolls', () => {
   it('reads what a spell gains per level', () => {

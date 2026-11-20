@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'vitest';
 import { render } from '@testing-library/svelte';
-import AbilityBand from '$lib/components/AbilityBand.svelte';
-import HitPoints from '$lib/components/HitPoints.svelte';
-import SkillRail from '$lib/components/SkillRail.svelte';
-import Tracker from '$lib/components/Tracker.svelte';
-import { formulaContext } from '$lib/rules/derived';
-import { emptyState, type Definition, type Tracker as TrackerT } from '$lib/types';
+import AbilityBand from '#lib/components/AbilityBand.svelte';
+import HitPoints from '#lib/components/HitPoints.svelte';
+import SkillRail from '#lib/components/SkillRail.svelte';
+import Tracker from '#lib/components/Tracker.svelte';
+import { formulaContext } from '#lib/rules/derived.ts';
+import { emptyState, type Definition, type Tracker as TrackerT } from '#lib/types.ts';
 
 /** Loka Sibbs at level 5, straight off the real sheet. */
 const loka: Definition = {

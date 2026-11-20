@@ -3,8 +3,8 @@
  * adds the extension by this file's address. Built with the site, so its
  * paths carry the site's base path.
  */
-import { base } from '$app/paths';
-import { version } from '$app/environment';
+import { base } from '#lib/base.ts';
+import { version } from '$app/env';
 
 export const prerender = true;
 

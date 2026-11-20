@@ -9,12 +9,12 @@
    */
   import { tick } from 'svelte';
   import InfoTip from './InfoTip.svelte';
-  import { diceRequest, takeRoll } from '$lib/stores/dice';
-  import { DIE_SIDES, addDie, diceCount, formula, hasD20, roll, type Mode, type Pool, type Roll, type Sides } from '$lib/rules/dice';
-  import { prefersReducedMotion } from '$lib/motion';
-  import { clatter, land, nat1, nat20 } from '$lib/sound';
-  import { storedDice } from '$lib/prefs';
-  import { trayMemory } from '$lib/stores/tray';
+  import { diceRequest, takeRoll } from '#lib/stores/dice.ts';
+  import { DIE_SIDES, addDie, diceCount, formula, hasD20, roll, type Mode, type Pool, type Roll, type Sides } from '#lib/rules/dice.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { clatter, land, nat1, nat20 } from '#lib/sound.ts';
+  import { storedDice } from '#lib/prefs.ts';
+  import { trayMemory } from '#lib/stores/tray.ts';
   import { get } from 'svelte/store';
 
   /** Told of each roll once it lands (the sheet passes it on to Owlbear rooms). */

@@ -13,14 +13,14 @@
   import { onMount, untrack } from 'svelte';
   import { fade, scale, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { campaignMessage, campaignRepo, type BoardData, type BoardItem } from '$lib/data/campaigns';
-  import { isConfigured, supabase } from '$lib/supabase';
-  import { prefersReducedMotion } from '$lib/motion';
-  import { INKS, PAPERS } from '$lib/palette';
+  import { campaignMessage, campaignRepo, type BoardData, type BoardItem } from '#lib/data/campaigns.ts';
+  import { isConfigured, supabase } from '#lib/supabase.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { INKS, PAPERS } from '#lib/palette.ts';
   import SectionHead from './SectionHead.svelte';
   import { get } from 'svelte/store';
-  import { isPalm, keepStylus, penOnly, sawPen } from '$lib/pen';
-  import { swept } from '$lib/rules/ink';
+  import { isPalm, keepStylus, penOnly, sawPen } from '#lib/pen.ts';
+  import { swept } from '#lib/rules/ink.ts';
 
   let {
     campaignId,

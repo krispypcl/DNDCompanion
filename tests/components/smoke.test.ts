@@ -1,14 +1,14 @@
 import { describe, expect, test } from 'vitest';
 import { render } from '@testing-library/svelte';
-import EntryTable from '$lib/components/EntryTable.svelte';
-import EntryLink from '$lib/components/EntryLink.svelte';
-import RestButtons from '$lib/components/RestButtons.svelte';
-import SaveIndicator from '$lib/components/SaveIndicator.svelte';
-import TrackerGroup from '$lib/components/TrackerGroup.svelte';
-import UndoToast from '$lib/components/UndoToast.svelte';
-import { formulaContext } from '$lib/rules/derived';
-import { blankDefinition } from '$lib/sample';
-import { emptyState, type Definition, type Tracker } from '$lib/types';
+import EntryTable from '#lib/components/EntryTable.svelte';
+import EntryLink from '#lib/components/EntryLink.svelte';
+import RestButtons from '#lib/components/RestButtons.svelte';
+import SaveIndicator from '#lib/components/SaveIndicator.svelte';
+import TrackerGroup from '#lib/components/TrackerGroup.svelte';
+import UndoToast from '#lib/components/UndoToast.svelte';
+import { formulaContext } from '#lib/rules/derived.ts';
+import { blankDefinition } from '#lib/sample.ts';
+import { emptyState, type Definition, type Tracker } from '#lib/types.ts';
 
 const def: Definition = {
   ...blankDefinition('Smoke'),

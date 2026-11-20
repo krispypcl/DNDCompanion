@@ -1,7 +1,7 @@
 import { render } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
-import DownScreen from '$lib/components/DownScreen.svelte';
-import { emptyState } from '$lib/types';
+import DownScreen from '#lib/components/DownScreen.svelte';
+import { emptyState } from '#lib/types.ts';
 
 describe('DownScreen', () => {
   it('beats twice on going down, then keeps a vignette', async () => {

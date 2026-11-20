@@ -9,17 +9,17 @@
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
   import { fade } from 'svelte/transition';
-  import { parsePlaylist, youtubeTitle } from '$lib/music';
+  import { parsePlaylist, youtubeTitle } from '#lib/music.ts';
   import InfoTip from './InfoTip.svelte';
-  import { nameFont } from '$lib/rules/fonts';
+  import { nameFont } from '#lib/rules/fonts.ts';
   import ThemePicker from './ThemePicker.svelte';
-  import { resolveImageUrl } from '$lib/rules/imageUrl';
-  import { SOUND_NAMES, audioUrl, previewSound, type SoundName } from '$lib/sound';
+  import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
+  import { SOUND_NAMES, audioUrl, previewSound, type SoundName } from '#lib/sound.ts';
   import SpeakerButton from './SpeakerButton.svelte';
-  import { foldRow } from '$lib/motion';
+  import { foldRow } from '#lib/motion.ts';
   import EditableField from './EditableField.svelte';
   import Lightbox from './Lightbox.svelte';
-  import type { Definition } from '$lib/types';
+  import type { Definition } from '#lib/types.ts';
 
   let {
     definition,

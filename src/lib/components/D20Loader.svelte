@@ -6,7 +6,7 @@
    * result has been shown long enough to read.
    */
   import { onMount } from 'svelte';
-  import { prefersReducedMotion } from '$lib/motion';
+  import { prefersReducedMotion } from '#lib/motion.ts';
 
   let {
     result = null,

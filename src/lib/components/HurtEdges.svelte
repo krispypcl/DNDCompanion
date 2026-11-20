@@ -9,7 +9,7 @@
    * starts faint and greyish-red and ends deep, saturated and nearly opaque,
    * and every step between is a transition rather than a jump.
    */
-  import { hurtLevel } from '$lib/rules/hp';
+  import { hurtLevel } from '#lib/rules/hp.ts';
 
   let { current, max }: { current: number; max: number } = $props();
 

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { PRESETS, buildPreset, presetsFor } from '$lib/rules/presets';
-import { evaluateFormula } from '$lib/rules/formula';
-import { trackerMax } from '$lib/rules/tracker';
-import { formulaContext } from '$lib/rules/derived';
-import { blankDefinition } from '$lib/sample';
+import { PRESETS, buildPreset, presetsFor } from '#lib/rules/presets.ts';
+import { evaluateFormula } from '#lib/rules/formula.ts';
+import { trackerMax } from '#lib/rules/tracker.ts';
+import { formulaContext } from '#lib/rules/derived.ts';
+import { blankDefinition } from '#lib/sample.ts';
 
 describe('ready-made trackers', () => {
   it('puts the character’s own classes first', () => {

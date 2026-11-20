@@ -21,9 +21,9 @@
  * the link between a window and the frame that opened it.
  */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { base } from '$app/paths';
-import { supabase, supabaseKey, supabaseUrl } from '$lib/supabase';
-import { PROVIDER_NAMES, type OAuthProvider } from '$lib/data/session';
+import { base } from '#lib/base.ts';
+import { supabase, supabaseKey, supabaseUrl } from '#lib/supabase.ts';
+import { PROVIDER_NAMES, type OAuthProvider } from '#lib/data/session.ts';
 
 export const SIGNIN_EVENT = 'code';
 export const signinChannel = (nonce: string) => `dndc-signin:${nonce}`;

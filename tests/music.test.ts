@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parsePlaylist } from '$lib/music';
+import { parsePlaylist } from '#lib/music.ts';
 
 describe('parsePlaylist', () => {
   it('reads YouTube and YouTube Music playlists', () => {

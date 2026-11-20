@@ -1,41 +1,41 @@
 <script lang="ts">
-  import InfoTip from '$lib/components/InfoTip.svelte';
-  import NotFound from '$lib/components/NotFound.svelte';
-  import { pageTitle } from '$lib/title';
-  import { profile } from '$lib/stores/profile';
+  import InfoTip from '#lib/components/InfoTip.svelte';
+  import NotFound from '#lib/components/NotFound.svelte';
+  import { pageTitle } from '#lib/title.ts';
+  import { profile } from '#lib/stores/profile.ts';
   /**
    * The player's own account: how they appear (a name and a picture, the
    * picture by link like a portrait) and signing out, their password, the
    * services they sign in with, and who can see what they make.
    */
-  import { base } from '$app/paths';
+  import { base } from '#lib/base.ts';
   import { goto } from '$app/navigation';
-  import Avatar from '$lib/components/Avatar.svelte';
-  import Lightbox from '$lib/components/Lightbox.svelte';
-  import ModeToggle from '$lib/components/ModeToggle.svelte';
-  import D20Loader from '$lib/components/D20Loader.svelte';
+  import Avatar from '#lib/components/Avatar.svelte';
+  import Lightbox from '#lib/components/Lightbox.svelte';
+  import ModeToggle from '#lib/components/ModeToggle.svelte';
+  import D20Loader from '#lib/components/D20Loader.svelte';
   import {
     deleteAccount, enabledProviders, profileOf, PROVIDER_NAMES, providersOf, sheetsPrivate,
     setSheetsPrivate, signOut, signOutEverywhere, unlinkProvider, updatePassword, updateProfile,
     type OAuthProvider
-  } from '$lib/data/session';
-  import OAuthButton from '$lib/components/OAuthButton.svelte';
-  import ProviderIcon from '$lib/components/ProviderIcon.svelte';
+  } from '#lib/data/session.ts';
+  import OAuthButton from '#lib/components/OAuthButton.svelte';
+  import ProviderIcon from '#lib/components/ProviderIcon.svelte';
   import { slide } from 'svelte/transition';
-  import { passwordStrength } from '$lib/rules/password';
-  import { resolveImageUrl } from '$lib/rules/imageUrl';
-  import { session } from '$lib/stores/session';
-  import { friendlyError } from '$lib/errors';
-  import Switch from '$lib/components/Switch.svelte';
-  import Choice from '$lib/components/Choice.svelte';
+  import { passwordStrength } from '#lib/rules/password.ts';
+  import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
+  import { session } from '#lib/stores/session.ts';
+  import { friendlyError } from '#lib/errors.ts';
+  import Switch from '#lib/components/Switch.svelte';
+  import Choice from '#lib/components/Choice.svelte';
   import { fade } from 'svelte/transition';
-  import { chooseMode, modeChoice, type ModeChoice } from '$lib/stores/mode';
-  import { savePrefs, setDiceStyle, setReduceMotion, storedDice, storedReduceMotion, type DiceStyle, type Prefs } from '$lib/prefs';
-  import { sheetRepo } from '$lib/data/sheets';
-  import { campaignRepo } from '$lib/data/campaigns';
-  import { characterLevel, mainClass } from '$lib/rules/derived';
-  import { numericDate } from '$lib/rules/dates';
-  import { setSharing, sharing } from '$lib/library';
+  import { chooseMode, modeChoice, type ModeChoice } from '#lib/stores/mode.ts';
+  import { savePrefs, setDiceStyle, setReduceMotion, storedDice, storedReduceMotion, type DiceStyle, type Prefs } from '#lib/prefs.ts';
+  import { sheetRepo } from '#lib/data/sheets.ts';
+  import { campaignRepo } from '#lib/data/campaigns.ts';
+  import { characterLevel, mainClass } from '#lib/rules/derived.ts';
+  import { numericDate } from '#lib/rules/dates.ts';
+  import { setSharing, sharing } from '#lib/library.ts';
 
   const MIN_PASSWORD = 8;
 

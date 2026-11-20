@@ -1,14 +1,14 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
-  import { applyRest, healFromHitDice, hitDiceLeft, hitDicePool } from '$lib/rules/rest';
-  import { formula as describePool, type Pool, type Roll } from '$lib/rules/dice';
-  import { modifierOf } from '$lib/rules/derived';
-  import { prefersReducedMotion } from '$lib/motion';
-  import { snapshot } from '$lib/stores/undo';
-  import { dawn, longRest, shortRest as shortRestSound } from '$lib/sound';
+  import { applyRest, healFromHitDice, hitDiceLeft, hitDicePool } from '#lib/rules/rest.ts';
+  import { formula as describePool, type Pool, type Roll } from '#lib/rules/dice.ts';
+  import { modifierOf } from '#lib/rules/derived.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { snapshot } from '#lib/stores/undo.ts';
+  import { dawn, longRest, shortRest as shortRestSound } from '#lib/sound.ts';
 
   const SOUNDS: Record<RestKind, () => void> = { short: shortRestSound, long: longRest, dawn };
-  import type { Definition, RestKind, State } from '$lib/types';
+  import type { Definition, RestKind, State } from '#lib/types.ts';
 
   let {
     definition,

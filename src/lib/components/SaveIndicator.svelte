@@ -14,8 +14,8 @@
    * to miss than a corner.
    */
   import { fly } from 'svelte/transition';
-  import { sheetStore } from '$lib/stores/sheet';
-  import { prefersReducedMotion } from '$lib/motion';
+  import { sheetStore } from '#lib/stores/sheet.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
 
   const LABELS: Record<string, string> = {
     idle: '',

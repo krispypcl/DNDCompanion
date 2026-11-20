@@ -8,8 +8,8 @@
    */
   import { fade } from 'svelte/transition';
   import { get } from 'svelte/store';
-  import { swept, type Ink, type Stroke } from '$lib/rules/ink';
-  import { isPalm, keepStylus, penOnly, sawPen } from '$lib/pen';
+  import { swept, type Ink, type Stroke } from '#lib/rules/ink.ts';
+  import { isPalm, keepStylus, penOnly, sawPen } from '#lib/pen.ts';
 
   let {
     ink,

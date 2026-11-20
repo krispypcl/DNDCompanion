@@ -1,7 +1,7 @@
 <script lang="ts">
   /** Coins. Lives in the rail rather than the Equipment tab, which is then
       only the things you carry. */
-  import type { Definition } from '$lib/types';
+  import type { Definition } from '#lib/types.ts';
 
   let {
     definition,

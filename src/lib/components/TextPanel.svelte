@@ -1,8 +1,8 @@
 <script lang="ts">
   import InkLayer from './InkLayer.svelte';
   import { fade } from 'svelte/transition';
-  import { INKS } from '$lib/palette';
-  import { blankInk, joinInk, splitInk, type Ink, type Paper, type Stroke } from '$lib/rules/ink';
+  import { INKS } from '#lib/palette.ts';
+  import { blankInk, joinInk, splitInk, type Ink, type Paper, type Stroke } from '#lib/rules/ink.ts';
   /**
    * One long-form writing (notes, backstory), kept in pages like a book. In
    * edit mode the owner has one switch for it, private or not, beside the
@@ -11,12 +11,12 @@
    */
   import FormatBar from './FormatBar.svelte';
   import RichPage from './RichPage.svelte';
-  import type { Format, MarkKind } from '$lib/rules/richtext';
+  import type { Format, MarkKind } from '#lib/rules/richtext.ts';
   import Switch from './Switch.svelte';
   import PageTurn from './PageTurn.svelte';
   import { cubicOut } from 'svelte/easing';
-  import { prefersReducedMotion } from '$lib/motion';
-  import { addPage, isBlank, joinPages, removePage, setPage, splitPages } from '$lib/rules/pages';
+  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { addPage, isBlank, joinPages, removePage, setPage, splitPages } from '#lib/rules/pages.ts';
 
   let {
     label,

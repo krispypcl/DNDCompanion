@@ -1,7 +1,3 @@
-/// <reference types="@sveltejs/kit" />
-/// <reference no-default-lib="true"/>
-/// <reference lib="esnext" />
-/// <reference lib="webworker" />
 /**
  * Lets the site be installed on a phone's home screen, and keeps the app's
  * own files on the device so it opens, and moves between pages, without
@@ -11,11 +7,14 @@
  * so a cached copy is never stale. Everything else — sheets, sign-in, other
  * sites' pictures — always goes to the network.
  */
-import { build, files, version } from '$service-worker';
+import { version } from '$app/env';
+import { assets, immutable } from '$app/manifest';
+import { self as sw } from '$app/service-worker';
 
-const sw = self as unknown as ServiceWorkerGlobalScope;
 const CACHE = `dndcompanion-${version}`;
-const SHELL = [...build, ...files];
+// The manifest's paths are relative to the base path, and the worker's scope
+// is the base path, so each resolves against the scope.
+const SHELL = [...immutable, ...assets].map(({ path }) => new URL(path, sw.registration.scope).pathname);
 
 sw.addEventListener('install', (event) => {
   event.waitUntil(

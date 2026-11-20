@@ -1,6 +1,6 @@
 <script lang="ts">
   import InfoTip from './InfoTip.svelte';
-  import { siteRoot } from '$lib/rules/share';
+  import { siteRoot } from '#lib/rules/share.ts';
   /**
    * A campaign's page, /c/<id>: a card for each character in it, with what a
    * DM glances at mid-fight (hit points, AC, passive Perception, conditions),
@@ -12,26 +12,26 @@
   import { onMount } from 'svelte';
   import { fade, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { base } from '$app/paths';
+  import { base } from '#lib/base.ts';
   import { goto } from '$app/navigation';
-  import { campaignMessage, campaignRepo, NO_INITIATIVE, setNextSession, type Campaign, type CampaignDetails } from '$lib/data/campaigns';
-  import { TableMusic } from '$lib/tableMusic.svelte';
-  import { sheetRepo } from '$lib/data/sheets';
-  import { isConfigured, supabase } from '$lib/supabase';
-  import { session } from '$lib/stores/session';
-  import { classLine, initiativeParts } from '$lib/rules/derived';
-  import { advantageFrom } from '$lib/rules/equipment';
-  import { creatureRepo, type Revealed } from '$lib/data/creatures';
-  import { CreatureTable } from '$lib/creatureTable.svelte';
-  import { next as nextTurn, previous as previousTurn, rollInitiative, start as startTurns, type InitiativeRow } from '$lib/rules/initiative';
-  import { LiveInitiative } from '$lib/initiative.svelte';
-  import { initiativeBonus } from '$lib/rules/statblock';
-  import { resolveImageUrl } from '$lib/rules/imageUrl';
-  import { faceFamily, nameFont } from '$lib/rules/fonts';
-  import { themeStyle } from '$lib/theme';
-  import { friendlyError } from '$lib/errors';
-  import { popIn, prefersReducedMotion } from '$lib/motion';
-  import { glide } from '$lib/flip';
+  import { campaignMessage, campaignRepo, NO_INITIATIVE, setNextSession, type Campaign, type CampaignDetails } from '#lib/data/campaigns.ts';
+  import { TableMusic } from '#lib/tableMusic.svelte.ts';
+  import { sheetRepo } from '#lib/data/sheets.ts';
+  import { isConfigured, supabase } from '#lib/supabase.ts';
+  import { session } from '#lib/stores/session.ts';
+  import { classLine, initiativeParts } from '#lib/rules/derived.ts';
+  import { advantageFrom } from '#lib/rules/equipment.ts';
+  import { creatureRepo, type Revealed } from '#lib/data/creatures.ts';
+  import { CreatureTable } from '#lib/creatureTable.svelte.ts';
+  import { next as nextTurn, previous as previousTurn, rollInitiative, start as startTurns, type InitiativeRow } from '#lib/rules/initiative.ts';
+  import { LiveInitiative } from '#lib/initiative.svelte.ts';
+  import { initiativeBonus } from '#lib/rules/statblock.ts';
+  import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
+  import { faceFamily, nameFont } from '#lib/rules/fonts.ts';
+  import { themeStyle } from '#lib/theme.ts';
+  import { friendlyError } from '#lib/errors.ts';
+  import { popIn, prefersReducedMotion } from '#lib/motion.ts';
+  import { glide } from '#lib/flip.ts';
   import Banner from './Banner.svelte';
   import CampaignMusic from './CampaignMusic.svelte';
   import SectionHead from './SectionHead.svelte';
@@ -45,18 +45,18 @@
   import CampaignSkeleton from './CampaignSkeleton.svelte';
   import CampaignCreatures from './CampaignCreatures.svelte';
   import AreaSwitch from './AreaSwitch.svelte';
-  import { pageTitle } from '$lib/title';
-  import { sessionWhen } from '$lib/rules/dates';
+  import { pageTitle } from '#lib/title.ts';
+  import { sessionWhen } from '#lib/rules/dates.ts';
   import ShareButton from './ShareButton.svelte';
   import ShortcutHelp from './ShortcutHelp.svelte';
   import Spotlight from './Spotlight.svelte';
   import InitiativeTracker from './InitiativeTracker.svelte';
   import RevealedCreatures from './RevealedCreatures.svelte';
   import ThemePicker from './ThemePicker.svelte';
-  import { setSound, soundOn } from '$lib/sound';
+  import { setSound, soundOn } from '#lib/sound.ts';
   import { get } from 'svelte/store';
   import SoundToggle from './SoundToggle.svelte';
-  import type { ConditionLook, Sheet } from '$lib/types';
+  import type { ConditionLook, Sheet } from '#lib/types.ts';
 
   let { id }: { id: string } = $props();
 

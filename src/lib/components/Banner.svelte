@@ -6,8 +6,8 @@
    * the image inside drifts at three quarters of the page's speed.
    */
   import { onMount } from 'svelte';
-  import { DESKTOP_SLASH, FALLBACK_MASK, PHONE_SLASH, slashMask } from '$lib/bannerMask';
-  import { prefersReducedMotion } from '$lib/motion';
+  import { DESKTOP_SLASH, FALLBACK_MASK, PHONE_SLASH, slashMask } from '#lib/bannerMask.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
 
   let { url }: { url: string } = $props();
 

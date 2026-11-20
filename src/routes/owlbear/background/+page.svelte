@@ -8,7 +8,7 @@
   onMount(() => {
     let stop = () => {};
     let gone = false;
-    void import('$lib/owlbear/background').then(async (m) => {
+    void import('#lib/owlbear/background.ts').then(async (m) => {
       const s = await m.run();
       if (gone) s();
       else stop = s;

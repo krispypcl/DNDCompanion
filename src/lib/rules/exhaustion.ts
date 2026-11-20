@@ -6,7 +6,7 @@
  * The level is read from the Exhaustion tracker when the sheet has one (its
  * pips count the levels), otherwise from an "Exhaustion 3" condition.
  */
-import type { Definition, State, Tracker } from '$lib/types';
+import type { Definition, State, Tracker } from '#lib/types.ts';
 
 const EXHAUSTION = 'Exhaustion';
 const MAX_EXHAUSTION = 6;

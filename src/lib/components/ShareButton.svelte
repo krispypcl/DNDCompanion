@@ -1,8 +1,8 @@
 <script lang="ts">
   /** Copies a page's link (a sheet's, or a campaign's), for pasting to the rest of the table. */
-  import { base } from '$app/paths';
-  import { copyText } from '$lib/clipboard';
-  import { sheetLink, siteRoot } from '$lib/rules/share';
+  import { base } from '#lib/base.ts';
+  import { copyText } from '#lib/clipboard.ts';
+  import { sheetLink, siteRoot } from '#lib/rules/share.ts';
 
   let {
     id,

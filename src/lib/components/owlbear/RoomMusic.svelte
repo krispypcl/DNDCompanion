@@ -6,11 +6,11 @@
    * It stays open while the panel is shut; × puts it away.
    */
   import { onMount } from 'svelte';
-  import { joinRoom, type Obr } from '$lib/owlbear/frame';
+  import { joinRoom, type Obr } from '#lib/owlbear/frame.ts';
   import { fade } from 'svelte/transition';
-  import { session } from '$lib/stores/session';
-  import { campaignRepo, type Campaign } from '$lib/data/campaigns';
-  import { TableMusic } from '$lib/tableMusic.svelte';
+  import { session } from '#lib/stores/session.ts';
+  import { campaignRepo, type Campaign } from '#lib/data/campaigns.ts';
+  import { TableMusic } from '#lib/tableMusic.svelte.ts';
   import CampaignMusic from '../CampaignMusic.svelte';
   import InfoTip from '../InfoTip.svelte';
   import SoundToggle from '../SoundToggle.svelte';

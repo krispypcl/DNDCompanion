@@ -3,8 +3,8 @@
  * definition. Kept apart from the component so they can be read, and tested,
  * on their own.
  */
-import { trackerUrl } from '$lib/rules/lookup';
-import type { ClassEntry, Definition, RestKind, State, Tracker, TrackerDirection, TrackerType } from '$lib/types';
+import { trackerUrl } from '#lib/rules/lookup.ts';
+import type { ClassEntry, Definition, RestKind, State, Tracker, TrackerDirection, TrackerType } from '#lib/types.ts';
 
 /** A fresh id for a tracker. */
 export function newId(): string {

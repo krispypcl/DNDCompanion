@@ -3,7 +3,7 @@
  * for, the total and the dice. Kept small: the room keeps the latest few in
  * its metadata (which Owlbear limits to 16 kB for everything).
  */
-import type { Roll } from '$lib/rules/dice';
+import type { Roll } from '#lib/rules/dice.ts';
 
 export type RollNote = {
   sheet: string;

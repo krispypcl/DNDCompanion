@@ -4,9 +4,9 @@
    * lost; when it comes back, sends what was waiting and says that too.
    */
   import { fly } from 'svelte/transition';
-  import { online } from '$lib/stores/online';
-  import { sheetStore } from '$lib/stores/sheet';
-  import { prefersReducedMotion } from '$lib/motion';
+  import { online } from '#lib/stores/online.ts';
+  import { sheetStore } from '#lib/stores/sheet.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
 
   let back = $state(false);
   let wasOffline = false;

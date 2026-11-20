@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { peekTarget } from '$lib/rules/peek';
-import { inline, render } from '$lib/rules/fiveRender';
+import { peekTarget } from '#lib/rules/peek.ts';
+import { inline, render } from '#lib/rules/fiveRender.ts';
 
 describe('peekTarget', () => {
   it('reads an entry page link', () => {

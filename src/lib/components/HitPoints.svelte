@@ -7,12 +7,12 @@
   import CountUp from './CountUp.svelte';
   import EditableField from './EditableField.svelte';
   import Reveal from './Reveal.svelte';
-  import { applyDamage, applyHealing, hitSeverity, isDead, setDeathSave, setTempHp, vitalStatus, withVitals } from '$lib/rules/hp';
-  import { snapshot } from '$lib/stores/undo';
-  import { heal, hit, shield } from '$lib/sound';
-  import { prefersReducedMotion } from '$lib/motion';
+  import { applyDamage, applyHealing, hitSeverity, isDead, setDeathSave, setTempHp, vitalStatus, withVitals } from '#lib/rules/hp.ts';
+  import { snapshot } from '#lib/stores/undo.ts';
+  import { heal, hit, shield } from '#lib/sound.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
   import { cubicOut } from 'svelte/easing';
-  import type { Definition, State } from '$lib/types';
+  import type { Definition, State } from '#lib/types.ts';
 
   let {
     definition,

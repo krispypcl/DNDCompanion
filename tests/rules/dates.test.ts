@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countdown, friendlyDate, latest, numericDate, sessionWhen } from '$lib/rules/dates';
+import { countdown, friendlyDate, latest, numericDate, sessionWhen } from '#lib/rules/dates.ts';
 
 const now = new Date(2026, 10, 2, 9, 0);
 

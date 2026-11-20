@@ -5,7 +5,7 @@
  * Not saved anywhere; a fresh visit starts folded.
  */
 import { writable } from 'svelte/store';
-import type { Pool, Roll } from '$lib/rules/dice';
+import type { Pool, Roll } from '#lib/rules/dice.ts';
 
 export type TrayMemory = { open: boolean; pool: Pool; last: Roll | null; history: Roll[] };
 

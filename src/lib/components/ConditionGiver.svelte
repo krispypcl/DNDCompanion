@@ -4,7 +4,7 @@
   campaign page uses it for characters and for monsters and NPCs alike.
 -->
 <script lang="ts">
-  import { STANDARD_CONDITIONS, lookOf } from '$lib/rules/conditions';
+  import { STANDARD_CONDITIONS, lookOf } from '#lib/rules/conditions.ts';
 
   let { given, ontoggle, onadd, ondone }: {
     given: string[];

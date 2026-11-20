@@ -2,12 +2,12 @@
   /**
    * One page of notes or backstory: shown formatted when reading, and edited
    * formatted (bold looks bold) when editing. The text underneath stays the
-   * readable marks in `$lib/rules/richtext`, which is what is saved.
+   * readable marks in `#lib/rules/richtext.ts`, which is what is saved.
    *
    * The toolbar lives elsewhere (beside the page arrows) and calls `apply`.
    */
   import { onMount } from 'svelte';
-  import { fromHtml, isEmptyText, toHtml, type Format, type MarkKind } from '$lib/rules/richtext';
+  import { fromHtml, isEmptyText, toHtml, type Format, type MarkKind } from '#lib/rules/richtext.ts';
 
   let {
     value,

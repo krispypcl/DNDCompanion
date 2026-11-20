@@ -5,10 +5,10 @@
  * and saved through set_sheet_hp (database/0011), which lets the player or
  * their DM do it.
  */
-import { supabase } from '$lib/supabase';
-import { applyDamage, applyHealing, setTempHp, withVitals } from '$lib/rules/hp';
-import type { Sheet, State } from '$lib/types';
-import { emptyState } from '$lib/types';
+import { supabase } from '#lib/supabase.ts';
+import { applyDamage, applyHealing, setTempHp, withVitals } from '#lib/rules/hp.ts';
+import type { Sheet, State } from '#lib/types.ts';
+import { emptyState } from '#lib/types.ts';
 
 export type HpChange = 'damage' | 'heal' | 'temp';
 

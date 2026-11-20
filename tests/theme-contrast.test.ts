@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { THEMES } from '$lib/theme';
+import { THEMES } from '#lib/theme.ts';
 
 // A Windows checkout may give the file CRLF line endings; the selectors below use LF.
 const css = readFileSync('src/app.css', 'utf8').replace(/\r\n/g, '\n');

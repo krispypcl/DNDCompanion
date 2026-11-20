@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fx from './fixtures-monsters.json';
-import { cleanStatBlock, fromFiveTools, initiativeBonus, kindLine, leadingNumber, statBlockHtml } from '$lib/rules/statblock';
-import { peekTarget } from '$lib/rules/peek';
+import { cleanStatBlock, fromFiveTools, initiativeBonus, kindLine, leadingNumber, statBlockHtml } from '#lib/rules/statblock.ts';
+import { peekTarget } from '#lib/rules/peek.ts';
 
 describe('stat blocks from 5e.tools', () => {
   const sb = fromFiveTools(fx.goblinBoss);
@@ -57,7 +57,7 @@ describe('bestiary links', () => {
 });
 
 describe('monsterArt', async () => {
-  const { monsterArt, FIVE_IMG } = await import('$lib/rules/statblock');
+  const { monsterArt, FIVE_IMG } = await import('#lib/rules/statblock.ts');
   it('names the token as 5e.tools does', () => {
     expect(monsterArt({ name: 'Goblin Boss', source: 'XMM', hasToken: true })).toBe(`${FIVE_IMG}/bestiary/tokens/XMM/Goblin%20Boss.webp`);
     expect(monsterArt({ name: 'Mûmak', source: 'XMM', hasToken: true })).toBe(`${FIVE_IMG}/bestiary/tokens/XMM/Mumak.webp`);

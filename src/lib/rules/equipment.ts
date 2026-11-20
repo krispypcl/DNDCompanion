@@ -3,7 +3,7 @@
  * of, for the pop-ups that say why a number is what it is. An item counts
  * only while it is equipped; one with no effects written in changes nothing.
  */
-import type { Ability, Definition, Item, ItemEffect } from '$lib/types';
+import type { Ability, Definition, Item, ItemEffect } from '#lib/types.ts';
 
 export type Part = { label: string; value: number; note?: string };
 

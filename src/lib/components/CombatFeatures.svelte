@@ -5,9 +5,9 @@
    * fighting styles, invocations and metamagic. Laid out like General
    * actions; each one is a button that opens it where it is written.
    */
-  import { featuresOpen } from '$lib/stores/tray';
+  import { featuresOpen } from '#lib/stores/tray.ts';
   import Fold from './Fold.svelte';
-  import type { Feature } from '$lib/types';
+  import type { Feature } from '#lib/types.ts';
 
   let { features, onpick }: { features: Feature[]; onpick: (index: number) => void } = $props();
 

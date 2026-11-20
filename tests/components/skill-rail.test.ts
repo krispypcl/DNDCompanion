@@ -6,8 +6,8 @@
 import { readFileSync } from 'node:fs';
 import { render, screen } from '@testing-library/svelte';
 import { describe, expect, it, vi } from 'vitest';
-import SkillRail from '$lib/components/SkillRail.svelte';
-import { SKILLS, type Ability, type Definition, type SkillName } from '$lib/types';
+import SkillRail from '#lib/components/SkillRail.svelte';
+import { SKILLS, type Ability, type Definition, type SkillName } from '#lib/types.ts';
 
 const LABELS: Record<SkillName, string> = {
   acrobatics: 'Acrobatics',

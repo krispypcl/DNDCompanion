@@ -8,7 +8,7 @@
    * bands flow slowly round, together, and glow a little brighter and back.
    */
   import { cubicOut } from 'svelte/easing';
-  import { prefersReducedMotion } from '$lib/motion';
+  import { prefersReducedMotion } from '#lib/motion.ts';
 
   let { bands }: { bands: { key: string; color: string }[] } = $props();
 

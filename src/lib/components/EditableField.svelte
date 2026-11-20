@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { flipKey } from '$lib/flip';
+  import { flipKey } from '#lib/flip.ts';
 
   let {
     value,

@@ -3,8 +3,8 @@
  * same way the screen works it out (rules/derived and friends). Pure: no
  * drawing here, so every value can be tested; sheetPdf.ts lays it out.
  */
-import { exhaustionLevel } from '$lib/rules/exhaustion';
-import { spellAttack, spellDc } from '$lib/rules/casting';
+import { exhaustionLevel } from '#lib/rules/exhaustion.ts';
+import { spellAttack, spellDc } from '#lib/rules/casting.ts';
 import {
   armorClass,
   classList,
@@ -16,13 +16,13 @@ import {
   skillTotal,
   speedParts,
   weightCarried
-} from '$lib/rules/derived';
-import { abilityScoreParts, advantageFrom } from '$lib/rules/equipment';
-import { countedForPrint, spellBlocks } from '$lib/rules/print';
-import { INK_MARK } from '$lib/rules/richtext';
-import { PAGE_BREAK } from '$lib/rules/pages';
-import { needsConcentration, ordinal } from '$lib/rules/spells';
-import { ABILITIES, SKILLS, type Ability, type Definition, type Item, type SkillName, type State } from '$lib/types';
+} from '#lib/rules/derived.ts';
+import { abilityScoreParts, advantageFrom } from '#lib/rules/equipment.ts';
+import { countedForPrint, spellBlocks } from '#lib/rules/print.ts';
+import { INK_MARK } from '#lib/rules/richtext.ts';
+import { PAGE_BREAK } from '#lib/rules/pages.ts';
+import { needsConcentration, ordinal } from '#lib/rules/spells.ts';
+import { ABILITIES, SKILLS, type Ability, type Definition, type Item, type SkillName, type State } from '#lib/types.ts';
 
 const ABILITY_NAMES: Record<Ability, string> = {
   str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma'

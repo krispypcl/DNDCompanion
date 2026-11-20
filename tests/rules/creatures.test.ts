@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { baseName, creatureUrl, damage, heal, hpNow, numberedNames } from '$lib/rules/creatures';
+import { baseName, creatureUrl, damage, heal, hpNow, numberedNames } from '#lib/rules/creatures.ts';
 
 const goblin = { hp_max: 7, hp_current: 7, hp_temp: 0 };
 

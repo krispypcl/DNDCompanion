@@ -1,8 +1,8 @@
 /** Spells sit in type order with headings; a row still moves by hand, within its group. */
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
-import EntryTable from '$lib/components/EntryTable.svelte';
-import { spellGroup, spellRank } from '$lib/rules/spells';
+import EntryTable from '#lib/components/EntryTable.svelte';
+import { spellGroup, spellRank } from '#lib/rules/spells.ts';
 
 const columns = [
   { key: 'name', label: 'Name', width: '60%' },

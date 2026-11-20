@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/svelte';
 import { describe, expect, it, vi } from 'vitest';
-import D20Loader from '$lib/components/D20Loader.svelte';
+import D20Loader from '#lib/components/D20Loader.svelte';
 
 describe('D20Loader', () => {
   it('tumbles while loading and lands on a natural 20', async () => {

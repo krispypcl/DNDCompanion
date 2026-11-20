@@ -8,9 +8,9 @@ const channel = {
   presenceState: () => state
 };
 const removeChannel = vi.fn();
-vi.mock('$lib/supabase', () => ({ isConfigured: true, supabase: { channel: vi.fn(() => channel), removeChannel } }));
+vi.mock('#lib/supabase.ts', () => ({ isConfigured: true, supabase: { channel: vi.fn(() => channel), removeChannel } }));
 
-const { watchTable } = await import('$lib/presence');
+const { watchTable } = await import('#lib/presence.ts');
 
 describe('who is at the table', () => {
   it('reads the DM and the players from the campaign page’s presence', () => {

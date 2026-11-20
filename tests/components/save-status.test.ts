@@ -10,14 +10,14 @@ import type { Writable } from 'svelte/store';
 
 // The real store only exposes the moves the app makes; these need to sit it
 // in each state directly, so they render against a stand-in.
-vi.mock('$lib/stores/sheet', async () => {
+vi.mock('#lib/stores/sheet.ts', async () => {
   const { writable } = await import('svelte/store');
   return { sheetStore: writable({ sheet: null, status: 'idle', message: null }) };
 });
 
-import SaveIndicator from '$lib/components/SaveIndicator.svelte';
-import SaveAlert from '$lib/components/SaveAlert.svelte';
-import { sheetStore } from '$lib/stores/sheet';
+import SaveIndicator from '#lib/components/SaveIndicator.svelte';
+import SaveAlert from '#lib/components/SaveAlert.svelte';
+import { sheetStore } from '#lib/stores/sheet.ts';
 
 const fake = sheetStore as unknown as Writable<{
   sheet: null;

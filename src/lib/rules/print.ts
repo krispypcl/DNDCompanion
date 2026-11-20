@@ -4,7 +4,7 @@
  * sheet has them, and everything else a tracker counts listed as boxes to
  * tick at the table.
  */
-import type { Definition, State, Tracker } from '$lib/types';
+import type { Definition, State, Tracker } from '#lib/types.ts';
 import { formulaContext } from './derived';
 import { spellLevel, spellRank } from './spells';
 import { clampSpent, trackerMax } from './tracker';

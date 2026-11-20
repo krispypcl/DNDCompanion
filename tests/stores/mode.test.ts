@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { get } from 'svelte/store';
 import { readFileSync } from 'node:fs';
-import { MODE_KEY, applyMode, chooseMode, mode, modeChoice, storedChoice, storedMode, toggleMode } from '$lib/stores/mode';
+import { MODE_KEY, applyMode, chooseMode, mode, modeChoice, storedChoice, storedMode, toggleMode } from '#lib/stores/mode.ts';
 
 describe('mode', () => {
   beforeEach(() => {

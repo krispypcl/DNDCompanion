@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { passwordStrength } from '$lib/rules/password';
+import { passwordStrength } from '#lib/rules/password.ts';
 
 describe('password strength', () => {
   it('says nothing about an empty field', () => {

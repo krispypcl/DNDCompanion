@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { StaleWriteError, isMissingTable, makeSheetRepo } from '$lib/data/sheets';
-import type { Definition } from '$lib/types';
+import { StaleWriteError, isMissingTable, makeSheetRepo } from '#lib/data/sheets.ts';
+import type { Definition } from '#lib/types.ts';
 
 /** A client whose every table answers with whatever it is told to. */
 function client(answers: Record<string, { data?: unknown; error?: unknown }>, seen: Record<string, unknown>[] = []) {

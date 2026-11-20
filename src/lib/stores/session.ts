@@ -1,6 +1,6 @@
 import { readable } from 'svelte/store';
 import type { User } from '@supabase/supabase-js';
-import { supabase } from '$lib/supabase';
+import { supabase } from '#lib/supabase.ts';
 
 export type SessionState = { user: User | null; loading: boolean };
 

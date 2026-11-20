@@ -12,10 +12,10 @@
   import { untrack } from 'svelte';
   import { fade, scale, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { focusFirst, movable, portal } from '$lib/actions';
-  import { prefersReducedMotion } from '$lib/motion';
-  import { guessEffects } from '$lib/rules/equipment';
-  import { ABILITIES, type Ability, type Item, type ItemEffect } from '$lib/types';
+  import { focusFirst, movable, portal } from '#lib/actions.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { guessEffects } from '#lib/rules/equipment.ts';
+  import { ABILITIES, type Ability, type Item, type ItemEffect } from '#lib/types.ts';
 
   let {
     item,

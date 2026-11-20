@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { nameFont } from '$lib/rules/fonts';
+import { nameFont } from '#lib/rules/fonts.ts';
 
 describe('the name font', () => {
   it('takes the font page, the stylesheet link, the embed code or the name', () => {
@@ -21,7 +21,7 @@ describe('the name font', () => {
   });
 });
 
-import { faceFamily, fontFace } from '$lib/rules/fonts';
+import { faceFamily, fontFace } from '#lib/rules/fonts.ts';
 
 describe('fontFace', () => {
   it('gives the face, or nothing for blank or unreadable', () => {
