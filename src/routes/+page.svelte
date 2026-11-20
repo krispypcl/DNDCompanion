@@ -3,7 +3,6 @@
   import { base } from '#lib/base.ts';
   import AuthForm from '#lib/components/AuthForm.svelte';
   import ModeToggle from '#lib/components/ModeToggle.svelte';
-  import SoundToggle from '#lib/components/SoundToggle.svelte';
   import { sheetName, sheetRepo, type PartyMember } from '#lib/data/sheets.ts';
   import { campaignMessage, campaignRepo, lastSessionOf, type Campaign } from '#lib/data/campaigns.ts';
   import { MAX_BYTES, importSheet } from '#lib/exchange.ts';
@@ -866,7 +865,6 @@
   <header>
     <h1><Logo size={30} /><span class="brandname">DND Companion</span></h1>
     <div class="tools">
-      <SoundToggle />
       <ModeToggle />
       {#if $session.user}
         {@const me = profileOf($session.user, $profile)}

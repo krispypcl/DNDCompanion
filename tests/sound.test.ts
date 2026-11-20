@@ -1,6 +1,7 @@
 import { get } from 'svelte/store';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { _resetSound, clatter, deathBell, deathSave, heartbeat, land, nat1, nat20, setSound, soundOn } from '#lib/sound.ts';
+import { _resetSound, clatter, deathBell, deathSave, heartbeat, land, nat1, nat20 } from '#lib/sound.ts';
+import { musicOn, setMusicOn } from '#lib/music.ts';
 
 /** Enough of the Web Audio API to count what would be played. */
 function fakeAudio() {
@@ -25,23 +26,26 @@ function fakeAudio() {
 
 describe('sound', () => {
   afterEach(() => {
-    setSound(false);
     _resetSound();
     vi.unstubAllGlobals();
   });
 
-  it('is off until turned on, and remembers', () => {
-    expect(get(soundOn)).toBe(false);
+  it('always plays, whatever the music is doing', () => {
+    expect(get(musicOn)).toBe(false);
     const started = fakeAudio();
     nat20();
-    expect(started).toHaveLength(0);
-    setSound(true);
-    expect(localStorage.getItem('dndcompanion:sound')).toBe('on');
+    expect(started.length).toBeGreaterThan(0);
   });
 
-  it('plays every effect without throwing once on', () => {
+  it('leaves the music its own mute, remembered', () => {
+    setMusicOn(true);
+    expect(localStorage.getItem('dndcompanion:sound')).toBe('on');
+    setMusicOn(false);
+    expect(get(musicOn)).toBe(false);
+  });
+
+  it('plays every effect without throwing', () => {
     const started = fakeAudio();
-    setSound(true);
     const before = started.length;
     clatter(3); land(); nat20(); nat1(); heartbeat(0.15); deathSave('save', 1); deathSave('fail', 3); deathBell();
     expect(started.length).toBeGreaterThan(before + 10);
@@ -49,7 +53,6 @@ describe('sound', () => {
 
   it('beats twice per heartbeat, 0.3s apart', () => {
     const started = fakeAudio();
-    setSound(true);
     const n = started.length;
     heartbeat(0.15);
     const times = [...new Set(started.slice(n).map((t) => Math.round(t * 100) / 100))].sort();

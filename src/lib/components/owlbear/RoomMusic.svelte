@@ -13,7 +13,6 @@
   import { TableMusic } from '#lib/tableMusic.svelte.ts';
   import CampaignMusic from '../CampaignMusic.svelte';
   import InfoTip from '../InfoTip.svelte';
-  import SoundToggle from '../SoundToggle.svelte';
 
   let obr = $state.raw<Obr | null>(null);
   let campaign = $state<Campaign | null>(null);
@@ -75,8 +74,7 @@
 <main bind:this={box}>
   <header>
     <span class="cap">Table music</span>
-    <InfoTip label="If you hear nothing">Turn the speaker on. Still quiet? Allow sound for owlbear.rodeo in your browser. Phones can’t play it here.</InfoTip>
-    <span class="end"><SoundToggle /></span>
+    <InfoTip label="If you hear nothing">Press the speaker in the player. Still quiet? Allow sound for owlbear.rodeo in your browser. Phones can’t play it here.</InfoTip>
     <button class="closex" aria-label="Close the music" title="Close the music" onclick={() => obr?.closeMusic()}>×</button>
   </header>
   {#if gone}
@@ -103,7 +101,7 @@
   main { padding: 0.625rem 0.75rem 0.75rem; display: grid; gap: 0.5rem; }
   header { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
   .cap { font-size: 0.6875rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--label); flex: none; }
-  .end { margin-left: auto; display: inline-flex; }
+  header .closex { margin-left: auto; }
   .msg { margin: 0; color: var(--dim); font-size: 0.8125rem; line-height: 1.4; }
   .musicskel { display: grid; gap: 0.5rem; }
   .musicskel i { height: 1.25rem; border-radius: var(--r-sm); }

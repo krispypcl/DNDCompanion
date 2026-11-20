@@ -54,9 +54,8 @@
   import InitiativeTracker from './InitiativeTracker.svelte';
   import RevealedCreatures from './RevealedCreatures.svelte';
   import ThemePicker from './ThemePicker.svelte';
-  import { setSound, soundOn } from '#lib/sound.ts';
+  import { musicOn, setMusicOn } from '#lib/music.ts';
   import { get } from 'svelte/store';
-  import SoundToggle from './SoundToggle.svelte';
   import type { ConditionLook, Sheet } from '#lib/types.ts';
 
   let { id }: { id: string } = $props();
@@ -210,7 +209,7 @@
       toggleEditing();
     } else if (e.key.toLowerCase() === 'm' && hasMusic) {
       e.preventDefault();
-      setSound(!get(soundOn));
+      setMusicOn(!get(musicOn));
     } else if (e.key === 'Escape' && confirming) {
       confirming = null;
     }
@@ -563,7 +562,6 @@
             </g>
           </svg>
         </button>
-        {#if hasMusic}<SoundToggle />{/if}
         <ModeToggle />
       </div>
     </header>

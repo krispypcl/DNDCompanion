@@ -23,9 +23,8 @@
   import { onDestroy, untrack } from 'svelte';
   import { fade } from 'svelte/transition';
   import { get } from 'svelte/store';
-  import { setSound, soundOn } from '#lib/sound.ts';
   import {
-    clock, loadYouTube, parsePlaylist, storeLoop, storeShuffle, storedLoop, storeVolume, storedShuffle, storedVolume,
+    clock, loadYouTube, musicOn, parsePlaylist, setMusicOn, storeLoop, storeShuffle, storedLoop, storeVolume, storedShuffle, storedVolume,
     type Playlist, type YTPlayer
   } from '#lib/music.ts';
   import { session } from '#lib/stores/session.ts';
@@ -110,7 +109,7 @@
   /** A player's page catching up with the DM's music. */
   function syncFollow() {
     const f = untrack(() => follow);
-    if (!f || !yt || !ready || !get(soundOn)) return;
+    if (!f || !yt || !ready || !get(musicOn)) return;
     const want = expected(f);
     if (playlist?.list && f.item != null && (yt.getPlaylistIndex?.() ?? -1) !== f.item) {
       yt.playVideoAt(f.item);
@@ -213,7 +212,7 @@
   function unhush() {
     if (!hushed) return;
     hushed = false;
-    if (get(soundOn)) yt?.unMute();
+    if (get(musicOn)) yt?.unMute();
   }
   /**
    * YouTube fills in a playlist's songs when it gets round to it: often not
@@ -385,7 +384,7 @@
     waiting = true;
     const go = () => {
       disarm?.();
-      if (get(soundOn) && !userPaused) start();
+      if (get(musicOn) && !userPaused) start();
     };
     document.addEventListener('pointerdown', go, true);
     document.addEventListener('keydown', go, true);
@@ -437,7 +436,7 @@
     clearTimeout(checkTimer);
     checkTimer = setTimeout(() => {
       const state = yt?.getPlayerState();
-      if (yt && state !== 1 && state !== 3 && get(soundOn) && !userPaused) armGesture();
+      if (yt && state !== 1 && state !== 3 && get(musicOn) && !userPaused) armGesture();
     }, 1500);
   }
   function stop() {
@@ -506,7 +505,7 @@
               hushNow();
               lastStep = performance.now();
               fader = setInterval(fadeStep, 50);
-              if (get(soundOn)) start();
+              if (get(musicOn)) start();
               else yt.mute();
               updateTitle();
             },
@@ -563,7 +562,7 @@
 
   // The speaker is the mute: on plays, off pauses.
   let first = true;
-  const unsub = soundOn.subscribe((on) => {
+  const unsub = musicOn.subscribe((on) => {
     if (first) { first = false; return; }
     if (!ready) return;
     if (on) {
@@ -588,7 +587,7 @@
     }
     userPaused = false;
     // Playing with the sound off would be silence: pressing play turns it on.
-    if (!get(soundOn)) setSound(true);
+    if (!get(musicOn)) setMusicOn(true);
     else start();
   }
 
@@ -619,7 +618,7 @@
       skipMute = false;
       return;
     }
-    setSound(!$soundOn);
+    setMusicOn(!$musicOn);
   }
   let capVol = $state<HTMLElement>();
   function closeVolOutside(e: PointerEvent) {
@@ -654,11 +653,11 @@
            onfocusin={() => (volOpen = true)}>
         <input class="caprange" type="range" min="0" max="100" step="1" value={volume} aria-label="Volume"
                style:--v="{volume}%" tabindex={volOpen ? 0 : -1} oninput={(e) => setVol(Number(e.currentTarget.value))} />
-        <button class="capbtn" aria-pressed={!$soundOn} aria-label={$soundOn ? 'Mute the music' : 'Unmute the music'}
-                title={$soundOn ? `Mute (volume ${volume}%)` : 'Unmute'} onpointerdown={capSpeakerDown} onclick={capSpeaker}>
+        <button class="capbtn" aria-pressed={!$musicOn} aria-label={$musicOn ? 'Mute the music' : 'Unmute the music'}
+                title={$musicOn ? `Mute (volume ${volume}%)` : 'Unmute'} onpointerdown={capSpeakerDown} onclick={capSpeaker}>
           <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
             <path d="M2.5 6.2h2.3l3-2.6v8.8l-3-2.6H2.5z" fill="currentColor" />
-            {#if !$soundOn || volume === 0}
+            {#if !$musicOn || volume === 0}
               <path d="M10.5 6.2l3.4 3.6M13.9 6.2l-3.4 3.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
             {:else}
               <path d="M10.4 6a2.8 2.8 0 0 1 0 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />

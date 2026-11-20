@@ -1,38 +1,10 @@
 /**
  * Sound effects, made on the spot with the Web Audio API: no files to load,
- * nothing to license. Off unless the reader turns them on (the speaker beside
- * the light/dark switch), remembered per device like the mode, quiet, and
- * only ever for a moment, except the heartbeat, which beats with the screen
- * for as long as a character is dying.
+ * nothing to license. Always on (the music players have their own mute),
+ * quiet, and only ever for a moment, except the heartbeat, which beats with
+ * the screen for as long as a character is dying.
  */
-import { get, writable } from 'svelte/store';
 import { loadYouTube, youtubeClip, type YTPlayer } from './music';
-
-const SOUND_KEY = 'dndcompanion:sound';
-
-function stored(): boolean {
-  try {
-    return localStorage.getItem(SOUND_KEY) === 'on';
-  } catch {
-    return false;
-  }
-}
-
-export const soundOn = writable<boolean>(typeof document === 'undefined' ? false : stored());
-
-export function setSound(on: boolean) {
-  soundOn.set(on);
-  try {
-    localStorage.setItem(SOUND_KEY, on ? 'on' : 'off');
-  } catch {
-    /* private mode: it lasts for this visit */
-  }
-  if (on) {
-    // Turning it on is a press, which is what lets a phone start audio.
-    ready()?.resume?.();
-    click();
-  }
-}
 
 /**
  * A sheet's own sounds: any effect can be swapped for a recording at a link
@@ -89,7 +61,7 @@ export function audioUrl(raw: string | undefined | null): string | null {
 function own(name: SoundName): boolean {
   const url = custom[name];
   if (!url) return false;
-  if (!get(soundOn) || typeof Audio === 'undefined') return true;
+  if (typeof Audio === 'undefined') return true;
   playClip(url);
   return true;
 }
@@ -152,11 +124,9 @@ let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let noiseBuf: AudioBuffer | null = null;
 
-/** The audio context, or null when sound is off or unavailable. */
-/** Set while a sound is previewed: it plays even with sound switched off. */
-let previewing = false;
+/** The audio context, or null where there's no Web Audio. */
 function ready(): AudioContext | null {
-  if ((!get(soundOn) && !previewing) || typeof window === 'undefined') return null;
+  if (typeof window === 'undefined') return null;
   const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!Ctor) return null;
   if (!ctx) {
@@ -207,13 +177,6 @@ function burst(ac: AudioContext, at: number, dur: number, gain: number, freq: nu
   g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
   src.connect(f).connect(g).connect(master!);
   src.start(at, Math.random() * 0.3, dur + 0.05);
-}
-
-/** The toggle's own confirmation. */
-function click() {
-  const ac = ready();
-  if (!ac) return;
-  tone(ac, ac.currentTime, 1400, 0.05, 0.12, 'triangle');
 }
 
 /** Dice rattling across a table: one knock per die, a few bounces each. */
@@ -384,19 +347,17 @@ const BUILT_IN: Record<SoundName, () => void> = {
 /**
  * Plays an effect to hear it (the speaker beside its name): the link in its
  * field if there is one, otherwise the built-in sound, even with the sheet's
- * own recordings set and sound switched off.
+ * own recordings set.
  */
 export function previewSound(name: SoundName, link?: string | null) {
   const url = audioUrl(link);
   if (url) return playClip(url);
   const kept = custom;
   custom = {};
-  previewing = true;
   try {
     BUILT_IN[name]();
   } finally {
     custom = kept;
-    previewing = false;
   }
 }
 

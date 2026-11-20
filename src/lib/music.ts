@@ -2,6 +2,7 @@
  * A sheet's playlist: a YouTube (or YouTube Music) playlist, or one video
  * whose sound plays on loop, read from the link its owner pasted.
  */
+import { writable } from 'svelte/store';
 
 export type Playlist = { kind: 'youtube'; list?: string; video?: string };
 
@@ -205,6 +206,30 @@ export async function inBatches<T, R>(items: T[], size: number, work: (item: T, 
     })
   );
   return out;
+}
+
+/**
+ * The music's own mute, for this device: off (the default), music waits,
+ * paused; on, it plays. Each player's speaker button is it, and pressing
+ * play turns it on. (The key is the old sound switch's, so the choice carries
+ * over.) Sound effects don't follow it: they always play.
+ */
+const MUSIC_KEY = 'dndcompanion:sound';
+export const musicOn = writable<boolean>(typeof document === 'undefined' ? false : readFlag(MUSIC_KEY));
+export function setMusicOn(on: boolean) {
+  musicOn.set(on);
+  try {
+    localStorage.setItem(MUSIC_KEY, on ? 'on' : 'off');
+  } catch {
+    /* private mode: it lasts for this visit */
+  }
+}
+function readFlag(key: string): boolean {
+  try {
+    return localStorage.getItem(key) === 'on';
+  } catch {
+    return false;
+  }
 }
 
 const VOLUME_KEY = 'dndcompanion:volume';

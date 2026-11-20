@@ -14,9 +14,8 @@
    */
   import { fade, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { inBatches, parsePlaylist, playlistSongs, youtubeTitle } from '#lib/music.ts';
+  import { inBatches, parsePlaylist, playlistSongs, setMusicOn, youtubeTitle } from '#lib/music.ts';
   import { foldRow, prefersReducedMotion } from '#lib/motion.ts';
-  import { setSound } from '#lib/sound.ts';
   import type { Playback, Song } from '#lib/data/campaigns.ts';
   import MusicPlayer from './MusicPlayer.svelte';
   import SectionHead from './SectionHead.svelte';
@@ -84,7 +83,7 @@
     try { localStorage.setItem(memoryKey, String(i)); } catch { /* private window */ }
     onplayback?.({ index: i, url: songs[i]?.url, playing: true, t: 0, at: Date.now() });
     // Choosing a song is asking to hear it.
-    setSound(true);
+    setMusicOn(true);
   }
   function told(m: { playing: boolean; t: number; item?: number }) {
     const song = songs[current];

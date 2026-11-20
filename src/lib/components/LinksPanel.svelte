@@ -192,7 +192,7 @@
       <div class="wide" data-flip-ghost="links:url:playlist" data-ghost-scale="0.94">
         <span class="lbl">Playlist URL
           <InfoTip label="About the music">
-            A YouTube or YouTube Music playlist, or one video. It plays from the player at the top of the sheet; the
+            A YouTube or YouTube Music playlist, or one video. It plays from the player at the top of the sheet; its
             speaker button is its mute.
           </InfoTip>
         </span>

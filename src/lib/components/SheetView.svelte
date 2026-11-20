@@ -9,8 +9,8 @@
   import { base } from '#lib/base.ts';
   import AbilityBand from '#lib/components/AbilityBand.svelte';
   import ModeToggle from '#lib/components/ModeToggle.svelte';
-  import SoundToggle from '#lib/components/SoundToggle.svelte';
-  import { setCustomSounds, setSound, soundOn } from '#lib/sound.ts';
+  import { setCustomSounds } from '#lib/sound.ts';
+  import { musicOn, setMusicOn } from '#lib/music.ts';
   import { get } from 'svelte/store';
   import MusicPlayer from '#lib/components/MusicPlayer.svelte';
   import Banner from '#lib/components/Banner.svelte';
@@ -559,9 +559,9 @@
       e.preventDefault();
       void glide(() => (editing = !editing));
     } else if (e.key.toLowerCase() === 'm') {
-      // The speaker: sound and music, on or off.
+      // The music's speaker, on or off.
       e.preventDefault();
-      setSound(!get(soundOn));
+      setMusicOn(!get(musicOn));
     } else if (e.key.toLowerCase() === 'p') {
       e.preventDefault();
       void makePdf();
@@ -861,7 +861,6 @@
             </g>
           </svg>
         </button>
-        <SoundToggle />
         <ModeToggle />
       </div>
     </header>
