@@ -781,7 +781,7 @@
         </span>
         <span class="stripname">{definition.identity.name || sheet.name || 'Unnamed'}</span>
         <button class="hppill {phoneVital?.vital ?? ''}" onclick={() => goPlace('play')} aria-label="Hit points {sheetState.hpCurrent} of {definition.combat?.hpMax ?? 0}, {phoneVital?.label ?? ''}">
-          <b>{sheetState.hpCurrent}{#if sheetState.hpTemp}<span class="temp">+{sheetState.hpTemp}</span>{/if}<small> / {definition.combat?.hpMax ?? 0}</small></b>
+          <b>{sheetState.hpCurrent}{#if sheetState.hpTemp}<span class="temp">+{sheetState.hpTemp}</span>{/if}<small>&nbsp;/ {definition.combat?.hpMax ?? 0}</small></b>
           <span class="pillbar"><i style:width="{Math.max(0, Math.min(100, ((sheetState.hpCurrent) / Math.max(1, definition.combat?.hpMax ?? 0)) * 100))}%"></i></span>
         </button>
       </div>
@@ -1907,6 +1907,8 @@
   .sheet[data-place] [data-places] { animation: placeIn 0.24s cubic-bezier(0.33, 1, 0.68, 1); }
   @keyframes placeIn { from { opacity: 0; } }
   .railfight { display: contents; }
+  /* With no tab row above it (a place with one tab), the tab starts at the panel's top. */
+  .sheet[data-place]:not([data-place='more']) .centre :global(section[role='tabpanel']) { padding-top: 0; }
   /* Gear and More: the rail's own heading spacing starts at its first part. */
   .sheet[data-place='gear'] .rail-right .money, .sheet[data-place='more'] .rail-right .money + .profs { padding-top: 0; }
   /* Play: the numbers and conditions first, then the attacks. */
