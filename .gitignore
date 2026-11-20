@@ -2,3 +2,6 @@ node_modules
 .svelte-kit
 build
 .env
+
+# Claude Code notes kept on your own computer
+CLAUDE.local.md
