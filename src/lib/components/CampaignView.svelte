@@ -455,7 +455,7 @@
   const moveTurn = (t: { turn: string | null; round: number }) => live?.patch({ ...t, asking: false }).catch(initFail);
   /** A fight is coming: the players roll theirs (a fresh order). */
   const callForInitiative = () => live?.save({ pcs: {}, turn: null, round: 0, asking: true }).catch(initFail);
-  /** The fight is over: the order is cleared for the next one. */
+  /** The fight is over, or the call for it is cancelled: the order is cleared for the next one. */
   function endFight() {
     live?.save(NO_INITIATIVE).catch(initFail);
     for (const c of table?.list.filter((x) => x.initiative !== null) ?? []) void table!.change(c, { initiative: null });
@@ -657,7 +657,7 @@
     {#if !ended && combatants.length && (isDm || fighting || init.asking)}
       <div class="campsec" transition:slide={unfold()}>
         <InitiativeTracker {combatants} turn={init.turn} round={init.round} asking={init.asking} {isDm}
-                           onvalue={setInitiative} onrollone={rollOne} onask={callForInitiative}
+                           onvalue={setInitiative} onrollone={rollOne} onask={callForInitiative} oncancel={isDm ? endFight : undefined}
                            onrollrest={isDm ? rollRest : undefined}
                            onstart={() => moveTurn(startTurns(combatants))} onnext={() => moveTurn(nextTurn(combatants, turnNow()))}
                            onprevious={() => moveTurn(previousTurn(combatants, turnNow()))} onend={endFight} />

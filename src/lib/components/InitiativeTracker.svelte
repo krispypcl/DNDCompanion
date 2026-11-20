@@ -8,7 +8,7 @@
 <script lang="ts">
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
-  import { fade, slide } from 'svelte/transition';
+  import { fade } from 'svelte/transition';
   import { prefersReducedMotion } from '#lib/motion.ts';
   import { ordered, type InitiativeRow } from '#lib/rules/initiative.ts';
   import SectionHead from './SectionHead.svelte';
@@ -22,6 +22,7 @@
     onvalue,
     onrollone,
     onask,
+    oncancel,
     onstart,
     onnext,
     onprevious,
@@ -39,6 +40,8 @@
     /** Rolls a d20 for this one (with what it adds). */
     onrollone?: (key: string) => void;
     onask?: () => void;
+    /** The DM stops calling for initiative: the call and what was rolled for it are cleared. */
+    oncancel?: () => void;
     onstart?: () => void;
     onnext?: () => void;
     onprevious?: () => void;
@@ -60,10 +63,34 @@
     const n = Number(v);
     onvalue?.(key, v.trim() === '' || !Number.isFinite(n) ? null : Math.max(-50, Math.min(100, Math.round(n))));
   }
+
+  /**
+   * Folded away while it isn't in use (no call, no fight), like the table
+   * board, with only Call for initiative left out; it opens by itself when
+   * the DM calls or a fight starts. Its title still folds or opens it by hand
+   * in between.
+   */
+  const idle = $derived(!running && !asking);
+  let byHand = $state<boolean | null>(null);
+  $effect(() => {
+    idle;
+    byHand = null;
+  });
+  const folded = $derived(isDm && (byHand ?? idle));
+  let foldInner = $state(0);
+  /** What the table is waiting for, beside the buttons. */
+  const status = $derived.by(() => {
+    if (!asking || running) return '';
+    if (isDm) return waiting === 0 ? 'Every character has rolled.' : waiting === 1 ? 'Waiting on 1 character.' : `Waiting on ${waiting} characters.`;
+    if (mineToRoll.length) return 'Roll for initiative!';
+    if (list.some((c) => c.mine)) return 'You’re in the order. The fight starts soon.';
+    return 'The DM calls for initiative.';
+  });
 </script>
 
 <section class="initiative" aria-label="Initiative">
-  <SectionHead title="Initiative">
+  <SectionHead title="Initiative" folded={isDm ? folded : undefined} controls="init-fold"
+               ontoggle={isDm ? () => (byHand = !folded) : undefined}>
     {#snippet info()}
       {#if isDm}
         Call for initiative and your players roll theirs here, on the campaign page. Write any number in yourself, or
@@ -75,6 +102,9 @@
     {/snippet}
     {#if running}<span class="round" in:fade={quick}>Round {round}</span>{/if}
     {#snippet end()}
+      {#if status}
+        {#key status}<span class="initcall" role="status" in:fade={quick}>{status}</span>{/key}
+      {/if}
       {#if isDm}
         {#if running}
           <button class="smallbtn" onclick={onprevious} aria-label="Previous turn" title="Previous turn">
@@ -82,8 +112,16 @@
           </button>
           <button class="smallbtn accent" onclick={onnext}>Next turn</button>
           <button class="smallbtn quiet" onclick={onend}>End</button>
+        {:else if !asking}
+          <button class="smallbtn" onclick={onask}>Call for initiative</button>
+          {#if !folded}
+            {#if onrollrest && list.some((c) => c.value === null)}<button class="smallbtn" onclick={onrollrest}>Roll the rest</button>{/if}
+            <button class="smallbtn accent" onclick={onstart} disabled={!list.some((c) => c.value !== null)}>Start</button>
+          {/if}
         {:else}
-          {#if !asking}<button class="smallbtn" onclick={onask}>Call for initiative</button>{/if}
+          {#if oncancel}
+            <button class="smallbtn quiet" onclick={oncancel} title="Stop calling for initiative and clear what was rolled">Cancel</button>
+          {/if}
           {#if onrollrest && list.some((c) => c.value === null)}<button class="smallbtn" onclick={onrollrest}>Roll the rest</button>{/if}
           <button class="smallbtn accent" onclick={onstart} disabled={!list.some((c) => c.value !== null)}>Start</button>
         {/if}
@@ -91,20 +129,10 @@
     {/snippet}
   </SectionHead>
 
-  {#if asking && !running}
-    <p class="initcall" transition:slide={quick}>
-      {#if isDm}
-        {waiting === 0 ? 'Every character has rolled.' : waiting === 1 ? 'Waiting on 1 character.' : `Waiting on ${waiting} characters.`}
-      {:else if mineToRoll.length}
-        Roll for initiative!
-      {:else if list.some((c) => c.mine)}
-        You’re in the order. The fight starts soon.
-      {:else}
-        The DM calls for initiative.
-      {/if}
-    </p>
-  {/if}
-
+  <!-- Folding eases the height to nothing, as the table board's does. -->
+  <div class="initfold" id="init-fold" class:folded inert={folded}
+       style:height={isDm && (folded || foldInner) ? `${folded ? 0 : foldInner}px` : undefined}>
+  <div bind:clientHeight={foldInner}>
   <ol class="initlist">
     {#each list as c (c.key)}
       <li class="initrow" class:initcr={c.side === 'creature'} class:now={c.key === turn} class:waiting={c.value === null}
@@ -131,12 +159,17 @@
       <li class="initrow now unseen" in:fade={quick}><span class="initname">Something unseen acts</span><span class="initnow">Now</span></li>
     {/if}
   </ol>
+  </div>
+  </div>
 </section>
 
 <style>
   .initiative { min-width: 0; }
   .round { font-size: 0.8125rem; color: var(--a); font-weight: 650; }
-  .initcall { margin: 0 0 0.625rem; font-size: 0.875rem; font-weight: 600; color: var(--a); }
+  .initcall { font-size: 0.8125rem; font-weight: 600; color: var(--a); margin-right: 0.25rem; }
+  .initfold { overflow: clip; overflow-clip-margin: 6px; transition: height 0.32s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.26s ease; }
+  .initfold.folded { opacity: 0; }
+  @media (prefers-reduced-motion: reduce) { .initfold { transition: none; } }
   .initlist { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.375rem; }
   .initrow {
     display: inline-flex; align-items: center; gap: 0.4375rem; padding: 0.25rem 0.625rem 0.25rem 0.25rem;
