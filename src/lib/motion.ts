@@ -44,6 +44,29 @@ export function arrive(_node: Element, { y = 10, duration = 260, delay = 0 }: Ri
   };
 }
 
+/** Whether something holding this node is fading or moving in right now (the page arriving). */
+function heldInMotion(node: Element): boolean {
+  for (let p = node.parentElement; p; p = p.parentElement) {
+    const moving = p.getAnimations?.().some((a) => {
+      if (a.playState !== 'running') return false;
+      const frames = (a.effect as KeyframeEffect | null)?.getKeyframes?.() ?? [];
+      return frames.some((k) => 'opacity' in k || 'transform' in k || 'top' in k);
+    });
+    if (moving) return true;
+  }
+  return false;
+}
+
+/**
+ * Content taking a skeleton's place (or arriving once it has loaded) fades
+ * in where it stands, unless what holds it is still arriving: then that
+ * one motion carries it, and it doesn't play a second inside it.
+ */
+export function settleIn(node: Element, { duration = 200 }: { duration?: number } = {}) {
+  const still = prefersReducedMotion() || heldInMotion(node);
+  return { duration: still ? 0 : duration, easing: cubicOut, css: (t: number) => `opacity: ${t};` };
+}
+
 /**
  * A small arrival for a part that swaps in place (the Edit/Done label, the
  * campaign chip): as a local `in:` transition it plays on a change, never with

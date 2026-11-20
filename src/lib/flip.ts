@@ -183,6 +183,8 @@ export async function glide(change: () => void): Promise<void> {
     const key = el.dataset.flipGhost!;
     present.add(key);
     if (had.has(key)) return;
+    // It also glides from where its stand-in was (data-flip): one motion, the glide.
+    if (el.dataset.flip && before.has(el.dataset.flip)) return;
     // Pictures and other larger pieces grow in from smaller (data-ghost-scale).
     // Big pieces that scale (data-ghost-quick) go briskly, or they lag
     // behind the words gliding round them.

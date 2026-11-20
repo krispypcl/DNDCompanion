@@ -28,7 +28,7 @@
   import { friendlyError } from '#lib/errors.ts';
   import Switch from '#lib/components/Switch.svelte';
   import Choice from '#lib/components/Choice.svelte';
-  import { fade } from 'svelte/transition';
+  import { settleIn } from '#lib/motion.ts';
   import { chooseMode, modeChoice, type ModeChoice } from '#lib/stores/mode.ts';
   import { savePrefs, setDiceStyle, setReduceMotion, storedDice, storedReduceMotion, type DiceStyle, type Prefs } from '#lib/prefs.ts';
   import { sheetRepo } from '#lib/data/sheets.ts';
@@ -41,7 +41,9 @@
 
   let name = $state('');
   let picture = $state('');
-  let filled = false;
+  let filled = $state(false);
+  /** What the profile says now: shown until the fields are filled, so the picture never starts as "?". */
+  const known = $derived($session.user ? profileOf($session.user, $profile) : null);
   // Filled once, when the profile has loaded (typing isn't overwritten after).
   $effect(() => {
     const user = $session.user;
@@ -280,7 +282,7 @@
       <div class="who">
         <button type="button" class="pic" disabled={!link.url || loaded[link.url] !== 'ok'}
                 aria-label="View profile picture full screen" onclick={(e) => { viewFrom = e.currentTarget; viewing = true; }}>
-          <Avatar url={picture} name={name || $session.user.email || '?'} size={72} />
+          <Avatar url={filled ? picture : (known?.avatarUrl ?? '')} name={(filled ? name : known?.displayName) || $session.user.email || '?'} size={72} />
         </button>
         <div class="grow">
           <label for="name">Display name</label>
@@ -288,7 +290,7 @@
         </div>
       </div>
       <label for="pic">Profile picture URL</label>
-      <input id="pic" bind:value={picture} placeholder="Paste an image link: Google Drive, Imgur, Pinterest, Dropbox…" />
+      <input id="pic" bind:value={picture} placeholder="Paste an image link: Google Drive, Imgur, Pinterest or Dropbox" />
       {#if link.url}
         <img class="probe" src={link.url} alt="" onload={() => (loaded[link.url] = 'ok')} onerror={() => (loaded[link.url] = 'failed')} />
       {/if}
@@ -309,7 +311,7 @@
         {/if}
         <InfoTip label="About signing out everywhere">Signing out everywhere ends every session on every device, this one included,
           which helps after signing in on someone else's phone.</InfoTip>
-        <button class="btn primary save" disabled={savingProfile}>{savingProfile ? 'Saving…' : 'Save profile'}</button>
+        <button class="btn primary save" disabled={savingProfile}>{savingProfile ? 'Saving' : 'Save profile'}</button>
       </div>
     </form>
 
@@ -327,7 +329,7 @@
       <input id="pw2" type="password" bind:value={pw2} autocomplete="new-password" />
       <div class="row">
         {#if pwMsg}<span class="msg" class:bad={!pwMsg.ok} role="status">{pwMsg.text}</span>{/if}
-        <button class="btn primary" disabled={savingPw || !pw}>{savingPw ? 'Changing…' : 'Change password'}</button>
+        <button class="btn primary" disabled={savingPw || !pw}>{savingPw ? 'Changing' : 'Change password'}</button>
       </div>
     </form>
 
@@ -349,7 +351,7 @@
                 {PROVIDER_NAMES[p]} is connected.
               </span>
               {#if linked.length > 1}
-                <button class="btn" disabled={unlinking === p} onclick={() => unlink(p)}>{unlinking === p ? 'Disconnecting…' : 'Disconnect'}</button>
+                <button class="btn" disabled={unlinking === p} onclick={() => unlink(p)}>{unlinking === p ? 'Disconnecting' : 'Disconnect'}</button>
               {/if}
             {:else}
               <!-- Not yet: said in gray where "connected" would be, the way to connect at the right. -->
@@ -410,7 +412,7 @@
     <section class="card" aria-labelledby="stats-h">
       <h2 id="stats-h">Statistics</h2>
       {#if stats}
-        <dl class="stats" in:fade={{ duration: 200 }}>
+        <dl class="stats" in:settleIn>
           <div><dt>Larper since</dt><dd>{numericDate($session.user.created_at) || 'Unknown'}</dd></div>
           <div><dt>Characters</dt><dd>{stats.characters}{#if stats.retired}<small>{stats.retired} retired</small>{/if}</dd></div>
           <div><dt>Highest level</dt><dd>{stats.highest ? stats.highest.level : 'None'}{#if stats.highest}<small>{stats.highest.name}</small>{/if}</dd></div>
@@ -446,7 +448,7 @@
           <div class="row">
             <button type="button" class="btn" onclick={() => { deletingOpen = false; typed = ''; deleteMsg = null; }}>Keep my account</button>
             <button class="btn danger solid" disabled={typed !== PHRASE || deleting}>
-              {deleting ? 'Deleting…' : 'Delete everything'}
+              {deleting ? 'Deleting' : 'Delete everything'}
             </button>
           </div>
         </form>

@@ -15,7 +15,7 @@
   import { cubicOut } from 'svelte/easing';
   import { campaignMessage, campaignRepo, type BoardData, type BoardItem } from '#lib/data/campaigns.ts';
   import { isConfigured, supabase } from '#lib/supabase.ts';
-  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { prefersReducedMotion, settleIn } from '#lib/motion.ts';
   import { INKS, PAPERS } from '#lib/palette.ts';
   import SectionHead from './SectionHead.svelte';
   import { get } from 'svelte/store';
@@ -765,7 +765,7 @@
         {/each}
       </div>
       {#if loaded && !here.length}
-        <p class="hint" in:fade={{ duration: 200 }}>
+        <p class="hint" in:settleIn>
           {canEdit ? 'An empty page. Pick a tool above to begin.' : 'Nothing on this page yet.'}
         </p>
       {/if}

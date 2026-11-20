@@ -19,7 +19,7 @@
   import InfoTip from './InfoTip.svelte';
   import { onDestroy, tick, untrack } from 'svelte';
   import { cubicOut } from 'svelte/easing';
-  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { popIn, prefersReducedMotion } from '#lib/motion.ts';
   import type { LookupCategory } from '#lib/rules/lookup.ts';
   import LibraryMenu from './LibraryMenu.svelte';
   import { fillRow, type LibraryKind, type Suggestion } from '#lib/library.ts';
@@ -652,7 +652,7 @@
             aria-label="{words.hint}: {nameOf(item) || 'this'}" title={editable ? words.hint : undefined}
             onclick={() => equip!.onpress(index)}>
       <span class="eqroom" aria-hidden="true">{words.on.length > words.off.length ? words.on : words.off}</span>
-      {#key on}<span class="eqlabel">{on ? words.on : words.off}</span>{/key}
+      {#key on}<span class="eqlabel" in:popIn={{ y: 3 }}>{on ? words.on : words.off}</span>{/key}
     </button>
   {:else}
     <button class="equip" class:on aria-pressed={on}
@@ -661,7 +661,7 @@
             onclick={() => equip!.onpress(index)}>
       <!-- Always as wide as "Equipped", so the name beside it never shifts. -->
       <span class="eqroom" aria-hidden="true">Equipped</span>
-      {#key on}<span class="eqlabel">{on ? 'Equipped' : 'Equip'}</span>{/key}
+      {#key on}<span class="eqlabel" in:popIn={{ y: 3 }}>{on ? 'Equipped' : 'Equip'}</span>{/key}
     </button>
   {/if}
 {/snippet}
@@ -1002,8 +1002,8 @@
   .equip.still { cursor: default; }
   .equip.still[tabindex]:hover, .equip.still[tabindex]:focus-visible { border-color: var(--a-edge); }
   .equip.still[tabindex]:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
-  .eqlabel { display: inline-block; animation: eqIn 0.25s cubic-bezier(0.2, 0.8, 0.3, 1); }
-  @keyframes eqIn { from { opacity: 0; transform: translateY(3px); } }
+  /* A label swapping (Equip, Equipped) rises in by popIn; showing with its table, it stays still. */
+  .eqlabel { display: inline-block; }
   .muted { color: var(--dim); font-size: 0.85rem; }
   .numeric { font-variant-numeric: tabular-nums; }
   /* Centered on the row rather than aligned with the first line of text. */
