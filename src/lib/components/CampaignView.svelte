@@ -823,7 +823,11 @@
   .tablebar.forplayers .nextsession { grid-column: 1; }
   .tablebar.forplayers .musicslot { grid-column: 2; justify-content: center; }
   .tablebar.forplayers .owlroom { grid-column: 3; justify-self: end; }
-  .owlroom { text-decoration: none; }
+  /* The same pill as the DM's side switch in this place: its height, its padding, its words' size. */
+  .owlroom {
+    text-decoration: none; box-sizing: border-box; min-height: var(--switch-h); border-radius: 999px;
+    padding: 0 calc(0.875rem + 3px); font-size: 0.875rem; gap: 0.4375rem;
+  }
   .owlroom svg { transition: transform 0.45s cubic-bezier(0.33, 1, 0.68, 1); }
   .owlroom:hover svg { transform: translateY(-1px) rotate(-6deg); }
   @media (max-width: 700px) {

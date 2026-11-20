@@ -277,6 +277,8 @@ button, summary, label:has(> input:is([type='checkbox'], [type='radio'])), [role
 /* On the campaign page every button is as tall as its Back (--btn-h), in its
    windows too (settings, M&N), which open outside its main. */
 html:has(main.campaignpage) { --btn-h: 2.125rem; }
+/* The height of a side switch (AreaSwitch), and of the players' Owlbear Rodeo button in its place. */
+:root { --switch-h: 2.5625rem; }
 .smallbtn:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
 .smallbtn:active:not(:disabled) { transform: translateY(1px); }
 .smallbtn:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
@@ -284,7 +286,7 @@ html:has(main.campaignpage) { --btn-h: 2.125rem; }
 .smallbtn.quiet { color: var(--dim); background: none; border-color: var(--line-soft); font-size: 0.75rem; padding: 0.25rem 0.5rem; }
 .smallbtn.accent { color: var(--a); border-color: var(--a-edge); }
 
-/* A small square × that closes what it sits in (the Owlbear player and board). */
+/* A small square × that closes what it sits in (a stat block window). */
 /*
  * An alert in the page's flow (a failed load, a notice): a soft box spaced
  * like a section, the same on every page. `.bad` for something gone wrong.

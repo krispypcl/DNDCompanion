@@ -32,6 +32,7 @@
   .areaswitch {
     position: relative; display: grid; grid-template-columns: 1fr 1fr; padding: 3px; flex: none;
     border-radius: 999px; border: 1px solid var(--line); background: var(--raised);
+    box-sizing: border-box; min-height: var(--switch-h);
   }
   .switchthumb {
     position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px); border-radius: 999px;
