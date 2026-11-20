@@ -393,7 +393,8 @@ p[role='alert'], p[role='status'] { animation: message-in 0.28s cubic-bezier(0.3
 /* lib/smoothHeight.ts: the box eases to its contents' height; inside, the
    parts being swapped (children of .swap-cell) share one cell, so one fades out where the other fades in. */
 .smooth-height { transition: height 0.32s cubic-bezier(0.33, 1, 0.68, 1); overflow: clip; overflow-clip-margin: 6px; }
-.swap-cell { display: grid; }
+/* Its own height, never stretched to the box's (a grid box would hold it at the old height, so the box never shrinks). */
+.swap-cell { display: grid; align-self: start; }
 .swap-cell > * { grid-area: 1 / 1; min-width: 0; }
 
 /* Lists of cards arrive one after another, a beat apart, rather than all
