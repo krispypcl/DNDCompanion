@@ -20,7 +20,7 @@
   import { session } from '#lib/stores/session.ts';
   import { classLine, initiativeParts } from '#lib/rules/derived.ts';
   import { advantageFrom } from '#lib/rules/equipment.ts';
-  import { creatureRepo, type Revealed } from '#lib/data/creatures.ts';
+  import { followRevealed, type Revealed } from '#lib/data/creatures.ts';
   import { CreatureTable } from '#lib/creatureTable.svelte.ts';
   import { next as nextTurn, previous as previousTurn, rollInitiative, settleAll, start as startTurns, unsettled, type InitiativeRow } from '#lib/rules/initiative.ts';
   import { LiveInitiative } from '#lib/initiative.svelte.ts';
@@ -117,6 +117,8 @@
   $effect(() => {
     void table?.load();
   });
+  // Changes made elsewhere (another tab, the Owlbear room) land here as they happen.
+  $effect(() => table?.follow());
   // What is still waiting to be saved goes before the page does.
   $effect(() => {
     const t = table;
@@ -129,18 +131,13 @@
     };
   });
   const creatureCount = $derived(table?.list.length ?? 0);
-  /** What the players see of them: only the revealed ones (database/0018). */
+  /** What the players see of them: only the revealed ones (database/0018), live (0025). */
   let revealed = $state<Revealed[]>([]);
-  async function lookAtRevealed() {
-    if (isDm || !isMember || !campaign) return;
-    try {
-      revealed = await creatureRepo.revealed(campaign.id);
-    } catch {
-      // Offline for a moment: the next look tries again.
-    }
-  }
+  const revealedFor = $derived(isMember && !isDm && campaign ? campaign.id : null);
   $effect(() => {
-    if (isMember && !isDm && campaign?.id) void lookAtRevealed();
+    const id = revealedFor;
+    if (!id) return;
+    return followRevealed(id, (r) => (revealed = r));
   });
   /**
    * Switching sides: the new side slides in, and the room they take eases
@@ -287,7 +284,6 @@
       if (document.visibilityState !== 'visible') return;
       ticks += 1;
       void lookAgain(ticks % 4 === 0);
-      void lookAtRevealed();
     }, 15000);
     const back = () => document.visibilityState === 'visible' && load();
     document.addEventListener('visibilitychange', back);

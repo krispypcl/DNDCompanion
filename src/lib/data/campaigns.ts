@@ -178,12 +178,56 @@ export function inviteCode(text: string): string {
   return (fromLink ? fromLink[1] : raw).toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
+/** What a page hears of campaign_state: the order, and the counters database/0025 keeps. */
+export type CampaignStateChange = { initiative?: unknown; creatures_rev?: number; campaign_rev?: number };
+
 function makeCampaignRepo(client: SupabaseClient) {
+  async function get(id: string): Promise<Campaign | null> {
+    const { data, error } = await client.from('campaigns').select(COLUMNS).eq('id', id).maybeSingle();
+    if (error) throw new Error(error.message);
+    return data ? asCampaign(data as Campaign) : null;
+  }
+  /** campaign_state as it changes; onjoin runs once listening (and again after a drop). Returns how to stop. */
+  function followState(campaignId: string, onrow: (row: CampaignStateChange) => void, onjoin?: () => void): () => void {
+    const channel = client
+      .channel(`state-${campaignId}-${Math.random().toString(36).slice(2, 8)}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'campaign_state', filter: `campaign_id=eq.${campaignId}` },
+        (payload) => onrow((payload.new ?? {}) as CampaignStateChange))
+      .subscribe((status) => status === 'SUBSCRIBED' && onjoin?.());
+    return () => void client.removeChannel(channel);
+  }
   return {
-    async get(id: string): Promise<Campaign | null> {
-      const { data, error } = await client.from('campaigns').select(COLUMNS).eq('id', id).maybeSingle();
-      if (error) throw new Error(error.message);
-      return data ? asCampaign(data as Campaign) : null;
+    get,
+    followState,
+
+    /**
+     * The campaign, read now and again whenever its name, details or ended
+     * state change (database/0025 counts them), on waking and after a dropped
+     * connection. Null once it is gone. Returns how to stop.
+     */
+    follow(id: string, oncampaign: (c: Campaign | null) => void): () => void {
+      let stopped = false;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      let rev: number | undefined;
+      const read = () => get(id).then((c) => !stopped && oncampaign(c)).catch(() => {});
+      const soon = () => {
+        clearTimeout(timer);
+        timer = setTimeout(read, 150);
+      };
+      void read();
+      const stop = followState(id, (row) => {
+        if (row.campaign_rev === undefined || row.campaign_rev === rev) return;
+        rev = row.campaign_rev;
+        soon();
+      }, soon);
+      const wake = () => document.visibilityState === 'visible' && soon();
+      document.addEventListener('visibilitychange', wake);
+      return () => {
+        stopped = true;
+        clearTimeout(timer);
+        document.removeEventListener('visibilitychange', wake);
+        stop();
+      };
     },
 
     /** Names for the campaigns a list of sheets is in. */
@@ -328,15 +372,10 @@ function makeCampaignRepo(client: SupabaseClient) {
     },
     /** Follows the order as the DM changes it; returns how to stop. */
     followInitiative(campaignId: string, onchange: (i: Initiative) => void): () => void {
-      const channel = client
-        .channel(`initiative-${campaignId}-${Math.random().toString(36).slice(2, 8)}`)
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'campaign_state', filter: `campaign_id=eq.${campaignId}` }, (payload) => {
-          const row = payload.new as { initiative?: unknown };
-          // A large order may be left out of a change that didn't touch it.
-          if (row && 'initiative' in row) onchange(readInitiative(row.initiative));
-        })
-        .subscribe();
-      return () => void client.removeChannel(channel);
+      // A large order may be left out of a change that didn't touch it.
+      return followState(campaignId, (row) => {
+        if ('initiative' in row) onchange(readInitiative(row.initiative));
+      });
     },
 
     async board(campaignId: string): Promise<BoardItem[] | null> {

@@ -4,6 +4,7 @@
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '#lib/supabase.ts';
+import { campaignRepo } from './campaigns.ts';
 import type { CreatureKind } from '#lib/rules/creatures.ts';
 import type { StatBlock } from '#lib/rules/statblock.ts';
 import type { ConditionLook } from '#lib/types.ts';
@@ -91,6 +92,30 @@ export function makeCreatureRepo(client: SupabaseClient) {
         if (error) throw fail(error);
       })));
     },
+    /**
+     * Each change to a campaign's creatures, made anywhere (database/0025;
+     * only the DM hears them). An update may leave out a large column it
+     * didn't touch (the stat block), so it is merged onto the row held. A
+     * delete carries only the id and can't be filtered by campaign, so the
+     * caller keeps the ones it has. Returns how to stop.
+     */
+    watch(campaignId: string, on: { row: (c: Partial<Creature> & { id: string }) => void; gone: (id: string) => void; joined?: () => void }): () => void {
+      const filter = `campaign_id=eq.${campaignId}`;
+      const row = (payload: { new?: unknown }) => {
+        const c = payload.new as Partial<Creature> | undefined;
+        if (c?.id) on.row(c as Partial<Creature> & { id: string });
+      };
+      const channel = client
+        .channel(`creatures-${campaignId}-${Math.random().toString(36).slice(2, 8)}`)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'campaign_creatures', filter }, row)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'campaign_creatures', filter }, row)
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'campaign_creatures' }, (payload) => {
+          const id = (payload.old as { id?: string } | undefined)?.id;
+          if (id) on.gone(id);
+        })
+        .subscribe((status) => status === 'SUBSCRIBED' && on.joined?.());
+      return () => void client.removeChannel(channel);
+    },
     /** The players' view: only the revealed ones, without their numbers. */
     async revealed(campaignId: string): Promise<Revealed[]> {
       const { data, error } = await client.rpc('revealed_creatures', { p_campaign: campaignId });
@@ -121,3 +146,69 @@ export function makeCreatureRepo(client: SupabaseClient) {
 }
 
 export const creatureRepo = makeCreatureRepo(supabase);
+
+/** In the DM's order: by place, then oldest first. */
+export const inOrder = (list: Creature[]): Creature[] =>
+  [...list].sort((a, b) => a.position - b.position || a.created_at.localeCompare(b.created_at));
+
+/** Reads again a moment after the last nudge, on waking, and on (re)joining; returns how to stop. */
+function keepReading(read: () => Promise<void>, listen: (nudge: () => void) => () => void): () => void {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const nudge = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => void read(), 150);
+  };
+  void read();
+  const stop = listen(nudge);
+  const wake = () => document.visibilityState === 'visible' && nudge();
+  document.addEventListener('visibilitychange', wake);
+  return () => {
+    clearTimeout(timer);
+    document.removeEventListener('visibilitychange', wake);
+    stop();
+  };
+}
+
+/** A campaign's creatures, live, for its DM (read-only: the Owlbear room's tokens and menus). Returns how to stop. */
+export function followCreatures(campaignId: string, onlist: (list: Creature[]) => void, onerror?: (e: unknown) => void): () => void {
+  let stopped = false;
+  let list: Creature[] = [];
+  const show = (next: Creature[]) => {
+    list = next;
+    if (!stopped) onlist(next);
+  };
+  const stop = keepReading(
+    () => creatureRepo.list(campaignId).then(show, (e) => void (!stopped && onerror?.(e))),
+    (nudge) => creatureRepo.watch(campaignId, {
+      row: (c) => (list.some((x) => x.id === c.id) ? show(inOrder(list.map((x) => (x.id === c.id ? { ...x, ...c } : x)))) : nudge()),
+      gone: (id) => list.some((x) => x.id === id) && show(list.filter((x) => x.id !== id)),
+      joined: nudge
+    })
+  );
+  return () => {
+    stopped = true;
+    stop();
+  };
+}
+
+/**
+ * What the players see of a campaign's creatures, live: asked again whenever
+ * one they can see changes (database/0025 counts those in campaign_state).
+ * Returns how to stop.
+ */
+export function followRevealed(campaignId: string, onlist: (list: Revealed[]) => void): () => void {
+  let stopped = false;
+  let rev: number | undefined;
+  const stop = keepReading(
+    () => creatureRepo.revealed(campaignId).then((r) => void (!stopped && onlist(r)), () => {}),
+    (nudge) => campaignRepo.followState(campaignId, (row) => {
+      if (row.creatures_rev === undefined || row.creatures_rev === rev) return;
+      rev = row.creatures_rev;
+      nudge();
+    }, nudge)
+  );
+  return () => {
+    stopped = true;
+    stop();
+  };
+}

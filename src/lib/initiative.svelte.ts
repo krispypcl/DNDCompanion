@@ -38,6 +38,8 @@ export class LiveInitiative {
       .catch(() => {})
       .finally(() => (this.ready = true));
     const stop = campaignRepo.followInitiative(this.campaignId, (i) => {
+      // campaign_state changes for other reasons too (the music, database/0025's counters).
+      if (JSON.stringify(i) === JSON.stringify(this.#confirmed)) return;
       this.#confirmed = i;
       if (on && !this.#sending) this.state = i;
     });

@@ -9,7 +9,7 @@
  * and one creature never has two saves in flight, so they can't land out of
  * order.
  */
-import { creatureRepo, type Creature, type CreatureFields, type Homebrew } from '#lib/data/creatures.ts';
+import { creatureRepo, inOrder, type Creature, type CreatureFields, type Homebrew } from '#lib/data/creatures.ts';
 import { friendlyError } from '#lib/errors.ts';
 import { findMonster } from '#lib/rules/fiveData.ts';
 import { fromFiveTools, leadingNumber, monsterArt, type StatBlock } from '#lib/rules/statblock.ts';
@@ -49,6 +49,50 @@ export class CreatureTable {
     } finally {
       this.loading = false;
     }
+  }
+
+  /**
+   * Follows changes made elsewhere (another page, the Owlbear room) as they
+   * land (database/0025). A creature with a change of this page's waiting or
+   * on its way keeps this page's, as the newest; its save brings the two
+   * back in step. Returns how to stop.
+   */
+  follow(): () => void {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const busy = (id: string) => this.#pending.has(id) || this.#flying.has(id);
+    const reread = () => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        try {
+          const list = await creatureRepo.list(this.campaignId);
+          this.#saved = new Map(list.map((x) => [x.id, x]));
+          this.list = list.map((x) => (busy(x.id) ? this.list.find((y) => y.id === x.id) ?? x : x));
+        } catch {
+          // Offline for a moment: the next change or wake reads again.
+        }
+      }, 150);
+    };
+    const stop = creatureRepo.watch(this.campaignId, {
+      row: (c) => {
+        const had = this.#saved.get(c.id) ?? this.list.find((x) => x.id === c.id);
+        if (!had) return reread();
+        const row = { ...had, ...c };
+        this.#saved.set(c.id, row);
+        if (!busy(c.id)) this.list = inOrder(this.list.map((x) => (x.id === c.id ? row : x)));
+      },
+      gone: (id) => {
+        this.#saved.delete(id);
+        if (this.list.some((x) => x.id === id)) this.list = this.list.filter((x) => x.id !== id);
+      },
+      joined: reread
+    });
+    const wake = () => document.visibilityState === 'visible' && reread();
+    document.addEventListener('visibilitychange', wake);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', wake);
+      stop();
+    };
   }
 
   #say(text: string) {
@@ -111,7 +155,8 @@ export class CreatureTable {
     }));
     try {
       const made = await creatureRepo.add(this.campaignId, rows);
-      this.list = [...this.list, ...made];
+      // The live feed may have brought them in first.
+      this.list = [...this.list.filter((x) => !made.some((m) => m.id === x.id)), ...made];
       for (const m of made) this.#saved.set(m.id, m);
       this.#say(names.length > 1 ? `Added ${names[0]} to ${names[names.length - 1]}` : `Added ${names[0]}`);
       return made;

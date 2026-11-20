@@ -80,6 +80,8 @@ create table if not exists public.campaign_state (
   invite_rev   integer not null default 0,
   initiative   jsonb not null default '{}'::jsonb
                constraint campaign_state_initiative_size check (jsonb_typeof(initiative) = 'object' and octet_length(initiative::text) <= 8000),
+  creatures_rev integer not null default 0,
+  campaign_rev integer not null default 0,
   updated_at   timestamptz not null default now()
 );
 
@@ -296,6 +298,48 @@ revoke all on function private.cap_campaign_creatures() from public, anon, authe
 drop trigger if exists campaign_creatures_cap on public.campaign_creatures;
 create trigger campaign_creatures_cap before insert on public.campaign_creatures
   for each row execute function private.cap_campaign_creatures();
+
+-- Live pages (0025): the players can't read the creatures, so campaign_state
+-- counts every change to one they can see, and every change to the campaign
+-- (left out of Realtime: its invite code is hidden by column grants).
+create or replace function private.count_creature_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  -- A campaign being deleted takes its creatures with it: nothing to count.
+  if (coalesce(new.visible, false) or coalesce(old.visible, false))
+     and exists (select 1 from public.campaigns c where c.id = coalesce(new.campaign_id, old.campaign_id)) then
+    update public.campaign_state set creatures_rev = creatures_rev + 1
+      where campaign_id = coalesce(new.campaign_id, old.campaign_id);
+  end if;
+  return null;
+end;
+$$;
+revoke all on function private.count_creature_change() from public, anon, authenticated;
+drop trigger if exists campaign_creatures_count on public.campaign_creatures;
+create trigger campaign_creatures_count after insert or update or delete on public.campaign_creatures
+  for each row execute function private.count_creature_change();
+
+create or replace function private.count_campaign_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if (new.name, new.archived, new.details) is distinct from (old.name, old.archived, old.details) then
+    update public.campaign_state set campaign_rev = campaign_rev + 1 where campaign_id = new.id;
+  end if;
+  return null;
+end;
+$$;
+revoke all on function private.count_campaign_change() from public, anon, authenticated;
+drop trigger if exists campaigns_count on public.campaigns;
+create trigger campaigns_count after update on public.campaigns
+  for each row execute function private.count_campaign_change();
 
 create or replace function private.cap_homebrew_creatures()
 returns trigger
@@ -1113,6 +1157,10 @@ begin
   if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'board_items') then
     alter publication supabase_realtime add table public.board_items;
   end if;
+  -- Only the DM may read these rows, so only the DM hears them.
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'campaign_creatures') then
+    alter publication supabase_realtime add table public.campaign_creatures;
+  end if;
 end;
 $$;
 
@@ -1152,6 +1200,8 @@ comment on column public.campaign_state.playback is 'The DM''s music: which song
 comment on column public.campaign_state.initiative is
   'The initiative order: {pcs: {characterId: number}, turn: "pc:<id>"|"cr:<id>"|null, round, asking}.';
 comment on column public.campaign_state.invite_rev is 'Goes up when the DM makes a new invite, so open pages fetch it.';
+comment on column public.campaign_state.creatures_rev is 'Counts changes to the creatures the players can see, so their pages know to ask revealed_creatures again.';
+comment on column public.campaign_state.campaign_rev is 'Counts changes to the campaign''s name, details and ended state, so pages know to read it again.';
 
 comment on table public.board_items is 'The campaign''s table board: pages, sticky notes, text and drawings.';
 comment on column public.board_items.kind is 'page, note, text or stroke.';

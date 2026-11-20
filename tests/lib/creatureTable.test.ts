@@ -1,8 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const update = vi.fn();
+type Watch = { row: (c: Record<string, unknown> & { id: string }) => void; gone: (id: string) => void; joined?: () => void };
+let heard: Watch | null = null;
 vi.mock('#lib/data/creatures.ts', () => ({
+  inOrder: (l: { position: number }[]) => [...l].sort((a, b) => a.position - b.position),
   creatureRepo: {
+    watch: (_c: string, on: Watch) => {
+      heard = on;
+      return () => (heard = null);
+    },
     list: vi.fn(async () => [{ id: 'a', campaign_id: 'c', kind: 'monster', name: 'Goblin', hp_max: 10, hp_current: 10, hp_temp: 0, ac: 15, conditions: [], notes: '', link: '', position: 0, initiative: null, visible: false, statblock: {}, created_at: '', updated_at: '' }]),
     update: (...a: unknown[]) => update(...a),
     homebrew: { list: vi.fn(async () => []) }
@@ -58,5 +65,39 @@ describe('CreatureTable saves', () => {
     await done;
     expect(t.list[0].hp_current).toBe(10);
     expect(t.error).toBeTruthy();
+  });
+});
+
+describe('CreatureTable live', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    update.mockReset();
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it('takes a change made elsewhere, merged onto the row it has', async () => {
+    const t = new CreatureTable('c');
+    await t.load();
+    const stop = t.follow();
+    heard!.row({ id: 'a', hp_current: 3 });
+    expect(t.list[0].hp_current).toBe(3);
+    expect(t.list[0].name).toBe('Goblin');
+    heard!.gone('a');
+    expect(t.list).toEqual([]);
+    stop();
+    expect(heard).toBeNull();
+  });
+
+  it('keeps its own change while it waits to be saved', async () => {
+    const t = new CreatureTable('c');
+    await t.load();
+    t.follow();
+    update.mockResolvedValue(undefined);
+    const done = t.change(t.list[0], { hp_current: 5 });
+    heard!.row({ id: 'a', hp_current: 9 });
+    expect(t.list[0].hp_current).toBe(5);
+    await vi.advanceTimersByTimeAsync(CreatureTable.SAVE_AFTER);
+    await done;
+    expect(update).toHaveBeenCalledWith('a', { hp_current: 5 });
   });
 });
