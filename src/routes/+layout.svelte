@@ -88,7 +88,14 @@
       );
     });
   });
+
+  /** A quick second or third press on a button is more presses, not a word or line to select. */
+  function noRepeatSelect(e: MouseEvent) {
+    if (e.detail > 1 && (e.target as Element | null)?.closest?.('button, [role="button"], .smallbtn')) e.preventDefault();
+  }
 </script>
+
+<svelte:document onmousedowncapture={noRepeatSelect} />
 
 <Splash />
 <ConnectionNotice />

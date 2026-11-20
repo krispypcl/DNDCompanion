@@ -236,6 +236,8 @@ body {
  * button, never bare text: a small bordered one, the same everywhere.
  * `quiet` is the muted kind (the privacy link under sign-in).
  */
+/* A button's words are its label, not text to select, however fast it is pressed. */
+button, [role='button'], .smallbtn { -webkit-user-select: none; user-select: none; }
 .smallbtn {
   display: inline-flex; align-items: center; justify-content: center; gap: 0.3125rem;
   padding: 0.3125rem 0.625rem; font: inherit; font-size: 0.8125rem; line-height: 1.25; letter-spacing: normal;
