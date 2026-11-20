@@ -241,7 +241,9 @@ input.numfield { text-align: center; font-variant-numeric: tabular-nums; -moz-ap
 input.numfield::-webkit-outer-spin-button, input.numfield::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
 /* A button's words are its label, not text to select, however fast it is pressed. */
-button, [role='button'], .smallbtn { -webkit-user-select: none; user-select: none; }
+button, summary, label:has(> input:is([type='checkbox'], [type='radio'])), [role='button'], [role='tab'], [role='radio'], [role='option'], [role='menuitem'], [role='switch'], .smallbtn {
+  -webkit-user-select: none; user-select: none;
+}
 .smallbtn {
   display: inline-flex; align-items: center; justify-content: center; gap: 0.3125rem;
   padding: 0.3125rem 0.625rem; font: inherit; font-size: 0.8125rem; line-height: 1.25; letter-spacing: normal;

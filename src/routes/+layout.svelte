@@ -89,9 +89,12 @@
     });
   });
 
-  /** A quick second or third press on a button is more presses, not a word or line to select. */
+  /** A quick second or third press on a button (a fold's title, a tab, a label) is more presses, not a word or line to select. */
+  const PRESSABLE = 'button, summary, label, [role="button"], [role="tab"], [role="radio"], [role="option"], [role="menuitem"], [role="switch"], .smallbtn';
   function noRepeatSelect(e: MouseEvent) {
-    if (e.detail > 1 && (e.target as Element | null)?.closest?.('button, [role="button"], .smallbtn')) e.preventDefault();
+    const t = e.target as Element | null;
+    // A field keeps its own double-click (a word in what's typed).
+    if (e.detail > 1 && t?.closest?.(PRESSABLE) && !t.closest('input, textarea, [contenteditable="true"]')) e.preventDefault();
   }
 </script>
 
