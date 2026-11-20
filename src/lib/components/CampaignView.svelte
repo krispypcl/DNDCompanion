@@ -544,7 +544,7 @@
 {:else if error && !campaign}
   <NotFound tab="Campaign didn’t load" title="That’s a critical fail!" message={error} />
 {:else if campaign}
-  <main class="themed" style={themeCss} in:fade={{ duration: prefersReducedMotion() ? 0 : 200 }} data-place={phoneOn ? place : undefined}>
+  <main class="themed campaignpage" style={themeCss} in:fade={{ duration: prefersReducedMotion() ? 0 : 200 }} data-place={phoneOn ? place : undefined}>
     {#if bannerLink.url}<Banner url={bannerLink.url} />{/if}
     <header>
       <!-- The die, in the campaign's own colour: home to the list. -->
