@@ -21,8 +21,6 @@ export class CreatureTable {
   homebrew = $state<Homebrew[]>([]);
   loading = $state(true);
   error = $state<string | null>(null);
-  /** The database still waits on 0020: no portraits or condition colours yet. TODO: drop once 0020 has run. */
-  before0020 = $state(false);
   /** A short word on what just happened ("Added Goblin Boss"). */
   notice = $state<string | null>(null);
   readonly campaignId: string;
@@ -45,7 +43,6 @@ export class CreatureTable {
       const [list, brew] = await Promise.all([creatureRepo.list(this.campaignId), creatureRepo.homebrew.list().catch(() => [])]);
       this.list = list;
       this.#saved = new Map(list.map((x) => [x.id, x]));
-      this.before0020 = creatureRepo.before0020;
       this.homebrew = brew;
     } catch (e) {
       this.error = friendlyError(e, 'The monsters slipped their leash! Try again in a moment.');

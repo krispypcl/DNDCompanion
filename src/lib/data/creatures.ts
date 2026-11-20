@@ -55,50 +55,26 @@ export type Revealed = {
   condition_looks?: Record<string, ConditionLook>;
 };
 
-/*
- * Until database/0020 has run there are no portrait or condition_looks
- * columns: they are read without, and left out of what is saved. TODO: drop
- * once 0020 has run.
- */
-const BEFORE_0020 = COLUMNS.replace(', portrait, condition_looks', '');
-const missingColumn = (e: { code?: string; message?: string }) => e.code === '42703' || /column .* does not exist/i.test(e.message ?? '');
-const filled = (rows: unknown[]) => (rows as Partial<Creature>[]).map((r) => ({ portrait: '', condition_looks: {}, ...r }) as Creature);
+const HOMEBREW = 'id, kind, name, statblock, portrait, updated_at';
 
 const fail = (e: { message?: string }) => new Error(e.message || 'Something went wrong');
 
 export function makeCreatureRepo(client: SupabaseClient) {
-  let before0020 = false;
-  const columns = () => (before0020 ? BEFORE_0020 : COLUMNS);
-  const strip = <T extends Record<string, unknown>>(r: T): T => {
-    if (!before0020) return r;
-    const { portrait: _p, condition_looks: _c, ...rest } = r as Record<string, unknown>;
-    return rest as T;
-  };
   return {
-    /** The database still waits on 0020 (no portraits or condition colours yet). */
-    get before0020() {
-      return before0020;
-    },
     async list(campaignId: string): Promise<Creature[]> {
-      const read = () => client.from('campaign_creatures').select(columns()).eq('campaign_id', campaignId).order('position').order('created_at');
-      let { data, error } = await read();
-      if (error && !before0020 && missingColumn(error)) {
-        before0020 = true;
-        ({ data, error } = await read());
-      }
+      const { data, error } = await client.from('campaign_creatures').select(COLUMNS).eq('campaign_id', campaignId).order('position').order('created_at');
       if (error) throw fail(error);
-      return filled(data ?? []);
+      return (data ?? []) as Creature[];
     },
     async add(campaignId: string, rows: CreatureFields[]): Promise<Creature[]> {
       const { data, error } = await client.from('campaign_creatures')
-        .insert(rows.map((r) => ({ ...strip(r), campaign_id: campaignId }))).select(columns());
+        .insert(rows.map((r) => ({ ...r, campaign_id: campaignId }))).select(COLUMNS);
       if (error) throw fail(error);
-      return filled(data ?? []);
+      return (data ?? []) as Creature[];
     },
     async update(id: string, patch: CreatureFields): Promise<void> {
-      const fields = strip(patch);
-      if (!Object.keys(fields).length) return;
-      const { error } = await client.from('campaign_creatures').update(fields).eq('id', id);
+      if (!Object.keys(patch).length) return;
+      const { error } = await client.from('campaign_creatures').update(patch).eq('id', id);
       if (error) throw fail(error);
     },
     async remove(id: string): Promise<void> {
@@ -119,23 +95,18 @@ export function makeCreatureRepo(client: SupabaseClient) {
     },
     homebrew: {
       async list(): Promise<Homebrew[]> {
-        const cols = () => `id, kind, name, statblock, ${before0020 ? '' : 'portrait, '}updated_at`;
-        let { data, error } = await client.from('homebrew_creatures').select(cols()).order('name');
-        if (error && !before0020 && missingColumn(error)) {
-          before0020 = true;
-          ({ data, error } = await client.from('homebrew_creatures').select(cols()).order('name'));
-        }
+        const { data, error } = await client.from('homebrew_creatures').select(HOMEBREW).order('name');
         if (error) throw fail(error);
-        return ((data ?? []) as Partial<Homebrew>[]).map((h) => ({ portrait: '', ...h }) as Homebrew);
+        return (data ?? []) as Homebrew[];
       },
       async save(row: { id?: string; kind: CreatureKind; name: string; statblock: StatBlock; portrait?: string }): Promise<Homebrew> {
-        const fields = { kind: row.kind, name: row.name, statblock: row.statblock, ...(before0020 ? {} : { portrait: row.portrait ?? '' }) };
+        const fields = { kind: row.kind, name: row.name, statblock: row.statblock, portrait: row.portrait ?? '' };
         const q = row.id
           ? client.from('homebrew_creatures').update(fields).eq('id', row.id)
           : client.from('homebrew_creatures').insert(fields);
-        const { data, error } = await q.select(`id, kind, name, statblock, ${before0020 ? '' : 'portrait, '}updated_at`).single();
+        const { data, error } = await q.select(HOMEBREW).single();
         if (error) throw fail(error);
-        return { portrait: '', ...(data as Partial<Homebrew>) } as Homebrew;
+        return data as Homebrew;
       },
       async remove(id: string): Promise<void> {
         const { error } = await client.from('homebrew_creatures').delete().eq('id', id);

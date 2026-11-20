@@ -78,7 +78,7 @@
     if (!name || has(c.conditions, name)) return;
     void table.change(c, { conditions: [...c.conditions, name] });
     // One of the DM's own: ask its colour, starting from the first swatch.
-    if (!isStandard(name) && !table.before0020) {
+    if (!isStandard(name)) {
       if (!(lookKey(name) in (c.condition_looks ?? {}))) setLook(c, name, defaultLook());
       tinting = { id: c.id, name };
     }
@@ -255,22 +255,20 @@
       {@const now = hpNow(c)}
       {@const v = vitalStatus(now, max)}
       {@const kind = kindLine(c.statblock ?? {})}
+      {@const ring = ringOf(c)}
+      {@const pic = resolveImageUrl(c.portrait).url}
       <li class="creature {v.vital}" class:revealed={c.visible} data-key={c.id}
           animate:flip={{ duration: still ? 0 : 240, easing: cubicOut }} transition:fade={{ duration: still ? 0 : 180 }}>
         <div class="creaturehead">
-          {#if !table.before0020}
-            {@const ring = ringOf(c)}
-            {@const pic = resolveImageUrl(c.portrait).url}
-            <span class="cportrait" class:ringed={ring.length > 0} class:npc={c.kind === 'npc'}>
-              {#if pic}<img src={pic} alt="" draggable="false" loading="lazy" />{:else}
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  {#if c.kind === 'npc'}<circle cx="12" cy="8.5" r="3.75" /><path d="M4.75 20c.6-3.9 3.6-6.25 7.25-6.25s6.65 2.35 7.25 6.25" />
-                  {:else}<path d="M8.25 8.5 5 3.25l.75 6.25M15.75 8.5 19 3.25l-.75 6.25" /><circle cx="12" cy="14" r="6.25" /><path d="M9.75 13.5h.01M14.25 13.5h.01M10 17.25h4" />{/if}
-                </svg>
-              {/if}
-              <ConditionRing bands={ring} />
-            </span>
-          {/if}
+          <span class="cportrait" class:ringed={ring.length > 0} class:npc={c.kind === 'npc'}>
+            {#if pic}<img src={pic} alt="" draggable="false" loading="lazy" />{:else}
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                {#if c.kind === 'npc'}<circle cx="12" cy="8.5" r="3.75" /><path d="M4.75 20c.6-3.9 3.6-6.25 7.25-6.25s6.65 2.35 7.25 6.25" />
+                {:else}<path d="M8.25 8.5 5 3.25l.75 6.25M15.75 8.5 19 3.25l-.75 6.25" /><circle cx="12" cy="14" r="6.25" /><path d="M9.75 13.5h.01M14.25 13.5h.01M10 17.25h4" />{/if}
+              </svg>
+            {/if}
+            <ConditionRing bands={ring} />
+          </span>
           <div class="creaturename">
             <strong>{c.name}</strong>
             <span class="kindtag" class:npc={c.kind === 'npc'}>{c.kind === 'npc' ? 'NPC' : 'Monster'}</span>
@@ -330,7 +328,7 @@
           {#each c.conditions as name (name)}
             {@const colour = colourOf(c, name)}
             <li style:--cc={colour ?? 'var(--dim)'} class:plain={!colour} transition:fade={{ duration: still ? 0 : 150 }}>
-              {#if !ended && !isStandard(name) && !table.before0020}
+              {#if !ended && !isStandard(name)}
                 <!-- One of the DM's own: its dot opens its colour. -->
                 <button class="cdot tint" aria-label="Choose {name}’s colour" title="Colour" onclick={() => (tinting = { id: c.id, name })}></button>
               {:else}
@@ -447,10 +445,8 @@
           <label class="wide"><span>5e.tools link (optional)</span>
             <input bind:value={e.draft.link} maxlength="500" placeholder="Left empty, its name is searched" /></label>
         {/if}
-        {#if !table.before0020}
-          <label class="wide"><span>Portrait (a picture link, optional)</span>
-            <input bind:value={e.draft.portrait} maxlength="2000" placeholder="Google Drive, Imgur, Pinterest, Dropbox or any image link" /></label>
-        {/if}
+        <label class="wide"><span>Portrait (a picture link, optional)</span>
+          <input bind:value={e.draft.portrait} maxlength="2000" placeholder="Google Drive, Imgur, Pinterest, Dropbox or any image link" /></label>
         <div class="wide sbwrap">
           <h3 class="sbtitle">Stat block</h3>
           <StatBlockEditor bind:value={e.draft.statblock} />
