@@ -267,7 +267,7 @@
                 {:else}<path d="M8.25 8.5 5 3.25l.75 6.25M15.75 8.5 19 3.25l-.75 6.25" /><circle cx="12" cy="14" r="6.25" /><path d="M9.75 13.5h.01M14.25 13.5h.01M10 17.25h4" />{/if}
               </svg>
             {/if}
-            <ConditionRing bands={ring} />
+            <ConditionRing bands={ring} round />
           </span>
           <div class="creaturename">
             <strong>{c.name}</strong>
@@ -490,8 +490,9 @@
   .sk-row { height: 2rem; }
   .creaturehead { display: flex; align-items: flex-start; gap: 0.75rem; }
   .creaturehead .creaturename { flex: 1; }
+  /* Round, as the 5e.tools tokens most portraits come from are. */
   .cportrait {
-    position: relative; flex: none; width: 3.25rem; height: 3.25rem; border-radius: var(--r-sm); display: grid; place-items: center;
+    position: relative; flex: none; width: 3.25rem; height: 3.25rem; border-radius: 50%; display: grid; place-items: center;
     border: 1px solid color-mix(in oklch, oklch(62% 0.21 25) 45%, var(--line)); background: var(--raised); color: var(--dim);
     transition: border-color 0.35s ease;
   }

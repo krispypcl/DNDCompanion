@@ -33,7 +33,7 @@
         <li class="foe {c.vital}" animate:flip={{ duration: still ? 0 : 240, easing: cubicOut }} transition:fade={{ duration: still ? 0 : 160 }}>
           <div class="foehead">
             {#if pic}
-              <span class="foepic" class:ringed={ring.length > 0}><img src={pic} alt="" loading="lazy" /><ConditionRing bands={ring} /></span>
+              <span class="foepic" class:ringed={ring.length > 0}><img src={pic} alt="" loading="lazy" /><ConditionRing bands={ring} round /></span>
             {/if}
             <span class="foename">
               <strong>{c.name}</strong>
@@ -68,8 +68,9 @@
   .foe.unknown { --vc: var(--dim); }
   .foehead { display: flex; align-items: center; gap: 0.75rem; }
   .foename { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; min-width: 0; }
+  /* Round, as the 5e.tools tokens most portraits come from are. */
   .foepic {
-    position: relative; flex: none; width: 2.75rem; height: 2.75rem; border-radius: var(--r-sm);
+    position: relative; flex: none; width: 2.75rem; height: 2.75rem; border-radius: 50%;
     border: 1px solid var(--line-soft); background: var(--raised); transition: border-color 0.35s ease;
   }
   .foepic.ringed { border-color: transparent; }
