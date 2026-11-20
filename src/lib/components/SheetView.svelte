@@ -931,7 +931,7 @@
         <button class="keys searchbtn" onclick={() => (searching = true)} aria-label="Search 5e.tools" title="Search 5e.tools (/)">
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
         </button>
-        <button class="keys" onclick={() => (showKeys = true)} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
+        <button class="keys kbd" onclick={() => (showKeys = true)} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
             <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <rect x="2.5" y="6" width="19" height="12" rx="2" />
@@ -981,6 +981,20 @@
               </Why>
             {/each}
           </div>
+        </div>
+        <!-- Senses under the passives: what the character notices, together. -->
+        <div class="profs senses" style:--rows={3}>
+          <h2 class="cap">Senses</h2>
+          <EditableField
+            value={definition.senses ?? ''}
+            {editable}
+            type="textarea"
+            rows={3}
+            label="Senses"
+            placeholder="—"
+            hint="Special senses and their range, such as darkvision."
+            onchange={(v) => setDefinition({ ...definition, senses: String(v) })}
+          />
         </div>
       </section>
 
@@ -1346,19 +1360,6 @@
           />
         </div>
 
-        <div class="profs" style:--rows={3} data-places="more">
-          <h2 class="cap">Senses</h2>
-          <EditableField
-            value={definition.senses ?? ''}
-            {editable}
-            type="textarea"
-            rows={3}
-            label="Senses"
-            placeholder="—"
-            hint="Special senses and their range, such as darkvision."
-            onchange={(v) => setDefinition({ ...definition, senses: String(v) })}
-          />
-        </div>
       </section>
     </div>
   </div>
@@ -1858,6 +1859,11 @@
   }
   .keys:hover { border-color: var(--a-edge); color: var(--a); }
   .keys:active { transform: translateY(1px); }
+  /* The magnifier leans in to look, the keyboard's keys lift, as the cog turns. */
+  .searchbtn svg, .kbd svg { transition: transform 0.4s cubic-bezier(0.33, 1, 0.68, 1); }
+  .searchbtn:hover svg { transform: rotate(-14deg) scale(1.1); }
+  .kbd:hover svg { transform: translateY(-1.5px) scale(1.06); }
+  @media (prefers-reduced-motion: reduce) { .searchbtn svg, .kbd svg { transition: none; } }
   @media (hover: hover) and (pointer: fine) { .keys { display: inline-grid; } }
   @media (max-width: 860px) {
     .sheet { padding: 0.875rem; }
