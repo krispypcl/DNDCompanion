@@ -1,5 +1,4 @@
 <script lang="ts">
-  import InfoTip from './InfoTip.svelte';
   import { siteRoot } from '#lib/rules/share.ts';
   /**
    * A campaign's page, /c/<id>: a card for each character in it, with what a
@@ -14,7 +13,7 @@
   import { cubicOut } from 'svelte/easing';
   import { base } from '#lib/base.ts';
   import { goto } from '$app/navigation';
-  import { campaignMessage, campaignRepo, NO_INITIATIVE, setNextSession, type Campaign, type CampaignDetails } from '#lib/data/campaigns.ts';
+  import { campaignMessage, campaignRepo, NO_INITIATIVE, type Campaign, type CampaignDetails } from '#lib/data/campaigns.ts';
   import { TableMusic } from '#lib/tableMusic.svelte.ts';
   import { sheetRepo } from '#lib/data/sheets.ts';
   import { isConfigured, supabase } from '#lib/supabase.ts';
@@ -30,8 +29,7 @@
   import { faceFamily, nameFont } from '#lib/rules/fonts.ts';
   import { themeStyle } from '#lib/theme.ts';
   import { friendlyError } from '#lib/errors.ts';
-  import { popIn, prefersReducedMotion } from '#lib/motion.ts';
-  import { glide } from '#lib/flip.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
   import { smoothHeight } from '#lib/smoothHeight.ts';
   import Banner from './Banner.svelte';
   import CampaignMusic from './CampaignMusic.svelte';
@@ -39,7 +37,6 @@
   import CampaignBoard from './CampaignBoard.svelte';
   import CampaignCards from './CampaignCards.svelte';
   import D20Loader from './D20Loader.svelte';
-  import EditableField from './EditableField.svelte';
   import ModeToggle from './ModeToggle.svelte';
   import Logo from './Logo.svelte';
   import NotFound from './NotFound.svelte';
@@ -53,7 +50,7 @@
   import Spotlight from './Spotlight.svelte';
   import InitiativeTracker from './InitiativeTracker.svelte';
   import RevealedCreatures from './RevealedCreatures.svelte';
-  import ThemePicker from './ThemePicker.svelte';
+  import CampaignSettings from './CampaignSettings.svelte';
   import { musicOn, setMusicOn } from '#lib/music.ts';
   import { get } from 'svelte/store';
   import type { ConditionLook, Sheet } from '#lib/types.ts';
@@ -70,20 +67,13 @@
   let invite = $state<string | null>(null);
   let copied = $state<'invite' | 'page' | null>(null);
   /**
-   * Edit mode, the DM's alone, as on a sheet: reading, the page is the table
-   * and the music; editing, the name, the songs, the invite, the banner and
-   * ending or deleting the campaign come out.
+   * The campaign's settings, the DM's alone, in a window of their own (the
+   * gear beside Back): name, next session, invite, banner, font, theme, and
+   * ending or deleting it. The page itself has no edit mode: the DM adds
+   * songs and moves cards on it as it is.
    */
-  let editing = $state(false);
-  function toggleEditing() {
-    void glide(() => {
-      editing = !editing;
-      if (!editing) confirming = null;
-    });
-  }
+  let settingsOpen = $state(false);
   const unfold = () => ({ duration: prefersReducedMotion() ? 0 : 280, easing: cubicOut });
-  /** Which of the campaign's last two buttons is asking to be sure. */
-  let confirming = $state<'end' | 'delete' | null>(null);
 
   const isDm = $derived(Boolean(campaign && $session.user && campaign.created_by === $session.user.id));
   /** In the campaign: its DM, or a player with a character in it. They may see the invite. */
@@ -179,7 +169,7 @@
 
   /** The table's music and who is here to lead it (lib/tableMusic). */
   const music = $derived(new TableMusic(id));
-  const showMusic = $derived((hasMusic || (isDm && editing)) && music.ready);
+  const showMusic = $derived((hasMusic || isDm) && music.ready);
   $effect(() => music.setDm(isDm));
   $effect(() => music.setUser($session.user?.id ?? null));
   $effect(() => music.start());
@@ -204,14 +194,9 @@
     if (e.key === '?') {
       e.preventDefault();
       showKeys = true;
-    } else if (e.key.toLowerCase() === 'e' && isDm) {
-      e.preventDefault();
-      toggleEditing();
     } else if (e.key.toLowerCase() === 'm' && hasMusic) {
       e.preventDefault();
       setMusicOn(!get(musicOn));
-    } else if (e.key === 'Escape' && confirming) {
-      confirming = null;
     }
   }
   const active = $derived(sheets.filter((s) => !s.retired));
@@ -359,7 +344,6 @@
     if (!campaign) return;
     await campaignRepo.archive(campaign.id, archived);
     campaign = { ...campaign, archived };
-    confirming = null;
   }, archived ? 'The story refused to end! Try again.' : 'The campaign stayed shut! Try again.');
 
   const destroy = () => act(async () => {
@@ -373,15 +357,6 @@
   const players = $derived([...music.present].filter((u) => u !== campaign?.created_by).length);
   /** When the table next meets (set by the DM). */
   const next = $derived(sessionWhen(campaign?.details.nextSession));
-
-  /** An ISO time as a datetime-local input shows it, in this device's time. */
-  function localInput(iso: string | undefined): string {
-    if (!iso) return '';
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return '';
-    const two = (n: number) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}T${two(d.getHours())}:${two(d.getMinutes())}`;
-  }
 
   async function saveDetails(patch: Partial<CampaignDetails>) {
     if (!campaign) return;
@@ -540,25 +515,16 @@
       <div class="title">
         <span class="eyebrow">Campaign{#if ended}<span class="sep">·</span>ended{/if}{#if isDm}<span class="sep">·</span>you’re the DM{/if}{#if music.presenceKnown && !isDm && music.dmHere}<span class="sep">·</span><span class="herenote"><i class="here-dot"></i>DM is here</span>{/if}{#if music.presenceKnown && players > 0}<span class="sep">·</span><span class="herenote"><i class="here-dot"></i>{players === 1 ? '1 player' : `${players} players`} here</span>{/if}</span>
         <h1 style:font-family={faceFamily(face)}>
-          {#if isDm}
-            <EditableField value={campaign.name} editable={editing} label="Campaign name" placeholder="Campaign name"
-                           onchange={(v) => rename(String(v))} />
-          {:else}
-            {campaign.name}
-          {/if}
+          {campaign.name}
         </h1>
       </div>
       <div class="tools">
-        {#if isDm}
-          <button class="edit" aria-pressed={editing} onclick={toggleEditing}>
-            {#key editing}<span class="edlabel" in:popIn>{editing ? 'Done' : 'Edit'}</span>{/key}
-          </button>
-        {/if}
         <a class="back" href="{base}/" title="Back to your characters and campaigns">Back</a>
-        {#if isMember && !ended}
-          <ShareButton link={inviteLink} icon="invite" disabled={!inviteLink}
-                       label="Copy the invite link (it lets a character join)"
-                       oncopied={(ok) => { if (!ok) error = 'The clipboard said no! Ask your DM to send you the invite.'; }} />
+        {#if isDm}
+          <button class="keys gear" onclick={() => (settingsOpen = true)} aria-label="Campaign settings" title="Campaign settings"
+                  aria-haspopup="dialog" aria-expanded={settingsOpen}>
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></g></svg>
+          </button>
         {/if}
         <ShareButton link={pageLink} label="Copy link to this page (to watch, not join)"
                      oncopied={(ok) => { if (!ok) error = 'The clipboard said no! Copy the address from the bar above instead.'; }} />
@@ -586,16 +552,7 @@
       <div class="tablewrap smooth-height" use:smoothHeight transition:slide={unfold()}>
       <div class="tablebar">
         <div class="nextsession">
-          {#if isDm && editing}
-            <label class="nextedit">
-              <span>Next session</span>
-              <input type="datetime-local" value={localInput(campaign.details.nextSession)}
-                     onchange={(e) => campaign && saveDetails(setNextSession(campaign.details, e.currentTarget.value ? new Date(e.currentTarget.value).toISOString() : ''))} />
-            </label>
-            {#if campaign.details.nextSession}
-              <button class="smallbtn" onclick={() => campaign && saveDetails(setNextSession(campaign.details, ''))}>Clear</button>
-            {/if}
-          {:else if next && !next.past}
+          {#if next && !next.past}
             <span class="nextlabel">Next session</span>
             <span class="nextwhen">{next.when}</span>
             <span class="nextuntil" class:soon={next.until === 'today' || next.until === 'now'}>{next.until === 'now' ? 'happening now' : next.until}</span>
@@ -604,7 +561,7 @@
         <!-- One jukebox, capsule or whole: switching between them never stops the song. -->
         {#if showMusic}
           <div class="musicslot" class:whole={!compactMusic} class:forplayers={!isDm}>
-            <CampaignMusic campaignId={campaign.id} songs={campaign.details.songs ?? []} editing={isDm && editing}
+            <CampaignMusic campaignId={campaign.id} songs={campaign.details.songs ?? []} editing={isDm && !ended}
                            lead={isDm} playback={music.table} away={music.away} onplayback={(p) => music.send(p)}
                            onchange={(songs) => saveDetails({ songs })} compact={compactMusic}
                            oncompact={isDm ? () => setMusicCompact(true) : undefined}
@@ -646,11 +603,17 @@
                 The party, live from their sheets. A green light means that player has the page open.
               {/if}
             {/snippet}
+            {#snippet end()}
+              {#if isMember && !ended}
+                <button class="smallbtn" onclick={() => copy(inviteLink, 'invite')} disabled={!inviteLink}
+                        title="The invite lets a character join this campaign">{copied === 'invite' ? 'Copied!' : 'Copy invite link'}</button>
+              {/if}
+            {/snippet}
           </SectionHead>
           {#if active.length === 0}
             <p class="empty">No characters yet.{#if isDm}{' '}Send your players the invite link.{/if}</p>
           {:else}
-            <CampaignCards here={music.present} sheets={active} order={campaign.details.order ?? []} {isDm} {editing} {ended}
+            <CampaignCards here={music.present} sheets={active} order={campaign.details.order ?? []} {isDm} {ended}
                            onorder={(order) => saveDetails({ order })} onremove={remove} onconditions={giveConditions} onlook={giveLook} />
           {/if}
         </section>
@@ -699,71 +662,10 @@
 
     <CampaignBoard campaignId={campaign.id} userId={$session.user?.id ?? null} canEdit={isMember && !ended} foldable />
 
-    <!-- Editing: the invite, the banner, and ending or deleting the campaign. -->
-    {#if isDm && editing}
-      <div class="manage" transition:slide={unfold()}>
-      {#if !ended}
-        <section class="dm">
-          <div class="invite">
-            <span class="label">Invite link
-              <InfoTip label="About the invite link">Players open it, sign in and pick which character joins. Anyone with this page’s own link can watch, but only the invite lets a character in. A new link stops the old one working.</InfoTip>
-            </span>
-            <input readonly value={inviteLink || 'Fetching…'} aria-label="Invite link" onfocus={(e) => e.currentTarget.select()} />
-            <button onclick={() => copy(inviteLink, 'invite')} disabled={!inviteLink}>{copied === 'invite' ? 'Copied!' : 'Copy'}</button>
-            <button class="ghost" onclick={newInvite} title="Make a new link; the old one stops working">New link</button>
-          </div>
-        </section>
-      {/if}
-      <section class="dm look">
-        <label class="invite">
-          <span class="label">Banner link</span>
-          <input value={campaign.details.bannerUrl ?? ''} placeholder="Optional: a wide picture shown behind the page"
-                 onchange={(e) => saveDetails({ bannerUrl: e.currentTarget.value.trim() })} />
-        </label>
-        {#if bannerLink.note}<p class="hint" class:bad={bannerLink.source === 'invalid'}>{bannerLink.note}</p>{/if}
-        <label class="invite fontrow">
-          <span class="label">Name font
-            <InfoTip label="About the name font">
-              The font of the campaign's name, on this page and in your list of campaigns. On
-              <a href="https://fonts.google.com" target="_blank" rel="noopener noreferrer">fonts.google.com</a>, open a font
-              and copy the address of its page (or the link from "Get font" → "Get embed code"). Paste either here, or
-              just the font's name. Leave it blank for the site's own font.
-            </InfoTip>
-          </span>
-          <input value={campaign.details.nameFont ?? ''} placeholder="Optional: a Google Fonts link"
-                 onchange={(e) => saveDetails({ nameFont: e.currentTarget.value.trim() })} />
-        </label>
-        {#if font === 'bad'}
-          <p class="hint bad" role="status">That’s not a font we can find! Paste a link from fonts.google.com, or the font’s name.</p>
-        {:else if face}
-          <p class="hint" role="status">Using <span style:font-family={faceFamily(face)}>{face.family}</span></p>
-        {/if}
-        <div class="themerow">
-          <span class="label">Campaign theme</span>
-          <ThemePicker value={campaign.details.theme} label="Campaign theme"
-                       onpreview={(hex) => (themePreview = hex)}
-                       onchange={(name) => { themePreview = null; void saveDetails({ theme: name }); }} />
-        </div>
-      </section>
-      <div class="end">
-        {#if confirming === 'end'}
-          <span>End this campaign? It moves to your archived campaigns, its characters stay in it, and you can reopen it later.</span>
-          <button class="danger" onclick={() => setEnded(true)}>End it</button>
-          <button class="ghost" onclick={() => (confirming = null)}>Keep playing</button>
-        {:else if confirming === 'delete'}
-          <span>Delete this campaign for good? Its characters stay, out of any campaign.</span>
-          <button class="danger" onclick={destroy}>Delete it</button>
-          <button class="ghost" onclick={() => (confirming = null)}>Keep</button>
-        {:else}
-          {#if ended}
-            <button class="ghost" onclick={() => setEnded(false)}>Reopen campaign</button>
-          {:else}
-            <button class="ghost" onclick={() => (confirming = 'end')}>End campaign</button>
-          {/if}
-          <button class="ghost dangerish" onclick={() => (confirming = 'delete')}>Delete campaign</button>
-        {/if}
-      </div>
-      </div>
+    {#if settingsOpen && isDm}
+      <CampaignSettings {campaign} {inviteLink} onrename={rename} onsave={saveDetails} onnewinvite={newInvite}
+                        onended={setEnded} ondelete={destroy} onpreview={(hex) => (themePreview = hex)}
+                        onclose={() => (settingsOpen = false)} />
     {/if}
     {#if showKeys}<ShortcutHelp owner={isDm} place="campaign" onclose={() => (showKeys = false)} />{/if}
     <Spotlight bind:open={searching} homebrew={table && !ended ? table.homebrew : []}
@@ -788,15 +690,7 @@
   .eyebrow { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--a); }
   h1 { margin: 0.125rem 0 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.015em; }
   .tools { display: flex; align-items: center; gap: 0.5rem; flex: none; }
-  button {
-    font: inherit; font-size: 0.875rem; cursor: pointer; border-radius: var(--r-sm); padding: 0.4375rem 0.875rem;
-    border: 1px solid var(--a-edge); background: var(--a-wash); color: var(--a);
-    transition: border-color 0.15s ease, background-color 0.15s ease;
-  }
-  button:hover:not(:disabled) { border-color: var(--a); }
-  button:disabled { opacity: 0.5; cursor: default; }
-  .ghost { border-color: var(--line); background: var(--surface); color: var(--text); }
-  /* The header's buttons, as on a sheet: Edit, Back, then square icons. */
+  /* The header's buttons: Back, the DM's gear, then square icons. */
   .back {
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font-size: 0.8125rem;
@@ -814,41 +708,8 @@
   .keys:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
   .keys:active { transform: translateY(1px); }
   @media (hover: hover) and (pointer: fine) { .keys { display: inline-grid; } }
-  .keys.searchbtn { display: inline-grid; }
-  .danger { border-color: var(--bad); background: none; color: var(--bad); }
-  .dangerish:hover { color: var(--bad); border-color: var(--bad); }
+  .keys.searchbtn, .keys.gear { display: inline-grid; }
 
-  .dm {
-    margin-top: 1.5rem; padding: 0.875rem 1rem; border: 1px solid var(--line-soft); border-radius: var(--r);
-    background: var(--surface);
-  }
-  .invite { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-  .label { font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600; }
-  .invite input {
-    flex: 1; min-width: 12rem; font: inherit; font-size: 0.8125rem; padding: 0.4375rem 0.625rem; color: var(--dim);
-    border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg);
-  }
-  .hint { margin: 0.5rem 0 0; font-size: 0.8125rem; color: var(--dim); line-height: 1.45; }
-  .hint.bad { color: var(--bad); }
-  /* Room above for the cards' shadows; a little below so it ends in air. */
-  .manage { padding-top: 1.5rem; }
-  .manage > .dm:first-child { margin-top: 0; }
-  .look { margin-top: 1rem; }
-  .fontrow { margin-top: 0.875rem; }
-  .label { display: inline-flex; align-items: center; gap: 0.25rem; }
-  .themerow { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.875rem; }
-  .look + .end { margin-top: 1.25rem; }
-  .edit {
-    background: var(--raised); border: 1px solid var(--line); color: var(--text);
-    padding: 0.375rem 0.875rem; font-size: 0.8125rem; line-height: 1.5; flex: none;
-    min-width: 4.5rem; transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
-  }
-  .edit:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
-  .edit:active { transform: translateY(1px); }
-  /* Edit and Done cross over rather than swap. */
-  .edlabel { display: inline-block; }
-  .edit[aria-pressed='true'] { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
-  .edit[aria-pressed='true']:hover { border-color: var(--a); background: var(--a-edge); color: var(--text); }
   /* Who is here, and the next session, in a line under the header. */
   .tablewrap { margin-top: 1.25rem; }
   .tablebar {
@@ -872,13 +733,6 @@
   .nextwhen { color: var(--text); }
   .nextuntil { color: var(--dim); }
   .nextuntil.soon { color: var(--a); font-weight: 600; }
-  .nextedit { display: inline-flex; align-items: center; gap: 0.5rem; }
-  .nextedit span { font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600; }
-  .nextedit input {
-    font: inherit; font-size: 0.8125rem; color: var(--text); background: var(--bg); border: 1px solid var(--line);
-    border-radius: var(--r-sm); padding: 0.3125rem 0.5rem; color-scheme: inherit;
-  }
-  .nextedit input:focus { outline: none; border-color: var(--a-edge); }
   .ended {
     margin: 1.5rem 0 0; padding: 0.75rem 1rem; border: 1px solid var(--line-soft); border-radius: var(--r);
     background: var(--surface); color: var(--dim); font-size: 0.875rem; line-height: 1.45;
@@ -889,14 +743,12 @@
 
   .retired ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.375rem; }
   .retired .smallbtn { margin-right: 0.5rem; }
-  .end { margin-top: 3rem; display: flex; align-items: center; gap: 0.625rem; flex-wrap: wrap; font-size: 0.875rem; color: var(--dim); }
   @media (max-width: 600px) {
     main { padding-top: 1.25rem; }
     h1 { font-size: 1.375rem; }
     header { flex-wrap: wrap; }
     /* The controls in one row under the name, together at the right. */
     .tools { width: 100%; justify-content: flex-end; gap: 0.375rem; flex-wrap: wrap; }
-    .edit { min-width: 3.25rem; padding: 0.375rem 0.5rem; }
     .back { padding: 0.375rem 0.5rem; }
   }
 </style>

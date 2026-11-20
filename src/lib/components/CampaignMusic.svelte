@@ -8,7 +8,8 @@
    * and removing songs is for edit mode.
    *
    * Whole, it is the player beside the list of songs (the list in a frosted
-   * box as tall as the player, the field to add one under it). Compact, it is
+   * box as tall as the player). For the DM, the field to add one sits above
+   * the list, on the title's line and as wide as the list, always there. Compact, it is
    * the little capsule (MusicPlayer's): the song playing, a mute and a volume
    * slider. The players only ever see that; the DM folds the jukebox into it
    * with the icon beside the song's name and opens it again, in view or edit
@@ -235,12 +236,33 @@
 
 <section class="jukebox" class:room class:compact aria-label="Table music">
   {#if !room && !compact}
-    <SectionHead title="Table music">
-      {#snippet info()}
-        You play the table’s music here and everyone on the campaign page hears it, each at their own volume. Your players
-        only see the song playing, in a small capsule. Add songs and playlists in edit mode.
-      {/snippet}
-    </SectionHead>
+    <!-- The title over the player, and (the DM's) the field to add a song over the list. -->
+    <div class="jhead">
+      <SectionHead title="Table music">
+        {#snippet info()}
+          You play the table’s music here and everyone on the campaign page hears it, each at their own volume. Your players
+          only see the song playing, in a small capsule. Paste a song or a playlist from YouTube to add it.
+        {/snippet}
+      </SectionHead>
+      {#if editing}
+        <div class="adder">
+          <div class="add">
+            <input bind:value={adding} placeholder="Paste a YouTube song or playlist link" aria-label="YouTube link to add"
+                   oninput={() => (problem = null)}
+                   onkeydown={(e) => { if (e.key === 'Enter') add(); }} />
+            <button onclick={add} disabled={!adding.trim() || busy}>
+              {busy ? (progress ? `Adding ${progress.done} of ${progress.of}` : 'Adding') : 'Add'}
+            </button>
+          </div>
+          {#if progress}
+            <div class="progress" transition:slide={motion()} aria-hidden="true">
+              <i style:width="{(progress.done / Math.max(1, progress.of)) * 100}%"></i>
+            </div>
+          {/if}
+          {#if problem}<p class="err" role="alert" transition:slide={motion()}>{problem}</p>{/if}
+        </div>
+      {/if}
+    </div>
   {/if}
   <div class="body" class:solo={room && !lead}>
     <div class="player">
@@ -258,7 +280,7 @@
       <!-- Only the songs are in the box; it is as tall as the player beside it, and scrolls. -->
       <div class="songbox">
       {#if !songs.length}
-        <p class="none" in:fade={{ duration: 160 }}>{editing ? 'Paste a song or a playlist below and it plays here, for the whole table.' : 'No songs yet. Add a song or a playlist in edit mode.'}</p>
+        <p class="none" in:fade={{ duration: 160 }}>{editing ? 'Paste a song or a playlist above and it plays here, for the whole table.' : 'No songs yet.'}</p>
       {/if}
       <ol class:empty={!songs.length}>
         {#each songs as song, i (song.url)}
@@ -277,24 +299,6 @@
         {/each}
       </ol>
       </div>
-      {#if editing}
-        <div class="adder" transition:slide={motion()}>
-          <div class="add">
-            <input bind:value={adding} placeholder="Paste a YouTube link" aria-label="YouTube link to add"
-                   oninput={() => (problem = null)}
-                   onkeydown={(e) => { if (e.key === 'Enter') add(); }} />
-            <button onclick={add} disabled={!adding.trim() || busy}>
-              {busy ? (progress ? `Adding ${progress.done} of ${progress.of}` : 'Adding') : 'Add'}
-            </button>
-          </div>
-          {#if progress}
-            <div class="progress" transition:slide={motion()} aria-hidden="true">
-              <i style:width="{(progress.done / Math.max(1, progress.of)) * 100}%"></i>
-            </div>
-          {/if}
-          {#if problem}<p class="err" role="alert" transition:slide={motion()}>{problem}</p>{/if}
-        </div>
-      {/if}
     </div>
     {/if}
   </div>
@@ -317,12 +321,19 @@
      has no size of its own, so the row is the player's, and the list scrolls.
      The field to add a song sits on the row below, under the box. */
   @media (min-width: 701px) {
-    .jukebox:not(.room) .body { align-items: stretch; row-gap: 0.5rem; }
-    .jukebox:not(.room) .player { grid-column: 1; grid-row: 1; }
-    .jukebox:not(.room) .list { display: contents; }
-    .jukebox:not(.room) .songbox { grid-column: 2; grid-row: 1; contain: size; display: grid; grid-template-rows: minmax(0, 1fr); }
+    .jukebox:not(.room) .body { align-items: stretch; }
+    .jukebox:not(.room) .list { display: grid; }
+    .jukebox:not(.room) .songbox { contain: size; display: grid; grid-template-rows: minmax(0, 1fr); }
     .jukebox:not(.room) .songbox ol { max-height: none; }
-    .jukebox:not(.room) .adder { grid-column: 2; grid-row: 2; padding-top: 0; }
+  }
+  /* The head lines up with the body's two columns: the title over the
+     player, the field over the list, as wide as it. */
+  .jhead { display: grid; grid-template-columns: minmax(0, 19rem) minmax(0, 1fr); gap: 0.25rem 1rem; align-items: start; margin-bottom: 0.625rem; }
+  .jhead :global(.sechead) { margin-bottom: 0; }
+  .jhead .adder { grid-column: 2; }
+  @media (max-width: 700px) {
+    .jhead { grid-template-columns: minmax(0, 1fr); }
+    .jhead .adder { grid-column: 1; }
   }
   .jukebox.compact { min-width: 0; max-width: min(24rem, 100%); }
   .compact .body { display: flex; margin: 0; }
@@ -368,9 +379,9 @@
   li:hover .x, .x:focus-visible { opacity: 1; }
   .x:hover { color: var(--bad); }
   @media (hover: none) { .x { opacity: 1; } }
-  .adder { padding-top: 0.5rem; }
+  .adder { min-width: 0; }
   .add { display: flex; gap: 0.5rem; }
-  .add button { white-space: nowrap; }
+  .add button { white-space: nowrap; flex: none; }
   .progress { height: 3px; border-radius: 2px; background: var(--line-soft); margin-top: 0.5rem; overflow: hidden; }
   .progress i { display: block; height: 100%; background: var(--a); transition: width 0.25s ease; }
   .pick.still { cursor: default; }
@@ -383,6 +394,9 @@
     font: inherit; font-size: 0.875rem; cursor: pointer; border-radius: var(--r-sm); padding: 0.4375rem 0.875rem;
     border: 1px solid var(--a-edge); background: var(--a-wash); color: var(--a);
   }
+  .add button:hover:not(:disabled) { border-color: var(--a); }
+  .add button:active:not(:disabled) { transform: translateY(1px); }
+  .add button:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
   .add button:disabled { opacity: 0.5; cursor: default; }
   .err { color: var(--bad); font-size: 0.8125rem; margin: 0.375rem 0 0; }
   @media (max-width: 700px) {

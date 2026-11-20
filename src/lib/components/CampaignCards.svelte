@@ -31,7 +31,6 @@
     sheets,
     order = [],
     isDm,
-    editing,
     ended,
     onorder,
     onremove,
@@ -44,7 +43,6 @@
     sheets: Sheet[];
     order?: string[];
     isDm: boolean;
-    editing: boolean;
     ended: boolean;
     onorder: (ids: string[]) => void;
     onremove: (id: string) => Promise<void> | void;
@@ -174,9 +172,6 @@
     onlook?.(s.id, lookKey(name), { ...lookFor(s, name), ...patch });
   }
   let removing = $state<string | null>(null);
-  $effect(() => {
-    if (!editing) removing = null;
-  });
 </script>
 
 <svelte:head>
@@ -299,7 +294,7 @@
           </g></svg>
         </button>
       {/if}
-      {#if isDm && !ended && editing}
+      {#if isDm && !ended}
         {#if removing === s.id}
           <div class="confirm" role="group" aria-label="Remove {nameOf(s)}" transition:slide={unfold()}>
             <span>Take out of the campaign?</span>

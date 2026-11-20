@@ -18,7 +18,6 @@
   const rows = $derived(
     place === 'campaign'
       ? [
-          ...(owner ? [{ keys: ['E'], what: 'Edit, or finish editing' }] : []),
           { keys: ['/'], what: 'Search 5e.tools' },
           { keys: ['M'], what: 'The table music on or off' },
           { keys: ['?'], what: 'Show these shortcuts' },
