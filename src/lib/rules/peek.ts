@@ -3,6 +3,7 @@
  * find the entry in 5e.tools' own data (rules/fiveData.ts) and show it.
  */
 import type { PeekPage, PeekTarget } from './fiveData';
+import { morePage } from './fiveMore';
 export type { PeekPage, PeekTarget };
 
 const PAGES: Record<string, PeekPage> = {
@@ -75,10 +76,12 @@ export function peekTarget(url: string): PeekTarget | null {
     return name ? { page, name, source } : null;
   }
 
-  const page = PAGES[file];
+  // One of 5e.tools' other pages (rules/fiveMore): rewards, deities, languages and the rest.
+  const more = morePage(file.replace(/\.html$/, ''));
+  const page = more ? 'more' : PAGES[file];
   if (!page || !u.hash) return null;
   const [head, ...rest] = u.hash.slice(1).split(',');
-  const target: PeekTarget = { page, ...nameAndSource(head) };
+  const target: PeekTarget = { page, ...nameAndSource(head), ...(more ? { more: more.page } : {}) };
   const state = rest.join(',').replace(/^state:/, '');
   for (const pair of state.split('~').filter(Boolean)) {
     const [key, value = ''] = pair.split('=');

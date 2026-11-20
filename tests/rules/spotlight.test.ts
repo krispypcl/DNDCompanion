@@ -46,4 +46,12 @@ describe('the search', () => {
     expect(entryUrl('Goblin Boss', 'm', 'XMM')).toBe('https://5e.tools/bestiary.html#goblin%20boss_xmm');
     expect(peekTarget(entryUrl('Fireball', 's', 'XPHB'))).toEqual({ page: 'spells', name: 'fireball', source: 'xphb' });
   });
+
+  it('opens another page’s entry at that page, and a homebrew subclass on its class’s', () => {
+    expect(entryUrl('Bahamut', 'g', 'XPHB', 'deities')).toBe('https://5e.tools/deities.html#bahamut_xphb');
+    expect(peekTarget(entryUrl('Bahamut', 'g', 'XPHB', 'deities'))).toEqual({ page: 'more', name: 'bahamut', source: 'xphb', more: 'deities' });
+    expect(peekTarget(entryUrl('Deadeye', 'u', 'ValdaGunslinger', 'Gunslinger|ValdaGunslinger|Deadeye'))).toMatchObject({
+      page: 'classes', name: 'gunslinger', source: 'valdagunslinger', subclass: { name: 'deadeye', source: 'valdagunslinger' }
+    });
+  });
 });

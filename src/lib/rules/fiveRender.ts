@@ -415,6 +415,22 @@ export function render(found: Found): Rendered {
       kind = `${e.subclassShortName ? `${e.subclassShortName} ` : ''}${e.className} Feature, Level ${e.level}`;
       html = blocks(e.entries);
       break;
+    case 'more': {
+      // Another page's entry: what it is, the few facts such a page leads with, and its text.
+      kind = found.word;
+      const list = (v: unknown) => (Array.isArray(v) ? v.map((x) => (typeof x === 'string' ? cap(x) : '')).filter(Boolean).join(', ') : typeof v === 'string' ? v : '');
+      facts = [
+        ['Pantheon', list(e.pantheon)],
+        ['Domains', list(e.domains)],
+        ['Title', list(e.title)],
+        ['Type', list(e.type) && !/^[A-Z]{1,3}$/.test(list(e.type)) ? list(e.type) : ''],
+        ['Typical Speakers', list(e.typicalSpeakers)],
+        ['Script', list(e.script)],
+        ['Prerequisite', prerequisite(e.prerequisite)]
+      ];
+      html = blocks(e.entries ?? []);
+      break;
+    }
     case 'subclass': {
       kind = `${e.className} Subclass`;
       html = featureList(found.features);

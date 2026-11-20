@@ -16,6 +16,8 @@ export type PeekPage =
   | 'optionalfeatures'
   | 'classes'
   | 'bestiary'
+  /** One of 5e.tools' other pages (rules/fiveMore), named in `more`. */
+  | 'more'
   | 'any';
 
 /** An entry as a 5e.tools link names it. */
@@ -26,6 +28,8 @@ export type PeekTarget = {
   source: string;
   /** On a class page: the subclass chosen ("battle master", its book). */
   subclass?: { name: string; source: string };
+  /** Which other page, for `more` ("deities", "languages"). */
+  more?: string;
   /** On a class page: the feature scrolled to, by level (1–20) and place in that level. */
   feature?: { level: number; index: number };
 };
@@ -36,6 +40,7 @@ const BASE = 'https://raw.githubusercontent.com/5etools-mirror-3/5etools-src/mai
 export type Raw = Record<string, any>;
 
 import CLASS_FEATURES from '#lib/data/class-features.json';
+import { MORE_WORD, morePage } from './fiveMore';
 
 /** Homebrew lives in its own repository, which 5e.tools reads too. */
 const BREW = 'https://raw.githubusercontent.com/TheGiddyLimit/homebrew/master/';
@@ -89,7 +94,9 @@ export type Found =
   | { kind: 'class'; entry: Raw; features: Raw[] }
   | { kind: 'subclass'; entry: Raw; features: Raw[]; only: boolean }
   | { kind: 'classFeature'; entry: Raw; features: Raw[] }
-  | { kind: 'monster'; entry: Raw };
+  | { kind: 'monster'; entry: Raw }
+  /** An entry of another page: what one is ("Deity", "Trap"), and its text. */
+  | { kind: 'more'; entry: Raw; word: string };
 
 const same = (a: unknown, b: unknown) => String(a ?? '').toLowerCase() === String(b ?? '').toLowerCase();
 
@@ -127,7 +134,13 @@ async function findSpell(name: string, source: string, everywhere: boolean): Pro
 async function findItem(name: string, source: string): Promise<{ entry: Raw; words: ItemWords } | null> {
   const [base, items, home] = await Promise.all([load('items-base.json'), load('items.json'), brew(source)]);
   const inBrew = home && pick([...(home.item ?? []), ...(home.baseitem ?? [])].filter((e: Raw) => same(e.source, source)), name, source);
-  const entry = inBrew || pick([...(items.item ?? []), ...(items.itemGroup ?? []), ...(base.baseitem ?? [])], name, source);
+  let entry = inBrew || pick([...(items.item ?? []), ...(items.itemGroup ?? []), ...(base.baseitem ?? [])], name, source);
+  // A magic variant ("+1 Weapon", "Adamantine Armor"): its rules are in what it passes on to each item.
+  if (!entry) {
+    const variants = await load('magicvariants.json').catch(() => ({}) as Raw);
+    const v = pick(variants.magicvariant ?? [], name, source);
+    if (v) entry = { ...v, ...(v.inherits ?? {}), name: v.name };
+  }
   return entry ? { entry, words: itemWords(home, base) } : null;
 }
 
@@ -304,6 +317,16 @@ export async function findEntry(t: PeekTarget, label = ''): Promise<Found | null
       return findClass(t, label);
     case 'bestiary':
       return one('monster', findMonster(name, source));
+    case 'more': {
+      const more = morePage(t.more ?? '');
+      if (!more) return null;
+      const data = await load(more.file);
+      for (const key of more.keys) {
+        const e = pick(data[key] ?? [], name, source);
+        if (e) return { kind: 'more', entry: e, word: MORE_WORD[key] ?? more.word };
+      }
+      return null;
+    }
     case 'any': {
       // A search with no category: each kind in turn, spells first
       // ("Invisibility" is a spell before it is anything else).

@@ -5,14 +5,18 @@
  * one opens in a pop-up.
  */
 import { LOOKUP_BASE } from './lookup';
+import { morePage } from './fiveMore';
 
-/** [name, kind, book, words] as the index writes it; a subclass adds "class|class book|short name". */
+/**
+ * [name, kind, book, words] as the index writes it; a subclass adds "class|class
+ * book|short name", and an entry of another page (kind g, rules/fiveMore) its page.
+ */
 export type IndexRow = [string, string, string, string] | [string, string, string, string, string];
 export type Hit = { name: string; kind: string; source: string; words: string; label: string; url: string };
 
 export const KIND_LABEL: Record<string, string> = {
   s: 'Spell', i: 'Item', f: 'Feat', o: 'Option', r: 'Species', b: 'Background', c: 'Class', u: 'Subclass', d: 'Condition',
-  m: 'Creature'
+  m: 'Creature', g: 'Reference'
 };
 const PAGE: Record<string, string> = {
   s: 'spells.html', i: 'items.html', f: 'feats.html', o: 'optionalfeatures.html', r: 'races.html',
@@ -34,6 +38,7 @@ export function entryUrl(name: string, kind: string, source: string, extra = '')
       return `${LOOKUP_BASE}/classes.html#${hash(cls)}_${hash(clsSource)},state:sub_${hash(short)}_${hash(source)}=b1`;
     }
   }
+  if (kind === 'g' && morePage(extra)) return `${LOOKUP_BASE}/${extra}.html#${hash(name)}_${hash(source)}`;
   return `${LOOKUP_BASE}/${PAGE[kind] ?? 'search.html'}#${hash(name)}_${hash(source)}`;
 }
 
