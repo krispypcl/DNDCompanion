@@ -7,7 +7,8 @@
  */
 import { writable } from 'svelte/store';
 import BREW_CLASS_FILES from '#lib/data/brew-class-files.json';
-import { knowsClass, registerClassData, registerEntryIndex, sourceId } from './lookup';
+import { knowsClass, registerClassData } from './classLinks.ts';
+import { registerEntryIndex, sourceId } from './lookup.ts';
 
 const REPO = 'https://raw.githubusercontent.com/TheGiddyLimit/homebrew/master/';
 const FILES = BREW_CLASS_FILES as Record<string, string>;

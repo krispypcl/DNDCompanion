@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { indexClassFile } from '#lib/rules/brewClasses.ts';
-import { featureUrl, registerClassData } from '#lib/rules/lookup.ts';
+import { featureUrl, registerClassData } from '#lib/rules/classLinks.ts';
 
 // A homebrew class file, cut down to what the links need.
 const file = {

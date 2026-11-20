@@ -3,7 +3,7 @@
  * definition. Kept apart from the component so they can be read, and tested,
  * on their own.
  */
-import { trackerUrl } from '#lib/rules/lookup.ts';
+import { trackerUrl } from '#lib/rules/classLinks.ts';
 import type { ClassEntry, Definition, RestKind, State, Tracker, TrackerDirection, TrackerType } from '#lib/types.ts';
 
 /** A fresh id for a tracker. */

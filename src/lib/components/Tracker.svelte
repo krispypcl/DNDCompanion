@@ -1,6 +1,6 @@
 <script lang="ts">
   import EntryLink from './EntryLink.svelte';
-  import { trackerUrl } from '#lib/rules/lookup.ts';
+  import { trackerUrl } from '#lib/rules/classLinks.ts';
   import { brewLoaded } from '#lib/rules/brewClasses.ts';
   import { clampSpent, trackerMax } from '#lib/rules/tracker.ts';
   import { FormulaError } from '#lib/rules/formula.ts';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { trackerUrl } from '#lib/rules/lookup.ts';
+import { trackerUrl } from '#lib/rules/classLinks.ts';
 import { trackerMax } from '#lib/rules/tracker.ts';
 
 describe('trackerUrl', () => {
@@ -32,7 +32,7 @@ describe('classlevel for a tracker from a feat', () => {
   });
 });
 
-import { featureUrl } from '#lib/rules/lookup.ts';
+import { featureUrl } from '#lib/rules/classLinks.ts';
 
 describe('featureUrl', () => {
   const identity = { ancestry: 'Tiefling (Asmodeus)', ancestrySource: 'xphb', background: 'Criminal', backgroundSource: 'xphb' };

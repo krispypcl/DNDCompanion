@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import index from '#lib/data/entry-index.json';
-import { entryUrl, registerEntryIndex, trackerUrl } from '#lib/rules/lookup.ts';
+import { entryUrl, registerEntryIndex } from '#lib/rules/lookup.ts';
+import { trackerUrl } from '#lib/rules/classLinks.ts';
 
 registerEntryIndex(index as never);
 

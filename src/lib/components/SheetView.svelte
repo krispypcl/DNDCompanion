@@ -65,7 +65,7 @@
     blankTracker, newId, trackerRows, withClasses, withTrackerRows, withoutTrackers, type TrackerRow
   } from '#lib/sheet/edits.ts';
   import { slotsByLevel, spellAttack, spellDc } from '#lib/rules/casting.ts';
-  import { featureUrl } from '#lib/rules/lookup.ts';
+  import { featureUrl } from '#lib/rules/classLinks.ts';
   import { brewLoaded, ensureBrewClasses, ensureEntryIndex } from '#lib/rules/brewClasses.ts';
   import {
     characterLevel,

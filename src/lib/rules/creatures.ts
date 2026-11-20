@@ -3,7 +3,7 @@
  * as they take damage and heal, numbering a group of the same creature,
  * and where to read about one on 5e.tools.
  */
-import { LOOKUP_BASE } from './lookup';
+import { LOOKUP_BASE } from './fiveBase.ts';
 
 /** Expressions the DM can pick for a creature (or write their own): calm to about to flee. */
 export const EXPRESSIONS = [

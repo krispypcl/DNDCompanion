@@ -39,7 +39,6 @@ const BASE = 'https://raw.githubusercontent.com/5etools-mirror-3/5etools-src/mai
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type Raw = Record<string, any>;
 
-import CLASS_FEATURES from '#lib/data/class-features.json';
 import { MORE_WORD, morePage } from './fiveMore';
 
 /** Homebrew lives in its own repository, which 5e.tools reads too. */
@@ -235,7 +234,8 @@ async function findFeature(name: string, source: string): Promise<Found | null> 
   const inBrew = home && pick(lists(home), name, source);
   if (inBrew) return { kind: 'classFeature', entry: inBrew, features: [] };
   const key = name.toLowerCase();
-  const index = CLASS_FEATURES as { classes: Record<string, Record<string, string>>; subclassFeatures: Record<string, string> };
+  // The class table (bundled), loaded only now: a monster's page never needs it.
+  const index = (await import('#lib/data/class-features.json')).default as { classes: Record<string, Record<string, string>>; subclassFeatures: Record<string, string> };
   const owner =
     Object.keys(index.classes).find((k) => key in index.classes[k] && (!source || k.endsWith(`|${source.toLowerCase()}`))) ??
     Object.keys(index.classes).find((k) => key in index.classes[k] && k.endsWith('|xphb')) ??

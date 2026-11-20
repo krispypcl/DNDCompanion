@@ -4,7 +4,7 @@
  * newest book's when an entry is in several), and the 5e.tools link each
  * one opens in a pop-up.
  */
-import { LOOKUP_BASE } from './lookup';
+import { LOOKUP_BASE } from './fiveBase.ts';
 import { morePage } from './fiveMore';
 
 /**
