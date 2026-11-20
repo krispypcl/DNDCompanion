@@ -57,6 +57,6 @@ describe('public view', () => {
 
   it('only offers Undo to the owner', () => {
     const undo = sheet.slice(sheet.indexOf('class="undo"') - 120, sheet.indexOf('class="undo"'));
-    expect(undo).toMatch(/\{#if isOwner\}/);
+    expect(undo).toMatch(/\{#if isOwner\b/);
   });
 });

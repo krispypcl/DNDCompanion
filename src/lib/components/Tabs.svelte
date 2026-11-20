@@ -8,6 +8,7 @@
     lit = null,
     label,
     bare = false,
+    quiet = false,
     children
   }: {
     tabs: string[];
@@ -18,6 +19,8 @@
     label?: import('svelte').Snippet<[string]>;
     /** No buttons here: the page switches `active` with its own control (the main menu). */
     bare?: boolean;
+    /** The next switch arrives without its slide (the page is already fading it in). */
+    quiet?: boolean;
     children: import('svelte').Snippet<[string]>;
   } = $props();
 
@@ -81,7 +84,7 @@
   });
 
   function slide(_node: Element) {
-    const span = prefersReducedMotion() ? 0 : 260;
+    const span = prefersReducedMotion() || quiet ? 0 : 260;
     const dx = 14 * direction;
     return {
       duration: span,

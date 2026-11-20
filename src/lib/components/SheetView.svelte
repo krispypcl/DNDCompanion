@@ -38,7 +38,7 @@
   import D20Loader from '#lib/components/D20Loader.svelte';
   import PrintButton from '#lib/components/PrintButton.svelte';
   import { beforeNavigate, goto } from '$app/navigation';
-  import { onMount, untrack } from 'svelte';
+  import { onMount, tick, untrack } from 'svelte';
   import { phone } from '#lib/stores/phone.svelte.ts';
   import PhoneBar, { type PhonePlace } from '#lib/components/PhoneBar.svelte';
   import { vitalStatus } from '#lib/rules/hp.ts';
@@ -253,8 +253,12 @@
   const phoneOn = $derived(phone.current);
   let place = $state<Place>('play');
   const placeOfTab = (tab: string): Place => (tab === 'Combat' ? 'play' : tab === 'Spells' ? 'spells' : tab === 'Equipment' ? 'gear' : 'more');
+  /** Coming from Abilities, the tab panel fades in with its place: its own slide stays still. */
+  let quietTab = $state(false);
   function goPlace(next: string) {
     const p = next as Place;
+    quietTab = place === 'abilities';
+    void tick().then(() => (quietTab = false));
     if (p === 'play') activeTab = 'Combat';
     else if (p === 'spells') activeTab = 'Spells';
     else if (p === 'gear') activeTab = 'Equipment';
@@ -269,11 +273,10 @@
       if (place !== 'abilities' && place !== placeOfTab(tab)) place = placeOfTab(tab);
     });
   });
-  const casts = $derived(Boolean(definition?.spellcastingAbility || (definition?.spells ?? []).length));
   const phonePlaces = $derived<PhonePlace[]>([
     { key: 'play', label: 'Play', icon: 'play' },
     { key: 'abilities', label: 'Abilities', icon: 'abilities' },
-    ...(casts || place === 'spells' ? [{ key: 'spells', label: 'Spells', icon: 'spells' as const }] : []),
+    { key: 'spells', label: 'Spells', icon: 'spells' },
     { key: 'gear', label: 'Gear', icon: 'gear' },
     { key: 'more', label: 'More', icon: 'more' }
   ]);
@@ -780,6 +783,11 @@
           {#if portraitSrc}<img src={portraitSrc} alt="" />{/if}
         </span>
         <span class="stripname">{definition.identity.name || sheet.name || 'Unnamed'}</span>
+        <!-- Away from Play the header (and its Edit and Undo) steps aside, so they come along here. -->
+        {#if isOwner && place !== 'play'}
+          <button class="undo" disabled={!$canUndo} title={$canUndo ? `Undo ${$lastLabel}` : 'Nothing to undo'} onclick={doUndo}>Undo</button>
+          <button class="edit" aria-pressed={editing} onclick={() => glide(() => (editing = !editing))}>{editing ? 'Done' : 'Edit'}</button>
+        {/if}
         <button class="hppill {phoneVital?.vital ?? ''}" onclick={() => goPlace('play')} aria-label="Hit points {sheetState.hpCurrent} of {definition.combat?.hpMax ?? 0}, {phoneVital?.label ?? ''}">
           <b>{sheetState.hpCurrent}{#if sheetState.hpTemp}<span class="temp">+{sheetState.hpTemp}</span>{/if}<small>&nbsp;/ {definition.combat?.hpMax ?? 0}</small></b>
           <span class="pillbar"><i style:width="{Math.max(0, Math.min(100, ((sheetState.hpCurrent) / Math.max(1, definition.combat?.hpMax ?? 0)) * 100))}%"></i></span>
@@ -788,7 +796,8 @@
       {#if place !== 'play'}<div class="striproom" aria-hidden="true"></div>{/if}
     {/if}
     {#if banner}<Banner url={banner} />{/if}
-    <header class="identity" bind:this={headerEl}>
+    <!-- Away from Play on a phone the header steps aside, still there, so its music plays on. -->
+    <header class="identity" class:offstage={phoneOn && place !== 'play'} bind:this={headerEl}>
       <div class="portrait" class:has={Boolean(portraitSrc)} class:fallen={dead} use:parallax>
         <!-- The picture turns toward the pointer, inside its still frame. -->
         <span class="frame">
@@ -976,7 +985,7 @@
       </section>
 
       <section class="panel centre" style:--i=3 data-places="play spells gear more">
-        <Tabs tabs={phoneOn && place === 'more' ? MORE_TABS : TABS} bare={phoneOn && place !== 'more'} bind:active={activeTab} lit={litLevel ? 'Spells' : null}>
+        <Tabs tabs={phoneOn && place === 'more' ? MORE_TABS : TABS} bare={phoneOn && place !== 'more'} quiet={quietTab} bind:active={activeTab} lit={litLevel ? 'Spells' : null}>
           {#snippet children(tab)}
             {#if tab === 'Combat'}
               <EntryTable
@@ -1898,14 +1907,7 @@
     .identity .musicslot, .identity .controls { grid-column: 1 / -1; margin-top: 0.75rem; }
   }
 
-  /* ── A phone's places: one at a time, each arriving with a short fade. ── */
-  .sheet[data-place='play'] [data-places]:not([data-places~='play']),
-  .sheet[data-place='abilities'] [data-places]:not([data-places~='abilities']),
-  .sheet[data-place='spells'] [data-places]:not([data-places~='spells']),
-  .sheet[data-place='gear'] [data-places]:not([data-places~='gear']),
-  .sheet[data-place='more'] [data-places]:not([data-places~='more']) { display: none; }
-  .sheet[data-place] [data-places] { animation: placeIn 0.24s cubic-bezier(0.33, 1, 0.68, 1); }
-  @keyframes placeIn { from { opacity: 0; } }
+  /* ── A phone's places (the rules for showing one are in app.css) ── */
   .railfight { display: contents; }
   /* With no tab row above it (a place with one tab), the tab starts at the panel's top. */
   .sheet[data-place]:not([data-place='more']) .centre :global(section[role='tabpanel']) { padding-top: 0; }
@@ -1913,12 +1915,7 @@
   .sheet[data-place='gear'] .rail-right .money, .sheet[data-place='more'] .rail-right .money + .profs { padding-top: 0; }
   /* Play: the numbers and conditions first, then the attacks. */
   .sheet[data-place='play'] .rail-right { order: -1; }
-  /* Away from Play the header steps aside (still there, so its music plays on). */
-  .sheet[data-place]:not([data-place='play']) .identity {
-    position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; pointer-events: none;
-  }
   .sheet[data-place]:not([data-place='play']) :global(.sheetinit) { margin-top: 0.25rem; }
-  @media (prefers-reduced-motion: reduce) { .sheet[data-place] [data-places] { animation: none; } }
 
   /* The slim strip: who, and how hurt. It slides down from the top. */
   .phonestrip {
@@ -1941,6 +1938,7 @@
   .strippic :global(svg) { width: 1.25rem; height: 1.25rem; }
   .strippic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .stripname { flex: 1; min-width: 0; font-weight: 650; font-size: 1rem; color: var(--a); overflow-wrap: anywhere; line-height: 1.2; }
+  .phonestrip .undo, .phonestrip .edit { flex: none; min-width: 0; padding: 0.375rem 0.5rem; }
   .hppill {
     flex: none; display: grid; justify-items: end; gap: 0.25rem; padding: 0.3125rem 0.625rem; font: inherit; color: var(--text); cursor: pointer;
     border: 1px solid var(--line); border-radius: 0.625rem; background: var(--raised);

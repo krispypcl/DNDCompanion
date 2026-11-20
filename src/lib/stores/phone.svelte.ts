@@ -5,5 +5,4 @@
  */
 import { MediaQuery } from 'svelte/reactivity';
 
-export const PHONE_QUERY = '(max-width: 700px)';
-export const phone = new MediaQuery(PHONE_QUERY, false);
+export const phone = new MediaQuery('(max-width: 700px)', false);

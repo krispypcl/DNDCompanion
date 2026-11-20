@@ -147,6 +147,31 @@
 /* Flipping modes recolours everything at once; without this it snaps. The
    class is on for a moment either side of the switch, so nothing carries a
    transition it does not need. */
+/* ── A phone's places (stores/phone, PhoneBar) ──
+   A page on a phone sets data-place to the place it shows; each part names
+   the places it belongs to in data-places. The rest is hidden, and what
+   shows fades in once: only the outermost part, never what is inside it. */
+[data-place='play'] [data-places]:not([data-places~='play']),
+[data-place='abilities'] [data-places]:not([data-places~='abilities']),
+[data-place='spells'] [data-places]:not([data-places~='spells']),
+[data-place='gear'] [data-places]:not([data-places~='gear']),
+[data-place='more'] [data-places]:not([data-places~='more']),
+[data-place='party'] [data-places]:not([data-places~='party']),
+[data-place='fight'] [data-places]:not([data-places~='fight']),
+[data-place='foes'] [data-places]:not([data-places~='foes']),
+[data-place='board'] [data-places]:not([data-places~='board']),
+[data-place='music'] [data-places]:not([data-places~='music']) { display: none; }
+[data-place] [data-places] { animation: place-in 0.24s cubic-bezier(0.33, 1, 0.68, 1); }
+[data-place] [data-places] [data-places] { animation: none; }
+@keyframes place-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { [data-place] [data-places] { animation: none; } }
+/* Out of sight but still there (and still playing, for the music): a part
+   that has to keep running while its place is elsewhere. */
+.offstage {
+  position: absolute !important; width: 1px; height: 1px; margin: 0; overflow: hidden; clip-path: inset(50%);
+  white-space: nowrap; pointer-events: none;
+}
+
 /* Light and dark fade into each other as one picture (ModeToggle); the page
    underneath switches at once, its own colour transitions held off. */
 :root.mode-snap *, :root.mode-snap *::before, :root.mode-snap *::after { transition: none !important; }
