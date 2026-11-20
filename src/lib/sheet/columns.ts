@@ -15,7 +15,7 @@ export const CLASS_COLUMNS = [
   { key: 'name', label: 'Class', width: '38%', placeholder: 'Class' },
   { key: 'subclass', label: 'Subclass', width: '30%', placeholder: 'Subclass' },
   { key: 'level', label: 'Level', width: '14%', type: 'number' as const, numeric: true, placeholder: '1' },
-  { key: 'source', label: 'Source', width: '18%', muted: true, placeholder: 'xphb' }
+  { key: 'source', label: 'Source', width: '18%', muted: true, placeholder: "PHB'24" }
 ];
 
 export const ATTACK_COLUMNS = [
@@ -43,7 +43,7 @@ export const SPELL_COLUMNS = [
     canPress: (v: unknown) => spellDamage(v, null, null, 1) !== null, pressVerb: 'Cast',
     show: (v: unknown) => String(v ?? '').replace(/\s*(?:\/|per)\s*(?:slot\s*)?(?:level|lvl|slot)s?\b/i, '/lvl') },
   { key: 'notes', label: 'Notes', width: '18%', muted: true, wide: true, placeholder: '+5 AC' },
-  { key: 'source', label: 'Source', short: 'Src', width: '7%', muted: true, placeholder: 'xphb' }
+  { key: 'source', label: 'Source', short: 'Src', width: '7%', muted: true, placeholder: "PHB'24" }
 ];
 
 /** Attunement: three items at most, by the rules. */
@@ -54,7 +54,7 @@ export const ITEM_COLUMNS = [
   { key: 'qty', label: 'Amount', short: 'Qty', width: '12%', type: 'number' as const, numeric: true, placeholder: '1' },
   { key: 'weight', label: 'Weight', width: '12%', type: 'number' as const, numeric: true, placeholder: '3' },
   { key: 'value', label: 'Value', width: '22%', numeric: true, placeholder: '15 gp' },
-  { key: 'source', label: 'Source', width: '16%', muted: true, placeholder: 'xphb' }
+  { key: 'source', label: 'Source', width: '16%', muted: true, placeholder: "PHB'24" }
 ];
 
 export const TRACKER_COLUMNS = [
@@ -66,7 +66,7 @@ export const TRACKER_COLUMNS = [
   { key: 'direction', label: 'Direction', short: 'Dir.', width: '10%', options: ['spend', 'accrue'] as const },
   { key: 'resetOn', label: 'Resets on', short: 'Resets', width: '11%', options: ['manual', 'short', 'long', 'dawn'] as const },
   { key: 'resetAmount', label: 'Refill', width: '9%', placeholder: 'full' },
-  { key: 'source', label: 'Source', short: 'Src', width: '15%', muted: true, placeholder: 'phb' }
+  { key: 'source', label: 'Source', short: 'Src', width: '15%', muted: true, placeholder: "PHB'24" }
 ];
 
 /** Where a feature comes from, in the order the groups are listed. A
@@ -79,5 +79,5 @@ export const FEATURE_COLUMNS = [
   { key: 'title', label: 'Title', width: '34%', viewWidth: '18%', placeholder: 'Second Wind' },
   { key: 'kind', label: 'Type', width: '13%', options: ['Other', ...FEATURE_KINDS.slice(0, -1)] },
   { key: 'body', label: 'Description', width: '40%', viewWidth: '60%', wide: true, placeholder: 'Regain 1d10 + level hit points' },
-  { key: 'source', label: 'Source', width: '13%', muted: true, placeholder: 'phb' }
+  { key: 'source', label: 'Source', width: '13%', muted: true, placeholder: "PHB'24" }
 ];

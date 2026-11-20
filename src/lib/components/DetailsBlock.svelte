@@ -21,24 +21,24 @@
   } = $props();
 
   const ORIGIN = [
-    { key: 'ancestry', label: 'Species', placeholder: 'Tiefling (Glasya)' },
-    { key: 'ancestrySource', label: 'Species source', placeholder: 'mtf' },
-    { key: 'background', label: 'Background', placeholder: 'Criminal' },
-    { key: 'backgroundSource', label: 'Background source', placeholder: 'xphb' }
+    { key: 'ancestry', label: 'Species', placeholder: 'Human, Elf, Dwarf' },
+    { key: 'ancestrySource', label: 'Species source', placeholder: "PHB'24" },
+    { key: 'background', label: 'Background', placeholder: 'Acolyte, Sage, Soldier' },
+    { key: 'backgroundSource', label: 'Background source', placeholder: "PHB'24" }
   ] as const;
 
   /** One-liners. All free text: an age may be "24" or "unknown". */
   const DETAILS = [
-    { key: 'alignment', label: 'Alignment', placeholder: 'Lawful good' },
-    { key: 'gender', label: 'Gender', placeholder: 'Male' },
-    { key: 'age', label: 'Age', placeholder: '22' },
-    { key: 'size', label: 'Size', placeholder: 'Medium' },
-    { key: 'height', label: 'Height', placeholder: '6’0″' },
-    { key: 'weight', label: 'Weight', placeholder: '180 lb' },
-    { key: 'faith', label: 'Faith', placeholder: 'None' },
-    { key: 'skin', label: 'Skin', placeholder: 'Tan' },
-    { key: 'eyes', label: 'Eyes', placeholder: 'Brown' },
-    { key: 'hair', label: 'Hair', placeholder: 'Black' }
+    { key: 'alignment', label: 'Alignment', placeholder: 'Lawful Good' },
+    { key: 'gender', label: 'Gender', placeholder: 'How they identify' },
+    { key: 'age', label: 'Age', placeholder: 'In years' },
+    { key: 'size', label: 'Size', placeholder: 'Small or Medium' },
+    { key: 'height', label: 'Height', placeholder: 'Feet and inches' },
+    { key: 'weight', label: 'Weight', placeholder: 'In pounds' },
+    { key: 'faith', label: 'Faith', placeholder: 'A god, a cause or none' },
+    { key: 'skin', label: 'Skin', placeholder: 'Tone and markings' },
+    { key: 'eyes', label: 'Eyes', placeholder: 'Color' },
+    { key: 'hair', label: 'Hair', placeholder: 'Color and style' }
   ] as const;
 
   const WRITING: { key: keyof Traits; label: string; placeholder: string }[] = [

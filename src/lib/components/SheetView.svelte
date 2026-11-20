@@ -1237,7 +1237,7 @@
             rows={4}
             label="Proficiencies"
             placeholder="—"
-            hint="Armour, weapons, tools, saving throws."
+            hint="The armor, weapons, tools and saves you are trained in."
             onchange={(v) =>
               setDefinition({
                 ...definition,
@@ -1255,7 +1255,7 @@
             rows={2}
             label="Languages"
             placeholder="—"
-            hint="Common, Thieves' cant, Deep Speech."
+            hint="Every language you speak, read or sign."
             onchange={(v) =>
               setDefinition({
                 ...definition,
@@ -1273,7 +1273,7 @@
             rows={3}
             label="Senses"
             placeholder="—"
-            hint="Darkvision 60 ft., blindsight, tremorsense."
+            hint="Special senses and their range, such as darkvision."
             onchange={(v) => setDefinition({ ...definition, senses: String(v) })}
           />
         </div>
