@@ -9,7 +9,7 @@
  * Coordinates are written from the top-left of a US Letter page (612 × 792
  * points), the way the page is read, and turned over for pdf-lib here.
  */
-import fontkit from '@pdf-lib/fontkit';
+import fontkit from '@cantoo/fontkit';
 import {
   PDFDocument,
   PDFFont,
@@ -24,7 +24,7 @@ import {
   pushGraphicsState,
   rgb,
   type RGB
-} from 'pdf-lib';
+} from '@cantoo/pdf-lib';
 import type { Definition, State } from '$lib/types';
 import { sheetContent, type Paragraph, type SheetContent } from './content';
 

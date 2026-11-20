@@ -33,10 +33,10 @@
     "vitest": "^5.1.1"
   },
   "dependencies": {
+    "@cantoo/fontkit": "^2.0.12",
+    "@cantoo/pdf-lib": "^2.11.1",
     "@owlbear-rodeo/sdk": "^3.1.0",
-    "@pdf-lib/fontkit": "^1.1.1",
-    "@supabase/supabase-js": "^2.119.2",
-    "pdf-lib": "^1.17.1"
+    "@supabase/supabase-js": "^2.119.2"
   },
   "overrides": {
     "@owlbear-rodeo/sdk": {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { PDFDocument, PDFTextField } from 'pdf-lib';
+import { PDFDocument, PDFTextField } from '@cantoo/pdf-lib';
 import { sheetPdf } from '$lib/pdf/sheetPdf';
 import { plainText, sheetContent } from '$lib/pdf/content';
 import { emptyState, type Definition, type State } from '$lib/types';
