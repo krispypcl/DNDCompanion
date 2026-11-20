@@ -80,8 +80,8 @@
   .foehead strong { overflow-wrap: anywhere; }
   .foekind {
     font-size: 0.625rem; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase;
-    padding: 0.125rem 0.4375rem; border-radius: 999px; border: 1px solid color-mix(in oklch, oklch(62% 0.21 25) 45%, var(--line));
-    color: color-mix(in oklch, oklch(70% 0.17 25) 80%, var(--text));
+    padding: 0.125rem 0.4375rem; border-radius: 999px; border: 1px solid color-mix(in oklab, oklch(62% 0.21 25) 45%, var(--line));
+    color: color-mix(in oklab, oklch(70% 0.17 25) 80%, var(--text));
   }
   .foekind.npc { border-color: var(--a-edge); color: var(--a); }
   .foelook { display: inline-flex; align-items: center; gap: 0.4375rem; font-size: 0.8125rem; color: var(--text); }

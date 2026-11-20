@@ -444,7 +444,7 @@ html[data-motion='reduce'] *, html[data-motion='reduce'] *::before, html[data-mo
  * these above each card's own border.
  */
 :root .hurtcard.bloodied {
-  border-color: color-mix(in oklch, var(--hurt-red) 45%, var(--line-soft));
+  border-color: color-mix(in oklab, var(--hurt-red) 45%, var(--line-soft));
   animation: hurtBeat 3.2s ease-in-out infinite;
 }
 :root .hurtcard:is(.critical, .down) {
@@ -452,7 +452,7 @@ html[data-motion='reduce'] *, html[data-motion='reduce'] *::before, html[data-mo
   box-shadow: var(--card-shadow, 0 0 #0000), 0 0 0 1px color-mix(in oklch, var(--hurt-red) 25%, transparent);
   animation: hurtBeat 1.8s ease-in-out infinite;
 }
-:root .hurtcard.dead { opacity: 0.7; border-color: color-mix(in oklch, var(--hurt-red) 60%, var(--line-soft)); }
+:root .hurtcard.dead { opacity: 0.7; border-color: color-mix(in oklab, var(--hurt-red) 60%, var(--line-soft)); }
 @keyframes hurtBeat {
   0%, 100% { box-shadow: var(--card-shadow, 0 0 #0000), 0 0 0 1px color-mix(in oklch, var(--hurt-red) 12%, transparent); }
   50% {

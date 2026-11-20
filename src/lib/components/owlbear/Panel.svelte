@@ -733,7 +733,7 @@
     display: grid; gap: 0.75rem; transition: border-color 0.3s ease;
   }
   .char:hover { border-color: var(--a-edge); }
-  .char.bloodied { border-color: color-mix(in oklch, var(--hurt-red) 45%, var(--line-soft)); }
+  .char.bloodied { border-color: color-mix(in oklab, var(--hurt-red) 45%, var(--line-soft)); }
   .char.critical, .char.down { border-color: color-mix(in oklch, var(--hurt-red) 80%, transparent); }
   .char.dead { opacity: 0.7; }
   .top { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
