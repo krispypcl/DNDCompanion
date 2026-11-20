@@ -118,6 +118,7 @@ export type YTPlayer = {
   getDuration(): number;
   seekTo(seconds: number, allowSeekAhead: boolean): void;
   loadVideoById(v: { videoId: string; startSeconds?: number; endSeconds?: number }): void;
+  cueVideoById(v: { videoId: string }): void;
   stopVideo(): void;
   destroy(): void;
 };
@@ -187,6 +188,54 @@ export async function playlistSongs(list: string, timeoutMs = 12000): Promise<st
     });
   } finally {
     try { (player as YTPlayer | null)?.destroy(); } catch { /* gone already */ }
+    host.remove();
+  }
+}
+
+/**
+ * How long each song is, in seconds, found with one hidden player: each is
+ * cued in turn (nothing plays or downloads beyond its details) and its length
+ * read once YouTube has it. A song that won't say within a few seconds is
+ * skipped; its length is learnt when it plays instead. Told each one as it
+ * comes, so a long list fills in as it goes. Stops when `stop()` says so.
+ */
+export async function songLengths(ids: string[], told: (id: string, seconds: number) => void, stop: () => boolean = () => false): Promise<void> {
+  if (!ids.length || typeof document === 'undefined') return;
+  const YT = await loadYouTube();
+  const host = document.createElement('div');
+  host.setAttribute('aria-hidden', 'true');
+  host.style.cssText = 'position:fixed;left:-10000px;top:0;width:200px;height:200px;opacity:0;pointer-events:none;';
+  const target = document.createElement('div');
+  host.appendChild(target);
+  document.body.appendChild(host);
+  let player: YTPlayer | null = null;
+  try {
+    player = await new Promise<YTPlayer>((resolve, reject) => {
+      const give = setTimeout(() => reject(new Error('YouTube did not load')), 15000);
+      const p = new YT.Player(target, {
+        width: 200, height: 200, playerVars: { controls: 0, disablekb: 1, playsinline: 1 },
+        events: { onReady: () => { clearTimeout(give); resolve(p as unknown as YTPlayer); } }
+      }) as unknown as YTPlayer;
+    });
+    for (const id of ids) {
+      if (stop()) return;
+      player.cueVideoById({ videoId: id });
+      const seconds = await new Promise<number>((resolve) => {
+        const until = Date.now() + 4000;
+        const poll = setInterval(() => {
+          const d = player?.getDuration?.() ?? 0;
+          if (d > 0 || Date.now() > until) {
+            clearInterval(poll);
+            resolve(d);
+          }
+        }, 150);
+      });
+      if (seconds > 0) told(id, Math.round(seconds));
+    }
+  } catch {
+    /* No YouTube: the lengths wait for each song to play. */
+  } finally {
+    try { player?.destroy(); } catch { /* gone already */ }
     host.remove();
   }
 }

@@ -36,6 +36,7 @@
     place = 'sheet',
     onended,
     ontitle,
+    onlength,
     lead,
     follow = null,
     resume = null,
@@ -60,6 +61,8 @@
     onended?: () => void;
     /** Told each song's title as YouTube gives it. */
     ontitle?: (title: string) => void;
+    /** Told a single song's length in seconds, once it is known. */
+    onlength?: (seconds: number) => void;
     /** The DM's jukebox: told what it is doing (playing or not, where), for the table to follow. */
     lead?: (now: Moment) => void;
     /**
@@ -349,9 +352,15 @@
   /** While the timeline is held, it shows where the thumb is, not the song. */
   let scrubbing = $state(false);
   let ticker: ReturnType<typeof setInterval> | undefined;
+  let toldLength = 0;
   function readTime() {
     if (!yt || scrubbing) return;
     length = yt.getDuration?.() ?? 0;
+    // A single song's length, once: the jukebox shows it in the list.
+    if (length > 0 && !playlist?.list && Math.round(length) !== toldLength) {
+      toldLength = Math.round(length);
+      onlength?.(toldLength);
+    }
     // Following, the bar shows where the DM is, listening or not.
     const f = untrack(() => follow);
     at = f ? Math.min(expected(f), length || Infinity) : (yt.getCurrentTime?.() ?? 0);
@@ -472,6 +481,7 @@
     hasPlayed = false;
     at = 0;
     length = 0;
+    toldLength = 0;
     if (host) host.innerHTML = '';
   }
 

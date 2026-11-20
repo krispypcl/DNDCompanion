@@ -15,9 +15,10 @@
    * mode alike. The same player plays underneath either way, so the music
    * never stops for the switch.
    */
+  import { onDestroy } from 'svelte';
   import { fade, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { inBatches, parsePlaylist, playlistSongs, setMusicOn, youtubeTitle } from '#lib/music.ts';
+  import { clock, inBatches, parsePlaylist, playlistSongs, setMusicOn, songLengths, youtubeTitle } from '#lib/music.ts';
   import { foldRow, prefersReducedMotion } from '#lib/motion.ts';
   import type { Playback, Song } from '#lib/data/campaigns.ts';
   import MusicPlayer from './MusicPlayer.svelte';
@@ -174,6 +175,49 @@
         void onchange(songs.map((s) => (!s.name && found.has(s.url) ? { ...s, name: found.get(s.url) } : s)));
       });
   });
+  /**
+   * Each song's length, found once on the DM's page (a hidden player cues
+   * them one by one) and kept on the list, so everyone sees it. Saved every
+   * few songs, merged into the list as it is then.
+   */
+  const measured = new Set<string>();
+  let found: Record<string, number> = {};
+  let saving: ReturnType<typeof setTimeout> | undefined;
+  function keepLength(url: string, seconds: number) {
+    found[url] = seconds;
+    clearTimeout(saving);
+    saving = setTimeout(() => {
+      const got = found;
+      found = {};
+      if (songs.some((s) => got[s.url] && s.length !== got[s.url])) void onchange(songs.map((s) => (got[s.url] ? { ...s, length: got[s.url] } : s)));
+    }, 1200);
+  }
+  $effect(() => {
+    if (!lead || room) return;
+    const todo = songs.filter((s) => !s.length && !measured.has(s.url)).flatMap((s) => {
+      const p = parsePlaylist(s.url);
+      return p?.video && !p.list ? [[s.url, p.video] as const] : [];
+    });
+    if (!todo.length) return;
+    todo.forEach(([url]) => measured.add(url));
+    const byId = new Map(todo.map(([url, id]) => [id, url]));
+    // Not stopped by the list changing (saving a length changes it): only by leaving.
+    void songLengths(todo.map(([, id]) => id), (id, seconds) => {
+      const url = byId.get(id);
+      if (url) keepLength(url, seconds);
+    }, () => gone);
+  });
+  let gone = false;
+  onDestroy(() => {
+    gone = true;
+    clearTimeout(saving);
+  });
+  /** The playing song's length, if the list doesn't have it yet. */
+  function learnLength(seconds: number) {
+    const song = playingSong;
+    if (lead && song && !song.length && !parsePlaylist(song.url)?.list) keepLength(song.url, seconds);
+  }
+
   /** If YouTube's lookup said nothing, the playing song's title will do. */
   function learnTitle(title: string) {
     const song = playingSong;
@@ -201,7 +245,7 @@
   <div class="body" class:solo={room && !lead}>
     <div class="player">
       {#if playingSong}
-        <MusicPlayer url={playingSong.url} place="campaign" onended={next} ontitle={learnTitle} capsule={compact}
+        <MusicPlayer url={playingSong.url} place="campaign" onended={next} ontitle={learnTitle} onlength={learnLength} capsule={compact}
                      onexpand={compact ? onexpand : undefined} oncompact={compact ? undefined : oncompact}
                      lead={lead ? told : undefined} follow={followMoment} resume={resumeMoment} {away} />
       {:else}
@@ -223,6 +267,7 @@
                     title={lead ? song.url : undefined} tabindex={lead ? 0 : -1}>
               <span class="n" aria-hidden="true">{playingSong === song ? '♪' : i + 1}</span>
               {#key song.name}<span class="nm" in:fade={{ duration: 200 }}>{label(song, i)}</span>{/key}
+              {#if song.length}<span class="len" in:fade={{ duration: 200 }}>{clock(song.length)}</span>{/if}
             </button>
             {#if editing}
               <button class="x" aria-label="Remove {label(song, i)}" title="Remove" onclick={() => remove(i)}
@@ -312,7 +357,9 @@
   li.on .pick { color: var(--a); }
   .n { flex: none; width: 1.125rem; text-align: center; font-size: 0.75rem; color: var(--faint); font-variant-numeric: tabular-nums; }
   li.on .n { color: var(--a); }
-  .nm { overflow-wrap: anywhere; }
+  .nm { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .len { flex: none; margin-left: auto; font-size: 0.75rem; color: var(--dim); font-variant-numeric: tabular-nums; }
+  li.on .len { color: var(--a); }
   .x {
     flex: none; width: 1.75rem; height: 1.75rem; display: grid; place-items: center; padding: 0;
     background: none; border: 0; color: var(--faint); font-size: 1.05rem; cursor: pointer; border-radius: var(--r-sm);
