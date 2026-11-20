@@ -32,7 +32,6 @@
     lead,
     playback = null,
     away = false,
-    room = false,
     compact = false,
     oncompact,
     onexpand,
@@ -54,8 +53,6 @@
     onplayback?: (p: Playback) => void;
     /** A player's page, with the DM not on the campaign page. */
     away?: boolean;
-    /** In an Owlbear Rodeo room: no card or heading of its own, and the list only for the DM. */
-    room?: boolean;
     onchange: (songs: Song[]) => Promise<void> | void;
   } = $props();
 
@@ -194,7 +191,7 @@
     }, 1200);
   }
   $effect(() => {
-    if (!lead || room) return;
+    if (!lead) return;
     const todo = songs.filter((s) => !s.length && !measured.has(s.url)).flatMap((s) => {
       const p = parsePlaylist(s.url);
       return p?.video && !p.list ? [[s.url, p.video] as const] : [];
@@ -234,8 +231,8 @@
   const motion = () => ({ duration: prefersReducedMotion() ? 0 : 240, easing: cubicOut });
 </script>
 
-<section class="jukebox" class:room class:compact aria-label="Table music">
-  {#if !room && !compact}
+<section class="jukebox" class:compact aria-label="Table music">
+  {#if !compact}
     <!-- The title over the player, and (the DM's) the field to add a song over the list. -->
     <div class="jhead">
       <SectionHead title="Table music">
@@ -264,7 +261,7 @@
       {/if}
     </div>
   {/if}
-  <div class="body" class:solo={room && !lead}>
+  <div class="body">
     <div class="player">
       {#if playingSong}
         <MusicPlayer url={playingSong.url} place="campaign" onended={next} ontitle={learnTitle} onlength={learnLength} capsule={compact}
@@ -275,7 +272,7 @@
                      onexpand={compact ? onexpand : undefined} oncompact={compact ? undefined : oncompact} />
       {/if}
     </div>
-    {#if !(room && !lead) && !compact}
+    {#if !compact}
     <div class="list">
       <!-- Only the songs are in the box; it is as tall as the player beside it, and scrolls. -->
       <div class="songbox">
@@ -307,7 +304,7 @@
 <style>
   /* The title sits above, like every section's; the songs sit in frosted
      glass, the banner and the page behind it showing through, softened. */
-  .jukebox:not(.room) .songbox {
+  .jukebox .songbox {
     padding: 0.375rem; border-radius: var(--r);
     border: 1px solid color-mix(in oklch, var(--line) 70%, transparent);
     background: color-mix(in oklch, var(--surface) 55%, transparent);
@@ -315,16 +312,16 @@
     box-shadow: inset 0 1px 0 color-mix(in oklch, white 6%, transparent);
   }
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .jukebox:not(.room) .songbox { background: color-mix(in oklch, var(--surface) 92%, transparent); }
+    .jukebox .songbox { background: color-mix(in oklch, var(--surface) 92%, transparent); }
   }
   /* Beside the player, the box takes the player's height, never its songs': it
      has no size of its own, so the row is the player's, and the list scrolls.
      The field to add a song sits on the row below, under the box. */
   @media (min-width: 701px) {
-    .jukebox:not(.room) .body { align-items: stretch; }
-    .jukebox:not(.room) .list { display: grid; }
-    .jukebox:not(.room) .songbox { contain: size; display: grid; grid-template-rows: minmax(0, 1fr); }
-    .jukebox:not(.room) .songbox ol { max-height: none; }
+    .jukebox .body { align-items: stretch; }
+    .jukebox .list { display: grid; }
+    .jukebox .songbox { contain: size; display: grid; grid-template-rows: minmax(0, 1fr); }
+    .jukebox .songbox ol { max-height: none; }
   }
   /* The head lines up with the body's two columns: the title over the
      player, the field over the list, as wide as it. */
@@ -338,9 +335,6 @@
   .jukebox.compact { min-width: 0; max-width: min(24rem, 100%); }
   .compact .body { display: flex; margin: 0; }
   .compact .player { display: flex; min-width: 0; max-width: 100%; }
-  .room .body { margin-top: 0; grid-template-columns: minmax(0, 1fr); }
-  .room .list ol { max-height: 9rem; }
-  .body.solo { display: block; }
   .body { display: grid; grid-template-columns: minmax(0, 19rem) minmax(0, 1fr); gap: 1rem; align-items: start; }
   .player { display: grid; justify-items: center; align-self: start; }
   .none { margin: 0; padding: 0.375rem 0.5rem; color: var(--dim); font-size: 0.8125rem; line-height: 1.45; }

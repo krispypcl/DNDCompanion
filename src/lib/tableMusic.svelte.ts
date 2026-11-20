@@ -1,8 +1,7 @@
 /**
  * The table's music, as one page sees it: what the DM's jukebox is doing
  * (database/0008, campaign_live) and whether the DM has the campaign open
- * anywhere (Realtime presence). Shared by the campaign page and the Owlbear
- * Rodeo room, so both hear the same thing.
+ * anywhere (Realtime presence).
  *
  * - `at` is moved onto this device's clock as it arrives, so following never
  *   depends on whose clock is right.

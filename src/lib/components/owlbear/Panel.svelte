@@ -478,19 +478,8 @@
           <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
           Campaign
         </a>
-        <button class="btn" onclick={() => obr?.openBoard(campaignId!)}>
-          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M4 5h16v11H4zM8 20h8M12 16v4M7.5 12.5l3-3 2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
-          Board
-        </button>
-        {#if campaign?.details.songs?.length}
-          <button class="btn" onclick={() => obr?.openMusic(campaignId!)} in:fade={{ duration: 160 }}>
-            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
-            Music
-          </button>
-        {/if}
         <InfoTip label="About these buttons">
-          Campaign opens its page. Board opens its board over the room. Music plays the DM’s table music in a small
-          player that stays open.{#if role === 'GM'} Drag a character to put them in order.{/if}
+          Campaign opens its page.{#if role === 'GM'} Drag a character to put them in order.{/if}
           {#if isDm} Signed in as the DM, you run the fight from here too: the initiative order, and your monsters and NPCs.{/if}
         </InfoTip>
       </div>
@@ -668,13 +657,13 @@
           <div class="who-row" in:fade={{ duration: 200, delay: 90 }} out:fade={{ duration: 120 }}>
             {#if $session.user}
               <span class="me">Signed in as {myName}
-                <InfoTip label="What signing in does">You can change hit points from a token’s right-click menu and draw on the campaign’s board. As the campaign’s DM, you run the fight and your monsters and NPCs from this panel.</InfoTip>
+                <InfoTip label="What signing in does">You can change hit points from a token’s right-click menu. As the campaign’s DM, you run the fight and your monsters and NPCs from this panel.</InfoTip>
               </span>
               <button class="smallbtn" onclick={() => signOut()}>Sign out</button>
             {:else}
               <span class="me">Not signed in
                 <InfoTip label="Why sign in">
-                  Sign in to change hit points from a token and draw on the board; the DM signs in to run the fight. Owlbear keeps its own sign-in, apart from the site’s.
+                  Sign in to change hit points from a token; the DM signs in to run the fight. Owlbear keeps its own sign-in, apart from the site’s.
                 </InfoTip>
               </span>
               <button class="smallbtn" onclick={() => (signing = true)}>Sign in</button>

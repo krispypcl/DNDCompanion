@@ -16,7 +16,7 @@ export function GET() {
     version: '1.3.0',
     manifest_version: 1,
     author: 'DND Companion',
-    description: 'Your DND Companion table in the room: live HP, tokens, rolls, initiative, monsters and NPCs, the board and music.',
+    description: 'Your DND Companion table in the room: live hit points, tokens, rolls, initiative, monsters and NPCs.',
     ...(site ? { homepage_url: `${site}/` } : {}),
     icon: at('icon.svg'),
     background_url: at('background'),
