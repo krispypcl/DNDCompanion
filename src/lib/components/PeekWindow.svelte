@@ -1,7 +1,8 @@
 <!--
   A 5e.tools peek moved aside (stores/peek `keep`): a window of its own that
   stays where it was put, can be dragged again and comes to the front when
-  pressed, until its × (or Esc) closes it, and it fades as it goes.
+  pressed, until its × (or Esc) closes it, and it fades as it goes. Asked for
+  again, it glides from where it is to where it was asked to open.
 -->
 <script lang="ts">
   import { fade } from 'svelte/transition';
@@ -13,6 +14,28 @@
   let { kept }: { kept: KeptPeek } = $props();
   const MAX_HEIGHT = 560;
   const still = prefersReducedMotion();
+
+  // Sent somewhere new: where it stood is measured first, and once it stands
+  // in its new place it glides there from the old one (dragging it again
+  // starts afresh from the new place: movable's key).
+  let node = $state<HTMLElement>();
+  let from: DOMRect | null = null;
+  $effect.pre(() => {
+    if (kept.moves && node) from = node.getBoundingClientRect();
+  });
+  $effect(() => {
+    if (!kept.moves || !node || !from) return;
+    const was = from;
+    from = null;
+    node.style.translate = '';
+    const now = node.getBoundingClientRect();
+    const dx = was.left - now.left;
+    const dy = was.top - now.top;
+    if (still || (Math.abs(dx) < 1 && Math.abs(dy) < 1)) return;
+    node.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], {
+      duration: 340, easing: 'cubic-bezier(0.33, 1, 0.68, 1)'
+    });
+  });
 </script>
 
 <div
@@ -20,7 +43,8 @@
   role="dialog"
   tabindex="-1"
   aria-label="{kept.target.name} on 5e.tools"
-  use:movable={{ handle: 'header' }}
+  bind:this={node}
+  use:movable={{ handle: 'header', key: kept.moves }}
   style:--h={kept.target.hue}
   style:--c={kept.target.chroma}
   style:left="{kept.left}px"

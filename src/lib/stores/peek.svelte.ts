@@ -26,6 +26,8 @@ export type KeptPeek = {
   id: number; target: PeekTarget; left: number; top: number; width: number;
   /** Opened from the search, so it fades in (one moved aside is already on screen). */
   opened?: boolean;
+  /** How many times it has been sent somewhere new: each time, it glides there from where it was. */
+  moves?: number;
 };
 
 class Peek {
@@ -87,8 +89,19 @@ class Peek {
   keep(rect: DOMRect) {
     const target = this.target;
     if (!target) return;
-    this.kept = [...this.kept.filter((k) => k.target.url !== target.url), { id: this.#next++, target, left: rect.left, top: rect.top, width: rect.width }];
+    const had = this.kept.find((k) => k.target.url === target.url);
+    if (had) this.#moveTo(had, rect.left, rect.top, rect.width);
+    else this.kept = [...this.kept, { id: this.#next++, target, left: rect.left, top: rect.top, width: rect.width }];
     this.close({ quietly: true });
+  }
+
+  /**
+   * The same entry asked for again while it is already open in a window: that
+   * window comes to the front and glides to the new place (PeekWindow), rather
+   * than a second one opening there and the first closing after it.
+   */
+  #moveTo(k: KeptPeek, left: number, top: number, width: number) {
+    this.kept = [...this.kept.filter((x) => x.id !== k.id), { ...k, left, top, width, opened: false, moves: (k.moves ?? 0) + 1 }];
   }
 
   /**
@@ -104,11 +117,12 @@ class Peek {
       return;
     }
     const width = Math.min(400, window.innerWidth - 24);
-    const step = (this.kept.length % 6) * 28;
-    this.kept = [
-      ...this.kept.filter((k) => k.target.url !== target.url),
-      { id: this.#next++, target, left: Math.max(12, window.innerWidth - width - 24 - step), top: 72 + step, width, opened: true }
-    ];
+    const had = this.kept.find((k) => k.target.url === target.url);
+    // Each next one a step down and left of the last; one already open takes the step a new one would.
+    const step = ((had ? this.kept.length - 1 : this.kept.length) % 6) * 28;
+    const left = Math.max(12, window.innerWidth - width - 24 - step);
+    if (had) this.#moveTo(had, left, 72 + step, width);
+    else this.kept = [...this.kept, { id: this.#next++, target, left, top: 72 + step, width, opened: true }];
   }
 
   /** A kept window to the front. */
