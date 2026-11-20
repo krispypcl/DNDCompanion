@@ -6,6 +6,10 @@
  * Only the app's built files are kept, and they are named by their contents,
  * so a cached copy is never stale. Everything else — sheets, sign-in, other
  * sites' pictures — always goes to the network.
+ *
+ * Light to install: only what every visit starts with is fetched up front.
+ * The rest (shared pieces, and the heavy ones a visit may never need, like
+ * the PDF maker and the search index) is kept the first time it is used.
  */
 import { version } from '$app/env';
 import { assets, immutable } from '$app/manifest';
@@ -14,13 +18,26 @@ import { self as sw } from '$app/service-worker';
 const CACHE = `dndcompanion-${version}`;
 // The manifest's paths are relative to the base path, and the worker's scope
 // is the base path, so each resolves against the scope.
-const SHELL = [...immutable, ...assets].map(({ path }) => new URL(path, sw.registration.scope).pathname);
+const scoped = (path: string) => new URL(path, sw.registration.scope).pathname;
+/** Everything built: served from the device once kept. */
+const BUILT = new Set([...immutable, ...assets].map(({ path }) => scoped(path)));
+/**
+ * What is fetched at install: the entry, the pages' own code, styles and
+ * icons. Not the PDF's fonts, the Owlbear tokens, the email picture, the link
+ * preview or the sounds, which wait until they are used.
+ */
+const UP_FRONT = [
+  ...[...immutable].map(({ path }) => path).filter((p) => /(^|\/)(entry|nodes)\//.test(p) || /\.css$/.test(p)),
+  ...[...assets].map(({ path }) => path).filter((p) => !/^(pdf|owlbear|email|sounds)\/|^og\.png$/.test(p))
+].map(scoped);
+const SHELL_PAGE = scoped('404.html');
 
 sw.addEventListener('install', (event) => {
   event.waitUntil(
     caches
       .open(CACHE)
-      .then((cache) => cache.addAll(SHELL))
+      // The shell is kept as well, for opening a page offline; never fatal.
+      .then((cache) => cache.addAll(UP_FRONT).then(() => cache.add(SHELL_PAGE).catch(() => {})))
       .then(() => sw.skipWaiting())
   );
 });
@@ -40,9 +57,21 @@ sw.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin !== sw.location.origin) return;
 
-  // The app's own files: from the device.
-  if (SHELL.includes(url.pathname)) {
-    event.respondWith(caches.match(req).then((hit) => hit ?? fetch(req)));
+  // The app's own files: from the device, or kept the first time they are fetched.
+  if (BUILT.has(url.pathname)) {
+    event.respondWith(
+      caches.match(req).then(
+        (hit) =>
+          hit ??
+          fetch(req).then((res) => {
+            if (res.ok) {
+              const copy = res.clone();
+              void caches.open(CACHE).then((cache) => cache.put(req, copy));
+            }
+            return res;
+          })
+      )
+    );
     return;
   }
 
@@ -53,7 +82,7 @@ sw.addEventListener('fetch', (event) => {
       fetch(req).catch(async () => {
         const base = sw.registration.scope;
         return (
-          (await caches.match(new URL('404.html', base).pathname)) ??
+          (await caches.match(SHELL_PAGE)) ??
           (await caches.match(new URL('./', base).pathname)) ??
           Response.error()
         );
