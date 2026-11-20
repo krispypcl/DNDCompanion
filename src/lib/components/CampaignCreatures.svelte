@@ -2,7 +2,8 @@
   The DM's monsters and NPCs on the campaign page (database/0017, 0018, 0020):
   a card each, like a character's: its portrait (the DM's picture, or a
   5e.tools monster's token art) ringed by its conditions' colours, its hit
-  points (damage and healing a press away), armour class, conditions (the
+  points (damage and healing a press away), armour class, speed and
+  initiative, conditions (the
   DM's own in colours they choose) and a short note; its stat block in a
   window of its own; whether the players can see it; and its place, moved
   by dragging the card. Added from 5e.tools, from the DM's own homebrew, or
@@ -257,6 +258,7 @@
       {@const kind = kindLine(c.statblock ?? {})}
       {@const ring = ringOf(c)}
       {@const pic = resolveImageUrl(c.portrait).url}
+      {@const speed = leadingNumber(c.statblock?.speed)}
       <li class="creature hurtcard {v.vital}" class:revealed={c.visible} data-key={c.id}
           animate:flip={{ duration: still ? 0 : 240, easing: cubicOut }} transition:fade={{ duration: still ? 0 : 180 }}>
         <div class="creaturehead">
@@ -307,18 +309,22 @@
           </div>
         </div>
 
+        <!-- Each part keeps its row, hit points or not, so the cards in a row line up. -->
         {#if c.hp_max !== null}
           <CardHp cur={now} {max} temp={c.hp_temp} vital={v.vital} label={v.label} />
+        {:else}
+          <span class="nohp" aria-hidden="true"></span>
         {/if}
 
         <div class="creaturerow">
           <div class="acbox" title="Armour class"><span class="k">AC</span><b>{c.ac ?? '–'}</b></div>
-          {#if c.initiative !== null}<div class="acbox" title="Initiative"><span class="k">INIT</span><b>{c.initiative}</b></div>{/if}
+          <div class="acbox" title={c.statblock?.speed ? `Speed: ${c.statblock.speed}` : 'Speed'}><span class="k">SPEED</span><b>{speed ?? '–'}</b></div>
+          <div class="acbox" title="Initiative"><span class="k">INIT</span><b>{c.initiative ?? '–'}</b></div>
           {#if !ended && c.hp_max !== null}
             <div class="hpctl">
+              <button class="smallbtn hurt" onclick={() => hit(c, 'damage')}>Damage</button>
               <input class="numfield" type="number" inputmode="numeric" min="1" placeholder="0" aria-label="Amount for {c.name}"
                      bind:value={amounts[c.id]} onkeydown={(e) => { if (e.key === 'Enter') hit(c, 'damage'); }} />
-              <button class="smallbtn hurt" onclick={() => hit(c, 'damage')}>Damage</button>
               <button class="smallbtn" onclick={() => hit(c, 'heal')}>Heal</button>
             </div>
           {/if}
@@ -475,15 +481,19 @@
     list-style: none; margin: 0; padding: 0; display: grid; gap: 0.875rem; position: relative;
     grid-template-columns: repeat(auto-fill, minmax(min(22rem, 100%), 1fr));
   }
+  /* Each card spans five of the list's rows and shares them (subgrid): its
+     head, hit points, numbers, conditions and note line up with its
+     neighbours', however many lines a name, a kind or the conditions take. */
   .creature {
-    position: relative; display: grid; gap: 0.75rem; align-content: start; min-width: 0;
+    position: relative; display: grid; grid-row: span 5; grid-template-rows: subgrid; row-gap: 0.75rem; min-width: 0;
     padding: 0.875rem; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line-soft);
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
   .creature:hover { border-color: var(--a-edge); }
   /* Revealed: a mark down its left edge, kept while a hurt card's edge beats (app.css .hurtcard). */
   .creature.revealed { --card-shadow: inset 3px 0 0 color-mix(in oklch, var(--a) 70%, transparent); box-shadow: var(--card-shadow); }
-  .creature.skel { min-height: 11rem; }
+  .creature.skel { min-height: 11rem; align-content: start; }
+  .nohp { display: block; }
   .sk-name { width: 9rem; height: 1rem; }
   .sk-hp { width: 5rem; height: 1.75rem; }
   .sk-bar { height: 6px; }
