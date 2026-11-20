@@ -26,6 +26,7 @@
   import MenuGreeting from '#lib/components/MenuGreeting.svelte';
   import AreaSwitch from '#lib/components/AreaSwitch.svelte';
   import PhoneBar from '#lib/components/PhoneBar.svelte';
+  import ConfirmModal from '#lib/components/ConfirmModal.svelte';
   import { phone } from '#lib/stores/phone.svelte.ts';
   import { hereText } from '#lib/rules/presence.ts';
   import Tabs from '#lib/components/Tabs.svelte';
@@ -671,11 +672,11 @@
   <!-- A campaign not pinned: its star (none once ended), its card, and leaving it. -->
   {#if !c.archived}{@render star(c.id, c.name, false, 'joined')}{:else}{@render starspace()}{/if}
   {@render joinedcard(c)}
-  {#if confirming === c.id}
+  {#if confirming === c.id && !phone.current}
     <div class="confirm" role="group" aria-label="Confirm leaving {c.name}">
       <span>Leave with {charactersIn(c).length > 1 ? 'all your characters' : 'your character'}?</span>
       <button class="danger" disabled={leavingId === c.id} onclick={() => leave(c)}>
-        {leavingId === c.id ? 'Leaving…' : 'Leave'}
+        {leavingId === c.id ? 'Leaving' : 'Leave'}
       </button>
       <button class="ghost" onclick={() => (confirming = null)}>Stay</button>
     </div>
@@ -827,11 +828,11 @@
   <!-- A sheet that is not pinned: its star (none once retired), its card, and deleting it. -->
   {#if !sheet.retired}{@render pin(sheet, false)}{:else}{@render starspace()}{/if}
   {@render card(sheet)}
-  {#if confirming === sheet.id}
+  {#if confirming === sheet.id && !phone.current}
     <div class="confirm" role="group" aria-label="Confirm deleting {nameOf(sheet)}">
       <span>Delete for good?</span>
       <button class="danger" disabled={deleting === sheet.id} onclick={() => remove(sheet.id)}>
-        {deleting === sheet.id ? 'Deleting…' : 'Delete'}
+        {deleting === sheet.id ? 'Deleting' : 'Delete'}
       </button>
       <button class="ghost" onclick={() => (confirming = null)}>Keep</button>
     </div>
@@ -900,7 +901,7 @@
           </div>
           <div class="hellorow">
             <input bind:value={nameDraft} placeholder="Your name" aria-label="Your name" maxlength="60" />
-            <button disabled={!nameDraft.trim() || savingName}>{savingName ? 'Saving…' : 'Save'}</button>
+            <button disabled={!nameDraft.trim() || savingName}>{savingName ? 'Saving' : 'Save'}</button>
           </div>
         </form>
       {:else if !me.avatarUrl}
@@ -951,7 +952,7 @@
             {#if area === AREA_SHEETS}
               <button class="ghost" onclick={() => picker?.click()} disabled={importing}
                       title="Bring back a sheet saved with Export">
-                {importing ? 'Importing…' : 'Import'}
+                {importing ? 'Importing' : 'Import'}
               </button>
               <button onclick={create} disabled={creating}>{creating ? 'Creating' : phone.current ? 'New character' : 'New sheet'}</button>
             {:else}
@@ -984,7 +985,7 @@
                   <!-- svelte-ignore a11y_autofocus -->
                   <input bind:value={newCampaign} placeholder="Campaign name" aria-label="Campaign name" autofocus
                          onkeydown={(e) => { if (e.key === 'Enter') startCampaign(); if (e.key === 'Escape') naming = false; }} />
-                  <button onclick={startCampaign} disabled={starting || !newCampaign.trim()}>{starting ? 'Starting…' : 'Start'}</button>
+                  <button onclick={startCampaign} disabled={starting || !newCampaign.trim()}>{starting ? 'Starting' : 'Start'}</button>
                   <button class="ghost" onclick={() => (naming = false)}>Cancel</button>
                 </div>
               {/if}
@@ -1003,6 +1004,18 @@
           { key: AREA_SHEETS, label: 'Characters', icon: 'person' },
           { key: AREA_CAMPAIGNS, label: 'Campaigns', icon: 'flag', badge: area !== AREA_CAMPAIGNS && atTables > 0 }
         ]} />
+      {/if}
+      <!-- A phone's cards have no room for the question beside them: it comes up in a window. -->
+      {#if phone.current && confirming}
+        {@const doomed = sheets.find((s) => s.id === confirming)}
+        {@const leaving = joined.find((c) => c.id === confirming)}
+        {#if doomed}
+          <ConfirmModal title="Delete {nameOf(doomed)}?" message="The sheet goes for good, with its notes and backstory." yes="Delete"
+                        busy={deleting === doomed.id} busyLabel="Deleting" onyes={() => remove(doomed.id)} onclose={() => (confirming = null)} />
+        {:else if leaving}
+          <ConfirmModal title="Leave {leaving.name}?" message="You leave with {charactersIn(leaving).length > 1 ? 'all your characters' : 'your character'}." yes="Leave" no="Stay"
+                        busy={leavingId === leaving.id} busyLabel="Leaving" onyes={() => leave(leaving)} onclose={() => (confirming = null)} />
+        {/if}
       {/if}
     {/if}
   {/if}
@@ -1055,7 +1068,9 @@
   .areas :global(div.panels) { overflow: clip; overflow-clip-margin: 1rem; }
   @media (max-width: 700px) {
     .menucontrols { width: 100%; flex-direction: column-reverse; align-items: stretch; gap: 0.75rem; }
-    .menucontrols .actions { justify-content: flex-end; }
+    /* New character (or campaign) at the left, Import at the right. */
+    .menucontrols .actions { justify-content: space-between; }
+    .menucontrols .actions > :not(.ghost) { order: -1; }
   }
   .pagearea { position: relative; }
   .pager {

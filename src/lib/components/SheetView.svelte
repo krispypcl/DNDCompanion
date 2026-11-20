@@ -9,6 +9,7 @@
   import { base } from '#lib/base.ts';
   import AbilityBand from '#lib/components/AbilityBand.svelte';
   import ModeToggle from '#lib/components/ModeToggle.svelte';
+  import Logo from '#lib/components/Logo.svelte';
   import { setCustomSounds, warmSounds } from '#lib/sound.ts';
   import { musicOn, setMusicOn } from '#lib/music.ts';
   import { get } from 'svelte/store';
@@ -243,26 +244,35 @@
   /*
    * A phone: the sheet in places, chosen on a bar at the bottom, in place of
    * one long column. Play is the fight (hit points, defenses, conditions,
-   * the Combat tab); Abilities the six and the skills; Spells and Gear their
-   * tabs; More the rest of the tabs. A slim strip keeps the name and hit
-   * points in sight wherever you are. The same parts as the desktop's,
-   * shown a place at a time.
+   * the Combat tab); Abilities the six and the skills; Spells, Gear and
+   * Features their tabs; More the rest of the tabs and the sheet's own tools
+   * (share, PDF, download, light or dark). Search on the bar opens the search.
+   * A top bar holds Edit and Undo (left) and Back (right); scrolled away, a
+   * slim strip keeps the name, hit points, Edit and Undo in sight. The same
+   * parts as the desktop's, shown a place at a time.
    */
-  type Place = 'play' | 'abilities' | 'spells' | 'gear' | 'more';
-  const MORE_TABS = ['Features', 'Trackers', 'Character', 'Notes', 'Backstory', 'Appearance'];
+  type Place = 'play' | 'abilities' | 'spells' | 'gear' | 'features' | 'more';
+  const MORE_TABS = ['Trackers', 'Character', 'Notes', 'Backstory', 'Appearance'];
   const phoneOn = $derived(phone.current);
   let place = $state<Place>('play');
-  const placeOfTab = (tab: string): Place => (tab === 'Combat' ? 'play' : tab === 'Spells' ? 'spells' : tab === 'Equipment' ? 'gear' : 'more');
+  /** Moved between places at least once: from then on a place's parts fade in (app.css). */
+  let moved = $state(false);
+  const placeOfTab = (tab: string): Place =>
+    tab === 'Combat' ? 'play' : tab === 'Spells' ? 'spells' : tab === 'Equipment' ? 'gear' : tab === 'Features' ? 'features' : 'more';
   /** Coming from Abilities, the tab panel fades in with its place: its own slide stays still. */
   let quietTab = $state(false);
   function goPlace(next: string) {
+    // Search is on the bar, but it is a window, not a place.
+    if (next === 'search') return void (searching = true);
     const p = next as Place;
     quietTab = place === 'abilities';
     void tick().then(() => (quietTab = false));
     if (p === 'play') activeTab = 'Combat';
     else if (p === 'spells') activeTab = 'Spells';
     else if (p === 'gear') activeTab = 'Equipment';
-    else if (p === 'more' && !MORE_TABS.includes(activeTab)) activeTab = 'Features';
+    else if (p === 'features') activeTab = 'Features';
+    else if (p === 'more' && !MORE_TABS.includes(activeTab)) activeTab = 'Trackers';
+    if (p !== place) moved = true;
     place = p;
     if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
   }
@@ -277,19 +287,21 @@
     { key: 'play', label: 'Play', icon: 'play' },
     { key: 'abilities', label: 'Abilities', icon: 'abilities' },
     { key: 'spells', label: 'Spells', icon: 'spells' },
+    { key: 'search', label: 'Search', icon: 'search' },
     { key: 'gear', label: 'Gear', icon: 'gear' },
+    { key: 'features', label: 'Features', icon: 'features' },
     { key: 'more', label: 'More', icon: 'more' }
   ]);
-  /** The full header scrolled away (or another place): the slim strip shows instead. */
-  let headerGone = $state(false);
-  let headerEl = $state<HTMLElement>();
+  /** The top bar scrolled away: the slim strip shows instead. */
+  let topGone = $state(false);
+  let topEl = $state<HTMLElement>();
   $effect(() => {
-    if (!phoneOn || !headerEl || typeof IntersectionObserver === 'undefined') return;
-    const watch = new IntersectionObserver(([e]) => (headerGone = !e.isIntersecting), { rootMargin: '-40px 0px 0px 0px' });
-    watch.observe(headerEl);
+    if (!phoneOn || !topEl || typeof IntersectionObserver === 'undefined') return;
+    const watch = new IntersectionObserver(([e]) => (topGone = !e.isIntersecting));
+    watch.observe(topEl);
     return () => watch.disconnect();
   });
-  const stripShown = $derived(phoneOn && (place !== 'play' || headerGone));
+  const stripShown = $derived(phoneOn && topGone);
   const phoneVital = $derived(sheetState && definition ? vitalStatus(sheetState.hpCurrent, definition.combat?.hpMax ?? 0, sheetState.deathSaves) : null);
   const castParts = $derived(definition && castAb
     ? [{ label: `${castAb.toUpperCase()} modifier`, value: modifierOf(definition, castAb) }, { label: 'Proficiency', value: proficiencyBonus(definition) }]
@@ -416,7 +428,7 @@
     if (nav.to.url.pathname === location.pathname && nav.to.url.search === location.search) return;
     nav.cancel();
     const target = nav.to.url.href;
-    say('Saving your changes…');
+    say('Saving your changes');
     sheetStore.retry().then(() => {
       if (!sheetStore.hasUnsaved()) {
         letGo = true;
@@ -730,6 +742,21 @@
   </svg>
 {/snippet}
 
+<!-- A phone's Edit (a pencil, a check while editing) and Undo, in the top bar and the strip. -->
+{#snippet editUndo()}
+  <button class="edit phoneicon" aria-pressed={editing} aria-label={editing ? 'Done editing' : 'Edit the sheet'} title={editing ? 'Done' : 'Edit'}
+          onclick={() => glide(() => (editing = !editing))}>
+    {#key editing}
+      <svg in:popIn viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        {#if editing}<path d="m5 12.5 4.5 4.5L19 7.5" />{:else}<path d="M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10zM14 7l3 3" />{/if}
+      </g></svg>
+    {/key}
+  </button>
+  <button class="undo phoneicon" disabled={!$canUndo} aria-label={$canUndo ? `Undo ${$lastLabel}` : 'Nothing to undo'} title={$canUndo ? `Undo ${$lastLabel}` : 'Nothing to undo'} onclick={doUndo}>
+    <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M9 14 4.5 9.5 9 5M4.5 9.5h9.75a5.25 5.25 0 0 1 0 10.5H11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+  </button>
+{/snippet}
+
 {#snippet writing(key: TextKey, label: string)}
   {#if definition}
     <TextPanel
@@ -775,7 +802,7 @@
   <!-- The theme is scoped here, not to :root, so a campaign view can later show
        several characters in their own colors at once. -->
   <div class="sheet themed" class:entering class:bannered={banner} style={themeStyle(themePreview ?? definition.identity.theme)}
-       data-place={phoneOn ? place : undefined}>
+       data-place={phoneOn ? place : undefined} data-moved={phoneOn && moved ? '' : undefined}>
     {#if phoneOn}
       <!-- Who, and how hurt, always in sight on a phone; its hit points lead to Play. -->
       <div class="phonestrip" class:shown={stripShown} aria-hidden={!stripShown} inert={!stripShown}>
@@ -784,21 +811,24 @@
           {#if portraitSrc}<img src={portraitSrc} alt="" />{/if}
         </span>
         <span class="stripname">{definition.identity.name || sheet.name || 'Unnamed'}</span>
-        <!-- Away from Play the header (and its Edit and Undo) steps aside, so they come along here. -->
-        {#if isOwner && place !== 'play'}
-          <button class="undo" disabled={!$canUndo} title={$canUndo ? `Undo ${$lastLabel}` : 'Nothing to undo'} onclick={doUndo}>Undo</button>
-          <button class="edit" aria-pressed={editing} onclick={() => glide(() => (editing = !editing))}>{editing ? 'Done' : 'Edit'}</button>
-        {/if}
+        <!-- The top bar's Edit and Undo come along. -->
+        {#if isOwner}{@render editUndo()}{/if}
         <button class="hppill {phoneVital?.vital ?? ''}" onclick={() => goPlace('play')} aria-label="Hit points {sheetState.hpCurrent} of {definition.combat?.hpMax ?? 0}, {phoneVital?.label ?? ''}">
           <b>{sheetState.hpCurrent}{#if sheetState.hpTemp}<span class="temp">+{sheetState.hpTemp}</span>{/if}<small>&nbsp;/ {definition.combat?.hpMax ?? 0}</small></b>
           <span class="pillbar"><i style:width="{Math.max(0, Math.min(100, ((sheetState.hpCurrent) / Math.max(1, definition.combat?.hpMax ?? 0)) * 100))}%"></i></span>
         </button>
       </div>
-      {#if place !== 'play'}<div class="striproom" aria-hidden="true"></div>{/if}
+      <!-- The top bar: Edit and Undo on the left, the app's mark in the middle, Back on the right. -->
+      <div class="phonetop" bind:this={topEl}>
+        <div class="topleft">{#if isOwner}{@render editUndo()}{/if}</div>
+        <span class="toplogo"><Logo size={26} /></span>
+        <a class="back topback" href={cameFrom ? `${base}/c/${cameFrom}` : `${base}/`}
+           title={cameFrom ? 'Back to the campaign' : 'Back to your characters'}>Back</a>
+      </div>
     {/if}
     {#if banner}<Banner url={banner} />{/if}
     <!-- Away from Play on a phone the header steps aside, still there, so its music plays on. -->
-    <header class="identity" class:offstage={phoneOn && place !== 'play'} bind:this={headerEl}>
+    <header class="identity" class:offstage={phoneOn && place !== 'play'}>
       <div class="portrait" class:has={Boolean(portraitSrc)} class:fallen={dead} use:parallax>
         <!-- The picture turns toward the pointer, inside its still frame. -->
         <span class="frame">
@@ -844,7 +874,7 @@
             <span style:font-family={campaign ? faceFamily(campaignFace) : undefined}>{campaign?.name ?? definition.identity.campaign?.trim() ?? 'Add to a campaign'}</span>
           </button>
         {:else if campaign || definition.identity.campaign?.trim()}
-          <div class="campaign" data-flip-ghost="identity:campaign" data-flip="identity:campaign-at" in:popIn={{ duration: 400 }}>
+          <div class="campaign" data-flip-ghost="identity:campaign" data-flip="identity:campaign-at">
             {@render flag()}
             {#if campaign}
               <a href="{base}/c/{campaign.id}" title="Open the campaign" style:font-family={faceFamily(campaignFace)}>{campaign.name}</a>
@@ -897,6 +927,7 @@
 
       <!-- One group, so they wrap together: loose in the header the status
            dot was left stranded at the end of the name's line on a phone. -->
+      {#if !phoneOn}
       <div class="controls">
         <!-- Only the owner has anything to undo, so a visitor is not shown a
              control that can never do anything. For the owner it is always
@@ -942,7 +973,24 @@
         </button>
         <ModeToggle />
       </div>
+      {/if}
     </header>
+
+    {#if phoneOn}
+      <!-- The sheet's own tools, which sit in the header on a computer. -->
+      <div class="phonetools" data-places="more">
+        <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
+        <PrintButton onprint={makePdf} busy={makingPdf} />
+        {#if isOwner}<DownloadButton ondownload={exportNow} />{/if}
+        <ModeToggle />
+        {#if !isOwner}
+          <dl class="stamps">
+            <div><dt>Created</dt><dd>{friendlyDate(sheet.created_at)}</dd></div>
+            <div><dt>Last updated</dt><dd>{friendlyDate(updated)}</dd></div>
+          </dl>
+        {/if}
+      </div>
+    {/if}
 
     {#if liveInit && sheet}<SheetInitiative live={liveInit} sheetId={sheet.id} />{/if}
 
@@ -999,7 +1047,7 @@
         </div>
       </section>
 
-      <section class="panel center" style:--i=3 data-places="play spells gear more">
+      <section class="panel center" style:--i=3 data-places="play spells gear features more">
         <Tabs tabs={phoneOn && place === 'more' ? MORE_TABS : TABS} bare={phoneOn && place !== 'more'} quiet={quietTab} bind:active={activeTab} lit={litLevel ? 'Spells' : null}>
           {#snippet children(tab)}
             {#if tab === 'Combat'}
@@ -1887,31 +1935,27 @@
     /* Six abilities over three columns leaves the names cramped; two rows of
        three with room to breathe reads better at this width. */
     .defense { gap: 0.4375rem; }
-    /* Seven controls in a phone's width: tighter, and allowed to wrap on the
-       narrowest screens rather than run off the edge. */
-    .controls { gap: 0.25rem; flex-wrap: wrap; width: 100%; justify-content: space-between; }
-    .edit { min-width: 3.25rem; padding: 0.375rem 0.5rem; }
-    .undo, .back { padding: 0.375rem 0.5rem; }
   }
   /*
    * A phone: the portrait at the left, the name and the class, species and
    * background beside it, together in the middle of its height; the
    * campaign under them across the header, so a long name has the room; then
-   * the music and the controls across. (Wrapped as a row, the portrait sat
-   * alone above the name.)
+   * the music. The controls are in the top bar and in More. (Wrapped as a
+   * row, the portrait sat alone above the name.)
    */
   @media (max-width: 700px) {
-    .identity { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); column-gap: 0.875rem; row-gap: 0.25rem; align-items: center; }
+    /* The portrait and the words beside it sit in the middle as one block, the words still left-aligned to the portrait. */
+    .identity { display: grid; grid-template-columns: 5.5rem minmax(0, max-content); justify-content: center; column-gap: 0.875rem; row-gap: 0.25rem; align-items: center; }
     .identity .portrait { width: 5.5rem; grid-column: 1; grid-row: 1 / 3; align-self: center; }
     .identity .who { display: contents; }
     .identity .who > h1 { grid-column: 2; grid-row: 1; align-self: end; min-width: 0; }
     .identity .who > .sub { grid-column: 2; grid-row: 2; align-self: start; margin-top: 0.125rem; }
-    .identity .who > .campaign { grid-column: 1 / -1; grid-row: 3; align-self: start; justify-self: start; margin: 0.875rem 0 0; max-width: 100%; }
+    .identity .who > .campaign { grid-column: 1 / -1; grid-row: 3; align-self: start; justify-self: center; margin: 0.875rem 0 0; max-width: 100%; }
     /* A long campaign name wraps inside its pill: a rounded box, not a
        stretched capsule, with a little less spacing between the letters. */
     .identity .campaign { letter-spacing: 0.08em; line-height: 1.35; }
     .identity .campaign a, .identity button.campaign { border-radius: var(--r-sm); padding: 0.1875rem 0.5rem; }
-    .identity .musicslot, .identity .controls { grid-column: 1 / -1; margin-top: 0.75rem; }
+    .identity .musicslot { grid-column: 1 / -1; justify-self: center; margin-top: 0.75rem; }
   }
 
   /* ── A phone's places (the rules for showing one are in app.css) ── */
@@ -1937,7 +1981,6 @@
     /* Nearly solid, no frost: a phone redrawing a blur under it on every scroll is what stutters. */
     background: color-mix(in oklch, var(--surface) 97%, transparent);
   }
-  .striproom { height: calc(3.375rem + env(safe-area-inset-top, 0px)); }
   .strippic {
     position: relative; flex: none; width: 2.25rem; height: 2.25rem; border-radius: var(--r-sm); overflow: hidden;
     display: grid; place-items: center; border: 1px solid var(--a-edge); background: var(--raised); color: var(--a);
@@ -1945,7 +1988,17 @@
   .strippic :global(svg) { width: 1.25rem; height: 1.25rem; }
   .strippic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .stripname { flex: 1; min-width: 0; font-weight: 650; font-size: 1rem; color: var(--a); overflow-wrap: anywhere; line-height: 1.2; }
-  .phonestrip .undo, .phonestrip .edit { flex: none; min-width: 0; padding: 0.375rem 0.5rem; }
+  .phonestrip .phoneicon { flex: none; }
+  /* The top bar: Edit and Undo at the left, the mark in the middle, Back at the right. */
+  .phonetop { position: relative; z-index: 2; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
+  .topleft { display: flex; align-items: center; gap: 0.375rem; }
+  .toplogo { display: grid; place-items: center; color: var(--text); }
+  .topback { justify-self: end; display: inline-grid; place-items: center; box-sizing: border-box; height: 2.25rem; padding: 0 0.875rem; }
+  .phoneicon { box-sizing: border-box; width: 2.25rem; height: 2.25rem; min-width: 0; padding: 0; display: inline-grid; place-items: center; }
+  .phoneicon svg { display: block; }
+  /* More's tools: the sheet's own buttons, in a row in the middle. */
+  .phonetools { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+  .phonetools .stamps { flex-basis: 100%; justify-content: center; }
   .hppill {
     flex: none; display: grid; justify-items: end; gap: 0.25rem; padding: 0.3125rem 0.625rem; font: inherit; color: var(--text); cursor: pointer;
     border: 1px solid var(--line); border-radius: 0.625rem; background: var(--raised);

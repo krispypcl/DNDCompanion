@@ -29,6 +29,8 @@
   import { reorder } from '#lib/reorder.ts';
   import CardHp from './CardHp.svelte';
   import DimModal from './DimModal.svelte';
+  import ConfirmModal from './ConfirmModal.svelte';
+  import { phone } from '#lib/stores/phone.svelte.ts';
   import ConditionGiver from './ConditionGiver.svelte';
   import ConditionLookPicker from './ConditionLookPicker.svelte';
   import ConditionRing from './ConditionRing.svelte';
@@ -307,7 +309,7 @@
               <button class="ctool" aria-label="Change {c.name}" title="Change it and its stat block" onclick={() => startEdit(c)}>
                 <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10zM14 7l3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
               </button>
-              {#if confirming === c.id}
+              {#if confirming === c.id && !phone.current}
                 <span class="confirmrm" transition:fade={{ duration: 120 }}>
                   <button class="smallbtn danger" onclick={() => { confirming = null; closeStats(c.id); void table.remove(c); }}>Remove</button>
                   <button class="smallbtn quiet" onclick={() => (confirming = null)}>Keep</button>
@@ -379,6 +381,14 @@
       </li>
     {/each}
   </ul>
+{/if}
+
+<!-- A phone's card has no room for the question beside its tools: it comes up in a window. -->
+{#if phone.current && confirming}
+  {@const c = table.list.find((x) => x.id === confirming)}
+  {#if c}
+    <ConfirmModal title="Remove {c.name}?" yes="Remove" onyes={() => { confirming = null; closeStats(c.id); void table.remove(c); }} onclose={() => (confirming = null)} />
+  {/if}
 {/if}
 
 <datalist id="creature-expressions">

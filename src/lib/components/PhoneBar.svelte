@@ -8,7 +8,7 @@
 -->
 <script lang="ts" module>
   export type PhonePlace = { key: string; label: string; icon: PlaceIcon; badge?: boolean };
-  export type PlaceIcon = 'play' | 'abilities' | 'spells' | 'gear' | 'more' | 'party' | 'fight' | 'foes' | 'board' | 'music' | 'person' | 'flag';
+  export type PlaceIcon = 'play' | 'abilities' | 'spells' | 'search' | 'gear' | 'features' | 'more' | 'party' | 'fight' | 'foes' | 'board' | 'music' | 'person' | 'flag';
 </script>
 
 <script lang="ts">
@@ -45,6 +45,10 @@
         <rect x="3.5" y="4" width="7" height="7" rx="1.5" /><rect x="13.5" y="4" width="7" height="7" rx="1.5" /><rect x="3.5" y="13" width="7" height="7" rx="1.5" /><rect x="13.5" y="13" width="7" height="7" rx="1.5" />
       {:else if icon === 'spells'}
         <path d="M12 3.5l1.9 4.6 4.6 1.9-4.6 1.9L12 16.5l-1.9-4.6L5.5 10l4.6-1.9zM18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" />
+      {:else if icon === 'search'}
+        <circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" />
+      {:else if icon === 'features'}
+        <path d="M12 3.5 14.4 8.4l5.4.8-3.9 3.8.9 5.4-4.8-2.6-4.8 2.6.9-5.4-3.9-3.8 5.4-.8z" />
       {:else if icon === 'gear'}
         <path d="M5.5 8.5h13l-1.2 11h-10.6zM9 8.5V7a3 3 0 0 1 6 0v1.5" />
       {:else if icon === 'more'}
@@ -96,20 +100,20 @@
   .dock { display: flex; gap: 0.5rem; padding: 0.625rem 0.25rem 0.125rem; }
   .dock :global(> *) { flex: 1; }
   .dock :global(.smallbtn) { min-height: 2.75rem; font-size: 0.9375rem; font-weight: 600; justify-content: center; }
-  .phonebar { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 0.25rem 0 0.375rem; }
+  .phonebar { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); padding: 0.125rem 0 0.1875rem; }
   .place {
-    display: grid; justify-items: center; gap: 0.1875rem; min-height: 3.25rem; padding: 0.375rem 0.125rem 0.25rem;
-    font: inherit; font-size: 0.6875rem; color: var(--dim); background: none; border: 0; border-radius: var(--r); cursor: pointer;
+    display: grid; justify-items: center; align-content: center; gap: 0.125rem; min-height: 2.875rem; padding: 0.25rem 0 0.125rem;
+    font: inherit; font-size: 0.65625rem; color: var(--dim); background: none; border: 0; border-radius: var(--r); cursor: pointer;
     -webkit-tap-highlight-color: transparent; transition: color 0.18s ease, transform 0.08s ease;
   }
   .place.on { color: var(--a); font-weight: 650; }
   .place:active { transform: translateY(1px); }
   .place:focus-visible { outline: 2px solid var(--a); outline-offset: -2px; }
-  .ic { position: relative; display: grid; place-items: center; width: 2.75rem; height: 1.75rem; border-radius: 999px; transition: background-color 0.2s ease; }
+  .ic { position: relative; display: grid; place-items: center; width: min(2.75rem, 100%); height: 1.625rem; border-radius: 999px; transition: background-color 0.2s ease; }
   .place.on .ic { background: var(--a-wash); }
   /* Something wants you there: a dot in the accent. */
   .ic.badge::after {
-    content: ''; position: absolute; top: 0.125rem; right: 0.625rem; width: 0.5rem; height: 0.5rem; border-radius: 50%;
+    content: ''; position: absolute; top: 0.0625rem; right: 0.5rem; width: 0.5rem; height: 0.5rem; border-radius: 50%;
     background: var(--a); box-shadow: 0 0 0 2px var(--surface);
   }
   .lb { line-height: 1.1; text-align: center; overflow-wrap: anywhere; }

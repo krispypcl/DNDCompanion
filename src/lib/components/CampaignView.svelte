@@ -178,10 +178,13 @@
   type Place = 'party' | 'fight' | 'foes' | 'board' | 'music';
   const phoneOn = $derived(phone.current);
   let place = $state<Place>('party');
+  /** Moved between places at least once: from then on a place's parts fade in (app.css). */
+  let moved = $state(false);
   function goPlace(next: string) {
     const p = next as Place;
     if (p === 'foes') void chooseSide(SIDE_CREATURES);
     else if (p === 'party') void chooseSide(SIDE_PLAYERS);
+    if (p !== place) moved = true;
     place = p;
     if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
   }
@@ -540,7 +543,7 @@
 {:else if error && !campaign}
   <NotFound tab="Campaign didn’t load" title="That’s a critical fail!" message={error} />
 {:else if campaign}
-  <main class="themed campaignpage" style={themeCss} in:fade={{ duration: prefersReducedMotion() ? 0 : 200 }} data-place={phoneOn ? place : undefined}>
+  <main class="themed campaignpage" style={themeCss} in:fade={{ duration: prefersReducedMotion() ? 0 : 200 }} data-place={phoneOn ? place : undefined} data-moved={phoneOn && moved ? '' : undefined}>
     {#if bannerLink.url}<Banner url={bannerLink.url} />{/if}
     <header>
       <!-- The die, in the campaign's own color: home to the list. -->
@@ -564,8 +567,8 @@
             </svg>
           </button>
         {/if}
-        {#if owlbear && isDm}
-          <!-- The table's Owlbear Rodeo room (set in Campaign settings); the players' is on the table's line. -->
+        {#if owlbear && (isDm || phoneOn)}
+          <!-- The table's Owlbear Rodeo room (set in Campaign settings); on a computer the players' is on the table's line. -->
           <a class="keys owlbtn" href={owlbear} target="_blank" rel="noopener noreferrer" aria-label="Open the table's Owlbear Rodeo room" title="Open the table's Owlbear Rodeo room">
             <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <path d="M5 5.5 7.5 8M19 5.5 16.5 8M6 9.5c0-2.2 2.7-3.5 6-3.5s6 1.3 6 3.5V14c0 3.3-2.7 6-6 6s-6-2.7-6-6z" />
@@ -615,7 +618,7 @@
                            onexpand={isDm ? () => setMusicCompact(false) : undefined} />
           </div>
         {/if}
-        {#if !isDm && owlbear}
+        {#if !isDm && owlbear && !phoneOn}
           <!-- A player's line: the next session, the music in the middle, the table's Owlbear Rodeo room at the right. -->
           <a class="smallbtn owlroom" href={owlbear} target="_blank" rel="noopener noreferrer" data-places="party"
              title="Open the table's Owlbear Rodeo room">
@@ -802,7 +805,7 @@
   .kbd:hover svg { transform: translateY(-1.5px) scale(1.06); }
   @media (prefers-reduced-motion: reduce) { .searchbtn svg, .kbd svg { transition: none; } }
   @media (hover: hover) and (pointer: fine) { .keys { display: inline-grid; } }
-  .keys.searchbtn, .keys.gear { display: inline-grid; }
+  .keys.searchbtn, .keys.gear, .keys.owlbtn { display: inline-grid; }
 
   /* Who is here, and the next session, in a line under the header. */
   .tablewrap { margin-top: 1.25rem; }
@@ -830,8 +833,12 @@
   }
   .owlroom svg { transition: transform 0.45s cubic-bezier(0.33, 1, 0.68, 1); }
   .owlroom:hover svg { transform: translateY(-1px) rotate(-6deg); }
+  /* A phone: the next session and the music each centered on a line of their own. */
   @media (max-width: 700px) {
     .tablebar.forplayers { display: flex; }
+    .tablebar { justify-content: center; }
+    .nextsession { flex-basis: 100%; justify-content: center; text-align: center; }
+    .musicslot { flex-basis: 100%; }
   }
   .musicslot.whole { order: 4; flex-basis: 100%; display: block; margin-top: 1.25rem; color: var(--text); font-size: 0.875rem; }
   /* The monsters' side slides in from the right, as the players' does from the left. */
@@ -866,8 +873,10 @@
     main { padding-top: 1.25rem; }
     h1 { font-size: 1.375rem; }
     header { flex-wrap: wrap; }
-    /* The controls in one row under the name, together at the right. */
-    .tools { width: 100%; justify-content: flex-end; gap: 0.375rem; flex-wrap: wrap; }
+    /* The controls in one row under the name, together in the middle. */
+    .tools { width: 100%; justify-content: center; gap: 0.375rem; flex-wrap: wrap; }
+    /* One height along the row: the icons as tall as Back. */
+    .tools .keys, .tools :global(:is(.share, .mode)) { width: var(--btn-h); height: var(--btn-h); }
     .back { padding: 0.375rem 0.5rem; }
   }
 </style>

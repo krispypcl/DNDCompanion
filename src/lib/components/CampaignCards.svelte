@@ -19,6 +19,8 @@
   import { cleanName, defaultLook, isStandard, lookKey, lookOf } from '#lib/rules/conditions.ts';
   import ConditionLookPicker from './ConditionLookPicker.svelte';
   import DimModal from './DimModal.svelte';
+  import ConfirmModal from './ConfirmModal.svelte';
+  import { phone } from '#lib/stores/phone.svelte.ts';
   import ConditionGiver from './ConditionGiver.svelte';
   import { themeStyle } from '#lib/theme.ts';
   import { followHeight, glideTo, prefersReducedMotion } from '#lib/motion.ts';
@@ -295,7 +297,7 @@
         </button>
       {/if}
       {#if isDm && !ended}
-        {#if removing === s.id}
+        {#if removing === s.id && !phone.current}
           <div class="confirm" role="group" aria-label="Remove {nameOf(s)}" transition:slide={unfold()}>
             <span>Take out of the campaign?</span>
             <button class="danger" onclick={async () => { await onremove(s.id); removing = null; }}>Remove</button>
@@ -310,6 +312,15 @@
     </li>
   {/each}
 </ul>
+
+<!-- A phone's card has no room for the question beside its buttons: it comes up in a window. -->
+{#if phone.current && removing}
+  {@const s = cards.find((x) => x.id === removing)}
+  {#if s}
+    <ConfirmModal title="Take {nameOf(s)} out of the campaign?" message="The character stays with their player, out of any campaign." yes="Remove"
+                  onyes={async () => { await onremove(s.id); removing = null; }} onclose={() => (removing = null)} />
+  {/if}
+{/if}
 
 {#if viewing}
   <Lightbox src={viewing.src} alt={viewing.alt} from={viewing.from} onclose={() => (viewing = null)} />
