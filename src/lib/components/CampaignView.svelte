@@ -9,7 +9,7 @@
    * character, ending the campaign (it is archived, and can be reopened) and
    * deleting it, a banner like a sheet's, and a jukebox of their own music.
    */
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { fade, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import { base } from '#lib/base.ts';
@@ -148,6 +148,26 @@
   $effect(() => {
     if (isMember && !isDm && campaign?.id) void lookAtRevealed();
   });
+  /**
+   * Switching sides: the new side slides in, and the room they take eases
+   * from one height to the other, so what follows (the initiative order)
+   * moves smoothly instead of jumping.
+   */
+  let sidesBox = $state<HTMLElement>();
+  async function chooseSide(next: string) {
+    if (next === side) return;
+    const box = sidesBox;
+    const from = box?.offsetHeight ?? 0;
+    side = next;
+    await tick();
+    if (!box || prefersReducedMotion()) return;
+    const to = box.offsetHeight;
+    if (Math.abs(to - from) < 2) return;
+    box.style.overflow = 'clip';
+    box.animate([{ height: `${from}px` }, { height: `${to}px` }], { duration: 280, easing: 'cubic-bezier(0.33, 1, 0.68, 1)' })
+      .finished.catch(() => {})
+      .finally(() => (box.style.overflow = ''));
+  }
   /** A side slides in from the side it sits on in the switch. */
   function sideIn(_node: Element, { dir = 1 }: { dir?: number } = {}) {
     return {
@@ -581,7 +601,7 @@
         {/if}
         {#if isDm}
           <div class="sideswitch">
-            <AreaSwitch active={side} onchoose={(k) => (side = k)} sides={[
+            <AreaSwitch active={side} onchoose={(k) => void chooseSide(k)} sides={[
               { key: SIDE_PLAYERS, icon: 'person', count: active.length },
               { key: SIDE_CREATURES, icon: 'monster', count: creatureCount }
             ]} />
@@ -597,23 +617,10 @@
     {#if error}<p class="app-alert bad" role="alert">{error}</p>{/if}
 
     <!-- Every section the same way, as the table board: its title above (SectionHead), its content below.
-         The initiative order comes after the characters (and for the DM, after the monsters and NPCs on
-         that side too); the players see it while the DM calls for initiative or a fight runs. -->
-    {#snippet order()}
-      {#if !ended && combatants.length && (isDm || fighting || init.asking)}
-        <div class="campsec" transition:slide={unfold()}>
-          <InitiativeTracker {combatants} turn={init.turn} round={init.round} asking={init.asking} {isDm}
-                             onvalue={setInitiative} onrollone={rollOne} onask={callForInitiative}
-                             onrollrest={isDm ? rollRest : undefined}
-                             onstart={() => moveTurn(startTurns(combatants))} onnext={() => moveTurn(nextTurn(combatants, turnNow()))}
-                             onprevious={() => moveTurn(previousTurn(combatants, turnNow()))} onend={endFight} />
-        </div>
-      {/if}
-    {/snippet}
-
-    <!-- The players' cards, or (the DM's other side) the monsters and NPCs.
-         The creatures stay mounted once opened, so their count and what was
-         typed survive a switch back and forth. -->
+         The players' cards, or (the DM's other side) the monsters and NPCs. The creatures stay mounted
+         once opened, so their count and what was typed survive a switch back and forth. Switching
+         sides eases the height between them, so the initiative order below moves smoothly. -->
+    <div class="sides" bind:this={sidesBox}>
     {#if side === SIDE_PLAYERS}
       <div class="sidepane" in:sideIn={{ dir: -1 }}>
         <section class="campsec" aria-label="Characters">
@@ -634,7 +641,6 @@
                            onorder={(order) => saveDetails({ order })} onremove={remove} onconditions={giveConditions} onlook={giveLook} />
           {/if}
         </section>
-        {@render order()}
       </div>
     {/if}
     {#if isDm && table}
@@ -642,9 +648,23 @@
         <section class="campsec" aria-label="Monsters and NPCs">
           <CampaignCreatures {table} {ended} />
         </section>
-        {@render order()}
       </div>
-    {:else if revealed.length}
+    {/if}
+    </div>
+
+    <!-- The initiative order, after either side and the same on both, so it stays put while the
+         sides switch above it. The players see it while the DM calls for initiative or a fight runs. -->
+    {#if !ended && combatants.length && (isDm || fighting || init.asking)}
+      <div class="campsec" transition:slide={unfold()}>
+        <InitiativeTracker {combatants} turn={init.turn} round={init.round} asking={init.asking} {isDm}
+                           onvalue={setInitiative} onrollone={rollOne} onask={callForInitiative}
+                           onrollrest={isDm ? rollRest : undefined}
+                           onstart={() => moveTurn(startTurns(combatants))} onnext={() => moveTurn(nextTurn(combatants, turnNow()))}
+                           onprevious={() => moveTurn(previousTurn(combatants, turnNow()))} onend={endFight} />
+      </div>
+    {/if}
+
+    {#if !isDm && revealed.length}
       <section class="campsec"><RevealedCreatures list={revealed} /></section>
     {/if}
 
@@ -734,8 +754,8 @@
     {/if}
     {#if showKeys}<ShortcutHelp owner={isDm} place="campaign" onclose={() => (showKeys = false)} />{/if}
     <Spotlight bind:open={searching} homebrew={table && !ended ? table.homebrew : []}
-               onadd={table && !ended ? (hit) => { side = SIDE_CREATURES; void table.addFromFive(hit.name, hit.source); } : undefined}
-               onaddhomebrew={table && !ended ? (hid) => { side = SIDE_CREATURES; void table.addHomebrew(hid); } : undefined} />
+               onadd={table && !ended ? (hit) => { void chooseSide(SIDE_CREATURES); void table.addFromFive(hit.name, hit.source); } : undefined}
+               onaddhomebrew={table && !ended ? (hid) => { void chooseSide(SIDE_CREATURES); void table.addHomebrew(hid); } : undefined} />
   </main>
 {/if}
 
