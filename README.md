@@ -13,45 +13,19 @@
 
 ## Overview
 
-An online D&D 5e character sheet for a group of friends. Each player has an
-account and their own characters; anyone with a sheet's link can read it
-(unless its player keeps their sheets private), and only its owner can change
-it. It works on a phone, a tablet and a laptop; on a phone each page is laid
-out for the thumb, its parts on a bar at the bottom and its windows rising
-from the bottom of the screen.
+An online D&D 5e character sheet for a group of friends, on a phone, a tablet
+or a computer. Each player keeps their own characters, and a sheet's link lets
+anyone read it.
 
-- **Sheets** work out what follows from other numbers (modifiers, saving
-  throws, armor class, spell save DC, exhaustion's penalties) and leave the
-  rest to be written by hand, so homebrew is as easy to keep as anything from
-  the books. Ready-made trackers cover spell slots, class resources and
-  exhaustion. Any class, species, background, feature, spell or item opens a
-  pop-up straight from [5e.tools](https://5e.tools/), and a sheet exports to a
-  printable PDF. Rolls, damage, healing, rests and death saves have their own
-  sounds, and each can be swapped for a recording of the player's choosing.
-- **Search** (<kbd>/</kbd>) finds anything on 5e.tools by name, from every
-  book: spells, items, feats, species, classes and subclasses, monsters,
-  deities, languages, rules and more, as well as the classes and subclasses
-  of 5e.tools' homebrew library. Each opens in a window of its own.
-- **Campaigns** bring characters together: the DM sees the whole party's hit
-  points, armor class and conditions live, gives and takes conditions, plays
-  music for the table, sets the next session's date, and shares a board
-  everyone can draw and write on. Each campaign has its own crest, banner,
-  color and name font, and can link the table's Owlbear Rodeo room. The
-  header says who is here ("DM and 3 players here"), and portraits open full
-  screen.
-- **Fights**: the DM calls for initiative and each player rolls their own
-  on the campaign page (their sheet points them there); the order and whose
-  turn it is follow live for everyone, and a tie is settled by dragging. The
-  DM keeps monsters and NPCs with their stat blocks (from 5e.tools or their
-  own homebrew) and reveals them to the players when the party finds them:
-  the players see how hurt each looks, and the expression the DM gives it.
-- **Owlbear Rodeo extension**: the campaign's party in an Owlbear room, live:
-  hit points and conditions on the map's tokens, rolls from the sheets as
-  pop-ups, the initiative order, and for the DM their monsters and NPCs with
-  stat blocks and tokens of their own.
-- **Progressive Web App**: install it on a phone's home screen or a computer
-  and it opens like an app of its own. Pages update themselves after each new
-  release.
+- **Sheets** work out the numbers that follow from others and leave the rest
+  to write by hand, so homebrew is as easy to keep as anything from the
+  books. Rules open straight from [5e.tools](https://5e.tools/), and a sheet
+  exports to a printable PDF.
+- **Campaigns** bring the party together: the DM sees everyone's hit points
+  and conditions live, runs initiative, keeps monsters and NPCs, plays music
+  for the table and shares a board everyone can draw on.
+- **Owlbear Rodeo extension**: the same party, live, on an Owlbear map.
+- **Installable**: it can be added to a home screen and opens like an app.
 
 ## Usage
 
