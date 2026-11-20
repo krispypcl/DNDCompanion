@@ -200,7 +200,7 @@
   /** The campaign name's own font, if the DM chose one. */
   const font = $derived(nameFont(campaign?.details.nameFont));
   const face = $derived(font && font !== 'bad' ? font : null);
-  /** The campaign's colour, as a sheet's: picked while editing, previewed while picking. */
+  /** The campaign's color, as a sheet's: picked while editing, previewed while picking. */
   let themePreview = $state<string | null>(null);
   const themeCss = $derived(themeStyle(themePreview ?? campaign?.details.theme));
   const pageLink = $derived(typeof location !== 'undefined' ? `${siteRoot(location.origin, base)}/c?id=${encodeURIComponent(id)}` : '');
@@ -478,7 +478,7 @@
   });
   /** A fight is coming: the players roll theirs (a fresh order). */
   const callForInitiative = () => live?.save({ ...NO_INITIATIVE, asking: true }).catch(initFail);
-  /** The fight is over, or the call for it is cancelled: the order is cleared for the next one. */
+  /** The fight is over, or the call for it is canceled: the order is cleared for the next one. */
   function endFight() {
     live?.save(NO_INITIATIVE).catch(initFail);
     for (const c of table?.list.filter((x) => x.initiative !== null) ?? []) void table!.change(c, { initiative: null });
@@ -486,7 +486,7 @@
 
   /**
    * The DM chooses how a condition of a player's own looks: shown at once,
-   * saved a moment after the last change (a colour dragged across the
+   * saved a moment after the last change (a color dragged across the
    * picker is one save, not dozens).
    */
   const lookTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -505,7 +505,7 @@
       try {
         await campaignRepo.setConditionLook(sheetId, key, look);
       } catch (e) {
-        error = campaignMessage(e, 'That colour wouldn’t stick! Try again.');
+        error = campaignMessage(e, 'That color wouldn’t stick! Try again.');
       }
     }, 350));
   }
@@ -547,7 +547,7 @@
   <main class="themed campaignpage" style={themeCss} in:fade={{ duration: prefersReducedMotion() ? 0 : 200 }} data-place={phoneOn ? place : undefined}>
     {#if bannerLink.url}<Banner url={bannerLink.url} />{/if}
     <header>
-      <!-- The die, in the campaign's own colour: home to the list. -->
+      <!-- The die, in the campaign's own color: home to the list. -->
       <!-- The campaign's crest, turning toward the pointer as a sheet's portrait does; with none
            set, the d20 a character with no portrait shows. -->
       <Crest src={crestLink.url ?? ''} size={3.25} name={campaign.name} onopen={(from) => (crestOpen = from)} />
@@ -660,7 +660,7 @@
             {#snippet info()}
               {#if isDm}
                 The party, live from their sheets. Drag a card to put them in order; + gives a condition, and its dot
-                chooses the colour of one of your own. A green light means that player has the page open.
+                chooses the color of one of your own. A green light means that player has the page open.
               {:else}
                 The party, live from their sheets. A green light means that player has the page open.
               {/if}

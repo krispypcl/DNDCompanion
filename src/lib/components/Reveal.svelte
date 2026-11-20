@@ -3,7 +3,7 @@
    * Covers what is inside until it is hovered, reached with the keyboard, or
    * — where there is no hover, on a phone — tapped. Used on death saves, the
    * table's moment of suspense. The cover is opaque, not a blur: a blur still
-   * showed how many dots were lit and in which colour.
+   * showed how many dots were lit and in which color.
    *
    * What is inside can be pressed. While it is covered, the first tap only
    * uncovers it, so nobody marks a death save they could not see. It covers
@@ -113,7 +113,7 @@
 <style>
   .reveal { position: relative; cursor: pointer; border-radius: var(--r-sm); outline-offset: 2px; }
   .inner { transition: opacity 0.22s ease, filter 0.22s ease; }
-  /* Nothing of what is underneath shows through: not the count, not the colours. */
+  /* Nothing of what is underneath shows through: not the count, not the colors. */
   .veiled .inner { opacity: 0; filter: blur(4px); user-select: none; }
   .cue {
     position: absolute; inset: 0; display: grid; place-items: center;

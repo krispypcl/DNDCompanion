@@ -197,7 +197,7 @@
   dt { display: flex; align-items: center; justify-content: center; gap: 0.125rem; }
   @media (max-width: 900px) { .details dl { grid-template-columns: repeat(3, 1fr); } }
   @media (max-width: 560px) { .details dl { grid-template-columns: repeat(2, 1fr); } }
-  /* Every detail hangs from the top of its row, whatever its neighbours hold. */
+  /* Every detail hangs from the top of its row, whatever its neighbors hold. */
   .details dl { align-items: start; align-content: start; }
   dl > div { text-align: center; display: flex; flex-direction: column; justify-content: flex-start; align-self: start; }
   dt {

@@ -12,7 +12,7 @@ import { clampSpent, trackerMax } from './tracker';
 /**
  * The spell level a tracker holds slots for, or null when it is not a slot
  * tracker. "1st-level slots", "Spell Slots · 3rd", "Pact slots (5th)" and a
- * tracker labelled "2nd" in a group called "Spell slots" all count.
+ * tracker labeled "2nd" in a group called "Spell slots" all count.
  */
 export function slotLevel(tracker: Pick<Tracker, 'label' | 'group'>): number | null {
   const text = `${tracker.label ?? ''} ${tracker.group ?? ''}`;

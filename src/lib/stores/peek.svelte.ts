@@ -17,7 +17,7 @@ export type PeekTarget = {
   url: string;
   /** Where the name sits on screen, so the window can open on the far side of it. */
   anchor: DOMRect;
-  /** The character's colours, where the name sits on a themed sheet. */
+  /** The character's colors, where the name sits on a themed sheet. */
   hue?: string;
   chroma?: string;
 };

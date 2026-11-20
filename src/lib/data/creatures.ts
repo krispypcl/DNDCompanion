@@ -28,7 +28,7 @@ export type Creature = {
   statblock: StatBlock;
   /** A picture link (database/0020): the DM's, or a 5e.tools monster's token art. */
   portrait: string;
-  /** The colours of the DM's own conditions on it (the standard ones keep theirs), by lookKey. */
+  /** The colors of the DM's own conditions on it (the standard ones keep theirs), by lookKey. */
   condition_looks: Record<string, ConditionLook>;
   /** Its expression, for the players (database/0023): "Snarling", "About to flee". */
   expression: string;

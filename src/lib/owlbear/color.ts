@@ -1,14 +1,14 @@
 /**
- * Owlbear draws shapes in plain sRGB colours; the sheet's condition colours
+ * Owlbear draws shapes in plain sRGB colors; the sheet's condition colors
  * are written in oklch. This turns one into the other (#rrggbb), and passes
- * hex colours through.
+ * hex colors through.
  */
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 const hex2 = (n: number) => Math.round(clamp01(n) * 255).toString(16).padStart(2, '0');
 const gamma = (c: number) => (c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055);
 
-export function toHex(colour: string | null | undefined, fallback = '#888888'): string {
-  const text = String(colour ?? '').trim();
+export function toHex(color: string | null | undefined, fallback = '#888888'): string {
+  const text = String(color ?? '').trim();
   const h = text.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
   if (h) return h[1].length === 3 ? `#${[...h[1]].map((c) => c + c).join('')}`.toLowerCase() : `#${h[1].toLowerCase()}`;
   const m = text.match(/^oklch\(\s*([\d.]+)(%?)\s+([\d.]+)\s+([\d.]+)(?:deg)?\s*(?:\/\s*[\d.]+%?\s*)?\)$/i);

@@ -166,9 +166,9 @@ function block(e: unknown, depth = 0, bare = false): string {
     case 'insetReadaloud':
       return `<div class="five-inset">${head(o.name)}${blocks(o.entries, depth + 1)}</div>`;
     case 'abilityDc':
-      return `<p class="five-centre"><b>${inline(o.name ?? 'Spell')} save DC</b> = 8 + your Proficiency Bonus + your ${(o.attributes ?? []).map((a: string) => ABILITY[a] ?? a).join(' or ')} modifier</p>`;
+      return `<p class="five-center"><b>${inline(o.name ?? 'Spell')} save DC</b> = 8 + your Proficiency Bonus + your ${(o.attributes ?? []).map((a: string) => ABILITY[a] ?? a).join(' or ')} modifier</p>`;
     case 'abilityAttackMod':
-      return `<p class="five-centre"><b>${inline(o.name ?? 'Spell')} attack modifier</b> = your Proficiency Bonus + your ${(o.attributes ?? []).map((a: string) => ABILITY[a] ?? a).join(' or ')} modifier</p>`;
+      return `<p class="five-center"><b>${inline(o.name ?? 'Spell')} attack modifier</b> = your Proficiency Bonus + your ${(o.attributes ?? []).map((a: string) => ABILITY[a] ?? a).join(' or ')} modifier</p>`;
     case 'refClassFeature':
     case 'refSubclassFeature':
     case 'refOptionalfeature': {

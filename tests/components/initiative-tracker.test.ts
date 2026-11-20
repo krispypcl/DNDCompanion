@@ -17,7 +17,7 @@ describe('InitiativeTracker', () => {
     expect(buttons(container)).toEqual(['Call for initiative']);
   });
 
-  it('opens while calling, says who it waits on beside the buttons, and can be cancelled', async () => {
+  it('opens while calling, says who it waits on beside the buttons, and can be canceled', async () => {
     const oncancel = vi.fn();
     const { container } = render(InitiativeTracker, {
       props: { combatants: party, turn: null, round: 0, asking: true, isDm: true, oncancel, onrollrest: () => {} }

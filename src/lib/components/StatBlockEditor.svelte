@@ -1,6 +1,6 @@
 <!--
   Writing a stat block (rules/statblock): the top lines, the six scores,
-  the defences and senses, then the traits, actions, bonus actions,
+  the defenses and senses, then the traits, actions, bonus actions,
   reactions and legendary actions, each a list of named entries to add to
   or take from. For a homebrew monster or NPC, or to change one from a book.
 -->

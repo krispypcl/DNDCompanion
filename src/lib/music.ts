@@ -196,7 +196,7 @@ export async function playlistSongs(list: string, timeoutMs = 12000): Promise<st
  * How long each song is, in seconds, found with one hidden player: each is
  * cued in turn (nothing plays or downloads beyond its details) and its length
  * read once YouTube has it. A song that won't say within a few seconds is
- * skipped; its length is learnt when it plays instead. Told each one as it
+ * skipped; its length is learned when it plays instead. Told each one as it
  * comes, so a long list fills in as it goes. Stops when `stop()` says so.
  */
 export async function songLengths(ids: string[], told: (id: string, seconds: number) => void, stop: () => boolean = () => false): Promise<void> {

@@ -430,10 +430,10 @@
   function follow(clientY: number) {
     if (!drag) return;
     const dy = clientY + window.scrollY - drag.startY;
-    const centre = drag.middles[drag.from] + dy;
+    const center = drag.middles[drag.from] + dy;
     let to = 0;
     drag.middles.forEach((m, i) => {
-      if (i !== drag!.from && m < centre) to += 1;
+      if (i !== drag!.from && m < center) to += 1;
     });
     drag.dy = dy;
     drag.to = to;
@@ -639,14 +639,14 @@
   {:else}
     {#if !editable && effects.length}
       <Why title={nameOf(item) || words.on} lines={effects}
-           hint={equip!.labels ? '' : on ? 'Press to take it off.' : 'Press to equip it.'}>{@render labelledTag(item, index, on, words)}</Why>
+           hint={equip!.labels ? '' : on ? 'Press to take it off.' : 'Press to equip it.'}>{@render labeledTag(item, index, on, words)}</Why>
     {:else}
-      {@render labelledTag(item, index, on, words)}
+      {@render labeledTag(item, index, on, words)}
     {/if}
   {/if}
 {/snippet}
 
-{#snippet labelledTag(item: T, index: number, on: boolean, words: { off: string; on: string; hint: string })}
+{#snippet labeledTag(item: T, index: number, on: boolean, words: { off: string; on: string; hint: string })}
   {#if equip!.labels}
     <button class="equip" class:on aria-pressed={on}
             aria-label="{words.hint}: {nameOf(item) || 'this'}" title={editable ? words.hint : undefined}
@@ -905,11 +905,11 @@
   /* Room at the row's left edge, so the words sit inside its rounded ends
      (and its hover) rather than against them; headings line up with them. */
   td:first-child, thead th:first-child, tr.group th { padding-left: 0.625rem; }
-  /* Every row's ends are softly rounded, for anything that colours a row. */
+  /* Every row's ends are softly rounded, for anything that colors a row. */
   tbody tr > td:first-child { border-top-left-radius: var(--r-sm); border-bottom-left-radius: var(--r-sm); }
   tbody tr > td:last-child { border-top-right-radius: var(--r-sm); border-bottom-right-radius: var(--r-sm); }
   /* A heading for the rows under it: spells by level. Quiet, and accent
-     coloured so the eye finds the breaks without a rule between them. */
+     colored so the eye finds the breaks without a rule between them. */
   tr.group th {
     padding: 0.875rem 0 0.3125rem;
     color: var(--a);
@@ -1006,8 +1006,8 @@
   @keyframes eqIn { from { opacity: 0; transform: translateY(3px); } }
   .muted { color: var(--dim); font-size: 0.85rem; }
   .numeric { font-variant-numeric: tabular-nums; }
-  /* Centred on the row rather than aligned with the first line of text. */
-  /* The handle and the remove button: at the top, centred on the first field
+  /* Centered on the row rather than aligned with the first line of text. */
+  /* The handle and the remove button: at the top, centered on the first field
      of the row (a field is --field-h tall), however tall the row grows. */
   .rm { padding-right: 0; vertical-align: top; }
   table { --field-h: calc(0.875rem * 1.4 + 0.4rem + 2px); }
@@ -1167,7 +1167,7 @@
     /* Editing, the table stops being a table. Six columns of inputs in 390px
        is what made the whole page shrink to fit: the browser zooms out rather
        than scroll, and the sheet arrives misaligned. Each entry becomes a
-       card instead, one labelled field per line, nothing wider than the
+       card instead, one labeled field per line, nothing wider than the
        screen. */
     table.editing,
     table.editing tbody,

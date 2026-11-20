@@ -6,27 +6,27 @@ describe('ThemePicker', () => {
   it('keeps a hex typed into the box, with or without the #', async () => {
     const onchange = vi.fn();
     render(ThemePicker, { props: { value: 'slate', onchange } });
-    const box = screen.getByLabelText('Accent colour as hex');
+    const box = screen.getByLabelText('Accent color as hex');
     await fireEvent.input(box, { target: { value: '3A7BD5' } });
     await fireEvent.keyDown(box, { key: 'Enter' });
     expect(onchange).toHaveBeenCalledWith('#3a7bd5');
   });
 
-  it('says so when the hex is not a colour, and keeps nothing', async () => {
+  it('says so when the hex is not a color, and keeps nothing', async () => {
     const onchange = vi.fn();
     render(ThemePicker, { props: { value: 'slate', onchange } });
-    const box = screen.getByLabelText('Accent colour as hex');
+    const box = screen.getByLabelText('Accent color as hex');
     await fireEvent.input(box, { target: { value: '#12zz' } });
     await fireEvent.blur(box);
-    expect(screen.getByRole('alert').textContent).toMatch(/not a colour/);
+    expect(screen.getByRole('alert').textContent).toMatch(/not a color/);
     expect(onchange).not.toHaveBeenCalled();
   });
 
-  it('only previews while the colour input is dragged, and keeps it when it settles', async () => {
+  it('only previews while the color input is dragged, and keeps it when it settles', async () => {
     const onchange = vi.fn();
     const onpreview = vi.fn();
     render(ThemePicker, { props: { value: 'slate', onchange, onpreview } });
-    const input = screen.getByLabelText('Pick your own accent colour');
+    const input = screen.getByLabelText('Pick your own accent color');
     await fireEvent.input(input, { target: { value: '#aa3355' } });
     await new Promise((r) => requestAnimationFrame(() => r(null)));
     expect(onpreview).toHaveBeenCalledWith('#aa3355');

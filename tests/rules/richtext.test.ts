@@ -92,7 +92,7 @@ describe('what the browser leaves behind', () => {
   });
 });
 
-describe('colour, highlight and size', () => {
+describe('color, highlight and size', () => {
   it('reads the marks, nested too, and drops unknown ones', () => {
     expect(toHtml('[[c:red|danger]]')).toBe('<div><span data-c="red">danger</span></div>');
     expect(toHtml('[[h:yellow|[[s:big|loud]] text]]')).toBe('<div><span data-h="yellow"><span data-s="big">loud</span> text</span></div>');

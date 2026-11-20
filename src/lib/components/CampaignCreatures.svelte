@@ -1,11 +1,11 @@
 <!--
   The DM's monsters and NPCs on the campaign page (database/0017, 0018, 0020):
   a card each, like a character's: its portrait (the DM's picture, or a
-  5e.tools monster's token art) ringed by its conditions' colours, its hit
-  points (damage and healing a press away), armour class, speed and
+  5e.tools monster's token art) ringed by its conditions' colors, its hit
+  points (damage and healing a press away), armor class, speed and
   initiative, its expression (database/0023, for the players),
   conditions (the
-  DM's own in colours they choose) and a short note; its stat block in a
+  DM's own in colors they choose) and a short note; its stat block in a
   window of its own; whether the players can see it; and its place, moved
   by its grip. A portrait opens full screen. Added from 5e.tools, from the DM's own homebrew, or
   written new with a stat block, in a window over the dimmed page.
@@ -80,13 +80,13 @@
     const name = cleanName(written);
     if (!name || has(c.conditions, name)) return;
     void table.change(c, { conditions: [...c.conditions, name] });
-    // One of the DM's own: ask its colour, starting from the first swatch.
+    // One of the DM's own: ask its color, starting from the first swatch.
     if (!isStandard(name)) {
       if (!(lookKey(name) in (c.condition_looks ?? {}))) setLook(c, name, defaultLook());
       tinting = { id: c.id, name };
     }
   }
-  /** The condition whose colour the DM is choosing, on which creature. */
+  /** The condition whose color the DM is choosing, on which creature. */
   let tinting = $state<{ id: string; name: string } | null>(null);
   const tinted = $derived(tinting ? table.list.find((c) => c.id === tinting!.id) ?? null : null);
   const lookFor = (c: Creature, name: string): ConditionLook => c.condition_looks?.[lookKey(name)] ?? { color: '', motion: 'pulse' };
@@ -94,8 +94,8 @@
     const cur = table.list.find((x) => x.id === c.id) ?? c;
     void table.change(cur, { condition_looks: { ...(cur.condition_looks ?? {}), [lookKey(name)]: { ...lookFor(cur, name), ...patch } } });
   }
-  const colourOf = (c: Creature, name: string) => lookOf(name, c.condition_looks ?? {})?.color;
-  const ringOf = (c: Creature) => c.conditions.flatMap((n) => { const color = colourOf(c, n); return color ? [{ key: n.toLowerCase(), color }] : []; });
+  const colorOf = (c: Creature, name: string) => lookOf(name, c.condition_looks ?? {})?.color;
+  const ringOf = (c: Creature) => c.conditions.flatMap((n) => { const color = colorOf(c, n); return color ? [{ key: n.toLowerCase(), color }] : []; });
 
   // ── Its page on 5e.tools: in a pop-up when the app can draw it, else in a new tab.
   function openPage(c: Creature, e: MouseEvent) {
@@ -165,7 +165,7 @@
     const e = editing;
     const d = e.draft;
     const statblock = cleanStatBlock({ ...d.statblock, source: d.statblock.source || 'Homebrew' });
-    // Hit points and armour class from the boxes, else from the stat block.
+    // Hit points and armor class from the boxes, else from the stat block.
     const hpMax = num(d.hp) ?? leadingNumber(statblock.hp);
     const ac = num(d.ac) ?? leadingNumber(statblock.ac);
     const name = d.name.trim();
@@ -351,11 +351,11 @@
 
         <ul class="cconds">
           {#each c.conditions as name (name)}
-            {@const colour = colourOf(c, name)}
-            <li style:--cc={colour ?? 'var(--dim)'} class:plain={!colour} transition:fade={{ duration: still ? 0 : 150 }}>
+            {@const color = colorOf(c, name)}
+            <li style:--cc={color ?? 'var(--dim)'} class:plain={!color} transition:fade={{ duration: still ? 0 : 150 }}>
               {#if !ended && !isStandard(name)}
-                <!-- One of the DM's own: its dot opens its colour. -->
-                <button class="cdot tint" aria-label="Choose {name}’s colour" title="Colour" onclick={() => (tinting = { id: c.id, name })}></button>
+                <!-- One of the DM's own: its dot opens its color. -->
+                <button class="cdot tint" aria-label="Choose {name}’s color" title="Color" onclick={() => (tinting = { id: c.id, name })}></button>
               {:else}
                 <span class="cdot" aria-hidden="true"></span>
               {/if}{name}
@@ -400,7 +400,7 @@
 {/each}
 
 {#if giver}
-  <!-- Giving conditions; a new one of the DM's own asks its colour in the same window. -->
+  <!-- Giving conditions; a new one of the DM's own asks its color in the same window. -->
   <DimModal id="creature-conds" title="Conditions for {giver.name}" onclose={() => { giving = null; tinting = null; }}>
     <ConditionGiver given={giver.conditions} ontoggle={(name) => toggleCondition(giver, name)} onadd={(name) => addCondition(giver, name)}
                     ondone={() => { giving = null; tinting = null; }} />
@@ -525,7 +525,7 @@
   }
   /* Each card spans five of the list's rows and shares them (subgrid): its
      head, hit points, numbers, conditions and note line up with its
-     neighbours', however many lines a name, a kind or the conditions take. */
+     neighbors', however many lines a name, a kind or the conditions take. */
   .creature {
     position: relative; display: grid; grid-row: span 6; grid-template-rows: subgrid; row-gap: 0.75rem; min-width: 0;
     padding: 0.875rem; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line-soft);

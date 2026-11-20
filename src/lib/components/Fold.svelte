@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * A labelled panel that folds open and shut, as the Combat tab's reference
+   * A labeled panel that folds open and shut, as the Combat tab's reference
    * lists do. Collapsed by default; what it holds is styled by whoever fills it.
    */
   import type { Snippet } from 'svelte';

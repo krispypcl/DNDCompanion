@@ -1,6 +1,6 @@
 /**
- * Monochrome base, one accent. The greys are HeroUI's dark tokens: near-neutral
- * (chroma 0.005) with a whisper of hue, so the accent is the only colour in the
+ * Monochrome base, one accent. The grays are HeroUI's dark tokens: near-neutral
+ * (chroma 0.005) with a whisper of hue, so the accent is the only color in the
  * room. Every accent shade derives from --h and --c, which a sheet sets per
  * character; see src/lib/theme.ts.
  */
@@ -69,7 +69,7 @@
  * The accent ramp is declared here rather than only on :root because a custom
  * property is substituted where it is DECLARED, not where it is used. Declared
  * on :root alone, --a would compute once against :root's hue and descendants
- * would inherit the finished colour — so a sheet setting --h deeper would
+ * would inherit the finished color — so a sheet setting --h deeper would
  * change nothing. Repeating the ramp on .themed makes it recompute against
  * that element's own hue.
  */
@@ -82,7 +82,7 @@
   --a-hi: oklch(86% calc(0.115 * var(--c)) var(--h));
 
   /* Danger stays on the one hue: deeper and far more saturated than the
-     accent, so it reads as heavy rather than as a second colour. */
+     accent, so it reads as heavy rather than as a second color. */
   --danger: oklch(58% calc(0.19 * var(--c)) var(--h));
   --danger-wash: oklch(28% calc(0.07 * var(--c)) var(--h));
 
@@ -91,14 +91,14 @@
   --hover-line: oklch(34% 0.005 286);
 
   /* Healing leaves a brighter stretch than the bar it fills. In light mode
-     the accent's bright end is its deepest shade, so this is its own colour
+     the accent's bright end is its deepest shade, so this is its own color
      rather than --a-hi: a heal should read as a lift either way. */
   --heal: oklch(86% calc(0.115 * var(--c)) var(--h));
   /* Temporary hit points flash by brightening against a dark bar, and by
      deepening against a light one. */
   --temp-flash: 1.9;
 
-  /* The portrait well: a faint wash of the character's colour, which is the
+  /* The portrait well: a faint wash of the character's color, which is the
      one surface drawn from the accent rather than from a neutral. */
   --portrait-from: oklch(32% calc(0.05 * var(--c)) var(--h));
   --portrait-to: oklch(18% calc(0.02 * var(--c)) var(--h));
@@ -118,7 +118,7 @@
  *
  * The numbers are not guesses: every pair a reader has to resolve — body text,
  * dim text, a hero number, an accent on its own wash — clears 4.5:1 against
- * each of the eight presets and a maximum-chroma custom colour. See
+ * each of the eight presets and a maximum-chroma custom color. See
  * tests/theme-contrast.test.ts, which recomputes them.
  */
 :root[data-mode='light'],
@@ -144,7 +144,7 @@
   --temp-flash: 0.72;
 }
 
-/* Flipping modes recolours everything at once; without this it snaps. The
+/* Flipping modes recolors everything at once; without this it snaps. The
    class is on for a moment either side of the switch, so nothing carries a
    transition it does not need. */
 /* ── A phone's places (stores/phone, PhoneBar) ──
@@ -173,7 +173,7 @@
 }
 
 /* Light and dark fade into each other as one picture (ModeToggle); the page
-   underneath switches at once, its own colour transitions held off. */
+   underneath switches at once, its own color transitions held off. */
 :root.mode-snap *, :root.mode-snap *::before, :root.mode-snap *::after { transition: none !important; }
 /* The new look is drawn over the old, so it is the new that fades in (the old waits beneath). */
 :root.mode-fade::view-transition-old(root) { animation: none; }
@@ -259,7 +259,7 @@ body {
  * button, never bare text: a small bordered one, the same everywhere.
  * `quiet` is the muted kind (the privacy link under sign-in).
  */
-/* A number written in a box: centred in it, with no arrows beside it (typing does the job). */
+/* A number written in a box: centered in it, with no arrows beside it (typing does the job). */
 input.numfield { text-align: center; font-variant-numeric: tabular-nums; -moz-appearance: textfield; appearance: textfield; }
 input.numfield::-webkit-outer-spin-button, input.numfield::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
@@ -310,7 +310,7 @@ html:has(main.campaignpage) { --btn-h: 2.125rem; }
 @keyframes here-glow { 0% { box-shadow: 0 0 0 0 oklch(74% 0.17 150 / 0.5); } 70%, 100% { box-shadow: 0 0 0 6px oklch(74% 0.17 150 / 0); } }
 @media (prefers-reduced-motion: reduce) { .here-dot { animation: none; } }
 
-/* A pop-up's scrolling area: a slim scrollbar in the character's colour
+/* A pop-up's scrolling area: a slim scrollbar in the character's color
    (the 5e.tools peeks, the sheet's dialogs). */
 .themed-scroll {
   scrollbar-width: thin;
@@ -417,7 +417,7 @@ html[data-motion='reduce'] *, html[data-motion='reduce'] *::before, html[data-mo
 }
 
 /*
- * Ink: the colours for writing and drawing (notes, backstory, the table's
+ * Ink: the colors for writing and drawing (notes, backstory, the table's
  * board), one set for dark pages and one for light, so a red line drawn in
  * the dark is still a clear red on white. Stored as var(--ink-…), so a
  * drawing changes with the mode. Sticky-note papers are pale in both: their
@@ -451,7 +451,7 @@ html[data-motion='reduce'] *, html[data-motion='reduce'] *::before, html[data-mo
 }
 
 /* A fixed red for hurt, as on the sheet's hit points: the theme's own
-   danger colour follows its hue, and a blue "Critical" reads as nothing. */
+   danger color follows its hue, and a blue "Critical" reads as nothing. */
 :root { --hurt-red: oklch(66% 0.22 25); }
 :root[data-mode='light'] { --hurt-red: oklch(56% 0.21 25); }
 

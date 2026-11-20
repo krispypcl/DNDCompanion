@@ -39,7 +39,7 @@
 
   /**
    * A damage or heal leaves a ghost on the bar: the stretch that was lost or
-   * gained, in the colour of what happened, fading out. Without it the bar
+   * gained, in the color of what happened, fading out. Without it the bar
    * just arrives at a new length and you cannot tell how far it moved.
    */
   let ghost = $state<{ left: number; width: number; kind: 'damage' | 'heal' } | null>(null);
@@ -171,7 +171,7 @@
   const hpMax = $derived(definition.combat?.hpMax ?? 0);
   const ratio = $derived(hpMax > 0 ? Math.min(1, sheetState.hpCurrent / hpMax) : 0);
   /* Temp HP sits beyond the maximum, so the bar is scaled to both and the
-     temporary part is the grey tail on the right. */
+     temporary part is the gray tail on the right. */
   const barTotal = $derived(hpMax + sheetState.hpTemp);
   const pct = (n: number) => (barTotal > 0 ? (n / barTotal) * 100 : 0);
   const down = $derived(sheetState.hpCurrent === 0);
@@ -422,7 +422,7 @@
   .ghost.damage { background: var(--danger); }
   .ghost.heal { background: var(--heal-green); }
 
-  /* Healing: green, always, whatever the character's colours. The gauge
+  /* Healing: green, always, whatever the character's colors. The gauge
      glows, a light runs along the filled part, and the number brightens. */
   .hpwrap { --heal-green: oklch(74% 0.17 150); --shield: oklch(91% 0.11 95); }
   /* On a light page, pale gold vanishes; a deeper gold, green and red read. */
@@ -571,7 +571,7 @@
     transform-origin: left center;
   }
   .dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: currentColor; flex: none; }
-  /* The sheet's own colours: the accent while well, danger as it fails. */
+  /* The sheet's own colors: the accent while well, danger as it fails. */
   .status.healthy { color: var(--a); border-color: var(--a-edge); background: var(--a-wash); }
   .status.bloodied {
     color: color-mix(in oklch, var(--danger) 70%, var(--text));

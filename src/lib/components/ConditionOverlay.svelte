@@ -8,7 +8,7 @@
    * sits behind the modules as they do, takes only the bottom of the screen
    * where they take the sides, and as the character is hurt its own sides
    * fade away to leave those to the red. With more than one condition, the
-   * colours take turns.
+   * colors take turns.
    */
   import { onDestroy } from 'svelte';
   import { prefersReducedMotion } from '#lib/motion.ts';
@@ -108,7 +108,7 @@
   }
 
   /* On a narrow screen the tint is lower and softer: the page shows only in
-     gutters there, and a strong tint turned the whole of it one colour. */
+     gutters there, and a strong tint turned the whole of it one color. */
   @media (max-width: 700px) {
     .tint.on { opacity: 0.55; }
     .tint i { height: clamp(12rem, 42vh, 22rem); }

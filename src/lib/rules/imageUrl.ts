@@ -30,7 +30,7 @@ export type ResolvedImage = {
   /** Safe to put in an <img src>, or empty when there is nothing to show. */
   url: string;
   source: ImageSource;
-  /** One sentence for the person editing: what was recognised, or what to do. */
+  /** One sentence for the person editing: what was recognized, or what to do. */
   note: string | null;
 };
 

@@ -3,10 +3,10 @@
  * shade is derived from them in oklch, so adding a theme costs one row here
  * rather than a hand-tuned palette, and a deliberately muted theme is possible
  * at all — hue alone cannot make a neutral, since the chroma would still be
- * there colouring it.
+ * there coloring it.
  *
  * A stored theme is either a preset name or a `#rrggbb` the player picked. A
- * picked colour is converted to the same two numbers, so its saturation carries
+ * picked color is converted to the same two numbers, so its saturation carries
  * through: a dusty blue themes the sheet quietly, a vivid red does not.
  */
 
@@ -22,7 +22,7 @@ export type ThemeName =
 
 export type Theme = { label: string; hue: number; chroma: number };
 
-/** `hex` is only a swatch fallback and the seed for the colour input; the
+/** `hex` is only a swatch fallback and the seed for the color input; the
     rendered accent always comes from hue and chroma. */
 export const THEMES: Record<ThemeName, Theme & { hex: string }> = {
   slate: { label: 'Slate', hue: 255, chroma: 0.45, hex: '#7994b7' },
@@ -39,8 +39,8 @@ export const THEMES: Record<ThemeName, Theme & { hex: string }> = {
 export const DEFAULT_THEME: ThemeName = 'slate';
 export const THEME_NAMES = Object.keys(THEMES) as ThemeName[];
 
-/** The chroma a picked colour needs to count as a full-strength accent. Above
-    it the ramp would clip; a greyscale pick lands at 0 and themes monochrome. */
+/** The chroma a picked color needs to count as a full-strength accent. Above
+    it the ramp would clip; a grayscale pick lands at 0 and themes monochrome. */
 const FULL_CHROMA = 0.135;
 const MAX_SCALE = 1.25;
 
@@ -76,7 +76,7 @@ function hexToOklch(hex: string): { l: number; c: number; h: number } | null {
   return { l: L, c, h };
 }
 
-/** A theme from a picked colour, or null if the value is not a hex. */
+/** A theme from a picked color, or null if the value is not a hex. */
 export function customTheme(value: unknown): Theme | null {
   if (!isHexColor(value)) return null;
   const ok = hexToOklch(value);
@@ -96,7 +96,7 @@ export function themeOf(value: unknown): Theme {
 /**
  * An inline `style` value scoping a theme to one subtree. Returned as a string
  * rather than applied to :root so a campaign view can show several characters
- * in their own colours at once.
+ * in their own colors at once.
  */
 export function themeStyle(value: unknown): string {
   const { hue, chroma } = themeOf(value);
@@ -109,7 +109,7 @@ export function swatchColor(name: ThemeName): string {
   return `oklch(66% calc(0.135 * ${chroma}) ${hue})`;
 }
 
-/** What the colour input should open on, given whatever is stored. */
+/** What the color input should open on, given whatever is stored. */
 export function seedHex(value: unknown): string {
   if (isHexColor(value)) return value.trim().startsWith('#') ? value.trim() : `#${value.trim()}`;
   return THEMES[isThemeName(value) ? value : DEFAULT_THEME].hex;

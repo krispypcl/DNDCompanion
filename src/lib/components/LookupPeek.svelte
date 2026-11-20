@@ -29,7 +29,7 @@
 
   /*
    * What the window shows. On closing it keeps the last entry, its place and
-   * its colours, so it fades where it stood rather than jumping to a corner
+   * its colors, so it fades where it stood rather than jumping to a corner
    * and emptying as it goes.
    */
   let last = $state<NonNullable<typeof peek.target> | null>(null);

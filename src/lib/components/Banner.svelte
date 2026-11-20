@@ -78,7 +78,7 @@
   /**
    * No positioned ancestor, so this resolves against the initial containing
    * block: the full width of the page at its very top, rather than the
-   * sheet's own column, which is centred and stops at 110rem. Deliberately
+   * sheet's own column, which is centered and stops at 110rem. Deliberately
    * not 100vw — that counts the scrollbar's width and would put a horizontal
    * scrollbar on every bannered sheet.
    */
@@ -114,9 +114,9 @@
    * and softens the slash where it crosses the modules.
    *
    * Across: the name and the class line live at the left, and they are the
-   * hardest text on the sheet to protect — dim grey on a mid-grey photograph
+   * hardest text on the sheet to protect — dim gray on a mid-gray photograph
    * is unreadable at any tint that still shows the photograph. So the image
-   * is held near the page colour on the left and opens up as it travels
+   * is held near the page color on the left and opens up as it travels
    * right, away from the text.
    *
    * The ends: fades it out at both edges of the sheet.
@@ -167,10 +167,10 @@
   }
 
   /**
-   * Light mode. The tint is mixed from the page colour, which here is near
+   * Light mode. The tint is mixed from the page color, which here is near
    * white, so the dark-mode strengths milked the picture into a haze. Here it
    * is held only where the name and class line sit (dark text reads on a
-   * light ground) and open elsewhere, with the picture's own colour brought
+   * light ground) and open elsewhere, with the picture's own color brought
    * back up.
    */
   :global(:root[data-mode='light']) img { filter: saturate(1.2) contrast(1.08); }

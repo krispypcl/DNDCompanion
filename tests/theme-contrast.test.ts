@@ -15,7 +15,7 @@ import { THEMES } from '#lib/theme.ts';
 // A Windows checkout may give the file CRLF line endings; the selectors below use LF.
 const css = readFileSync('src/app.css', 'utf8').replace(/\r\n/g, '\n');
 
-/** Every (hue, chroma) an accent can take: the presets, and a custom colour
+/** Every (hue, chroma) an accent can take: the presets, and a custom color
     picked at the top of the scale. */
 const ACCENTS: [string, number, number][] = [
   ...Object.entries(THEMES).map(([name, t]) => [name, t.hue, t.chroma] as [string, number, number]),
@@ -117,10 +117,10 @@ const PAIRS: [string, string, number][] = [
 /**
  * Danger is held to a different number in each mode, and deliberately.
  *
- * In light it is a colour written for this work, so it clears the 4.5:1 text
- * threshold against every accent. In dark it is the colour the sheet has
+ * In light it is a color written for this work, so it clears the 4.5:1 text
+ * threshold against every accent. In dark it is the color the sheet has
  * shipped with: it lands between 4.03 and 5.15 depending on the accent, under
- * the threshold for the stronger hues. Raising it would mean recolouring a
+ * the threshold for the stronger hues. Raising it would mean recoloring a
  * dark palette nobody asked to change, so it is pinned where it is and the
  * number here says what it actually achieves rather than what one would want.
  * It is only ever a delete glyph and a confirm button, never body text.
@@ -137,10 +137,10 @@ describe.each(Object.entries(MODES))('%s mode contrast', (name, where) => {
   const ramp = block(where.ramp);
 
   it.each(ACCENTS)('holds up for %s', (_accent, hue, chromaScale) => {
-    const colour = (n: string) =>
+    const color = (n: string) =>
       toRgb(token(ramp.includes(`--${n}:`) ? ramp : neutrals, n, chromaScale, hue));
     for (const [fg, bg, min] of [...PAIRS, ['danger', 'surface', DANGER[name]] as [string, string, number]]) {
-      const ratio = contrast(colour(fg), colour(bg));
+      const ratio = contrast(color(fg), color(bg));
       expect(
         Number(ratio.toFixed(2)),
         `${name}: ${fg} on ${bg} is ${ratio.toFixed(2)}:1, needs ${min}:1`

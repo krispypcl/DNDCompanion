@@ -36,7 +36,7 @@ describe('Banner', () => {
     expect(source).toMatch(/position: absolute/);
     expect(source).not.toMatch(/position: (fixed|sticky)/);
     // Nothing above it is positioned, so it resolves against the page itself
-    // and runs the full width rather than the sheet's centred column.
+    // and runs the full width rather than the sheet's centered column.
     expect(sheet).not.toMatch(/\.sheet \{[^}]*position: relative/);
     // Held down by a quarter of the page's travel: that is the lag.
     expect(source).toMatch(/scrollY \* 0\.25/);
@@ -59,7 +59,7 @@ describe('Banner', () => {
     expect(source).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*transform: none/);
   });
 
-  it('tints the band in the page colour, so it follows light and dark', () => {
+  it('tints the band in the page color, so it follows light and dark', () => {
     const tint = source.slice(source.indexOf('.tint {'), source.indexOf('@media'));
     expect(tint).toMatch(/var\(--bg\)/);
     expect(tint).not.toMatch(/#[0-9a-f]{3,6}/i);

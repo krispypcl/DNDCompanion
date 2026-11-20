@@ -33,7 +33,7 @@ const legacy = (extra: Partial<Definition> = {}) =>
   ({ identity: { name: 'X', level: 1 }, notes: '', ...extra }) as Definition;
 
 describe('isMissingTable', () => {
-  it('recognises the two ways a missing table is reported', () => {
+  it('recognizes the two ways a missing table is reported', () => {
     expect(isMissingTable({ code: '42P01', message: 'x' })).toBe(true);
     expect(isMissingTable({ code: 'PGRST205', message: 'x' })).toBe(true);
     expect(isMissingTable({ message: "Could not find the table 'public.character_pages' in the schema cache" })).toBe(true);

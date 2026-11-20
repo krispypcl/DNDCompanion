@@ -142,7 +142,7 @@
   }
 
   /**
-   * Colour, highlight or size for the selection. The browser's own font-name
+   * Color, highlight or size for the selection. The browser's own font-name
    * command does the hard part (wrapping a selection that crosses lines and
    * other marks); the wrapping it leaves is then made into the sheet's own.
    */
@@ -245,8 +245,8 @@
   .rich :global(strong), .rich :global(b) { font-weight: 650; }
   .rich :global(u) { text-underline-offset: 2px; }
   .rich :global(s), .rich :global(strike) { color: var(--dim); }
-  /* Colours read on both light and dark pages; highlights are washes, so the
-     writing on them stays the page's own colour. */
+  /* Colors read on both light and dark pages; highlights are washes, so the
+     writing on them stays the page's own color. */
   .rich :global([data-c]) { color: var(--ink-c); }
   .rich :global([data-c='red']) { --ink-c: var(--ink-red); }
   .rich :global([data-c='orange']) { --ink-c: var(--ink-orange); }

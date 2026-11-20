@@ -59,7 +59,7 @@
   /**
    * The panel grows or shrinks to the new tab's height rather than jumping:
    * measured before the switch and after it, and eased between. Where the
-   * card is stretched to its neighbours (a laptop) the two are the same and
+   * card is stretched to its neighbors (a laptop) the two are the same and
    * nothing moves.
    */
   let panels: HTMLDivElement | undefined = $state();
@@ -183,7 +183,7 @@
   button:hover { border-color: var(--a-edge); color: var(--text); }
   button:active { transform: translateY(1px); }
   .active { border-color: var(--a-edge); background: var(--a-wash); }
-  /* On a light page the grey of a resting tab was too faint to read. */
+  /* On a light page the gray of a resting tab was too faint to read. */
   :global([data-mode='light']) button:not(.active) { color: color-mix(in oklch, var(--text) 82%, transparent); }
   :global([data-mode='light']) button:not(.active):hover { color: var(--text); }
   .indicator { display: none; }

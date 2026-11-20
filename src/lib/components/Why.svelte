@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
    * Why a number is what it is: hovering it (or focusing it, a tap on a
-   * phone, or holding a finger or pencil on it) brings up a small card of its parts — "Leather armour 11,
+   * phone, or holding a finger or pencil on it) brings up a small card of its parts — "Leather armor 11,
    * Dexterity +3, Shield +2 = 16". Drawn over the page, so no module's edge
    * clips it.
    */

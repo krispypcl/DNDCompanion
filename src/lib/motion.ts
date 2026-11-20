@@ -30,7 +30,7 @@ export function rise(_node: Element, { y = 8, duration = 220, delay = 0 }: RiseO
 /**
  * The same arrival for a whole page. It moves the page by `top`, never by
  * `transform`: a transformed element becomes the frame its fixed children
- * are placed in, so the loading die (fixed, centred on the screen) would
+ * are placed in, so the loading die (fixed, centered on the screen) would
  * appear in a corner and then jump to the middle. The element needs
  * `position: relative`.
  */

@@ -21,7 +21,7 @@ describe('equipment effects', () => {
     const shield = { name: 'Shield', equipped: true, effects: [{ kind: 'shield', bonus: 2 }] };
     expect(armorClass(def([shield], { identity: { name: 'X', level: 5, classes: [{ name: 'Monk', level: 5 }] }, abilities: { str: 10, dex: 16, con: 12, int: 10, wis: 16, cha: 10 } })).total).toBe(15);
   });
-  it('works out armour, Dexterity as allowed, shields and bonuses', () => {
+  it('works out armor, Dexterity as allowed, shields and bonuses', () => {
     const leather = { name: 'Leather armor', equipped: true, effects: [{ kind: 'armor', base: 11, dex: 'full' }] };
     const shield = { name: 'Shield', equipped: true, effects: [{ kind: 'shield', bonus: 2 }] };
     expect(armorClass(def([leather, shield])).total).toBe(16);
@@ -29,7 +29,7 @@ describe('equipment effects', () => {
     expect(armorClass(def([breastplate])).total).toBe(16);
     const plate = { name: 'Plate', equipped: true, effects: [{ kind: 'armor', base: 18, dex: 'none' }] };
     expect(armorClass(def([plate])).total).toBe(18);
-    expect(armorClass(def([shield])).total).toBe(15); // unarmoured 10 + 3 + 2
+    expect(armorClass(def([shield])).total).toBe(15); // unarmored 10 + 3 + 2
   });
   it('sets or raises ability scores, and everything follows', () => {
     const gauntlets = { name: 'Gauntlets', equipped: true, effects: [{ kind: 'ability', ability: 'str', mode: 'set', value: 19 }] };
@@ -44,7 +44,7 @@ describe('equipment effects', () => {
     const boots = { name: 'Boots', equipped: true, effects: [{ kind: 'speed', bonus: 10 }] };
     expect(speedParts(def([boots])).total).toBe(40);
   });
-  it('guesses armour and shields from their names', () => {
+  it('guesses armor and shields from their names', () => {
     expect(guessEffects('Studded leather armor +1')).toEqual([{ kind: 'armor', base: 13, dex: 'full' }]);
     expect(guessEffects('Half plate')).toEqual([{ kind: 'armor', base: 15, dex: 'max2' }]);
     expect(guessEffects('Shield')).toEqual([{ kind: 'shield', bonus: 2 }]);

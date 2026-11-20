@@ -94,7 +94,7 @@ export function applyMode(next: Mode) {
 /**
  * Switching light and dark by hand: the new look fades in over the old as
  * one picture (a view transition), so it costs the same on any page. Easing
- * every element's colours instead made a full campaign page stutter. The
+ * every element's colors instead made a full campaign page stutter. The
  * page underneath switches at once (`.mode-snap` holds every element's own
  * transitions off meanwhile). Without view transitions, or with reduced
  * motion, it simply switches, as cheaply.

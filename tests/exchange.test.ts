@@ -28,7 +28,7 @@ const character = (): Definition => ({
     { id: 't2', label: '1st', max: 4, type: 'pips', direction: 'spend', reset: { on: 'long', amount: 'full' }, group: 'Spell Slots' }
   ],
   currency: { gp: 11, sp: 6 },
-  traits: { proficiencies: 'Light armour', languages: 'Common, Thieves’ cant', personality: 'Dry.' },
+  traits: { proficiencies: 'Light armor', languages: 'Common, Thieves’ cant', personality: 'Dry.' },
   senses: 'Darkvision 60 ft.',
   spellcastingAbility: 'cha', spellSaveDc: 14, spellAttackBonus: 6, abilitySaveDc: 14
 });

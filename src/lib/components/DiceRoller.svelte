@@ -303,7 +303,7 @@
     animation: land 0.3s cubic-bezier(0.2, 0.8, 0.3, 1);
   }
   @keyframes land { from { opacity: 0; transform: translateY(4px); } }
-  /* A natural 20 bursts gold; a natural 1 sinks and greys. */
+  /* A natural 20 bursts gold; a natural 1 sinks and grays. */
   .result { position: relative; --gold: oklch(86% 0.15 90); }
   .result.crit { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 0 26px -6px var(--gold); }
   .result.crit .total { color: var(--gold); animation: critPop 0.6s cubic-bezier(0.3, 1.6, 0.5, 1); }

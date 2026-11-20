@@ -60,7 +60,7 @@ describe('condition looks', () => {
     expect(isStandard('Bless')).toBe(false);
     expect(lookOf('Charmed')?.motion).toBe('pulse');
   });
-  it('uses a chosen look for one written in, and none for a blank colour', async () => {
+  it('uses a chosen look for one written in, and none for a blank color', async () => {
     const { lookOf } = await import('#lib/rules/conditions.ts');
     expect(lookOf('Bless', { bless: { color: '#ffcc00', motion: 'shimmer' } })).toEqual({ color: '#ffcc00', motion: 'shimmer' });
     expect(lookOf('Bless', { bless: { color: '', motion: 'pulse' } })).toBeNull();

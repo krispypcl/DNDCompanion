@@ -121,7 +121,7 @@ export class CreatureTable {
     }
   }
 
-  /** A monster from 5e.tools, with its stat block, hit points and armour class. */
+  /** A monster from 5e.tools, with its stat block, hit points and armor class. */
   async addFromFive(name: string, source: string, count = 1) {
     try {
       const m = await findMonster(name, source);

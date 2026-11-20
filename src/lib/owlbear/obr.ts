@@ -127,8 +127,8 @@ export async function placeToken(sheet: Sheet): Promise<string> {
   const url = portraitOf(sheet);
   const info = await imageInfo(url);
   const [w, h] = await Promise.all([OBR.viewport.getWidth(), OBR.viewport.getHeight()]);
-  const centre = await OBR.viewport.inverseTransformPoint({ x: w / 2, y: h / 2 });
-  const at = await OBR.scene.grid.snapPosition(centre);
+  const center = await OBR.viewport.inverseTransformPoint({ x: w / 2, y: h / 2 });
+  const at = await OBR.scene.grid.snapPosition(center);
   const size = Math.min(info.width, info.height);
   const token = buildImage(
     { url, width: info.width, height: info.height, mime: info.mime },
@@ -157,8 +157,8 @@ export async function placeCreatureToken(c: Creature): Promise<string> {
   const info = pic ? await imageInfo(pic).catch(() => null) : null;
   const img = info && pic ? { url: pic, ...info } : { url: mark, width: 512, height: 512, mime: 'image/png' };
   const [w, h] = await Promise.all([OBR.viewport.getWidth(), OBR.viewport.getHeight()]);
-  const centre = await OBR.viewport.inverseTransformPoint({ x: w / 2, y: h / 2 });
-  const at = await OBR.scene.grid.snapPosition(centre);
+  const center = await OBR.viewport.inverseTransformPoint({ x: w / 2, y: h / 2 });
+  const at = await OBR.scene.grid.snapPosition(center);
   const size = Math.min(img.width, img.height);
   const token = buildImage(img, { dpi: size, offset: { x: img.width / 2, y: img.height / 2 } })
     .name(c.name)
@@ -238,7 +238,7 @@ const swapping = new Set<string>();
 
 /**
  * Brings every tied token's bar and condition dots in line with its sheet:
- * adds what is missing, moves or recolours what changed, takes away what is
+ * adds what is missing, moves or recolors what changed, takes away what is
  * no longer wanted. Parts of a token whose sheet has not been read yet are
  * left alone. A changed portrait is put on the token too.
  */

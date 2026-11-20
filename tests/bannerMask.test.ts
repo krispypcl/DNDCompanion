@@ -21,7 +21,7 @@ describe('banner slash', () => {
   it('is level when both sides meet at the same height', () => {
     const { angle, stops } = parse(slashMask(1000, 400, { left: 0.5, right: 0.5, feather: 0.5 }));
     expect(angle).toBe(180);
-    // Centred on half way down, fading over half the height.
+    // Centered on half way down, fading over half the height.
     expect(stops[0]).toBe(100);
     expect(stops.at(-1)).toBe(300);
   });

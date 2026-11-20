@@ -6,7 +6,7 @@
  *
  *   **bold**   *italic*   __underline__   ~~strikethrough~~
  *   ## Heading           - bulleted item       1. numbered item
- *   [[c:red|coloured]]   [[h:yellow|highlighted]]   [[s:big|bigger]]
+ *   [[c:red|colored]]   [[h:yellow|highlighted]]   [[s:big|bigger]]
  *
  * On the page it is shown formatted, and edited formatted too: `toHtml` turns
  * the text into the editor's HTML, and `fromHtml` turns what the editor holds
@@ -17,7 +17,7 @@
 
 export type Format = 'bold' | 'italic' | 'underline' | 'strike' | 'heading' | 'bullets' | 'numbers';
 
-/** Colour, highlight and size: a kind and one of its named values. */
+/** Color, highlight and size: a kind and one of its named values. */
 export type MarkKind = 'c' | 'h' | 's';
 export const MARKS: Record<MarkKind, readonly string[]> = {
   c: ['red', 'orange', 'gold', 'lime', 'green', 'teal', 'blue', 'purple', 'pink', 'brown', 'grey', 'none'],
@@ -45,7 +45,7 @@ function inline(text: string): string {
   s = s.replace(/__(\S(?:[^]*?\S)?)__/g, '<u>$1</u>');
   s = s.replace(/~~(\S(?:[^]*?\S)?)~~/g, '<s>$1</s>');
   s = s.replace(/\*(\S(?:[^]*?\S)?)\*/g, '<em>$1</em>');
-  // Colour, highlight and size, innermost first, so they can sit inside each other.
+  // Color, highlight and size, innermost first, so they can sit inside each other.
   for (let guard = 0; guard < 8; guard++) {
     const next = s.replace(MARK, (_, k: MarkKind, v: string, inner: string) =>
       MARKS[k].includes(v) ? `<span data-${k}="${v}">${inner}</span>` : inner
@@ -139,7 +139,7 @@ function inlineNode(node: Node): string {
   if (tag === 'S' || tag === 'STRIKE' || tag === 'DEL' || /text-decoration[^;]*line-through/.test(style)) {
     return wrap('~~', inner);
   }
-  // Colour, highlight, size: kept by name, so a theme can draw them its own way.
+  // Color, highlight, size: kept by name, so a theme can draw them its own way.
   let out = inner;
   for (const k of ['s', 'h', 'c'] as MarkKind[]) {
     const v = el.getAttribute(`data-${k}`) ?? (tag === 'FONT' ? el.getAttribute('face')?.match(new RegExp(`^dnd-${k}-([a-z]+)$`))?.[1] : null);

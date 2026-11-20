@@ -5,7 +5,7 @@
  *
  * Supabase and the browser have their own wording ("Invalid login
  * credentials", "Failed to fetch"), which is translated here; anything not
- * recognised falls back to the caller's own message.
+ * recognized falls back to the caller's own message.
  */
 
 const KNOWN: [RegExp, string][] = [

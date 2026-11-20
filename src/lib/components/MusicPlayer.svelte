@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * The music player (a sheet's, top centre, and the campaign's table music):
+   * The music player (a sheet's, top center, and the campaign's table music):
    * the song playing, its timeline, and its controls, over a YouTube player
    * kept out of sight. It plays a YouTube (or YouTube Music) playlist, or a
    * single video's sound, once or on loop.
@@ -701,10 +701,10 @@
 {/snippet}
 
 <!--
-  The whole player: the bars, the song's name (centred) and, for the DM,
+  The whole player: the bars, the song's name (centered) and, for the DM,
   Minimize, on one line; the timeline; then one row of controls on a single
   middle line: shuffle and loop on the left, back, play and next in the
-  centre, the speaker on the right. At rest (no song yet) it is the same
+  center, the speaker on the right. At rest (no song yet) it is the same
   player, still, so nothing changes size when a song arrives.
 -->
 {#snippet wholeView(text: string, live: boolean)}
@@ -900,7 +900,7 @@
   .caprange::-webkit-slider-thumb { -webkit-appearance: none; width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--a); border: 0; }
   .caprange::-moz-range-thumb { width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--a); border: 0; }
   .ythost { position: fixed; left: -10000px; top: 0; width: 200px; height: 200px; opacity: 0; pointer-events: none; }
-  /* The bars on the left, the name centred, Minimize (or its room) on the right. */
+  /* The bars on the left, the name centered, Minimize (or its room) on the right. */
   .title {
     width: 100%; min-width: 0; display: grid; grid-template-columns: 1.75rem minmax(0, 1fr) 1.75rem; align-items: center;
     gap: 0.25rem; font-size: 0.8125rem; color: var(--dim);

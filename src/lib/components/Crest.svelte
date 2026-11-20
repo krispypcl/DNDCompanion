@@ -1,6 +1,6 @@
 <!--
   A campaign's crest: its picture in a still frame washed in the campaign's
-  colour, as a sheet's portrait is, turning toward the pointer like a coin
+  color, as a sheet's portrait is, turning toward the pointer like a coin
   (motion.ts parallax). With no crest (or one that won't load), what a
   character with no portrait shows: the d20, on the same wash. A crest that
   can be opened full screen is a button.

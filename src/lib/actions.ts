@@ -9,7 +9,7 @@
  */
 export function portal(node: HTMLElement) {
   // Moved out to the page's end, it would lose the character's or campaign's
-  // colour it was drawn inside: it takes that colour along (a theme is only
+  // color it was drawn inside: it takes that color along (a theme is only
   // the variables --h and --c on a .themed element, see app.css).
   let host = node.parentElement?.closest<HTMLElement>('.themed') ?? null;
   while (host && !host.style.getPropertyValue('--h')) host = host.parentElement?.closest<HTMLElement>('.themed') ?? null;

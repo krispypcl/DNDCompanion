@@ -35,7 +35,7 @@ from the bottom of the screen.
   points, armor class and conditions live, gives and takes conditions, plays
   music for the table, sets the next session's date, and shares a board
   everyone can draw and write on. Each campaign has its own crest, banner,
-  colour and name font, and can link the table's Owlbear Rodeo room. The
+  color and name font, and can link the table's Owlbear Rodeo room. The
   header says who is here ("DM and 3 players here"), and portraits open full
   screen.
 - **Fights**: the DM calls for initiative and each player rolls their own
@@ -68,7 +68,7 @@ from the bottom of the screen.
    the Characters title on the campaign page). Each player opens it and picks
    which character joins. The DM's cog, beside **Back**, opens the campaign's
    settings: its name, next session, crest, banner, Owlbear Rodeo room, font
-   and colour, and ending or deleting it.
+   and color, and ending or deleting it.
 5. **Your account:** a name and picture, connected sign-ins (Google, Discord),
    light, dark or your device's own look, reduced motion, the dice style, and
    a few statistics.

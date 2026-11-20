@@ -232,31 +232,31 @@
   // and the others slide to their new places, across as well as down.
   let rowEls = $state<Record<string, HTMLElement>>({});
   type Point = { x: number; y: number };
-  let drag = $state<{ kind: Kind; id: string; from: number; to: number; dx: number; dy: number; centres: Point[]; start: Point; pointerId: number } | null>(null);
+  let drag = $state<{ kind: Kind; id: string; from: number; to: number; dx: number; dy: number; centers: Point[]; start: Point; pointerId: number } | null>(null);
   let landing = $state(false);
   const pinnedIds = (kind: Kind) => (kind === 'sheets' ? pinnedSheets : kind === 'campaigns' ? pinnedCampaigns : pinnedJoined).map((x) => x.id);
   function grab(event: PointerEvent, id: string, kind: Kind = 'sheets') {
     const ids = pinnedIds(kind);
     if (event.button !== 0 || ids.length < 2) return;
-    const centres = ids.map((k) => {
+    const centers = ids.map((k) => {
       const r = rowEls[k]?.getBoundingClientRect();
       return r ? { x: r.left + window.scrollX + r.width / 2, y: r.top + window.scrollY + r.height / 2 } : null;
     });
     // A pinned card on another page cannot be dragged past.
-    if (centres.some((c) => !c)) return;
+    if (centers.some((c) => !c)) return;
     event.preventDefault();
     const from = ids.indexOf(id);
     (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
-    drag = { kind, id, from, to: from, dx: 0, dy: 0, centres: centres as Point[], start: { x: event.clientX + window.scrollX, y: event.clientY + window.scrollY }, pointerId: event.pointerId };
+    drag = { kind, id, from, to: from, dx: 0, dy: 0, centers: centers as Point[], start: { x: event.clientX + window.scrollX, y: event.clientY + window.scrollY }, pointerId: event.pointerId };
   }
   function moveDrag(event: PointerEvent) {
     if (!drag || event.pointerId !== drag.pointerId) return;
     const dx = event.clientX + window.scrollX - drag.start.x;
     const dy = event.clientY + window.scrollY - drag.start.y;
-    const at = { x: drag.centres[drag.from].x + dx, y: drag.centres[drag.from].y + dy };
+    const at = { x: drag.centers[drag.from].x + dx, y: drag.centers[drag.from].y + dy };
     let to = drag.from;
     let best = Infinity;
-    drag.centres.forEach((c, i) => {
+    drag.centers.forEach((c, i) => {
       const d = Math.hypot(c.x - at.x, c.y - at.y);
       if (d < best) { best = d; to = i; }
     });
@@ -288,8 +288,8 @@
     const order = ids.filter((_, k) => k !== drag!.from);
     order.splice(drag.to, 0, drag.id);
     const j = order.indexOf(id);
-    const a = drag.centres[i];
-    const b = drag.centres[j];
+    const a = drag.centers[i];
+    const b = drag.centers[j];
     return `translate(${b.x - a.x}px, ${b.y - a.y}px)`;
   }
 
@@ -327,10 +327,10 @@
   let pageDirection = $state(1);
 
   function groupsOf<T>(pinnedList: T[], rest: T[], faded: T[], fadedLabel: string): Group<T>[] {
-    const labelled = pinnedList.length > 0 || faded.length > 0;
+    const labeled = pinnedList.length > 0 || faded.length > 0;
     return [
       { key: 'pinned', label: 'Pinned', items: pinnedList, pinned: true },
-      { key: 'rest', label: labelled ? 'Everything else' : '', items: rest },
+      { key: 'rest', label: labeled ? 'Everything else' : '', items: rest },
       { key: 'faded', label: fadedLabel, items: faded, faded: true }
     ];
   }
@@ -721,7 +721,7 @@
 {/snippet}
 
 {#snippet facts(sheet: Sheet)}
-  <!-- How the character stands: hit points with their bar, armour class, and
+  <!-- How the character stands: hit points with their bar, armor class, and
        the conditions on them (three, then how many more). -->
   {@const def = sheet.definition}
   {@const max = Number(def?.combat?.hpMax) || 0}
@@ -1066,8 +1066,8 @@
    * The portrait (or the class drawn) at the card's left, in the sheet's
    * frame: a square as tall as the card's lines. Sized outright rather than
    * stretched to the card: Safari would not keep a stretched one square and
-   * squeezed it into a strip on a phone. The lines are centred beside it,
-   * and how the character stands (hit points, armour class, conditions) at
+   * squeezed it into a strip on a phone. The lines are centered beside it,
+   * and how the character stands (hit points, armor class, conditions) at
    * the right, in a card wide enough for it.
    */
   li { container-type: inline-size; }
@@ -1175,7 +1175,7 @@
     }
     .cardtext { display: contents; }
     .lines { grid-area: text; }
-    /* The dates are the card's foot, under a hairline, centred on one line. */
+    /* The dates are the card's foot, under a hairline, centered on one line. */
     .meta.dates { grid-area: dates; margin-top: 0; padding-top: 0.5rem; border-top: 1px solid var(--line-soft); }
     .meta.dates .datesrow { justify-content: center; }
   }

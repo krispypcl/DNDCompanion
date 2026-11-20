@@ -12,20 +12,20 @@
   }: {
     active: Partial<Record<Format, boolean>>;
     onformat: (f: Format) => void;
-    /** Colour, highlight or size for the selection. */
+    /** Color, highlight or size for the selection. */
     onmark?: (kind: MarkKind, value: string) => void;
   } = $props();
 
   /** Which of the three swatch trays is open. */
   let tray = $state<MarkKind | null>(null);
   const SWATCH: Record<string, string> = {
-    // Text colours: the shared inks (src/app.css), right for light and dark.
+    // Text colors: the shared inks (src/app.css), right for light and dark.
     red: 'var(--ink-red)', orange: 'var(--ink-orange)', gold: 'var(--ink-gold)', lime: 'var(--ink-lime)',
     green: 'var(--ink-green)', teal: 'var(--ink-teal)', blue: 'var(--ink-blue)', purple: 'var(--ink-purple)',
     pink: 'var(--ink-pink)', brown: 'var(--ink-brown)', grey: 'var(--ink-grey)', yellow: 'oklch(88% 0.17 98)'
   };
   const TRAYS: { kind: MarkKind; label: string }[] = [
-    { kind: 'c', label: 'Text colour' }, { kind: 'h', label: 'Highlight' }, { kind: 's', label: 'Text size' }
+    { kind: 'c', label: 'Text color' }, { kind: 'h', label: 'Highlight' }, { kind: 's', label: 'Text size' }
   ];
   const SIZE_LABEL: Record<string, string> = { small: 'Small', big: 'Big', huge: 'Huge', none: 'Normal' };
 

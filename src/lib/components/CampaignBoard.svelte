@@ -58,8 +58,8 @@
   type Tool = 'move' | 'pen' | 'note' | 'text' | 'erase';
   type Paper = NonNullable<BoardData['paper']>;
   let tool = $state<Tool>('move');
-  let noteColour = $state(PAPERS[0].c);
-  let penColour = $state(INKS[0].c);
+  let noteColor = $state(PAPERS[0].c);
+  let penColor = $state(INKS[0].c);
   let penSize = $state(6);
 
   let items = $state<BoardItem[]>([]);
@@ -460,7 +460,7 @@
       const h = tool === 'note' ? 170 : 60;
       void add(tool, stamp({
         x: x - w / 2, y: y - 20, w, h, text: '',
-        color: tool === 'note' ? noteColour : penColour, size: tool === 'note' ? 22 : 34, z: topZ()
+        color: tool === 'note' ? noteColor : penColor, size: tool === 'note' ? 22 : 34, z: topZ()
       }));
       // On the board at once (saved behind it): write on it straight away.
       const made = items[items.length - 1];
@@ -520,7 +520,7 @@
     if (drawing) {
       const pts = drawing.length >= 4 ? drawing : [...drawing, drawing[0] + 1, drawing[1] + 1];
       drawing = null;
-      void add('stroke', stamp({ points: pts.slice(0, 4000), color: penColour, size: penSize }));
+      void add('stroke', stamp({ points: pts.slice(0, 4000), color: penColor, size: penSize }));
     }
     if (dragging) endDrag();
   }
@@ -669,8 +669,8 @@
         <span class="sep" aria-hidden="true"></span>
         <div class="swatches" transition:fade={{ duration: 140 }}>
           {#each INKS as p (p.name)}
-            <button class="sw" style:--sw={p.c} aria-label={p.name} title={p.name} aria-pressed={penColour === p.c}
-                    onclick={() => (penColour = p.c)}></button>
+            <button class="sw" style:--sw={p.c} aria-label={p.name} title={p.name} aria-pressed={penColor === p.c}
+                    onclick={() => (penColor = p.c)}></button>
           {/each}
         </div>
         {#if tool === 'pen'}
@@ -692,8 +692,8 @@
         <span class="sep" aria-hidden="true"></span>
         <div class="swatches" transition:fade={{ duration: 140 }}>
           {#each PAPERS as n (n.name)}
-            <button class="sw" style:--sw={n.c} aria-label={n.name} title={n.name} aria-pressed={noteColour === n.c}
-                    onclick={() => (noteColour = n.c)}></button>
+            <button class="sw" style:--sw={n.c} aria-label={n.name} title={n.name} aria-pressed={noteColor === n.c}
+                    onclick={() => (noteColor = n.c)}></button>
           {/each}
         </div>
       {/if}
@@ -732,7 +732,7 @@
                   class:erasable={canEdit && tool === 'erase'}
                   in:appear={{ id: s.id }} out:fade={{ duration: 160 }} />
           {/each}
-          {#if drawing}<path d={pathOf(drawing)} style:stroke={penColour} stroke-width={penSize} />{/if}
+          {#if drawing}<path d={pathOf(drawing)} style:stroke={penColor} stroke-width={penSize} />{/if}
         </svg>
         {#each cards as item (keyOf(item))}
           <!-- svelte-ignore a11y_no_static_element_interactions -->

@@ -1145,7 +1145,7 @@ comment on table public.campaigns is 'Campaigns: a DM and the characters that jo
 comment on column public.campaigns.created_by is 'The DM.';
 comment on column public.campaigns.invite_code is 'The code in the invite link; only members can read it.';
 comment on column public.campaigns.archived is 'An ended campaign: still readable, its invite opens nothing.';
-comment on column public.campaigns.details is 'Banner, colour, name font, songs, card order and the next session.';
+comment on column public.campaigns.details is 'Banner, color, name font, songs, card order and the next session.';
 
 comment on table public.campaign_state is 'What is happening in a campaign right now: the music, the invite counter and the initiative order.';
 comment on column public.campaign_state.playback is 'The DM''s music: which song, playing or paused, and where.';
@@ -1155,7 +1155,7 @@ comment on column public.campaign_state.invite_rev is 'Goes up when the DM makes
 
 comment on table public.board_items is 'The campaign''s table board: pages, sticky notes, text and drawings.';
 comment on column public.board_items.kind is 'page, note, text or stroke.';
-comment on column public.board_items.data is 'Where it is and what it holds (its page, position, text, colour, points).';
+comment on column public.board_items.data is 'Where it is and what it holds (its page, position, text, color, points).';
 
 comment on table public.shared_rows is 'Rows players wrote on their sheets (attacks, spells, items, features, trackers), offered to others as they type.';
 comment on column public.shared_rows.name_key is 'The name lower-cased with single spaces, for searching.';

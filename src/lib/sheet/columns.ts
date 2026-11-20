@@ -1,7 +1,7 @@
 /**
  * What each of the sheet's tables shows: its columns, in order, with their
  * widths, placeholders and what can be pressed. Plain data, so the sheet's
- * component keeps to behaviour and layout.
+ * component keeps to behavior and layout.
  */
 import { parseRoll } from '#lib/rules/dice.ts';
 import { spellDamage } from '#lib/rules/spellroll.ts';

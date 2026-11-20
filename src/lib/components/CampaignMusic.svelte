@@ -348,7 +348,7 @@
   /* No gap between rows: a row folding away takes its own room with it. */
   ol {
     list-style: none; margin: 0; padding: 0; max-height: 13rem; overflow-y: auto;
-    /* A slim scrollbar in the campaign's colour when the songs outrun the room. */
+    /* A slim scrollbar in the campaign's color when the songs outrun the room. */
     scrollbar-width: thin; scrollbar-color: color-mix(in oklch, var(--a) 55%, transparent) transparent;
   }
   ol::-webkit-scrollbar { width: 6px; }

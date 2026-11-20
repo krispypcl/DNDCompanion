@@ -69,7 +69,7 @@ describe('every component renders without throwing', () => {
   test('column widths are declared, so headers cannot shift', () => {
     const { container } = table([], true);
     const widths = [...container.querySelectorAll('col')].map((c) => (c as HTMLElement).style.width);
-    // The widths are the testable half; that the table honours them with
+    // The widths are the testable half; that the table honors them with
     // table-layout: fixed is checked in a browser, since jsdom does not
     // resolve a component's scoped styles into computed values.
     expect(widths.slice(1, 3)).toEqual(['60%', '40%']);

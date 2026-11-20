@@ -188,7 +188,7 @@
   /** Statistics: counted from the account's sheets and campaigns. */
   type Stats = {
     characters: number; retired: number; highest: { level: number; name: string } | null;
-    favourite: string | null; favouriteCount: number; run: number; ended: number; joined: number;
+    favorite: string | null; favoriteCount: number; run: number; ended: number; joined: number;
   };
   let stats = $state<Stats | null>(null);
   let statsError = $state<string | null>(null);
@@ -214,8 +214,8 @@
           characters: mine.length,
           retired: mine.filter((s) => s.retired).length,
           highest,
-          favourite: top?.[0] ?? null,
-          favouriteCount: top?.[1] ?? 0,
+          favorite: top?.[0] ?? null,
+          favoriteCount: top?.[1] ?? 0,
           run: run.length,
           ended: run.filter((c) => c.archived).length,
           joined: theirs.length
@@ -352,7 +352,7 @@
                 <button class="btn" disabled={unlinking === p} onclick={() => unlink(p)}>{unlinking === p ? 'Disconnecting…' : 'Disconnect'}</button>
               {/if}
             {:else}
-              <!-- Not yet: said in grey where "connected" would be, the way to connect at the right. -->
+              <!-- Not yet: said in gray where "connected" would be, the way to connect at the right. -->
               <span class="linked off">
                 <ProviderIcon provider={p} />
                 {PROVIDER_NAMES[p]} is not yet connected.
@@ -414,7 +414,7 @@
           <div><dt>Larper since</dt><dd>{numericDate($session.user.created_at) || 'Unknown'}</dd></div>
           <div><dt>Characters</dt><dd>{stats.characters}{#if stats.retired}<small>{stats.retired} retired</small>{/if}</dd></div>
           <div><dt>Highest level</dt><dd>{stats.highest ? stats.highest.level : 'None'}{#if stats.highest}<small>{stats.highest.name}</small>{/if}</dd></div>
-          <div><dt>Favourite class</dt><dd>{stats.favourite ?? 'None yet'}{#if stats.favouriteCount > 1}<small>{stats.favouriteCount} characters</small>{/if}</dd></div>
+          <div><dt>Favorite class</dt><dd>{stats.favorite ?? 'None yet'}{#if stats.favoriteCount > 1}<small>{stats.favoriteCount} characters</small>{/if}</dd></div>
           <div><dt>Campaigns run</dt><dd>{stats.run}{#if stats.ended}<small>{stats.ended} ended</small>{/if}</dd></div>
           <div><dt>Campaigns joined</dt><dd>{stats.joined}</dd></div>
         </dl>
@@ -467,7 +467,7 @@
   .conns li { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; min-height: 2.5rem; }
   .conns .linked { margin: 0; font-size: 0.875rem; }
   .conns .linked.off { color: var(--faint); }
-  /* Not connected yet: the service's mark, greyed. */
+  /* Not connected yet: the service's mark, grayed. */
   .conns .linked.off :global(.provider-icon) { filter: grayscale(1); opacity: 0.55; }
   /* An OAuthButton's message sits under the row. */
   .conns li :global(.err) { flex-basis: 100%; text-align: right; }

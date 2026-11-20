@@ -30,7 +30,7 @@ const LABELS: Record<SkillName, string> = {
   survival: 'Survival'
 };
 
-/** Groups are labelled "<ability> skills" so a skill can be traced to its group. */
+/** Groups are labeled "<ability> skills" so a skill can be traced to its group. */
 const groupLabel = (ability: Ability) => `${ability} skills`;
 
 const loka: Definition = {

@@ -36,7 +36,7 @@ export function slashMask(width: number, height: number, slash: Slash): string {
   const rad = (angle * Math.PI) / 180;
   const ux = Math.sin(rad);
   const uy = -Math.cos(rad);
-  // The gradient line runs through the box's centre and is long enough to
+  // The gradient line runs through the box's center and is long enough to
   // reach its far corners.
   const length = Math.abs(width * ux) + Math.abs(height * uy);
   // Where the slash's midpoint falls along that line.

@@ -292,11 +292,11 @@
   /* Editing, the arrows stay in the middle too: formatting on their left,
      the page and privacy controls on their right. Where the card is too
      narrow for all three on one line, the arrows take a line of their own,
-     still centred, and on a phone everything stacks. */
+     still centered, and on a phone everything stacks. */
   /*
    * The page controls stay in sight at the module's foot. On a wide screen
    * the writing scrolls inside the book above them, so nothing ever passes
-   * beneath the bar and it needs no colour of its own: it is simply the
+   * beneath the bar and it needs no color of its own: it is simply the
    * module's. On a phone the page itself scrolls and the bar rides its foot,
    * solid, so writing stops at its rule.
    */

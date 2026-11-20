@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CUSTOM, UNLEVELLED, spellGroup, spellLevel, spellRank } from '#lib/rules/spells.ts';
+import { CUSTOM, UNLEVELED, spellGroup, spellLevel, spellRank } from '#lib/rules/spells.ts';
 
 describe('spell types', () => {
   it('reads a level however it was written', () => {
@@ -18,7 +18,7 @@ describe('spell types', () => {
     const sorted = [...types].sort((a, b) => spellRank(a) - spellRank(b));
     expect(sorted.slice(0, 4)).toEqual(['Cantrip', '1st level', '3', '10']);
     expect(spellRank('Ritual')).toBe(CUSTOM);
-    expect(spellRank('')).toBe(UNLEVELLED);
+    expect(spellRank('')).toBe(UNLEVELED);
   });
 
   it('names the groups, folding case for the player’s own', () => {

@@ -6,7 +6,7 @@
  */
 
 /** Spells with no type yet go last, after every real one. */
-export const UNLEVELLED = 99;
+export const UNLEVELED = 99;
 /** Anything that is not a level sits between the levels and the untyped. */
 export const CUSTOM = 50;
 
@@ -35,7 +35,7 @@ export function spellLevel(type: unknown): number | null {
 export function spellRank(type: unknown): number {
   const level = spellLevel(type);
   if (level !== null) return level;
-  return String(type ?? '').trim() ? CUSTOM : UNLEVELLED;
+  return String(type ?? '').trim() ? CUSTOM : UNLEVELED;
 }
 
 /** The group a spell is listed under. Custom types are grouped regardless of case. */

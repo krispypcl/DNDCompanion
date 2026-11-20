@@ -16,7 +16,7 @@
   </div>
   <div class="main">
     <div class="card rail">{#each Array(9) as _, i (i)}<i class="skeleton row"></i>{/each}</div>
-    <div class="card centre">{#each Array(5) as _, i (i)}<i class="skeleton row wide"></i>{/each}</div>
+    <div class="card center">{#each Array(5) as _, i (i)}<i class="skeleton row wide"></i>{/each}</div>
     <div class="card rail">{#each Array(6) as _, i (i)}<i class="skeleton box2"></i>{/each}</div>
   </div>
 </div>
@@ -39,7 +39,7 @@
   .abil { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.625rem; align-content: start; }
   .box { height: 5.5rem; border-radius: var(--r); }
   .main { display: grid; grid-template-columns: 16.5rem 1fr 18.75rem; gap: 1rem; }
-  .rail, .centre { display: grid; gap: 0.75rem; align-content: start; min-height: 24rem; }
+  .rail, .center { display: grid; gap: 0.75rem; align-content: start; min-height: 24rem; }
   .row { height: 1.25rem; }
   .row.wide { height: 2rem; }
   .box2 { height: 4rem; border-radius: var(--r); }

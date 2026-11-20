@@ -20,7 +20,7 @@ describe('debounce', () => {
     expect(fn).toHaveBeenCalledWith('fir');
   });
 
-  it('runs what is waiting at once when flushed, and nothing when cancelled', () => {
+  it('runs what is waiting at once when flushed, and nothing when canceled', () => {
     vi.useFakeTimers();
     const fn = vi.fn();
     const later = debounce(fn, 100);

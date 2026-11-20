@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { addLink, campaignOf, orderSheets, parseLink, readLinks, removeLink } from '#lib/owlbear/links.ts';
-import { toHex } from '#lib/owlbear/colour.ts';
+import { toHex } from '#lib/owlbear/color.ts';
 import { diceLine, headline, natural, noteOf, pushNote, readLog, ROLL_LOG_MAX } from '#lib/owlbear/rolls.ts';
 import { partsFor, sameParts, tokenBox } from '#lib/owlbear/layout.ts';
 import { blankDefinition, blankState } from '#lib/sample.ts';
@@ -89,7 +89,7 @@ describe('token parts', () => {
     const box = tokenBox({ position: { x: 100, y: 100 }, scale: { x: 2, y: 2 }, image: { width: 300, height: 300 }, grid: { dpi: 300, offset: { x: 150, y: 150 } } }, 150);
     expect(box).toEqual({ x: -50, y: -50, w: 300, h: 300 });
   });
-  it('draws the bar to scale, the temp above it, and a dot per coloured condition', () => {
+  it('draws the bar to scale, the temp above it, and a dot per colored condition', () => {
     const box = { x: 0, y: 0, w: 100, h: 100 };
     const parts = partsFor(box, sheet(5, 10, 3, ['Poisoned', 'Prone']));
     const back = parts.find((p) => p.kind === 'hp-back')!;

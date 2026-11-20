@@ -112,7 +112,7 @@ function capHeight(font: PDFFont, size: number): number {
   return f?.capHeight && f.unitsPerEm ? (f.capHeight / f.unitsPerEm) * size : 0.72 * size;
 }
 
-/** Capitals with their middle on a line at y, centred on x. */
+/** Capitals with their middle on a line at y, centered on x. */
 function capsAt(page: PDFPage, s: string, font: PDFFont, size: number, x: number, y: number, spacing = 0, color = INK) {
   const total = font.widthOfTextAtSize(s, size) + spacing * Math.max(0, s.length - 1);
   let at = x - total / 2;
@@ -133,7 +133,7 @@ function section(k: Kit, page: PDFPage, x: number, y: number, w: number, h: numb
   capsAt(page, label, k.fonts.semibold, 5.8, x + w / 2, y + h, 0.55);
 }
 
-/** A rounded grey well that a value sits in. */
+/** A rounded gray well that a value sits in. */
 const well = (page: PDFPage, x: number, y: number, w: number, h: number, r = 3) => box(page, x, y, w, h, { fill: WELL, r });
 
 /** The die, as the app draws it (Logo.svelte), at a size. */
@@ -420,7 +420,7 @@ function pageOne(k: Kit) {
   });
   field(k, p, 'Senses', c.senses, 34, 674, 168, 66, { multiline: true, size: 7.2 });
 
-  // Initiative and armour class.
+  // Initiative and armor class.
   section(k, p, 216, 112, 84, 74, 'Initiative');
   field(k, p, 'Initiative', c.initiative, 222, 128, 72, 26, { size: 19, font: 'bold', align: 'center' });
   if (c.initiativeNote) write(p, c.initiativeNote, 258, 157, { font: k.fonts.italic, size: 6, color: MUTED, align: 'center' });
@@ -742,7 +742,7 @@ export async function sheetPdf(
   doc.setSubject('Dungeons & Dragons 5e character sheet');
 
   // Grayscale, so it prints the same on any printer: the accent is black
-  // and the spell levels' band a light grey. The portrait keeps its colours.
+  // and the spell levels' band a light gray. The portrait keeps its colors.
   const accent = INK;
   const wash = hexRgb('#e9e9e9');
   const load: FontLoader = opts.loadFont ?? (async (file) => new Uint8Array(await (await fetch(`${opts.base ?? ''}/pdf/${file}`)).arrayBuffer()));

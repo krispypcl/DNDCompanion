@@ -52,7 +52,7 @@
   } = $props();
 
   const nameOf = (s: Sheet) => s.definition?.identity?.name || s.name || '';
-  /** The conditions' colours round the portrait, a band each; none for conditions without a colour. */
+  /** The conditions' colors round the portrait, a band each; none for conditions without a color. */
   const ringOf = (conds: string[], looks: Record<string, { color?: string }>) =>
     conds.flatMap((c) => {
       const color = lookOf(c, looks as never)?.color;
@@ -107,7 +107,7 @@
     const py = event.clientY + window.scrollY;
     drag.dx = px - drag.x0;
     drag.dy = py - drag.y0;
-    // The slot under the dragged card's centre, or the nearest one.
+    // The slot under the dragged card's center, or the nearest one.
     const me = drag.slots[drag.from];
     const cx = me.x + me.w / 2 + drag.dx;
     const cy = me.y + me.h / 2 + drag.dy;
@@ -191,7 +191,7 @@
         style={themeStyle(def?.identity?.theme)} style:transform={shift(s.id)}
         animate:glideTo>
       <div class="cardhead">
-        <!-- Conditions ring the portrait in their colours (the card's own edge
+        <!-- Conditions ring the portrait in their colors (the card's own edge
              is kept for being hurt), a band for each, all the way round. A
              picture opens full screen; the name opens the sheet. -->
         {#snippet likeness()}
@@ -226,7 +226,7 @@
         <div class="perc"><dt><span class="long">Passive Perception</span><span class="short">Passive Perc.</span></dt><dd>{passiveScore(def, 'perception')}</dd></div>
         <div class="ins"><dt><span class="long">Passive Insight</span><span class="short">Passive Ins.</span></dt><dd>{passiveScore(def, 'insight')}</dd></div>
       </dl>
-      <!-- Conditions, in their own colours; the card eases to its new height. -->
+      <!-- Conditions, in their own colors; the card eases to its new height. -->
       <div class="condbox" use:followHeight>
         <!-- The DM moves a condition by picking it up (lib/reorder.ts). -->
         <ul class="conds" aria-label="Conditions" class:can-reorder={isDm && !ended && conds.length > 1}
@@ -239,8 +239,8 @@
                 animate:flip={{ duration: 300, easing: quintOut }}
                 transition:scale={{ start: 0.8, duration: 220, easing: cubicOut }}>
               {#if isDm && !ended && onlook && !isStandard(c)}
-                <!-- One of their own: the DM chooses its colour and motion. -->
-                <button class="dot tint" class:none={!look} aria-label="Choose how {c} looks" title="Colour and motion"
+                <!-- One of their own: the DM chooses its color and motion. -->
+                <button class="dot tint" class:none={!look} aria-label="Choose how {c} looks" title="Color and motion"
                         aria-expanded={tinting?.sheet === s.id && tinting.name === c}
                         onclick={() => (tinting = tinting?.sheet === s.id && tinting.name === c ? null : { sheet: s.id, name: c })}></button>
               {:else}
@@ -263,7 +263,7 @@
         </ul>
         {#if picking === s.id}
           <!-- Giving conditions, in a window over the dimmed page so the card
-               keeps its size; a new one's colour and motion are asked in the
+               keeps its size; a new one's color and motion are asked in the
                same window. -->
           <DimModal id="give-{s.id}" title="Conditions for {nameOf(s)}" onclose={() => { picking = null; tinting = null; }}>
             <ConditionGiver given={conds} ontoggle={(name) => toggle(s, name)} onadd={(name) => addCustom(s, name)}
@@ -276,7 +276,7 @@
             {/if}
           </DimModal>
         {:else if tinting?.sheet === s.id && has(s.state?.conditions ?? [], tinting.name)}
-          <!-- A given condition's colour and motion, from its dot on the card. -->
+          <!-- A given condition's color and motion, from its dot on the card. -->
           <DimModal id="look-{s.id}" title="{tinting.name} on {nameOf(s)}" onclose={() => (tinting = null)}>
             <ConditionLookPicker name={tinting.name} look={lookFor(s, tinting.name)} who={nameOf(s)}
                                  onchange={(patch) => setLook(s, tinting!.name, patch)} ondone={() => (tinting = null)} />
@@ -327,7 +327,7 @@
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
   .card:hover { border-color: var(--a-edge); }
-  /* Hurt shows on the card's edge (app.css .hurtcard); pointed at, a hurt card still shows its own colour round it. */
+  /* Hurt shows on the card's edge (app.css .hurtcard); pointed at, a hurt card still shows its own color round it. */
   .card:is(.bloodied, .critical, .down, .dead):hover { border-color: var(--a-edge); }
 
   /* Dragging: the others slide to make room; the lifted one rides above. */
@@ -344,7 +344,7 @@
   }
   .card:hover .grip, .grip:focus-visible, .lifted .grip { opacity: 1; }
   /* Here: a small green light on the portrait's top right corner, ringed in
-     the card's colour, so nothing in the card moves when it comes and goes. */
+     the card's color, so nothing in the card moves when it comes and goes. */
   .herebadge {
     position: absolute; top: -0.3125rem; right: -0.3125rem; z-index: 2;
     display: grid; place-items: center; width: 1rem; height: 1rem; border-radius: 50%; background: var(--surface);
@@ -355,8 +355,8 @@
   .cardhead { display: flex; gap: 0.75rem; align-items: center; min-width: 0; padding-right: 3.25rem; }
   .card.sortable .cardhead { padding-right: 4rem; }
   .open { flex: 1; min-width: 0; color: inherit; text-decoration: none; border-radius: var(--r-sm); }
-  /* A colour swipe: hovered, the character's colour runs through the name
-     from the left (the text painted with a two-colour band that slides). */
+  /* A color swipe: hovered, the character's color runs through the name
+     from the left (the text painted with a two-color band that slides). */
   .who strong {
     justify-self: start; color: transparent;
     background-image: linear-gradient(90deg, var(--a) 0 50%, var(--text) 50% 100%);
@@ -409,7 +409,7 @@
   .conds { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.3125rem; align-items: center; }
   .conds:has(li) { padding-top: 0.75rem; }
 
-  /* A condition's chip in its own colour (the tint it gives the player's screen). */
+  /* A condition's chip in its own color (the tint it gives the player's screen). */
   .conds li:not(.add) {
     --cc: var(--dim);
     display: inline-flex; align-items: center; gap: 0.3125rem;
@@ -417,7 +417,7 @@
     border: 1px solid color-mix(in oklch, var(--cc) 60%, var(--line));
     background: color-mix(in oklch, var(--cc) 18%, var(--raised));
   }
-  /* Light mode: the same chips in the condition's own colour as in dark
+  /* Light mode: the same chips in the condition's own color as in dark
      mode; only the dot's ring is a little darker, to show on a light page. */
   :global([data-mode='light']) .dot { box-shadow: 0 0 0 1px color-mix(in oklch, var(--text) 35%, transparent); }
   .dot {

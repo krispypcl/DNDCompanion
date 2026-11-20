@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
    * The ring of a character's conditions round their portrait on a campaign
-   * card: a band in each condition's colour, together all the way round. A
+   * card: a band in each condition's color, together all the way round. A
    * monster's or NPC's portrait is round (5e.tools tokens are), and so is its
    * ring (`round`). Each band is a stretch of the one shape, so when a condition comes
    * its band draws itself in while the others slide along to make room, and

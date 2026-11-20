@@ -33,7 +33,7 @@ const setStatus = (status: string, message: string | null = null) =>
 
 describe('save indicator', () => {
   it('says what happened, in words', () => {
-    // A coloured dot asked the reader to know what the colour meant, and the
+    // A colored dot asked the reader to know what the color meant, and the
     // accent is the character's own — a red character reporting a red
     // "saved" is worse than no indicator.
     for (const [status, word] of [

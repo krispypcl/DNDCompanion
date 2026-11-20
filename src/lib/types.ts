@@ -102,7 +102,7 @@ export type Item = LinkableEntry & {
       is never summed. */
   value?: string;
   notes?: string;
-  /** Worn or held: its effects count (armour on, shield up, ring worn). */
+  /** Worn or held: its effects count (armor on, shield up, ring worn). */
   equipped?: boolean;
   /** What it does to the character while equipped. */
   effects?: ItemEffect[];
@@ -125,7 +125,7 @@ export type ItemEffect =
 export type ClassEntry = { name: string; subclass?: string; level: number; source?: string };
 
 export type Traits = {
-  /** Armour, weapons, tools and saving throws. Languages are separate: a
+  /** Armor, weapons, tools and saving throws. Languages are separate: a
       sheet written before they were split keeps both here. */
   proficiencies?: string;
   languages?: string;
@@ -174,7 +174,7 @@ export type Definition = {
      */
     classes?: ClassEntry[];
     /** Descriptive details, all free text: a size is "Medium", an age may be
-        "24" or "unknown", a height may be in feet or centimetres. */
+        "24" or "unknown", a height may be in feet or centimeters. */
     gender?: string;
     age?: string;
     size?: string;
@@ -214,7 +214,7 @@ export type Definition = {
   notes: string;
   backstory?: string;
   /** How a condition that is not one of the standard ones tints the screen,
-      by its name in lower case. A blank colour means no tint. */
+      by its name in lower case. A blank color means no tint. */
   conditionLooks?: Record<string, ConditionLook>;
   /** Which writings are private. The writing itself is kept from visitors by
       the database; this copy, on the public row, is only so a visitor can be

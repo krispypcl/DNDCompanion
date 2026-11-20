@@ -13,7 +13,7 @@ const columns = [
 ];
 
 describe('ListEditor', () => {
-  it('renders a row per item with labelled controls', () => {
+  it('renders a row per item with labeled controls', () => {
     render(ListEditor, {
       props: {
         title: 'Trackers',

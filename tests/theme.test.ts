@@ -14,7 +14,7 @@ import {
 } from '#lib/theme.ts';
 
 describe('themes', () => {
-  it('falls back to the default for anything unrecognised', () => {
+  it('falls back to the default for anything unrecognized', () => {
     for (const bad of [undefined, null, '', 'chartreuse', 42, {}]) {
       expect(themeOf(bad)).toEqual(THEMES[DEFAULT_THEME]);
     }
@@ -45,14 +45,14 @@ describe('themes', () => {
     for (const n of THEME_NAMES) expect(swatchColor(n)).toMatch(/^oklch\(/);
   });
 
-  it('recognises only real theme names', () => {
+  it('recognizes only real theme names', () => {
     expect(isThemeName('copper')).toBe(true);
     expect(isThemeName('COPPER')).toBe(false);
     expect(isThemeName(undefined)).toBe(false);
   });
 });
 
-describe('a colour the player picked', () => {
+describe('a color the player picked', () => {
   it('reads hue and chroma out of a hex', () => {
     const t = customTheme('#d2783b')!; // the copper preset's own hex
     expect(t.hue).toBeGreaterThan(40);
@@ -60,13 +60,13 @@ describe('a colour the player picked', () => {
     expect(t.chroma).toBeGreaterThan(0.8);
   });
 
-  it('themes a grey monochrome rather than picking an arbitrary hue', () => {
-    for (const grey of ['#808080', '#ffffff', '#000000']) {
-      expect(customTheme(grey)!.chroma).toBeLessThan(0.02);
+  it('themes a gray monochrome rather than picking an arbitrary hue', () => {
+    for (const gray of ['#808080', '#ffffff', '#000000']) {
+      expect(customTheme(gray)!.chroma).toBeLessThan(0.02);
     }
   });
 
-  it('carries the pick’s saturation through, so a dusty colour stays quiet', () => {
+  it('carries the pick’s saturation through, so a dusty color stays quiet', () => {
     const vivid = customTheme('#ff0000')!;
     const dusty = customTheme('#9b7f7f')!;
     expect(vivid.chroma).toBeGreaterThan(dusty.chroma * 2);
@@ -78,7 +78,7 @@ describe('a colour the player picked', () => {
     }
   });
 
-  it('round-trips roughly to the hue of a known colour', () => {
+  it('round-trips roughly to the hue of a known color', () => {
     expect(customTheme('#4a9bcc')!.hue).toBeCloseTo(THEMES.steel.hue, -1);
   });
 
@@ -96,11 +96,11 @@ describe('a colour the player picked', () => {
     expect(themeOf('#nothex')).toEqual(THEMES[DEFAULT_THEME]);
   });
 
-  it('prefers a preset name over reading it as a colour', () => {
+  it('prefers a preset name over reading it as a color', () => {
     expect(themeOf('copper')).toEqual(THEMES.copper);
   });
 
-  it('seeds the colour input from whatever is stored', () => {
+  it('seeds the color input from whatever is stored', () => {
     expect(seedHex('#abcdef')).toBe('#abcdef');
     expect(seedHex('abcdef')).toBe('#abcdef');
     expect(seedHex('steel')).toBe(THEMES.steel.hex);
@@ -119,7 +119,7 @@ describe('a colour the player picked', () => {
 /**
  * A custom property is substituted where it is DECLARED. If the accent ramp is
  * declared only on :root it computes once against :root's hue, descendants
- * inherit the finished colour, and a sheet setting --h deeper silently changes
+ * inherit the finished color, and a sheet setting --h deeper silently changes
  * nothing. This caught exactly that, after it shipped past unit tests, the type
  * checker and a build.
  */

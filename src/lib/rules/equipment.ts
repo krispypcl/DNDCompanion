@@ -10,8 +10,8 @@ export type Part = { label: string; value: number; note?: string };
 /**
  * Everything that changes the numbers, with the name of where it comes
  * from: each equipped item's effects, then each feature's (a feature is
- * always on). Items first, so worn armour comes before a feature's natural
- * armour.
+ * always on). Items first, so worn armor comes before a feature's natural
+ * armor.
  */
 export function equippedEffects(def: Definition): { item: string; effect: ItemEffect }[] {
   const worn = (def.equipment ?? [])
@@ -56,7 +56,7 @@ export function abilityScoreParts(def: Definition, ability: Ability): { score: n
   return { score, parts };
 }
 
-/** Light, medium and heavy armour from the core rules, by name, to fill in the prompt. */
+/** Light, medium and heavy armor from the core rules, by name, to fill in the prompt. */
 const ARMOR: [RegExp, number, 'full' | 'max2' | 'none'][] = [
   [/padded/i, 11, 'full'], [/studded/i, 12, 'full'], [/leather/i, 11, 'full'],
   [/hide/i, 12, 'max2'], [/chain\s*shirt/i, 13, 'max2'], [/scale/i, 14, 'max2'], [/breastplate/i, 14, 'max2'],

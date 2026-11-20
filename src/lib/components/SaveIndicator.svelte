@@ -4,12 +4,12 @@
    *
    * It began as a word in the header, where its changing width pushed the
    * controls onto a second line on a phone and shoved the sheet down. Then it
-   * was a coloured dot, which does not move anything but asks the reader to
-   * know what the colour means — and the accent is the character's own, so a
+   * was a colored dot, which does not move anything but asks the reader to
+   * know what the color means — and the accent is the character's own, so a
    * red character would report a red "saved".
    *
    * Floating in the corner, it can say the word and still move nothing. The
-   * colour is deliberately neutral: the sentence carries the meaning, not the
+   * color is deliberately neutral: the sentence carries the meaning, not the
    * hue. A write that actually failed also raises SaveAlert, which is harder
    * to miss than a corner.
    */

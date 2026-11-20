@@ -46,7 +46,7 @@
         network is touched, so a typo costs no round trip. */
     validate?: (values: Record<string, string>) => string | null | undefined;
     busyLabel?: string;
-    /** A page of its own centres itself; embedded in the landing page it does not. */
+    /** A page of its own centers itself; embedded in the landing page it does not. */
     standalone?: boolean;
     children?: import('svelte').Snippet;
     /** Offer "Continue with Google" under the form, returning to `googleNext`. */
@@ -183,7 +183,7 @@
     margin: 0; text-align: center; font-size: 2rem; line-height: 1.15;
     font-family: var(--font-brand); font-weight: 700; letter-spacing: 0.01em;
   }
-  /* Its own page centres in the viewport; embedded, it sits in the flow. */
+  /* Its own page centers in the viewport; embedded, it sits in the flow. */
   .standalone { min-height: 100dvh; align-items: center; padding: 1.5rem; }
   @keyframes cardIn {
     from { opacity: 0; transform: translateY(8px) scale(0.995); }

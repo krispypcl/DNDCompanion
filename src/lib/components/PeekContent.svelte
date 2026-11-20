@@ -146,7 +146,7 @@
   .peek-tools :global(.peek-pin):active { transform: translateY(1px); }
   .peek-tools :global(.peek-pin):focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
   /* Only the entry scrolls, from its first line to its book, on a slim
-     scrollbar in the character's colour. */
+     scrollbar in the character's color. */
   .peek-body {
     flex: 1 1 auto;
     min-height: 0;
@@ -172,7 +172,7 @@
   .peek-text :global(li) { margin-bottom: 0.25rem; }
   .peek-text :global(.five-note) { color: var(--dim); font-style: italic; }
   .peek-text :global(.five-ref) { margin: 0 0 0.375rem; color: var(--dim); font-size: 0.75rem; }
-  .peek-text :global(.five-centre) { text-align: center; }
+  .peek-text :global(.five-center) { text-align: center; }
   .peek-text :global(blockquote) { margin: 0 0 0.5rem; padding-left: 0.75rem; border-left: 2px solid var(--line); color: var(--dim); }
   .peek-text :global(.five-inset) {
     margin: 0.5rem 0; padding: 0.5rem 0.75rem; border: 1px solid var(--line-soft); border-radius: var(--r-sm); background: var(--raised);

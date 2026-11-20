@@ -66,7 +66,7 @@ export function saveParts(def: Definition, ability: Ability): Part[] {
  */
 export function armorClass(def: Definition): { total: number; parts: Part[]; computed: boolean } {
   // Always worked out: from what is worn, or from the body (and the class)
-  // when nothing is. Natural armour is worn too: an item with an armour effect.
+  // when nothing is. Natural armor is worn too: an item with an armor effect.
   const effects = equippedEffects(def).filter(({ effect }) => ['armor', 'shield', 'ac'].includes(effect.kind));
   const dex = modifierOf(def, 'dex');
   const armor = effects.find(({ effect }) => effect.kind === 'armor');
@@ -77,7 +77,7 @@ export function armorClass(def: Definition): { total: number; parts: Part[]; com
     const allowed = armor.effect.dex === 'none' ? 0 : armor.effect.dex === 'max2' ? Math.min(2, dex) : dex;
     if (armor.effect.dex !== 'none') parts.push({ label: armor.effect.dex === 'max2' ? 'Dexterity (up to +2)' : 'Dexterity', value: allowed });
   } else {
-    // Unarmoured Defence: a Barbarian adds Constitution, a Monk (without a
+    // Unarmored Defense: a Barbarian adds Constitution, a Monk (without a
     // shield) Wisdom. The better one counts, as the rules have it.
     const levels = classLevels(def);
     const options: { label: string; extra: Part | null }[] = [{ label: 'Unarmored', extra: null }];

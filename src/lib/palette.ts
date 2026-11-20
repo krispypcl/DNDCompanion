@@ -1,12 +1,12 @@
 /**
- * The colours offered for writing and drawing, everywhere: notes and
- * backstory (text colour and pen), and the table's board. Each is a CSS
+ * The colors offered for writing and drawing, everywhere: notes and
+ * backstory (text color and pen), and the table's board. Each is a CSS
  * variable with a dark-page and a light-page value (src/app.css, Ink), so
  * whatever is drawn stays readable when the mode changes.
  */
 export type Ink = { name: string; c: string };
 
-/** Pens and writing: the page's own text colour first. */
+/** Pens and writing: the page's own text color first. */
 export const INKS: Ink[] = [
   { name: 'Text', c: 'var(--text)' },
   { name: 'Red', c: 'var(--ink-red)' },
@@ -19,7 +19,7 @@ export const INKS: Ink[] = [
   { name: 'Purple', c: 'var(--ink-purple)' },
   { name: 'Pink', c: 'var(--ink-pink)' },
   { name: 'Brown', c: 'var(--ink-brown)' },
-  { name: 'Grey', c: 'var(--ink-grey)' }
+  { name: 'Gray', c: 'var(--ink-grey)' }
 ];
 
 /** Sticky-note papers: pale in either mode, with dark writing on them. */
@@ -33,5 +33,5 @@ export const PAPERS: Ink[] = [
   { name: 'Green', c: 'oklch(88% 0.1 145)' },
   { name: 'Lime', c: 'oklch(92% 0.12 120)' },
   { name: 'White', c: 'oklch(97% 0.005 286)' },
-  { name: 'Grey', c: 'oklch(84% 0.01 286)' }
+  { name: 'Gray', c: 'oklch(84% 0.01 286)' }
 ];

@@ -242,7 +242,7 @@
 
   /*
    * A phone: the sheet in places, chosen on a bar at the bottom, in place of
-   * one long column. Play is the fight (hit points, defences, conditions,
+   * one long column. Play is the fight (hit points, defenses, conditions,
    * the Combat tab); Abilities the six and the skills; Spells and Gear their
    * tabs; More the rest of the tabs. A slim strip keeps the name and hit
    * points in sight wherever you are. The same parts as the desktop's,
@@ -474,7 +474,7 @@
     const stamp = await sheetRepo.saveRow(current.id, patch, current.updated_at);
     sheetStore.adoptRow({ ...patch, updated_at: stamp });
   }
-  /** A colour being dragged to in the theme picker, shown before it is kept. */
+  /** A color being dragged to in the theme picker, shown before it is kept. */
   let themePreview = $state<string | null>(null);
   function rollSpell(_key: string, spell: Spell) {
     casting = spell;
@@ -772,7 +772,7 @@
   <NotFound tab="Sheet didn’t load" title="That’s a critical fail!" message={loadError} />
 {:else if sheet && definition && sheetState}
   <!-- The theme is scoped here, not to :root, so a campaign view can later show
-       several characters in their own colours at once. -->
+       several characters in their own colors at once. -->
   <div class="sheet themed" class:entering class:bannered={banner} style={themeStyle(themePreview ?? definition.identity.theme)}
        data-place={phoneOn ? place : undefined}>
     {#if phoneOn}
@@ -813,7 +813,7 @@
         <span class="lvl" use:glow={totalLevel}>LV {totalLevel}</span>
         {#key levelUp}
           {#if levelUp > 0}
-            <!-- Levelled up: rays burst from the portrait and the news floats up. -->
+            <!-- Leveled up: rays burst from the portrait and the news floats up. -->
             <span class="burst" aria-hidden="true">{#each Array(12) as _, i (i)}<i style:--r="{i * 30}deg"></i>{/each}</span>
             <span class="levelup" role="status">Level up!</span>
           {/if}
@@ -890,7 +890,7 @@
       </div>
 
       {#if definition.identity.playlistUrl?.trim()}
-        <!-- Top centre: the sheet's music, the same player as the table's. -->
+        <!-- Top center: the sheet's music, the same player as the table's. -->
         <div class="musicslot" data-flip="identity:music"><MusicPlayer url={definition.identity.playlistUrl} /></div>
       {/if}
 
@@ -998,7 +998,7 @@
         </div>
       </section>
 
-      <section class="panel centre" style:--i=3 data-places="play spells gear more">
+      <section class="panel center" style:--i=3 data-places="play spells gear more">
         <Tabs tabs={phoneOn && place === 'more' ? MORE_TABS : TABS} bare={phoneOn && place !== 'more'} quiet={quietTab} bind:active={activeTab} lit={litLevel ? 'Spells' : null}>
           {#snippet children(tab)}
             {#if tab === 'Combat'}
@@ -1224,7 +1224,7 @@
       </section>
 
       <section class="panel rail-right" style:--i=4 data-places="play gear more">
-        <!-- On a phone, Play keeps the conditions, trackers and defences; the
+        <!-- On a phone, Play keeps the conditions, trackers and defenses; the
              purse goes to Gear and the proficiencies to More. -->
         <div class="railfight" data-places="play">
         <Conditions state={sheetState} editable={isOwner} onchange={setState}
@@ -1253,7 +1253,7 @@
           <Why title="Armor Class" parts={ac.parts} total={String(ac.total)}
                hint={ac.computed ? 'Worked out from what is equipped.' : 'Nothing worn yet. Equip armor or a shield on the Equipment tab to change it.'}>
           <div class="defbox">
-            <!-- Worked out, never typed: armour and shields are equipped on the Equipment tab. -->
+            <!-- Worked out, never typed: armor and shields are equipped on the Equipment tab. -->
             <b use:bump={ac.total}><span class="computed">{ac.total}</span></b>
             <span class="cap">Armor Class</span>
           </div>
@@ -1438,7 +1438,7 @@
     border-radius: var(--r); padding: 1rem; min-width: 0;
   }
   /* With a banner behind it, a module stops being opaque and starts being
-     frosted: the band's colour carries through, the detail does not, and the
+     frosted: the band's color carries through, the detail does not, and the
      text keeps the surface it needs. Only with a banner — an ordinary sheet
      pays none of this. */
   /* The frost is a layer under the module's content rather than the module
@@ -1458,12 +1458,12 @@
     -webkit-backdrop-filter: blur(16px) saturate(1.1);
   }
   /* Every section sits above the hurt edges (z-index 0), so the red only
-     ever colours the background between and around them. */
+     ever colors the background between and around them. */
   .identity, .band, .main { position: relative; z-index: 1; }
   /**
-   * The class line is secondary text, and secondary text is a mid grey. Over
+   * The class line is secondary text, and secondary text is a mid gray. Over
    * a photograph that is unreadable at any tint which still shows the
-   * photograph: dim grey needs a backdrop darker than the banner can be and
+   * photograph: dim gray needs a backdrop darker than the banner can be and
    * still be seen. So on a sheet with a banner it is not secondary any more.
    * Measured over a deliberately bright test image rather than guessed.
    */
@@ -1536,9 +1536,9 @@
     color: var(--a); border-radius: var(--r-sm); font-size: 0.6875rem; font-weight: 650;
     padding: 0.0625rem 0.5rem; letter-spacing: 0.02em; white-space: nowrap;
   }
-  /* Dead: the portrait drains of colour and a skull sits on its top edge. */
+  /* Dead: the portrait drains of color and a skull sits on its top edge. */
   .portrait.fallen img { filter: grayscale(1) brightness(0.65); }
-  /* Dead: a big skull in front of the greyed portrait, not a badge. */
+  /* Dead: a big skull in front of the grayed portrait, not a badge. */
   .skull {
     position: absolute; inset: 0; z-index: 1; border-radius: var(--r);
     display: grid; place-items: center; pointer-events: none;
@@ -1662,12 +1662,12 @@
   .main { display: grid; grid-template-columns: 16.5rem 1fr 18.75rem; gap: 1rem; align-items: stretch; }
   .rail-skills { order: -1; }
   .rail-right { order: 1; display: flex; flex-direction: column; }
-  .centre { display: flex; flex-direction: column; }
+  .center { display: flex; flex-direction: column; }
   /* Wide screens: the middle module is exactly as tall as the taller column
      beside it, whatever tab is open; what is longer scrolls inside it, and a
      wheel that has nothing left to scroll there moves the page. */
   @media (min-width: 861px) {
-    .centre { height: 0; min-height: 100%; }
+    .center { height: 0; min-height: 100%; }
   }
 
   .defense { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin: 0.625rem 0 0; }
@@ -1680,7 +1680,7 @@
   }
   .defbox:hover { border-color: var(--hover-line); background: var(--hover-bg); }
   /* Inspiration is the one number here that is spent, so it keeps the theme.
-     The field sets its own colour, so the rule has to reach inside it. */
+     The field sets its own color, so the rule has to reach inside it. */
   .defbox.themed-num b,
   .defbox.themed-num :global(.field) { color: var(--a-hi); }
   /* Initiative, out of edit mode: the number itself is the button that rolls it. */
@@ -1762,7 +1762,7 @@
   .carried b { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 600; }
 
   .casting {
-    /* Always three across, centred, so the third never sits alone on a row. */
+    /* Always three across, centered, so the third never sits alone on a row. */
     display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.75rem; margin-bottom: 1.25rem; text-align: center; align-items: end;
   }
@@ -1916,7 +1916,7 @@
   /* ── A phone's places (the rules for showing one are in app.css) ── */
   .railfight { display: contents; }
   /* With no tab row above it (a place with one tab), the tab starts at the panel's top. */
-  .sheet[data-place]:not([data-place='more']) .centre :global(section[role='tabpanel']) { padding-top: 0; }
+  .sheet[data-place]:not([data-place='more']) .center :global(section[role='tabpanel']) { padding-top: 0; }
   /* Gear and More: the rail's own heading spacing starts at its first part. */
   .sheet[data-place='gear'] .rail-right .money, .sheet[data-place='more'] .rail-right .money + .profs { padding-top: 0; }
   /* Play: the numbers and conditions first, then the attacks. */

@@ -228,8 +228,8 @@
     transition: border-color 0.16s ease-out, transform 0.18s ease;
   }
   /* The fill is a layer whose opacity moves. Animating the theme's accent as
-     a colour either overshot or switched at once, so a spent pip held its
-     colour, then vanished. */
+     a color either overshot or switched at once, so a spent pip held its
+     color, then vanished. */
   .pip::before {
     content: ''; position: absolute; inset: -1px; border-radius: 50%; pointer-events: none;
     background: var(--accent); opacity: 0;
@@ -244,7 +244,7 @@
     background: var(--accent); opacity: 0;
     animation: puff 0.36s cubic-bezier(0.2, 0.7, 0.3, 1) both; animation-delay: var(--delay);
   }
-  /* A soft cloud of the pip's colour, swelling and thinning to nothing. */
+  /* A soft cloud of the pip's color, swelling and thinning to nothing. */
   @keyframes puff {
     0% { opacity: 0; transform: scale(0.8); }
     15% { opacity: 0.4; transform: scale(1.05); }

@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
-   * How a condition of the player's own looks: its colour (one of the
-   * swatches, any colour, or none) and how its tint moves at the bottom of
+   * How a condition of the player's own looks: its color (one of the
+   * swatches, any color, or none) and how its tint moves at the bottom of
    * the screen. The sheet's owner sets it when they add one; on the campaign
    * page, the DM does for the conditions they give.
    */
@@ -23,7 +23,7 @@
     look: ConditionLook;
     /** Whose screen it tints, when it is not the reader's own (the DM's view). */
     who?: string;
-    /** Only its colour (a monster's or NPC's: no screen to tint). */
+    /** Only its color (a monster's or NPC's: no screen to tint). */
     colorOnly?: boolean;
     onchange: (patch: Partial<ConditionLook>) => void;
     ondone: () => void;
@@ -33,17 +33,17 @@
 
 <div class="ask" transition:slide={{ duration: prefersReducedMotion() ? 0 : 200, easing: cubicOut }} role="group" aria-label="How {name} tints the screen">
   {#if colorOnly}
-    <p>What colour is <b>{name}</b>{who ? ` on ${who}` : ''}?</p>
+    <p>What color is <b>{name}</b>{who ? ` on ${who}` : ''}?</p>
   {:else}
-    <p>What colour is <b>{name}</b>? It tints the bottom of {who ? `${who}’s` : 'the'} screen while it lasts.</p>
+    <p>What color is <b>{name}</b>? It tints the bottom of {who ? `${who}’s` : 'the'} screen while it lasts.</p>
   {/if}
   <div class="swatches">
     {#each SWATCHES as sw (sw.name)}
       <button class="sw" style:--sw={sw.color} aria-label={sw.name} title={sw.name}
               aria-pressed={look.color === sw.color} onclick={() => onchange({ color: sw.color })}></button>
     {/each}
-    <label class="sw custom" title="Any colour">
-      <input type="color" aria-label="Any colour"
+    <label class="sw custom" title="Any color">
+      <input type="color" aria-label="Any color"
              value={look.color.startsWith('#') ? look.color : '#c060a0'}
              oninput={(e) => onchange({ color: e.currentTarget.value })} />
     </label>

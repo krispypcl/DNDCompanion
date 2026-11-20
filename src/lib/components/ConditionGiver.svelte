@@ -1,6 +1,6 @@
 <!--
   Giving conditions (in a DimModal): every standard condition as a chip in
-  its own colour, pressed when given, and a field for one of your own. The
+  its own color, pressed when given, and a field for one of your own. The
   campaign page uses it for characters and for monsters and NPCs alike.
 -->
 <script lang="ts">
@@ -50,8 +50,8 @@
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
   .opt:hover { color: var(--text); border-color: color-mix(in oklch, var(--cc) 50%, var(--line)); }
-  /* Given: tinted in its colour and ringed, the ring mixed toward the text so
-     a dark colour (Blinded, Dead) still shows on a dark page, as a light one does on a light page. */
+  /* Given: tinted in its color and ringed, the ring mixed toward the text so
+     a dark color (Blinded, Dead) still shows on a dark page, as a light one does on a light page. */
   .opt.on {
     color: var(--text); border-color: color-mix(in oklch, var(--cc) 65%, var(--text));
     background: color-mix(in oklch, var(--cc) 22%, var(--raised));

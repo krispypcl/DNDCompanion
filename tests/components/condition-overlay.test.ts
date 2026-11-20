@@ -10,7 +10,7 @@ describe('ConditionOverlay', () => {
     expect(container.querySelectorAll('.tint.on')).toHaveLength(1);
   });
 
-  it('tints for a condition of the player\'s own, in their colour', () => {
+  it('tints for a condition of the player\'s own, in their color', () => {
     const { container } = render(ConditionOverlay, {
       props: { conditions: ['Bless'], looks: { bless: { color: '#ffcc00', motion: 'shimmer' } } }
     });

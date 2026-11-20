@@ -62,7 +62,7 @@ export function conditionUrl(name: string): string | null {
 }
 
 /**
- * The screen tint for each standard condition: a colour and how it moves.
+ * The screen tint for each standard condition: a color and how it moves.
  * Dead has one too. A condition written in by hand gets whatever its owner
  * chose for it, kept on the sheet in `conditionLooks`.
  */
@@ -99,7 +99,7 @@ export function lookOf(name: string, custom: Record<string, ConditionLook> = {})
   return look && look.color ? look : null;
 }
 
-/** The colours offered for a condition of the player's own, and how its tint can move. */
+/** The colors offered for a condition of the player's own, and how its tint can move. */
 export const CONDITION_SWATCHES = [
   { name: 'Pink', color: 'oklch(70% 0.19 350)' },
   { name: 'Red', color: 'oklch(60% 0.21 25)' },
