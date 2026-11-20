@@ -111,7 +111,7 @@
           class:hiddenone={c.hidden} class:mine={c.mine}
           animate:flip={{ duration: still ? 0 : 260, easing: cubicOut }} in:fade={{ duration: still ? 0 : 160 }}>
         {#if canWrite(c)}
-          <input type="number" inputmode="numeric" aria-label="{c.name}’s initiative" value={c.value ?? ''} placeholder="–"
+          <input class="numfield" type="number" inputmode="numeric" aria-label="{c.name}’s initiative" value={c.value ?? ''} placeholder="–"
                  onchange={(e) => write(c.key, e.currentTarget.value)} />
         {:else}
           <b class="initvalue">{c.value ?? '–'}</b>

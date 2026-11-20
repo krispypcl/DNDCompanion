@@ -316,7 +316,7 @@
           {#if c.initiative !== null}<div class="acbox" title="Initiative"><span class="k">INIT</span><b>{c.initiative}</b></div>{/if}
           {#if !ended && c.hp_max !== null}
             <div class="hpctl">
-              <input type="number" inputmode="numeric" min="1" placeholder="0" aria-label="Amount for {c.name}"
+              <input class="numfield" type="number" inputmode="numeric" min="1" placeholder="0" aria-label="Amount for {c.name}"
                      bind:value={amounts[c.id]} onkeydown={(e) => { if (e.key === 'Enter') hit(c, 'damage'); }} />
               <button class="smallbtn hurt" onclick={() => hit(c, 'damage')}>Damage</button>
               <button class="smallbtn" onclick={() => hit(c, 'heal')}>Heal</button>
@@ -393,7 +393,7 @@
       <div class="pickrow">
         <!-- svelte-ignore a11y_autofocus -->
         <input class="pickquery" bind:value={bookQuery} placeholder="Goblin, Owlbear, Adult Red Dragon" aria-label="Find a monster on 5e.tools" autofocus />
-        <label class="howmany"><span>How many</span><input type="number" min="1" max="20" inputmode="numeric" bind:value={howMany} /></label>
+        <label class="howmany"><span>How many</span><input class="numfield" type="number" min="1" max="20" inputmode="numeric" bind:value={howMany} /></label>
       </div>
       <ul class="picklist themed-scroll">
         {#each bookHits as h (h.url)}
@@ -410,7 +410,7 @@
     {:else if e.way === 'homebrew'}
       <div class="pickrow">
         <p class="pickhint">Your own monsters and NPCs, for any of your campaigns.</p>
-        <label class="howmany"><span>How many</span><input type="number" min="1" max="20" inputmode="numeric" bind:value={howMany} /></label>
+        <label class="howmany"><span>How many</span><input class="numfield" type="number" min="1" max="20" inputmode="numeric" bind:value={howMany} /></label>
       </div>
       <ul class="picklist themed-scroll">
         {#each table.homebrew as h (h.id)}
@@ -437,10 +437,10 @@
           {/each}
         </div>
         {#if !e.homebrewId}
-          <label><span>Hit points</span><input type="number" min="0" inputmode="numeric" bind:value={e.draft.hp} placeholder="From its stat block" /></label>
-          <label><span>Armour class</span><input type="number" min="0" inputmode="numeric" bind:value={e.draft.ac} placeholder="From its stat block" /></label>
+          <label><span>Hit points</span><input class="numfield" type="number" min="0" inputmode="numeric" bind:value={e.draft.hp} placeholder="From its stat block" /></label>
+          <label><span>Armour class</span><input class="numfield" type="number" min="0" inputmode="numeric" bind:value={e.draft.ac} placeholder="From its stat block" /></label>
           {#if !e.id}
-            <label><span>How many</span><input type="number" min="1" max="20" inputmode="numeric" bind:value={e.draft.howMany} /></label>
+            <label><span>How many</span><input class="numfield" type="number" min="1" max="20" inputmode="numeric" bind:value={e.draft.howMany} /></label>
           {/if}
           <label class="wide"><span>5e.tools link (optional)</span>
             <input bind:value={e.draft.link} maxlength="500" placeholder="Left empty, its name is searched" /></label>

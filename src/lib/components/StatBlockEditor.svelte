@@ -65,7 +65,7 @@
   <div class="sbescores" role="group" aria-label="Ability scores">
     {#each ABILITIES as a (a)}
       <label><span>{a.toUpperCase()}</span>
-        <input type="number" min="1" max="30" inputmode="numeric" value={value[a] ?? ''} placeholder="10"
+        <input class="numfield" type="number" min="1" max="30" inputmode="numeric" value={value[a] ?? ''} placeholder="10"
                oninput={(e) => setScore(a, e.currentTarget.value)} />
         <i>{signedMod(modifier(value[a]))}</i>
       </label>
