@@ -469,36 +469,43 @@
         {/each}
       </ul>
     {:else}
+      <!-- On a wide screen, two columns as the account page has: the creature on the
+           left, its stat block across the rest (spread over columns of its own). -->
       <form class="cform" onsubmit={(ev) => { ev.preventDefault(); void save(); }}>
-        <label class="wide"><span>Name</span><input bind:value={e.draft.name} maxlength="80" placeholder="Mud Imp" required /></label>
-        <div class="wide kindpick" role="radiogroup" aria-label="Kind">
-          {#each [['monster', 'Monster'], ['npc', 'NPC']] as [value, label] (value)}
-            <button type="button" role="radio" aria-checked={e.draft.kind === value} class:on={e.draft.kind === value}
-                    onclick={() => (e.draft.kind = value as CreatureKind)}>{label}</button>
-          {/each}
-        </div>
-        {#if !e.homebrewId}
-          <label><span>Hit points</span><input class="numfield" type="number" min="0" inputmode="numeric" bind:value={e.draft.hp} placeholder="From its stat block" /></label>
-          <label><span>Armor class</span><input class="numfield" type="number" min="0" inputmode="numeric" bind:value={e.draft.ac} placeholder="From its stat block" /></label>
-          {#if !e.id}
-            <label><span>How many</span><input class="numfield" type="number" min="1" max="20" inputmode="numeric" bind:value={e.draft.howMany} /></label>
+        <div class="cformside">
+          <h3 class="sbtitle">The creature</h3>
+          <label><span>Name</span><input bind:value={e.draft.name} maxlength="80" placeholder="Mud Imp" required /></label>
+          <div class="kindpick" role="radiogroup" aria-label="Kind">
+            {#each [['monster', 'Monster'], ['npc', 'NPC']] as [value, label] (value)}
+              <button type="button" role="radio" aria-checked={e.draft.kind === value} class:on={e.draft.kind === value}
+                      onclick={() => (e.draft.kind = value as CreatureKind)}>{label}</button>
+            {/each}
+          </div>
+          {#if !e.homebrewId}
+            <div class="cnums">
+              <label><span>Hit points</span><input class="numfield" type="number" min="0" inputmode="numeric" bind:value={e.draft.hp} placeholder="Stat block" /></label>
+              <label><span>Armor class</span><input class="numfield" type="number" min="0" inputmode="numeric" bind:value={e.draft.ac} placeholder="Stat block" /></label>
+              {#if !e.id}
+                <label><span>How many</span><input class="numfield" type="number" min="1" max="20" inputmode="numeric" bind:value={e.draft.howMany} /></label>
+              {/if}
+            </div>
+            <label><span>5e.tools link (optional)</span>
+              <input bind:value={e.draft.link} maxlength="500" placeholder="Left empty, its name is searched" /></label>
           {/if}
-          <label class="wide"><span>5e.tools link (optional)</span>
-            <input bind:value={e.draft.link} maxlength="500" placeholder="Left empty, its name is searched" /></label>
-        {/if}
-        <label class="wide"><span>Portrait (a picture link, optional)</span>
-          <input bind:value={e.draft.portrait} maxlength="2000" placeholder="Google Drive, Imgur, Pinterest, Dropbox or any image link" /></label>
-        <div class="wide sbwrap">
-          <h3 class="sbtitle">Stat block</h3>
-          <StatBlockEditor bind:value={e.draft.statblock} />
+          <label><span>Portrait (a picture link, optional)</span>
+            <input bind:value={e.draft.portrait} maxlength="2000" placeholder="Drive, Imgur, Pinterest or any image link" /></label>
+          {#if !e.homebrewId}
+            <label class="keep"><input type="checkbox" bind:checked={e.draft.keep} />
+              <span>Keep it in your homebrew too</span>
+              <InfoTip label="About your homebrew">Kept there, it’s yours to add to any of your campaigns, from Your homebrew when adding, or from the search.</InfoTip>
+            </label>
+          {/if}
         </div>
-        {#if !e.homebrewId}
-          <label class="wide keep"><input type="checkbox" bind:checked={e.draft.keep} />
-            <span>Keep it in your homebrew too</span>
-            <InfoTip label="About your homebrew">Kept there, it’s yours to add to any of your campaigns, from Your homebrew when adding, or from the search.</InfoTip>
-          </label>
-        {/if}
-        <div class="wide cformdo">
+        <div class="sbwrap">
+          <h3 class="sbtitle">Stat block</h3>
+          <StatBlockEditor bind:value={e.draft.statblock} spread />
+        </div>
+        <div class="cformdo">
           <button type="button" class="smallbtn quiet" onclick={() => (editing = e.homebrewId ? { id: null, way: 'homebrew', draft: blank() } : null)}>Cancel</button>
           <button class="smallbtn accent" disabled={!e.draft.name.trim() || saving}>
             {saving ? 'Saving' : e.id || e.homebrewId ? 'Save' : count(e.draft.howMany) > 1 ? `Add ${count(e.draft.howMany)}` : 'Add'}
@@ -651,28 +658,36 @@
     border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg);
   }
   .howmany input:focus { outline: none; border-color: var(--a-edge); }
-  .picklist { list-style: none; margin: 0.75rem 0 0; padding: 0; height: min(22rem, 50vh); overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 0.25rem; }
+  .picklist {
+    list-style: none; margin: 0.75rem 0 0; padding: 0; height: min(26rem, 55vh); overflow-y: auto; overscroll-behavior: contain;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(min(22rem, 100%), 1fr)); align-content: start; gap: 0.375rem;
+  }
+  .picklist li.pickempty { grid-column: 1 / -1; }
   .picklist li { display: flex; align-items: center; gap: 0.375rem; padding: 0.375rem 0.375rem 0.375rem 0.625rem; border-radius: var(--r-sm); border: 1px solid var(--line-soft); background: var(--raised); }
   .pickname { flex: 1; min-width: 0; display: grid; font-weight: 600; font-size: 0.875rem; overflow-wrap: anywhere; }
   .pickwords { display: flex; gap: 0.5rem; font-weight: 400; font-size: 0.75rem; color: var(--dim); }
   .pickbook { color: var(--faint); font-variant: all-small-caps; letter-spacing: 0.04em; }
   .picklist li.pickempty { color: var(--dim); font-size: 0.8125rem; justify-content: center; border-style: dashed; background: none; padding: 1rem; }
-  .cform { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(13rem, 100%), 1fr)); gap: 0.75rem; }
+  /* One column on a narrow screen; on a wide one the creature on the left and
+     its stat block across the rest, as the account page sets its cards out. */
+  .cform { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+  @media (min-width: 900px) { .cform { grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr); } }
+  .cformside { display: grid; gap: 0.75rem; align-content: start; }
+  .cnums { display: grid; grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr)); gap: 0.5rem; }
   .cform label { display: grid; gap: 0.3125rem; font-size: 0.75rem; color: var(--label); }
-  .cform .wide { grid-column: 1 / -1; }
-  .cform > label > input:not([type='checkbox']) {
+  .cform label > input:not([type='checkbox']) {
     font: inherit; font-size: 0.875rem; padding: 0.4375rem 0.5625rem; color: var(--text); min-width: 0;
     border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg);
   }
-  .cform > label > input:focus { outline: none; border-color: var(--a-edge); }
+  .cform label > input:focus { outline: none; border-color: var(--a-edge); }
   .kindpick { display: inline-grid; grid-template-columns: 1fr 1fr; gap: 0.25rem; padding: 3px; border-radius: 999px; border: 1px solid var(--line); background: var(--raised); justify-self: start; }
-  .sbwrap { border-top: 1px solid var(--line-soft); padding-top: 0.875rem; margin-top: 0.25rem; }
+  .sbwrap { min-width: 0; }
+  @media (max-width: 899px) { .sbwrap { border-top: 1px solid var(--line-soft); padding-top: 0.875rem; } }
   .sbtitle { margin: 0 0 0.75rem; font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600; }
   .cform label.keep { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; color: var(--text); }
   .keep input { accent-color: var(--a); width: 1rem; height: 1rem; margin: 0; }
-  .cformdo { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.25rem; }
+  .cformdo { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 0.5rem; padding-top: 0.875rem; border-top: 1px solid var(--line-soft); }
   @media (max-width: 480px) {
-    .cform { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     .pickrow { flex-wrap: wrap; }
     .ways { grid-auto-flow: row; grid-template-columns: repeat(3, auto); }
     .ways button { padding: 0.3125rem 0.5rem; }

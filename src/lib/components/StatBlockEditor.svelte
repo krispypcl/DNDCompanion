@@ -7,7 +7,7 @@
 <script lang="ts">
   import { ABILITIES, SECTIONS, modifier, signedMod, type Section, type StatBlock } from '#lib/rules/statblock.ts';
 
-  let { value = $bindable() }: { value: StatBlock } = $props();
+  let { value = $bindable(), spread = false }: { value: StatBlock; /** A wide window: the parts side by side and the features in columns. */ spread?: boolean } = $props();
 
   const SIZES = ['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan'];
   const TOP: [keyof StatBlock, string, string][] = [
@@ -49,7 +49,7 @@
   }
 </script>
 
-<div class="sbe">
+<div class="sbe" class:spread>
   <div class="sbegrid">
     <label><span>Size</span>
       <select value={text('size')} onchange={(e) => setText('size', e.currentTarget.value)}>
@@ -78,6 +78,7 @@
     {/each}
   </div>
 
+  <div class="sbesections">
   {#each SECTIONS as [k, title] (k)}
     <section class="sbesection">
       <h3>{title}</h3>
@@ -93,10 +94,22 @@
       <button type="button" class="smallbtn quiet" onclick={() => addFeature(k)}>Add a {ONE[k]}</button>
     </section>
   {/each}
+  </div>
 </div>
 
 <style>
   .sbe { display: grid; gap: 1rem; }
+  .sbesections { display: grid; gap: 1rem; }
+  /* Spread (a wide window): the basics and scores beside the longer lines,
+     then the traits and actions in columns, each kept whole. */
+  @media (min-width: 900px) {
+    .sbe.spread { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 1.25rem; align-items: start; }
+    .sbe.spread > .sbegrid:first-child { grid-column: 1; grid-row: 1; }
+    .sbe.spread > .sbescores { grid-column: 1; grid-row: 2; }
+    .sbe.spread > .sbegrid.two { grid-column: 2; grid-row: 1 / span 2; grid-template-columns: repeat(auto-fill, minmax(min(13rem, 100%), 1fr)); }
+    .sbe.spread > .sbesections { grid-column: 1 / -1; display: block; columns: 2 20rem; column-gap: 1.25rem; }
+    .sbe.spread .sbesection { break-inside: avoid; margin-bottom: 1rem; }
+  }
   .sbegrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(12rem, 100%), 1fr)); gap: 0.625rem; }
   .sbegrid.two { grid-template-columns: repeat(auto-fill, minmax(min(16rem, 100%), 1fr)); }
   label { display: grid; gap: 0.25rem; font-size: 0.75rem; color: var(--label); min-width: 0; }
