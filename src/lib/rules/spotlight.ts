@@ -6,12 +6,13 @@
  */
 import { LOOKUP_BASE } from './lookup';
 
-/** [name, kind, book, words] as the index writes it. */
-export type IndexRow = [string, string, string, string];
+/** [name, kind, book, words] as the index writes it; a subclass adds "class|class book|short name". */
+export type IndexRow = [string, string, string, string] | [string, string, string, string, string];
 export type Hit = { name: string; kind: string; source: string; words: string; label: string; url: string };
 
 export const KIND_LABEL: Record<string, string> = {
-  s: 'Spell', i: 'Item', f: 'Feat', o: 'Option', r: 'Species', b: 'Background', c: 'Class', d: 'Condition', m: 'Creature'
+  s: 'Spell', i: 'Item', f: 'Feat', o: 'Option', r: 'Species', b: 'Background', c: 'Class', u: 'Subclass', d: 'Condition',
+  m: 'Creature'
 };
 const PAGE: Record<string, string> = {
   s: 'spells.html', i: 'items.html', f: 'feats.html', o: 'optionalfeatures.html', r: 'races.html',
@@ -25,9 +26,16 @@ const bookRank = (b: string) => {
 };
 const hash = (s: string) => encodeURIComponent(s.toLowerCase()).toLowerCase();
 
-/** The 5e.tools page for an entry of the index. */
-export const entryUrl = (name: string, kind: string, source: string) =>
-  `${LOOKUP_BASE}/${PAGE[kind] ?? 'search.html'}#${hash(name)}_${hash(source)}`;
+/** The 5e.tools page for an entry of the index. A subclass is its class's page, with the subclass chosen. */
+export function entryUrl(name: string, kind: string, source: string, extra = ''): string {
+  if (kind === 'u') {
+    const [cls, clsSource, short] = extra.split('|');
+    if (cls && clsSource && short) {
+      return `${LOOKUP_BASE}/classes.html#${hash(cls)}_${hash(clsSource)},state:sub_${hash(short)}_${hash(source)}=b1`;
+    }
+  }
+  return `${LOOKUP_BASE}/${PAGE[kind] ?? 'search.html'}#${hash(name)}_${hash(source)}`;
+}
 
 /** How well a name matches: 0 the same, 1 starts with it, 2 a word starts with it, 3 holds it; -1 not at all. */
 export function matchRank(name: string, query: string): number {
@@ -49,14 +57,15 @@ export function search(rows: IndexRow[], query: string, limit = 30, kinds?: stri
     if (kinds && !kinds.includes(row[1])) continue;
     const rank = matchRank(row[0], q);
     if (rank < 0) continue;
-    const key = `${row[1]}|${row[0].toLowerCase()}`;
+    // Subclasses of the same name in different classes are different entries.
+    const key = `${row[1]}|${row[0].toLowerCase()}${row[1] === 'u' ? `|${row[3]}` : ''}`;
     const had = best.get(key);
     if (!had || bookRank(row[2]) < bookRank(had.row[2])) best.set(key, { row, rank });
   }
   return [...best.values()]
     .sort((a, b) => a.rank - b.rank || a.row[0].length - b.row[0].length || a.row[0].localeCompare(b.row[0]))
     .slice(0, limit)
-    .map(({ row: [name, kind, source, words] }) => ({
-      name, kind, source, words, label: KIND_LABEL[kind] ?? 'Entry', url: entryUrl(name, kind, source)
+    .map(({ row: [name, kind, source, words, extra] }) => ({
+      name, kind, source, words, label: KIND_LABEL[kind] ?? 'Entry', url: entryUrl(name, kind, source, extra)
     }));
 }

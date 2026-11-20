@@ -28,6 +28,20 @@ describe('the search', () => {
     expect(search(rows, 'gob', 30, ['s'])).toEqual([]);
     expect(search(rows, 'g')).toEqual([]);
   });
+  it('finds subclasses, each on its class’s page with the subclass chosen', () => {
+    const subs: IndexRow[] = [
+      ['School of Evocation', 'u', 'PHB', 'Wizard Subclass', 'Wizard|PHB|Evocation'],
+      ['Evoker', 'u', 'XPHB', 'Wizard Subclass', 'Wizard|XPHB|Evoker'],
+      ['Champion', 'u', 'XPHB', 'Fighter Subclass', 'Fighter|XPHB|Champion'],
+      ['Champion', 'u', 'WoW', 'Warrior Subclass', 'Warrior|WoW|Champion']
+    ];
+    const [evoker] = search(subs, 'evok');
+    expect(evoker).toMatchObject({ name: 'Evoker', label: 'Subclass', words: 'Wizard Subclass' });
+    expect(evoker.url).toBe('https://5e.tools/classes.html#wizard_xphb,state:sub_evoker_xphb=b1');
+    expect(peekTarget(evoker.url)).toMatchObject({ page: 'classes', subclass: { name: 'evoker', source: 'xphb' } });
+    // The same name in two classes is two entries.
+    expect(search(subs, 'champion').map((h) => h.words)).toEqual(['Fighter Subclass', 'Warrior Subclass']);
+  });
   it('opens each at its page, which the pop-ups read', () => {
     expect(entryUrl('Goblin Boss', 'm', 'XMM')).toBe('https://5e.tools/bestiary.html#goblin%20boss_xmm');
     expect(peekTarget(entryUrl('Fireball', 's', 'XPHB'))).toEqual({ page: 'spells', name: 'fireball', source: 'xphb' });

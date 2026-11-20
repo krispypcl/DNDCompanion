@@ -1,6 +1,6 @@
 // Writes src/lib/data/search-index.json: every entry the search (/)
 // can find on 5e.tools, by its proper name: spells, items, feats, optional
-// features, species, backgrounds, classes, conditions and monsters, each
+// features, species, backgrounds, classes, subclasses, conditions and monsters, each
 // with its book and a few words on what it is ("Level 3 Evocation",
 // "CR 1 Fey"). Loaded only when the search opens. Run `npm run search-index`.
 import { writeFile } from 'node:fs/promises';
@@ -14,15 +14,18 @@ const get = async (path) => {
 
 const SCHOOL = { A: 'Abjuration', C: 'Conjuration', D: 'Divination', E: 'Enchantment', V: 'Evocation', I: 'Illusion', N: 'Necromancy', T: 'Transmutation' };
 const cap = (s) => String(s ?? '').replace(/\b\w/g, (c) => c.toUpperCase());
-/** [name, kind, book, words] — kind: s spell, i item, f feat, o option, r species, b background, c class, d condition, m monster. */
+/**
+ * [name, kind, book, words] — kind: s spell, i item, f feat, o option, r species, b background, c class,
+ * u subclass, d condition, m monster. A subclass adds a fifth: "class|class book|short name".
+ */
 const rows = [];
 const seen = new Set();
-const add = (name, kind, source, words = '') => {
+const add = (name, kind, source, words = '', extra = '') => {
   if (!name || !source) return;
   const key = `${kind}|${name.toLowerCase()}|${source.toLowerCase()}`;
   if (seen.has(key)) return;
   seen.add(key);
-  rows.push([name, kind, source, words]);
+  rows.push(extra ? [name, kind, source, words, extra] : [name, kind, source, words]);
 };
 
 const spellIndex = await get('spells/index.json');
@@ -40,7 +43,14 @@ for (const r of races.race ?? []) add(r.name, 'r', r.source, 'Species');
 for (const bg of (await get('backgrounds.json')).background ?? []) add(bg.name, 'b', bg.source, 'Background');
 const classIndex = await get('class/index.json');
 for (const file of Object.values(classIndex)) {
-  for (const c of (await get(`class/${file}`)).class ?? []) add(c.name, 'c', c.source, 'Class');
+  const data = await get(`class/${file}`);
+  for (const c of data.class ?? []) add(c.name, 'c', c.source, 'Class');
+  // A subclass opens on its class's page, so its row also carries the class,
+  // the class's book and the subclass's short name (5e.tools links by those).
+  for (const sc of data.subclass ?? []) {
+    if (!sc.className || !sc.shortName) continue;
+    add(sc.name, 'u', sc.source, `${sc.className} Subclass`, `${sc.className}|${sc.classSource ?? sc.source}|${sc.shortName}`);
+  }
 }
 const cd = await get('conditionsdiseases.json');
 for (const c of cd.condition ?? []) add(c.name, 'd', c.source, 'Condition');
