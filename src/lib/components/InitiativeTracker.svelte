@@ -198,6 +198,8 @@
   .initcall { font-size: 0.8125rem; font-weight: 600; color: var(--a); margin-right: 0.25rem; }
   .initfold { overflow: clip; overflow-clip-margin: 6px; transition: height 0.32s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.26s ease; }
   .initfold.folded { opacity: 0; }
+  /* While a row is dragged it may leave the list's box: nothing clips it. */
+  .initfold:has(:global(.reordering)) { overflow: visible; }
   @media (prefers-reduced-motion: reduce) { .initfold { transition: none; } }
   .initlist { position: relative; list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.375rem; }
   .initrow {

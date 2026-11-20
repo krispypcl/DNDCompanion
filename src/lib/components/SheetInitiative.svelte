@@ -46,7 +46,10 @@
 {/if}
 
 <style>
+  /* Above the banner and the hurt edges, as the sheet's modules are, so it
+     reads as solid as they do. */
   .sheetinit {
+    position: relative; z-index: 1;
     display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 0.875rem; margin: 0 0 1rem; padding: 0.625rem 0.875rem;
     border-radius: var(--r); border: 1px solid var(--line-soft); background: var(--surface);
     transition: border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
