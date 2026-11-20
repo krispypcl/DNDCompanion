@@ -27,6 +27,8 @@ export type KeptPeek = {
   id: number; target: PeekTarget; left: number; top: number; width: number;
   /** Opened from the search, so it fades in (one moved aside is already on screen). */
   opened?: boolean;
+  /** Came from the search: always kept, so it has no pin to let it go, only its ×. */
+  fromSearch?: boolean;
   /** How many times it has been sent somewhere new: each time, it glides there from where it was. */
   moves?: number;
 };
@@ -145,7 +147,7 @@ class Peek {
     const step = ((had ? this.kept.length - 1 : this.kept.length) % 6) * 28;
     const left = Math.max(12, window.innerWidth - width - 24 - step);
     if (had) this.#moveTo(had, left, 72 + step, width);
-    else this.kept = [...this.kept, { id: this.#next++, target, left, top: 72 + step, width, opened: true }];
+    else this.kept = [...this.kept, { id: this.#next++, target, left, top: 72 + step, width, opened: true, fromSearch: true }];
   }
 
   /** A kept window to the front. */
