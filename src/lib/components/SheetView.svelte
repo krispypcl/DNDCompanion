@@ -36,6 +36,7 @@
   import NotFound from '#lib/components/NotFound.svelte';
   import { pageTitle } from '#lib/title.ts';
   import SheetSkeleton from '#lib/components/SheetSkeleton.svelte';
+  import { assetsReady } from '#lib/assets.ts';
   import D20Loader from '#lib/components/D20Loader.svelte';
   import SaveButton from '#lib/components/SaveButton.svelte';
   import { beforeNavigate, goto } from '$app/navigation';
@@ -238,6 +239,14 @@
     const f = nameFont(definition?.identity?.nameFont);
     return f && f !== 'bad' ? f : null;
   });
+  /** Its pictures and name fonts are here (lib/assets): until then the die keeps rolling over the outline. */
+  let assetsDone = $state(false);
+  $effect(() => {
+    if (loading || loadError || !definition || assetsDone) return;
+    let live = true;
+    void assetsReady([portraitSrc, banner], [nameFace]).then(() => { if (live) assetsDone = true; });
+    return () => (live = false);
+  });
   const initAdv = $derived(definition ? advantageFrom(definition, 'init') : []);
   /** The spellcasting ability, and what the spell DC and attack are made of. */
   const castAb = $derived(definition?.spellcastingAbility);
@@ -323,6 +332,7 @@
     }
     loading = true;
     revealed = false;
+    assetsDone = false;
     loadError = null;
     resetUndo();
     resetTray();
@@ -785,7 +795,7 @@
   <div class="loading">
     <SheetSkeleton />
     <div class="screen-center">
-      <D20Loader result={loading ? null : loadError ? 1 : 20} label="Loading the sheet"
+      <D20Loader result={loading || (!loadError && !assetsDone) ? null : loadError ? 1 : 20} label="Loading the sheet"
                  onlanded={() => (revealed = true)} />
     </div>
   </div>

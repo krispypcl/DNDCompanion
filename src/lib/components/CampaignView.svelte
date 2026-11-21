@@ -39,6 +39,7 @@
   import D20Loader from './D20Loader.svelte';
   import ModeToggle from './ModeToggle.svelte';
   import PhoneTop from './PhoneTop.svelte';
+  import { assetsReady } from '#lib/assets.ts';
   import BackLink from './BackLink.svelte';
   import Crest from './Crest.svelte';
   import Lightbox from './Lightbox.svelte';
@@ -384,6 +385,15 @@
   /** Who is here, in one line with one light, as in the main menu ("DM and 3 players here"). */
   const hereLine = $derived(music.presenceKnown ? hereText(isDm || music.dmHere, players) : '');
   const crestLink = $derived(resolveImageUrl(campaign?.details.crestUrl));
+  /** Its pictures (banner, crest, the characters' portraits) and name font are here (lib/assets): until then the die keeps rolling. */
+  let assetsDone = $state(false);
+  $effect(() => {
+    if (loading || !campaign || assetsDone) return;
+    const pics = [bannerLink.url, crestLink.url, ...sheets.map((s) => resolveImageUrl(s.definition?.identity?.portraitUrl).url)];
+    let live = true;
+    void assetsReady(pics, [face]).then(() => { if (live) assetsDone = true; });
+    return () => (live = false);
+  });
   const owlbear = $derived(webLink(campaign?.details.owlbearUrl));
   /** The crest full screen, grown out of the header. */
   let crestOpen = $state<Element | null>(null);
@@ -590,7 +600,7 @@
   <div class="loading">
     <CampaignSkeleton />
     <div class="screen-center">
-      <D20Loader size={56} label="Loading the campaign" result={loading ? null : missing || (error && !campaign) ? 1 : 20}
+      <D20Loader size={56} label="Loading the campaign" result={loading || (campaign && !assetsDone) ? null : missing || (error && !campaign) ? 1 : 20}
                  onlanded={() => (landed = true)} />
     </div>
   </div>

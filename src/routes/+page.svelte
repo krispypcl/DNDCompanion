@@ -37,6 +37,7 @@
   import { vitalStatus } from '#lib/rules/hp.ts';
   import { lookOf } from '#lib/rules/conditions.ts';
   import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
+  import { assetsReady } from '#lib/assets.ts';
   import { themeStyle } from '#lib/theme.ts';
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
@@ -481,6 +482,15 @@
         running = mine;
         campaignNames = names;
         joined = theirs.filter((c) => c.created_by !== id);
+        // The cards' pictures and name fonts first (lib/assets): until then the die keeps rolling.
+        const camps = [...mine, ...joined];
+        const pics = [
+          ...rows.flatMap((s) => [s.definition?.identity?.portraitUrl, s.definition?.identity?.bannerUrl]),
+          ...camps.flatMap((c) => [c.details?.crestUrl, c.details?.bannerUrl]),
+          ...(members ?? []).map((m) => m.identity?.portraitUrl)
+        ].map((u) => resolveImageUrl(u).url);
+        const fonts = [...rows.map((s) => fontFace(s.definition?.identity?.nameFont)), ...camps.map((c) => fontFace(c.details?.nameFont))];
+        await assetsReady(pics, fonts);
       })
       .catch((e) => (error = friendlyError(e, 'Your sheets wouldn’t load! Try again in a moment.')))
       .finally(() => (loading = false));
