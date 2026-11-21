@@ -3,11 +3,25 @@
   the defenses and senses, then the traits, actions, bonus actions,
   reactions and legendary actions, each a list of named entries to add to
   or take from. For a homebrew monster or NPC, or to change one from a book.
+  Every text box grows with its words (actions fitText), so nothing hides
+  behind a scrollbar; the one-line ones wrap rather than scroll sideways.
 -->
 <script lang="ts">
-  import { ABILITIES, SECTIONS, modifier, signedMod, type Section, type StatBlock } from '#lib/rules/statblock.ts';
+  import { fitText } from '#lib/actions.ts';
+  import { SECTIONS, type Section, type StatBlock } from '#lib/rules/statblock.ts';
+  import StatScores from './StatScores.svelte';
 
-  let { value = $bindable(), spread = false }: { value: StatBlock; /** A wide window: the parts side by side and the features in columns. */ spread?: boolean } = $props();
+  let {
+    value = $bindable(),
+    spread = false,
+    scores = true
+  }: {
+    value: StatBlock;
+    /** A wide window: the parts side by side and the features in columns. */
+    spread?: boolean;
+    /** The six scores here; off when the window shows them elsewhere (beside the name). */
+    scores?: boolean;
+  } = $props();
 
   const SIZES = ['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan'];
   const TOP: [keyof StatBlock, string, string][] = [
@@ -32,13 +46,13 @@
   const ONE: Record<Section, string> = { traits: 'a trait', actions: 'an action', bonus: 'a bonus action', reactions: 'a reaction', legendary: 'a legendary action' };
 
   const text = (k: keyof StatBlock) => (typeof value[k] === 'string' ? (value[k] as string) : '');
+  /** A line of the stat block: one line, however it wraps on screen. */
   function setText(k: keyof StatBlock, v: string) {
-    value = { ...value, [k]: v };
+    value = { ...value, [k]: v.replace(/\s*\n\s*/g, ' ') };
   }
-  function setScore(a: (typeof ABILITIES)[number], v: string) {
-    const n = Number(v);
-    value = { ...value, [a]: v === '' || !Number.isFinite(n) ? undefined : n };
-  }
+  const oneLine = (e: KeyboardEvent) => {
+    if (e.key === 'Enter') e.preventDefault();
+  };
   function addFeature(k: Section) {
     value = { ...value, [k]: [...(value[k] ?? []), { name: '', text: '' }] };
   }
@@ -59,23 +73,15 @@
       </select>
     </label>
     {#each TOP as [k, label, hint] (k)}
-      <label><span>{label}</span><input value={text(k)} placeholder={hint} maxlength="400" oninput={(e) => setText(k, e.currentTarget.value)} /></label>
+      {@render line(k, label, hint)}
     {/each}
   </div>
 
-  <div class="sbescores" role="group" aria-label="Ability scores">
-    {#each ABILITIES as a (a)}
-      <label><span>{a.toUpperCase()}</span>
-        <input class="numfield" type="number" min="1" max="30" inputmode="numeric" value={value[a] ?? ''} placeholder="10"
-               oninput={(e) => setScore(a, e.currentTarget.value)} />
-        <i>{signedMod(modifier(value[a]))}</i>
-      </label>
-    {/each}
-  </div>
+  {#if scores}<StatScores bind:value />{/if}
 
   <div class="sbegrid two">
     {#each LINES as [k, label, hint] (k)}
-      <label><span>{label}</span><input value={text(k)} placeholder={hint} maxlength="400" oninput={(e) => setText(k, e.currentTarget.value)} /></label>
+      {@render line(k, label, hint)}
     {/each}
   </div>
 
@@ -89,7 +95,7 @@
                  oninput={(e) => setFeature(k, i, 'name', e.currentTarget.value)} />
           <button type="button" class="fdrop" aria-label="Remove {f.name || ONE[k]}" title="Remove" onclick={() => dropFeature(k, i)}>×</button>
           <textarea rows="2" value={f.text} placeholder="What it does" maxlength="3000" aria-label="{title}: what it does"
-                    oninput={(e) => setFeature(k, i, 'text', e.currentTarget.value)}></textarea>
+                    use:fitText={f.text} oninput={(e) => setFeature(k, i, 'text', e.currentTarget.value)}></textarea>
         </div>
       {/each}
       <button type="button" class="smallbtn quiet" onclick={() => addFeature(k)}>Add {ONE[k]}</button>
@@ -97,6 +103,13 @@
   {/each}
   </div>
 </div>
+
+{#snippet line(k: keyof StatBlock, label: string, hint: string)}
+  <label><span>{label}</span>
+    <textarea class="sbeline" rows="1" value={text(k)} placeholder={hint} maxlength="400" use:fitText={text(k)}
+              onkeydown={oneLine} oninput={(e) => setText(k, e.currentTarget.value)}></textarea>
+  </label>
+{/snippet}
 
 <style>
   .sbe { display: grid; gap: 1rem; }
@@ -106,7 +119,7 @@
   @media (min-width: 900px) {
     .sbe.spread { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 1.5rem; align-items: start; }
     .sbe.spread > .sbegrid:first-child { grid-column: 1; grid-row: 1; grid-template-columns: repeat(auto-fill, minmax(min(10rem, 100%), 1fr)); }
-    .sbe.spread > .sbescores { grid-column: 1; grid-row: 2; }
+    .sbe.spread > :global(.sbescores) { grid-column: 1; grid-row: 2; }
     .sbe.spread > .sbegrid.two { grid-column: 2; grid-row: 1 / span 2; grid-template-columns: repeat(auto-fill, minmax(min(14rem, 100%), 1fr)); }
     .sbe.spread > .sbesections { grid-column: 1 / -1; display: block; columns: 3 18rem; column-gap: 1.5rem; }
     .sbe.spread .sbesection { break-inside: avoid; margin-bottom: 1rem; }
@@ -118,22 +131,21 @@
     font: inherit; font-size: 0.8125rem; color: var(--text); min-width: 0; width: 100%;
     padding: 0.375rem 0.5rem; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg);
   }
+  input, select, textarea { transition: border-color 0.15s ease; }
+  input:hover, select:hover, textarea:hover { border-color: var(--a-edge); }
   input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a-edge); }
-  .sbescores { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.375rem; }
-  .sbescores label { justify-items: center; text-align: center; padding: 0.375rem; border-radius: var(--r-sm); background: var(--raised); border: 1px solid var(--line-soft); }
-  .sbescores span { font-weight: 650; letter-spacing: 0.08em; font-size: 0.625rem; }
-  .sbescores input { text-align: center; padding: 0.25rem; }
-  .sbescores i { font-style: normal; font-size: 0.6875rem; color: var(--dim); }
+  textarea { display: block; box-sizing: border-box; overflow: hidden; }
+  /* A line wraps as it grows; it is never dragged taller by hand. */
+  .sbeline { resize: none; line-height: 1.4; }
   .sbesection { display: grid; gap: 0.5rem; }
   .sbesection h3 { margin: 0; padding-bottom: 0.25rem; border-bottom: 1px solid var(--a-edge); font-size: 0.75rem; font-weight: 650; letter-spacing: 0.1em; text-transform: uppercase; color: var(--a); }
   .sbesection > .smallbtn { justify-self: start; }
   .sbefeature { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.375rem; }
-  .sbefeature textarea { grid-column: 1 / -1; resize: vertical; line-height: 1.45; }
+  .sbefeature textarea { grid-column: 1 / -1; resize: none; line-height: 1.45; }
   .fname { font-weight: 600; }
   .fdrop {
     width: 2rem; padding: 0; border: 1px solid transparent; border-radius: var(--r-sm); background: none; color: var(--dim);
     font-size: 1.05rem; cursor: pointer; transition: color 0.15s ease, border-color 0.15s ease;
   }
   .fdrop:hover { color: var(--bad); border-color: color-mix(in oklch, var(--bad) 50%, transparent); }
-  @media (max-width: 480px) { .sbescores { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 </style>

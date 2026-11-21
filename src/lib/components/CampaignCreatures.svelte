@@ -40,6 +40,7 @@
   import Lightbox from './Lightbox.svelte';
   import SectionHead from './SectionHead.svelte';
   import StatBlockEditor from './StatBlockEditor.svelte';
+  import StatScores from './StatScores.svelte';
   import StatWindow from './StatWindow.svelte';
 
   let {
@@ -488,6 +489,8 @@
           {#if !e.id && !e.homebrewId}
             <label class="cmany"><span>How many</span><input class="numfield" type="number" min="1" max="20" inputmode="numeric" bind:value={e.draft.howMany} /></label>
           {/if}
+          <!-- Its six scores beside its name, where a stat block opens with them. -->
+          <div class="cscores"><StatScores bind:value={e.draft.statblock} /></div>
         </div>
         <div class="cformlinks">
           {#if !e.homebrewId}
@@ -507,7 +510,7 @@
           <h3 class="sbtitle">Stat block
             <InfoTip label="About its hit points and armor class">Its hit points and armor class are the stat block’s first numbers. One already in the fight keeps its own until those change.</InfoTip>
           </h3>
-          <StatBlockEditor bind:value={e.draft.statblock} spread />
+          <StatBlockEditor bind:value={e.draft.statblock} spread scores={false} />
         </div>
         <div class="cformdo">
           <button type="button" class="smallbtn quiet" onclick={() => (editing = e.homebrewId ? { id: null, way: 'homebrew', draft: blank() } : null)}>Cancel</button>
@@ -672,8 +675,10 @@
   /* One column on a narrow screen; on a wide one the creature on the left and
      its stat block across the rest, as the account page sets its cards out. */
   .cform { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.125rem; align-items: start; }
-  /* The band: portrait, name, kind and how many on one line; the links on the next. */
-  .cformtop { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: end; gap: 0.875rem; }
+  /* The band: portrait, name, kind, how many and the six scores on one line; the links on the next. */
+  .cformtop { display: grid; grid-template-columns: auto minmax(10rem, 1fr) auto auto minmax(18rem, 26rem); align-items: end; gap: 0.875rem; }
+  .cformtop:not(:has(.cmany)) { grid-template-columns: auto minmax(10rem, 1fr) auto minmax(18rem, 26rem); }
+  .cscores { min-width: 0; }
   .cformlinks { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; align-items: end; gap: 0.875rem; }
   .cformpic {
     width: 3.25rem; height: 3.25rem; border-radius: 50%; overflow: hidden; display: grid; place-items: center;
@@ -683,8 +688,8 @@
   .cmany input { width: 5rem; }
   .cformlinks .keep { padding-bottom: 0.4375rem; }
   @media (max-width: 899px) {
-    .cformtop { grid-template-columns: auto minmax(0, 1fr); }
-    .cformtop .kindpick, .cformtop .cmany { grid-column: 1 / -1; }
+    .cformtop, .cformtop:not(:has(.cmany)) { grid-template-columns: auto minmax(0, 1fr); }
+    .cformtop .kindpick, .cformtop .cmany, .cformtop .cscores { grid-column: 1 / -1; }
     .cformlinks { grid-template-columns: minmax(0, 1fr); }
   }
   .cform label { display: grid; gap: 0.3125rem; font-size: 0.75rem; color: var(--label); }
