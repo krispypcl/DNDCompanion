@@ -10,6 +10,12 @@
   import { prefersReducedMotion } from '#lib/motion.ts';
 
   let { url }: { url: string } = $props();
+  /**
+   * How far the picture reaches above the top of the page, out of sight,
+   * fading upward into nothing. Pulling a phone's page down (to refresh)
+   * shows it, so the picture fades into the page instead of ending in a line.
+   */
+  const REACH = 128;
 
   let drift = $state(0);
   /** A link that no longer works leaves no banner rather than a tinted blank. */
@@ -25,7 +31,7 @@
   let height = $state(0);
   let phone = $state(false);
   const mask = $derived(
-    width > 0 && height > 0 ? slashMask(width, height, phone ? PHONE_SLASH : DESKTOP_SLASH) : FALLBACK_MASK
+    width > 0 && height > REACH ? slashMask(width, height - REACH, phone ? PHONE_SLASH : DESKTOP_SLASH) : FALLBACK_MASK
   );
 
   onMount(() => {
@@ -62,15 +68,18 @@
   class="slash"
   class:failed
   style:--mask={mask}
+  style:--reach="{REACH}px"
   bind:clientWidth={width}
   bind:clientHeight={height}
   aria-hidden="true"
 >
   <!-- object-fit: cover crops to the layer. The image is never stretched: a
        banner of the wrong proportions loses its edges, not its shape. -->
-  <img src={url} alt="" style:--drift="{drift}px" onerror={() => (failed = true)} />
-  <!-- Holds the contrast the text needs. -->
-  <div class="tint"></div>
+  <div class="frame">
+    <img src={url} alt="" style:--drift="{drift}px" onerror={() => (failed = true)} />
+    <!-- Holds the contrast the text needs. -->
+    <div class="tint"></div>
+  </div>
 </div>
 
 <style>
@@ -84,16 +93,27 @@
    */
   .slash {
     position: absolute;
-    top: 0;
+    top: calc(-1 * var(--reach));
     left: 0;
     right: 0;
-    height: 27rem;
+    height: calc(27rem + var(--reach));
     z-index: 0;
     pointer-events: none;
     overflow: hidden;
-    -webkit-mask-image: var(--mask);
-    mask-image: var(--mask);
+    /* Two masks: the reach above the page fading in from nothing, and the slash below it. */
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000), var(--mask);
+    mask-image: linear-gradient(to bottom, transparent, #000), var(--mask);
+    -webkit-mask-size: 100% var(--reach), 100% calc(100% - var(--reach));
+    mask-size: 100% var(--reach), 100% calc(100% - var(--reach));
+    -webkit-mask-position: 0 0, 0 var(--reach);
+    mask-position: 0 0, 0 var(--reach);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
   }
+  /* The banner's own box, below the reach: the picture spills up out of it into the reach. */
+  .frame { position: absolute; left: 0; right: 0; top: var(--reach); bottom: 0; }
+  /* The tint's top color carries on up through the reach, so the picture keeps one shade there. */
+  .tint::before { content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: var(--reach); background: var(--tint-top, transparent); }
   img {
     position: absolute;
     inset: -22% 0;
@@ -124,6 +144,7 @@
   .tint {
     position: absolute;
     inset: 0;
+    --tint-top: color-mix(in oklch, var(--bg) 62%, transparent);
     background:
       linear-gradient(
         to bottom,
@@ -177,6 +198,7 @@
    */
   :global(:root[data-mode='light']) img { filter: saturate(1.2) contrast(1.08); }
   :global(:root[data-mode='light']) .tint {
+    --tint-top: color-mix(in oklch, var(--bg) 26%, transparent);
     background:
       linear-gradient(
         to bottom,

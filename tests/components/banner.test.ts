@@ -50,8 +50,9 @@ describe('Banner', () => {
     // No clip shape any more: the edge is a gradient mask, nothing is cut.
     expect(container.querySelector('clipPath')).toBeNull();
     expect(source).not.toMatch(/clip-path/);
-    expect(source).toMatch(/mask-image: var\(--mask\)/);
-    expect(source).toMatch(/-webkit-mask-image: var\(--mask\)/);
+    // The slash's mask, beside the reach's fade above the page (pulled into view to refresh).
+    expect(source).toMatch(/mask-image: linear-gradient\(to bottom, transparent, #000\), var\(--mask\)/);
+    expect(source).toMatch(/-webkit-mask-image: linear-gradient\(to bottom, transparent, #000\), var\(--mask\)/);
   });
 
   it('holds still for anyone who asked for less movement', () => {

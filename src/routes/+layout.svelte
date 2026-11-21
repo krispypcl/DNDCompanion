@@ -11,8 +11,12 @@
   import { profile } from '#lib/stores/profile.ts';
   import { adoptAccountPrefs } from '#lib/prefs.ts';
   import { installSettle } from '#lib/settle.ts';
+  import PullRefresh from '#lib/components/PullRefresh.svelte';
 
   let { children } = $props();
+  /** A phone's pull to refresh: how far the page is pulled down, and whether a finger is on it. */
+  let pull = $state(0);
+  let pulling = $state(false);
 
   /*
    * The 5e.tools peek (and the 5e.tools reader behind it) loads on its own,
@@ -160,6 +164,7 @@
 
 <Splash />
 <ConnectionNotice />
+<PullRefresh bind:offset={pull} bind:pulling busy={() => sheetStore.hasUnsaved()} />
 {#if LookupPeek}<LookupPeek />{/if}
 
 <!--
@@ -169,13 +174,17 @@
   would jump.
 -->
 {#key page.url.pathname}
-  <div class="route" in:arrive={{ y: 10, duration: 260, delay: 30 }}>
+  <div class="route" class:pulling style:top={pull ? `${pull}px` : undefined} in:arrive={{ y: 10, duration: 260, delay: 30 }}>
     {@render children()}
   </div>
 {/key}
 
 <style>
-  .route { position: relative; }
+  /* Pulled down to refresh, the page moves by top (it holds fixed parts, so never a transform)
+     and eases back up when let go. */
+  .route { position: relative; transition: top 0.28s cubic-bezier(0.33, 1, 0.68, 1); }
+  .route.pulling { transition: none; }
+  @media (prefers-reduced-motion: reduce) { .route { transition: none; } }
   /* The old page leaves; the new one brings its own arrival (the rise above). */
   :global(::view-transition-old(root)) {
     animation: leave-page 0.2s cubic-bezier(0.33, 1, 0.68, 1) both;

@@ -201,6 +201,8 @@
   --font-brand: 'Cinzel Decorative', Georgia, 'Times New Roman', serif;
 }
 html, body { margin: 0; height: 100%; }
+/* A phone pulls to refresh with the app's own (PullRefresh): the browser's own pull and bounce are off. */
+html.pull-refresh, html.pull-refresh body { overscroll-behavior-y: none; }
 /* Nothing may make the page wider than the screen: on a phone that lets the
    whole page be panned or zoomed sideways. The banner's slant is clipped. */
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
