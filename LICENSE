@@ -35,17 +35,17 @@ Permitted Purpose
 
 A permitted purpose is any purpose other than a commercial one. You may not:
 
-- sell the software, or a copy, change or new work based on it;
+- sell the software, or a copy, change, or new work based on it;
 - charge for access to it, or for anything it does;
-- run advertising, sponsorship, donations or paid features on or around it;
+- run advertising, sponsorship, donations, or paid features on or around it;
 - use any part of it to train or improve machine-learning or artificial
   intelligence systems.
 
 No Distribution
 
 Beyond the copy your table uses, you may not publish, distribute, share,
-sublicense or otherwise make the software, or any changes or new works based
-on it, available to anyone else, whether as source code, as built files or
+sublicense, or otherwise make the software, or any changes or new works based
+on it, available to anyone else, whether as source code, as built files, or
 as a hosted service. This includes publishing a fork or a changed version on
 GitHub or anywhere else. GitHub's Terms of Service let you view and fork this
 repository within GitHub; that fork must stay unused outside these terms and

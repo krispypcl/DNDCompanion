@@ -18,10 +18,10 @@ does the arithmetic so the game doesn't stop for it, keeps the rules a press
 away, and puts the whole party on one live page for the DM.
 
 - **A sheet that keeps up.** Modifiers, saving throws, armor class, spell save
-  DC and the rest are worked out from what the character has and wears, and
+  DC, and the rest are worked out from what the character has and wears, and
   every number can explain itself. Anything the rules don't cover is written
   by hand, so homebrew sits as comfortably as anything from the books.
-- **The rules beside you.** Every class, spell, item, feature and monster opens
+- **The rules beside you.** Every class, spell, item, feature, and monster opens
   straight from [5e.tools](https://5e.tools/), and <kbd>/</kbd> searches every
   book.
 - **A table that's live.** In a campaign the DM sees each character's hit
@@ -39,10 +39,10 @@ away, and puts the whole party on one live page for the DM.
 
 ### In app
 
-1. **Sign up** with an email, Google or Discord.
+1. **Sign up** with an email, Google, or Discord.
 2. **Make a character** with **New sheet**, then the pencil to fill it in; it
    saves as you go. The cog beside it sets the sheet's look: portrait,
-   banner, color, music and sounds. <kbd>?</kbd> lists the keyboard
+   banner, color, music, and sounds. <kbd>?</kbd> lists the keyboard
    shortcuts.
 3. **Share it** by its link. The down arrow saves it as a printable PDF, and
    **Import** in the main menu brings the character back from that PDF.
@@ -117,4 +117,4 @@ live updates all come from one Supabase project.
 
 ## License
 
-The DND Companion Personal Use License (see [LICENSE](LICENSE)). You may use the code, change it and run your own copy for yourself and the people you play with, free of charge. You may not sell it, charge for it or put ads on it, publish or share it or your changes, offer a copy to the public, or train AI on it. Playing on the hosted app is always welcome. The sound effects, fonts and packages it uses keep their own licenses.
+The DND Companion Personal Use License (see [LICENSE](LICENSE)). You may use the code, change it, and run your own copy for yourself and the people you play with, free of charge. You may not sell it, charge for it, or put ads on it; publish or share it or your changes; offer a copy to the public; or train AI on it. Playing on the hosted app is always welcome. The sound effects, fonts, and packages it uses keep their own licenses.
