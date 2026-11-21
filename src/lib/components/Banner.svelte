@@ -149,20 +149,22 @@
    * image clears the header and is read through the frost of the hit points.
    */
   @media (max-width: 700px) {
-    .slash { height: 28rem; }
+    .slash { height: calc(28rem + var(--reach, 0px)); }
     /* One column, so the header text runs the full width and the sideways
        relief has nowhere to put it. The tint stays even across instead. */
+    /* No side fades, which darkened the top bar's buttons at either edge, and a thinner veil at
+       the very top, where the bar and the mark sit; deeper again under them, where the name is. */
     .tint {
+      --tint-top: color-mix(in oklch, var(--bg) 42%, transparent);
       background:
         linear-gradient(
           to bottom,
-          color-mix(in oklch, var(--bg) 78%, transparent) 0%,
-          color-mix(in oklch, var(--bg) 74%, transparent) 26%,
+          var(--tint-top) 0%,
+          color-mix(in oklch, var(--bg) 66%, transparent) 30%,
           color-mix(in oklch, var(--bg) 40%, transparent) 60%,
           color-mix(in oklch, var(--bg) 34%, transparent) 90%,
           var(--bg) 100%
-        ),
-        linear-gradient(to right, var(--bg) 0%, transparent 10%, transparent 90%, var(--bg) 100%);
+        );
     }
   }
 
@@ -195,16 +197,16 @@
   }
   @media (max-width: 700px) {
     :global(:root[data-mode='light']) .tint {
+      --tint-top: color-mix(in oklch, var(--bg) 22%, transparent);
       background:
         linear-gradient(
           to bottom,
-          color-mix(in oklch, var(--bg) 36%, transparent) 0%,
-          color-mix(in oklch, var(--bg) 30%, transparent) 26%,
+          var(--tint-top) 0%,
+          color-mix(in oklch, var(--bg) 32%, transparent) 30%,
           color-mix(in oklch, var(--bg) 8%, transparent) 60%,
           color-mix(in oklch, var(--bg) 5%, transparent) 90%,
           var(--bg) 100%
-        ),
-        linear-gradient(to right, var(--bg) 0%, transparent 10%, transparent 90%, var(--bg) 100%);
+        );
     }
   }
 
