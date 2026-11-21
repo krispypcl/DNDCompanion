@@ -24,7 +24,7 @@
         ]
       : [
           ...(owner ? [{ keys: ['E'], what: 'Edit, or finish editing' }] : []),
-          { keys: ['1', '–', '8'], what: 'Switch tabs, Combat to Backstory' },
+          { keys: ['1', '–', '8'], what: 'Switch tabs, Combat to Lore' },
           { keys: ['/'], what: 'Search 5e.tools' },
           { keys: ['M'], what: 'Music on or off' },
           { keys: ['?'], what: 'Show these shortcuts' },

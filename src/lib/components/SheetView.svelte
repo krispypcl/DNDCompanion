@@ -252,7 +252,7 @@
    * same parts as the desktop's, shown a place at a time.
    */
   type Place = 'play' | 'abilities' | 'spells' | 'gear' | 'features' | 'more';
-  const MORE_TABS = ['Trackers', 'Character', 'Notes', 'Backstory'];
+  const MORE_TABS = ['Trackers', 'Character', 'Notes', 'Lore'];
   /** The sheet's look and sound (LinksPanel): a window from the cog, not a tab. */
   let appearanceOpen = $state(false);
   const phoneOn = $derived(phone.current);
@@ -383,7 +383,8 @@
     const hash = location.hash.slice(1).toLowerCase();
     // Appearance (once a tab, and before that Links) opens its window.
     if (hash === 'appearance' || hash === 'links') return void (appearanceOpen = true);
-    const wanted = TABS.find((t) => t.toLowerCase() === hash);
+    // The Lore tab was once Backstory: an old link still finds it.
+    const wanted = TABS.find((t) => t.toLowerCase() === (hash === 'backstory' ? 'lore' : hash));
     if (wanted) activeTab = wanted;
   });
 
@@ -1221,7 +1222,7 @@
             {:else if tab === 'Notes'}
               {@render writing('notes', 'Notes')}
             {:else}
-              {@render writing('backstory', 'Backstory')}
+              {@render writing('backstory', 'Lore')}
             {/if}
           {/snippet}
         </Tabs>

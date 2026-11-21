@@ -5,7 +5,7 @@ import TextPanel from '#lib/components/TextPanel.svelte';
 
 const mount = (over: Record<string, unknown> = {}) => {
   const props = {
-    label: 'Backstory', value: 'The long story', editable: false, owner: true,
+    label: 'Lore', value: 'The long story', editable: false, owner: true,
     isPublic: true, onbody: vi.fn(), onpublic: vi.fn(), ...over
   };
   const view = render(TextPanel, { props });
@@ -26,7 +26,7 @@ describe('TextPanel', () => {
     });
 
     it('is told a private writing is private, not shown it as empty', () => {
-      mount({ owner: false, value: '', locked: true, label: 'Backstory' });
+      mount({ owner: false, value: '', locked: true, label: 'Lore' });
       expect(screen.getByRole('note').textContent).toMatch(/private/i);
       expect(screen.queryByText('Nothing written yet.')).toBeNull();
       expect(screen.queryByText(/page 1 of/i)).toBeNull();

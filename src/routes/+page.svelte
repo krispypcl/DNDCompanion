@@ -1039,7 +1039,7 @@
         {@const doomed = sheets.find((s) => s.id === confirming)}
         {@const leaving = joined.find((c) => c.id === confirming)}
         {#if doomed}
-          <ConfirmModal title="Delete {nameOf(doomed)}?" message="The sheet goes for good, with its notes and backstory." yes="Delete"
+          <ConfirmModal title="Delete {nameOf(doomed)}?" message="The sheet goes for good, with its notes and lore." yes="Delete"
                         busy={deleting === doomed.id} busyLabel="Deleting" onyes={() => remove(doomed.id)} onclose={() => (confirming = null)} />
         {:else if leaving}
           <ConfirmModal title="Leave {leaving.name}?" message="You leave with {charactersIn(leaving).length > 1 ? 'all your characters' : 'your character'}." yes="Leave" no="Stay"

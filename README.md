@@ -29,8 +29,8 @@ away, and puts the whole party on one live page for the DM.
   NPCs with their stat blocks and reveals them when the party finds them. The
   table shares its music and a board to draw on.
 - **Yours to keep.** A sheet saves to a printable PDF that carries the whole
-  character inside it, so the same file can bring it back. Notes and backstory
-  can stay private.
+  character inside it, so the same file can bring it back. Notes and lore can
+  stay private.
 - **Anywhere you play.** It's laid out for a phone as well as a computer,
   installs like an app, and joins an [Owlbear Rodeo](https://www.owlbear.rodeo/)
   map through its extension.
@@ -40,7 +40,7 @@ away, and puts the whole party on one live page for the DM.
 ### In app
 
 1. **Sign up** with an email, Google, or Discord.
-2. **Make a character** with **New sheet**, then the pencil to fill it in; it
+2. **Make a character** with **New Sheet**, then the pencil to fill it in; it
    saves as you go. The cog beside it sets the sheet's look: portrait,
    banner, color, music, and sounds. <kbd>?</kbd> lists the keyboard
    shortcuts.
@@ -49,7 +49,7 @@ away, and puts the whole party on one live page for the DM.
    Edits made inside the PDF don't come back, and saving the PDF again from
    another app can leave the character out.
 4. **Start a campaign** from the main menu's Campaigns and send the players its
-   invite (**Invite a player**); each picks a character to bring. The DM's cog holds the
+   invite (**Invite a Player**); each picks a character to bring. The DM's cog holds the
    campaign's settings, from the next session's date to its Owlbear room.
 5. **Install it** from the browser's menu: *Add to Home Screen* on a phone,
    *Install app* on a computer. On a phone the main menu shows the way.
