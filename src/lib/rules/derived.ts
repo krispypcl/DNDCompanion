@@ -4,9 +4,9 @@
  * a dozen stale values behind.
  */
 
-import type { FormulaContext } from './formula';
-import { abilityScoreParts, equippedEffects, type Part } from './equipment';
-import { speciesWalk } from './lookup';
+import type { FormulaContext } from './formula.ts';
+import { abilityScoreParts, equippedEffects, type Part } from './equipment.ts';
+import { speciesWalk } from './lookup.ts';
 import {
   ABILITIES,
   SKILLS,

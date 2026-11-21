@@ -4,8 +4,8 @@
  * built as HTML from the data's own structure with every piece of text
  * escaped, so it is safe to place in the page.
  */
-import type { Found, ItemWords, Raw } from './fiveData';
-import { fromFiveTools, kindLine, statBlockHtml } from './statblock';
+import type { Found, ItemWords, Raw } from './fiveData.ts';
+import { fromFiveTools, kindLine, statBlockHtml } from './statblock.ts';
 
 /** Every string here is HTML, built with its text escaped. */
 export type Rendered = {

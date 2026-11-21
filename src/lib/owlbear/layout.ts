@@ -7,8 +7,8 @@
 import { vitalStatus } from '#lib/rules/hp.ts';
 import { lookOf } from '#lib/rules/conditions.ts';
 import type { ConditionLook, Sheet, State } from '#lib/types.ts';
-import { toHex } from './color';
-import type { PartKind } from './keys';
+import { toHex } from './color.ts';
+import type { PartKind } from './keys.ts';
 
 export type Box = { x: number; y: number; w: number; h: number };
 /** A rectangle by its top-left corner; a circle by its center. */

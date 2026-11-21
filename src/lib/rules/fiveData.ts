@@ -39,7 +39,7 @@ const BASE = 'https://raw.githubusercontent.com/5etools-mirror-3/5etools-src/mai
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type Raw = Record<string, any>;
 
-import { MORE_WORD, morePage } from './fiveMore';
+import { MORE_WORD, morePage } from './fiveMore.ts';
 
 /** Homebrew lives in its own repository, which 5e.tools reads too. */
 const BREW = 'https://raw.githubusercontent.com/TheGiddyLimit/homebrew/master/';

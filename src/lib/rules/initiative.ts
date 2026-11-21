@@ -10,7 +10,7 @@
  * What was settled is a score per combatant (database/0022, initiative.ties)
  * that stands in for its Dexterity, so the order stays one sort.
  */
-import { fairRng, type Rng } from './dice';
+import { fairRng, type Rng } from './dice.ts';
 
 export type Combatant = {
   /** "pc:<sheet id>" or "cr:<creature id>". */

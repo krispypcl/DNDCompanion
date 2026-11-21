@@ -1,4 +1,4 @@
-import { evaluateFormula, type FormulaContext } from './formula';
+import { evaluateFormula, type FormulaContext } from './formula.ts';
 import type { Tracker } from '#lib/types.ts';
 
 /**

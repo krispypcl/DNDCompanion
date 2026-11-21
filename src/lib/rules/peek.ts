@@ -2,8 +2,8 @@
  * What a 5e.tools link points at, read from the link itself, so the peek can
  * find the entry in 5e.tools' own data (rules/fiveData.ts) and show it.
  */
-import type { PeekPage, PeekTarget } from './fiveData';
-import { morePage } from './fiveMore';
+import type { PeekPage, PeekTarget } from './fiveData.ts';
+import { morePage } from './fiveMore.ts';
 export type { PeekPage, PeekTarget };
 
 const PAGES: Record<string, PeekPage> = {

@@ -11,7 +11,7 @@
  * so there is always a sound.
  */
 import { base } from './base.ts';
-import { loadYouTube, youtubeClip, type YTPlayer } from './music';
+import { loadYouTube, youtubeClip, type YTPlayer } from './music.ts';
 
 /**
  * A sheet's own sounds: any effect can be swapped for a recording at a link

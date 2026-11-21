@@ -16,7 +16,7 @@
  * focused grip also moves its item with the arrow keys.
  */
 import { tick } from 'svelte';
-import { prefersReducedMotion } from './motion';
+import { prefersReducedMotion } from './motion.ts';
 
 export type ReorderOptions = {
   enabled: boolean;

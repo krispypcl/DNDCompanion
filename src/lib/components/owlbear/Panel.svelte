@@ -50,6 +50,7 @@
   import InfoTip from '../InfoTip.svelte';
   import SectionHead from '../SectionHead.svelte';
   import HpBar from './HpBar.svelte';
+  import CreatureMark from '../CreatureMark.svelte';
   import RevealedCreatures from '../RevealedCreatures.svelte';
   import InitiativeTracker from '../InitiativeTracker.svelte';
   import ProviderIcon from '../ProviderIcon.svelte';
@@ -359,10 +360,7 @@
     {#if pic}
       <img src={pic} alt="" draggable="false" loading="lazy" />
     {:else if mark}
-      <svg class="mark" viewBox="0 0 24 24" aria-hidden="true">
-        {#if mark === 'npc'}<circle cx="12" cy="8.5" r="3.75" /><path d="M4.75 20c.6-3.9 3.6-6.25 7.25-6.25s6.65 2.35 7.25 6.25" />
-        {:else}<path d="M8.25 8.5 5 3.25l.75 6.25M15.75 8.5 19 3.25l-.75 6.25" /><circle cx="12" cy="14" r="6.25" /><path d="M9.75 13.5h.01M14.25 13.5h.01M10 17.25h4" />{/if}
-      </svg>
+      <span class="mark"><CreatureMark kind={mark} /></span>
     {/if}
     <ConditionRing bands={ring} {round} />
   </span>
@@ -682,7 +680,7 @@
   .portrait.round { border-radius: 50%; }
   .portrait.ringed { border-color: transparent; }
   .portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
-  .portrait .mark { width: 1.625rem; height: 1.625rem; fill: none; stroke: var(--dim); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .portrait .mark { display: grid; color: var(--dim); }
   .who { display: grid; gap: 0.125rem; min-width: 0; flex: 1; }
   .who strong { font-size: 1rem; overflow-wrap: anywhere; }
   .sub { font-size: 0.8125rem; color: var(--dim); overflow-wrap: anywhere; }

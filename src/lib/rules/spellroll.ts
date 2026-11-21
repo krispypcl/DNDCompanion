@@ -7,7 +7,7 @@
  *   1d10 fire                  Fire Bolt: a cantrip, so it grows with the
  *                              character instead: 2d10 at 5th, 3d10 at 11th...
  */
-import { DIE_SIDES, MAX_DICE, diceCount, parseRoll, type Pool, type Sides } from './dice';
+import { DIE_SIDES, MAX_DICE, diceCount, parseRoll, type Pool, type Sides } from './dice.ts';
 
 /** "+1d6/level", "+1d6 per slot level", "+ 2d8 / lvl". */
 const UPCAST = /\+\s*((?:\d*\s*d\s*\d+)(?:\s*[+-]\s*\d+)?)\s*(?:\/|per)\s*(?:slot\s*)?(?:lvl|level|slot)s?\b/i;

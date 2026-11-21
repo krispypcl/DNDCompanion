@@ -7,7 +7,7 @@
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { isConfigured, supabase } from '#lib/supabase.ts';
 import type { Roll } from '#lib/rules/dice.ts';
-import { noteOf, readNote, type RollNote } from './rolls';
+import { noteOf, readNote, type RollNote } from './rolls.ts';
 
 const rollChannelName = (sheet: string) => `dndc-rolls:${sheet}`;
 const EVENT = 'roll';

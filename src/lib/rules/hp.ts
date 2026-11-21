@@ -1,5 +1,5 @@
 import type { State } from '#lib/types.ts';
-import { addCondition, hasCondition, removeCondition } from './conditions';
+import { addCondition, hasCondition, removeCondition } from './conditions.ts';
 
 /**
  * Hit point arithmetic, kept pure and apart from the component so the edges

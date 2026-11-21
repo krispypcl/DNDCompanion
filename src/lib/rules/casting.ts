@@ -3,9 +3,9 @@
  * written, or worked out from the casting ability), and the spell slots by
  * level, from the slot trackers.
  */
-import { formulaContext, spellAttackBonus, spellSaveDC } from './derived';
-import { slotLevel } from './print';
-import { trackerMax } from './tracker';
+import { formulaContext, spellAttackBonus, spellSaveDC } from './derived.ts';
+import { slotLevel } from './print.ts';
+import { trackerMax } from './tracker.ts';
 import type { Definition, State } from '#lib/types.ts';
 
 /** Always worked out from the spellcasting ability: modifier + proficiency. */

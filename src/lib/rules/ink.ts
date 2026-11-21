@@ -5,7 +5,7 @@
  * Points are in units of the page's width (0 to 1000), so a drawing scales
  * with the page.
  */
-import { INK_MARK } from './richtext';
+import { INK_MARK } from './richtext.ts';
 
 export type Paper = 'plain' | 'lines' | 'grid' | 'dots';
 export type Stroke = { c: string; w: number; p: number[] };

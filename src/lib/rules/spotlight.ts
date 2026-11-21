@@ -5,7 +5,7 @@
  * one opens in a pop-up.
  */
 import { LOOKUP_BASE } from './fiveBase.ts';
-import { morePage } from './fiveMore';
+import { morePage } from './fiveMore.ts';
 
 /**
  * [name, kind, book, words] as the index writes it; a subclass adds "class|class

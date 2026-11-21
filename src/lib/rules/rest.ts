@@ -1,7 +1,7 @@
-import { evaluateFormula } from './formula';
-import { formulaContext, modifierOf } from './derived';
-import type { Pool } from './dice';
-import { clampSpent, trackerMax } from './tracker';
+import { evaluateFormula } from './formula.ts';
+import { formulaContext, modifierOf } from './derived.ts';
+import type { Pool } from './dice.ts';
+import { clampSpent, trackerMax } from './tracker.ts';
 import type { Definition, RestKind, State } from '#lib/types.ts';
 
 /**

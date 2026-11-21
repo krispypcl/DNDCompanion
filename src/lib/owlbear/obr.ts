@@ -11,10 +11,10 @@ import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
 import { siteRoot } from '#lib/rules/share.ts';
 import { crossfade } from '#lib/stores/mode.ts';
 import type { Sheet } from '#lib/types.ts';
-import { CREATURE_KEY, NS, OLD_ROLLS_KEY, ORDER_KEY, PART_KEY, ROOM_KEY, SHEET_KEY, type CreatureLink, type PartLink, type TokenLink } from './keys';
+import { CREATURE_KEY, NS, OLD_ROLLS_KEY, ORDER_KEY, PART_KEY, ROOM_KEY, SHEET_KEY, type CreatureLink, type PartLink, type TokenLink } from './keys.ts';
 import type { Creature } from '#lib/data/creatures.ts';
-import { readCampaign, roomValue } from './links';
-import { partsFor, partsForVitals, sameParts, tokenBox, vitalsOfCreature, type Part } from './layout';
+import { readCampaign, roomValue } from './links.ts';
+import { partsFor, partsForVitals, sameParts, tokenBox, vitalsOfCreature, type Part } from './layout.ts';
 
 export { OBR };
 

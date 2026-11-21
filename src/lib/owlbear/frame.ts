@@ -5,10 +5,10 @@
  */
 import { applyMode } from '#lib/stores/mode.ts';
 
-export type Obr = typeof import('./obr');
+export type Obr = typeof import('./obr.ts');
 
 export async function joinRoom(stops: (() => void)[]): Promise<Obr> {
-  const obr = await import('./obr');
+  const obr = await import('./obr.ts');
   await obr.ready();
   stops.push(await obr.followTheme(applyMode));
   return obr;

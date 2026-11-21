@@ -11,10 +11,10 @@ import type { Sheet } from '#lib/types.ts';
 import { supabase } from '#lib/supabase.ts';
 import { campaignRepo } from '#lib/data/campaigns.ts';
 import { followCreatures, type Creature } from '#lib/data/creatures.ts';
-import { followSheets } from './live';
-import { hearRolls } from './channel';
-import { diceLine, headline, natural } from './rolls';
-import { OBR, clearOldRolls, creatureLinkOf, getCampaign, isKeeper, linkOf, makeMenus, onCampaign, ready, syncTokens } from './obr';
+import { followSheets } from './live.ts';
+import { hearRolls } from './channel.ts';
+import { diceLine, headline, natural } from './rolls.ts';
+import { OBR, clearOldRolls, creatureLinkOf, getCampaign, isKeeper, linkOf, makeMenus, onCampaign, ready, syncTokens } from './obr.ts';
 
 export async function run(): Promise<() => void> {
   await ready();

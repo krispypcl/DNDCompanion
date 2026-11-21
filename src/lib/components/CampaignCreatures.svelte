@@ -28,6 +28,7 @@
   import { prefersReducedMotion } from '#lib/motion.ts';
   import { reorder } from '#lib/reorder.ts';
   import CardHp from './CardHp.svelte';
+  import CreatureMark from './CreatureMark.svelte';
   import DimModal from './DimModal.svelte';
   import ConfirmModal from './ConfirmModal.svelte';
   import { phone } from '#lib/stores/phone.svelte.ts';
@@ -270,10 +271,7 @@
         <div class="creaturehead">
           {#snippet likeness()}
             {#if pic}<img src={pic} alt="" draggable="false" loading="lazy" />{:else}
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                {#if c.kind === 'npc'}<circle cx="12" cy="8.5" r="3.75" /><path d="M4.75 20c.6-3.9 3.6-6.25 7.25-6.25s6.65 2.35 7.25 6.25" />
-                {:else}<path d="M8.25 8.5 5 3.25l.75 6.25M15.75 8.5 19 3.25l-.75 6.25" /><circle cx="12" cy="14" r="6.25" /><path d="M9.75 13.5h.01M14.25 13.5h.01M10 17.25h4" />{/if}
-              </svg>
+              <CreatureMark kind={c.kind} />
             {/if}
             <ConditionRing bands={ring} round />
           {/snippet}
@@ -480,10 +478,7 @@
         <div class="cformtop">
           <span class="cformpic" class:npc={e.draft.kind === 'npc'} aria-hidden="true">
             {#if draftPic}<img src={draftPic} alt="" draggable="false" />{:else}
-              <svg viewBox="0 0 24 24">
-                {#if e.draft.kind === 'npc'}<circle cx="12" cy="8.5" r="3.75" /><path d="M4.75 20c.6-3.9 3.6-6.25 7.25-6.25s6.65 2.35 7.25 6.25" />
-                {:else}<path d="M8.25 8.5 5 3.25l.75 6.25M15.75 8.5 19 3.25l-.75 6.25" /><circle cx="12" cy="14" r="6.25" /><path d="M9.75 13.5h.01M14.25 13.5h.01M10 17.25h4" />{/if}
-              </svg>
+              <CreatureMark kind={e.draft.kind} size="1.75rem" />
             {/if}
           </span>
           <label class="cname"><span>Name</span><input bind:value={e.draft.name} maxlength="80" placeholder="Mud Imp" required /></label>
@@ -586,7 +581,6 @@
   .cexpr input:focus { outline: none; border-color: var(--a-edge); }
   .cportrait.ringed { border-color: transparent; }
   .cportrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
-  .cportrait svg { width: 1.625rem; height: 1.625rem; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
   .cdot.tint { padding: 0; border: 0; cursor: pointer; width: 0.625rem; height: 0.625rem; transition: transform 0.15s ease; }
   .cdot.tint:hover { transform: scale(1.25); }
   .cdot.tint:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
@@ -691,7 +685,6 @@
     border: 1px solid var(--a-edge); background: var(--raised); color: var(--dim);
   }
   .cformpic img { width: 100%; height: 100%; object-fit: cover; }
-  .cformpic svg { width: 1.75rem; height: 1.75rem; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
   .cmany input { width: 5rem; }
   .cformlinks .keep { padding-bottom: 0.4375rem; }
   @media (max-width: 899px) {

@@ -4,8 +4,8 @@
  * one when it is added to the table. Every text is plain text; it becomes
  * HTML only in `statBlockHtml`, escaped, so it is safe to show.
  */
-import { inline } from './fiveRender';
-import type { Raw } from './fiveData';
+import { inline } from './fiveRender.ts';
+import type { Raw } from './fiveData.ts';
 
 export type Feature = { name: string; text: string };
 export const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'] as const;

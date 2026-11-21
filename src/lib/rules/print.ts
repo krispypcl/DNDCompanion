@@ -5,9 +5,9 @@
  * tick at the table.
  */
 import type { Definition, State, Tracker } from '#lib/types.ts';
-import { formulaContext } from './derived';
-import { spellLevel, spellRank } from './spells';
-import { clampSpent, trackerMax } from './tracker';
+import { formulaContext } from './derived.ts';
+import { spellLevel, spellRank } from './spells.ts';
+import { clampSpent, trackerMax } from './tracker.ts';
 
 /**
  * The spell level a tracker holds slots for, or null when it is not a slot

@@ -1853,12 +1853,6 @@
   .opener:active { transform: translateY(1px); }
   .chev { font-style: normal; font-size: 0.7rem; transition: transform 0.2s ease; }
   .chev.up { transform: rotate(180deg); }
-  /* The narrowest phones: the icon buttons and the dates draw in a little so
-     every control still fits on one row. */
-  @media (max-width: 400px) {
-    .identity .controls :global(:is(.share, .print, .sound, .mode)) { width: 1.875rem; height: 1.875rem; }
-    .identity .stamps { gap: 0.625rem; margin-right: 0.25rem; }
-  }
   /* Opening a sheet: the panels fill in one after another, where the outline had them. */
   .entering .panel { animation: sheetFill 0.4s ease-out backwards; animation-delay: calc(var(--i, 0) * 60ms); }
   /* Inspiration held: a soft glow that breathes until it is spent. */

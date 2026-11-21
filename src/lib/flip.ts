@@ -9,7 +9,7 @@
  * the change, then plays each one from its old place to its new one.
  */
 import { tick } from 'svelte';
-import { prefersReducedMotion } from './motion';
+import { prefersReducedMotion } from './motion.ts';
 
 let counter = 0;
 /** A key for one component instance, the same for both of its states. */

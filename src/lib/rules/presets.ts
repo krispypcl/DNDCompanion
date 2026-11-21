@@ -8,7 +8,7 @@
  * with level, it is set for the level the character has when it is added.
  */
 import type { Tracker } from '#lib/types.ts';
-import { ordinal } from './spells';
+import { ordinal } from './spells.ts';
 
 export type Preset = {
   id: string;
