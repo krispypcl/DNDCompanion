@@ -554,7 +554,7 @@
            set, the d20 a character with no portrait shows. -->
       <Crest src={crestLink.url ?? ''} size={3.25} name={campaign.name} onopen={(from) => (crestOpen = from)} />
       <div class="title">
-        <span class="eyebrow">Campaign{#if ended}<span class="sep">·</span>ended{/if}{#if isDm}<span class="sep">·</span>you’re the DM{/if}{#if hereLine}<span class="sep">·</span><span class="herenote"><i class="here-dot"></i>{hereLine}</span>{/if}</span>
+        <span class="eyebrow">Campaign{#if ended}<span class="sep">·</span>ended{/if}{#if isDm}<span class="sep">·</span>you’re the DM{/if}{#if hereLine}<span class="sep">·</span><span class="herenote"><i class="here-dot"></i>{hereLine}</span>{/if}{#if next && !next.past}<span class="sep">·</span><span class="nextnote">Next session {next.when}<span class="nextuntil" class:soon={next.until === 'today' || next.until === 'now'}>, {next.until === 'now' ? 'happening now' : next.until}</span></span>{/if}</span>
         <h1 style:font-family={faceFamily(face)}>
           {campaign.name}
         </h1>
@@ -594,23 +594,15 @@
       </div>
     </header>
 
-    <!-- When the table next meets at the left; the table's music in the
-         middle, as a capsule (all the players see of it); the DM's switch between the players and their monsters and
-         NPCs at the right. The DM's whole jukebox takes its own row below. -->
-    {#if (next && !next.past) || isDm || showMusic}
+    <!-- The table's music in the very middle, as a capsule (all the players see of it); the DM's switch between
+         the players and their monsters and NPCs at the right. The DM's whole jukebox takes its own row below. -->
+    {#if isDm || showMusic}
       <!-- Its height eases when the jukebox folds into the capsule or opens out of it. -->
       <div class="tablewrap smooth-height" use:smoothHeight transition:slide={unfold()}>
-      <div class="tablebar" class:forplayers={!isDm}>
-        <div class="nextsession" data-places="party">
-          {#if next && !next.past}
-            <span class="nextlabel">Next session</span>
-            <span class="nextwhen">{next.when}</span>
-            <span class="nextuntil" class:soon={next.until === 'today' || next.until === 'now'}>{next.until === 'now' ? 'happening now' : next.until}</span>
-          {/if}
-        </div>
+      <div class="tablebar">
         <!-- One jukebox, capsule or whole: switching between them never stops the song. -->
         {#if showMusic}
-          <div class="musicslot" class:whole={!compactMusic} class:forplayers={!isDm} class:offstage={phoneOn && place !== (isDm ? 'music' : 'party')}>
+          <div class="musicslot" class:whole={!compactMusic} class:offstage={phoneOn && place !== (isDm ? 'music' : 'party')}>
             <CampaignMusic campaignId={campaign.id} songs={campaign.details.songs ?? []} editing={isDm && !ended}
                            lead={isDm} playback={music.table} away={music.away} onplayback={(p) => music.send(p)}
                            onchange={(songs) => saveDetails({ songs })} compact={compactMusic}
@@ -655,8 +647,17 @@
             {/snippet}
             {#snippet end()}
               {#if isMember && !ended}
-                <button class="smallbtn" onclick={() => copy(inviteLink, 'invite')} disabled={!inviteLink}
-                        title="The invite lets a character join this campaign">{copied === 'invite' ? 'Copied!' : 'Copy invite link'}</button>
+                <button class="smallbtn invitebtn" class:done={copied === 'invite'} onclick={() => copy(inviteLink, 'invite')} disabled={!inviteLink}
+                        title="Copies the invite link: it lets a player's character join this campaign">
+                  <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+                    <g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                      {#if copied === 'invite'}<path d="m5 12.5 4.5 4.5L19 7.5" stroke-width="2" />{:else}
+                        <circle cx="9.5" cy="8.5" r="3.5" /><path d="M3 19.5c.8-3.3 3.4-5 6.5-5s5.7 1.7 6.5 5" /><path class="plus" d="M19 8v6M16 11h6" />
+                      {/if}
+                    </g>
+                  </svg>
+                  {copied === 'invite' ? 'Link copied!' : 'Invite a player'}
+                </button>
               {/if}
             {/snippet}
           </SectionHead>
@@ -797,40 +798,38 @@
   @media (hover: hover) and (pointer: fine) { .keys { display: inline-grid; } }
   .keys.searchbtn, .keys.gear, .keys.owlbtn { display: inline-grid; }
 
-  /* Who is here, and the next session, in a line under the header. */
+  /* The music and the DM's switch, in a line under the header: three equal thirds, so the music sits in the very middle. */
   .tablewrap { margin-top: 1.25rem; }
   .tablebar {
-    display: flex; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; flex-wrap: wrap;
+    display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 0.5rem 1rem;
     font-size: 0.8125rem; color: var(--dim);
   }
   .herenote { display: inline-flex; align-items: center; gap: 0.375rem; color: oklch(74% 0.17 150); }
   :global([data-mode='light']) .herenote { color: oklch(52% 0.15 150); }
-  .nextsession { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-  .sideswitch { margin-left: auto; order: 3; }
-  .nextsession { order: 1; }
-  /* The capsule in the middle of the line (at its right for players); the whole jukebox on a row of its own below. */
-  .musicslot { order: 2; flex: 1 1 auto; display: flex; justify-content: center; min-width: 0; }
-  /* A player's line in three: the next session, the music in the very middle, an empty third to balance it. */
-  .tablebar.forplayers { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
-  .tablebar.forplayers > * { grid-row: 1; }
-  .tablebar.forplayers .nextsession { grid-column: 1; }
-  .tablebar.forplayers .musicslot { grid-column: 2; justify-content: center; }
-  /* A phone: the next session and the music each centered on a line of their own. */
+  .sideswitch { grid-column: 3; grid-row: 1; justify-self: end; }
+  /* The capsule in the middle of the line; the whole jukebox on a row of its own below. */
+  .musicslot { grid-column: 2; grid-row: 1; display: flex; justify-content: center; min-width: 0; }
+  .musicslot.whole { grid-column: 1 / -1; grid-row: 2; display: block; margin-top: 1.25rem; color: var(--text); font-size: 0.875rem; }
+  /* A phone: the music alone, the width of the screen. */
   @media (max-width: 700px) {
-    .tablebar.forplayers { display: flex; }
-    .tablebar { justify-content: center; }
-    .nextsession { flex-basis: 100%; justify-content: center; text-align: center; }
-    .musicslot { flex-basis: 100%; }
+    .tablebar { grid-template-columns: minmax(0, 1fr); }
+    .musicslot, .musicslot.whole { grid-column: 1; grid-row: auto; }
   }
-  .musicslot.whole { order: 4; flex-basis: 100%; display: block; margin-top: 1.25rem; color: var(--text); font-size: 0.875rem; }
+  .nextnote { white-space: normal; }
   /* The monsters' side slides in from the right, as the players' does from the left. */
   .creaturespane:not([hidden]) { animation: creaturesIn 0.26s cubic-bezier(0.33, 1, 0.68, 1); }
   @keyframes creaturesIn { from { opacity: 0; transform: translate3d(14px, 0, 0); } }
   @media (prefers-reduced-motion: reduce) { .creaturespane:not([hidden]) { animation: none; } }
-  .nextlabel { font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600; }
-  .nextwhen { color: var(--text); }
+  /* How far off it is, quieter, unless it is today. */
   .nextuntil { color: var(--dim); }
-  .nextuntil.soon { color: var(--a); font-weight: 600; }
+  .nextuntil.soon { color: inherit; }
+  /* The invite's plus turns once on hover, a little welcome. */
+  .invitebtn svg { flex: none; }
+  .invitebtn .plus { transform-box: fill-box; transform-origin: center; }
+  .invitebtn:hover:not(:disabled) .plus { animation: welcome 0.5s cubic-bezier(0.33, 1, 0.68, 1); }
+  .invitebtn.done { color: var(--a); border-color: var(--a-edge); background: var(--a-wash); }
+  @keyframes welcome { from { transform: rotate(-90deg) scale(0.6); } }
+  @media (prefers-reduced-motion: reduce) { .invitebtn .plus { animation: none !important; } }
   .ended {
     margin: 1.5rem 0 0; padding: 0.75rem 1rem; border: 1px solid var(--line-soft); border-radius: var(--r);
     background: var(--surface); color: var(--dim); font-size: 0.875rem; line-height: 1.45;
