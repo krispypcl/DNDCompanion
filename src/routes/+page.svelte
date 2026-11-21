@@ -620,11 +620,10 @@
 {#snippet joinedcard(c: Campaign)}{@render campaigncard(c)}{/snippet}
 
 {#snippet campaigncard(c: Campaign)}
-  <!-- As tall as a character's card, laid out the same: the crest (or else
-       the banner) in the square; the name, who you are there, the party's faces and how many,
+  <!-- As tall as a character's card, laid out the same: the crest (or, with
+       none, the d20) in the square; the name, who you are there, the party's faces and how many,
        and when it started; at the right of a wide card, who is here and the
        next session. -->
-  {@const banner = resolveImageUrl(c.details?.bannerUrl).url}
   {@const crest = resolveImageUrl(c.details?.crestUrl).url}
   {@const mine = charactersIn(c).map(nameOf)}
   {@const members = party?.get(c.id) ?? []}
@@ -636,9 +635,9 @@
   {@const last = lastSessionOf(c.details, now)}
   <a href="{base}/c/{c.id}" class="withface campcard">
     <span class="face campface">
-      <!-- No crest or banner: the d20 a character with no portrait shows. -->
+      <!-- No crest: the d20 a character with no portrait shows (the banner stays behind the card). -->
       <ClassIcon />
-      {#if crest || banner}<img src={crest || banner} alt="" loading="lazy" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />{/if}
+      {#if crest}<img src={crest} alt="" loading="lazy" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />{/if}
     </span>
     <span class="cardtext">
       <span class="lines">
