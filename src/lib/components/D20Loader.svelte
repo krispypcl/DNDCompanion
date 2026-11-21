@@ -12,7 +12,7 @@
     result = null,
     label = 'Loading',
     failedLabel = 'Could not load',
-    size = 72,
+    size = 56,
     onlanded
   }: {
     /** null while loading; 20 for success, 1 for failure. */
