@@ -13,70 +13,59 @@
 
 ## Overview
 
-An online D&D 5e character sheet for a group of friends, on a phone, a tablet
-or a computer. Each player keeps their own characters, and a sheet's link lets
-anyone read it.
+DND Companion is a D&D 5e character sheet built for one table of friends. It
+does the arithmetic so the game doesn't stop for it, keeps the rules a press
+away, and puts the whole party on one live page for the DM.
 
-- **Sheets** work out the numbers that follow from others and leave the rest
-  to write by hand, so homebrew is as easy to keep as anything from the
-  books. Rules open straight from [5e.tools](https://5e.tools/), and a sheet
-  exports to a printable PDF.
-- **Campaigns** bring the party together: the DM sees everyone's hit points
-  and conditions live, runs initiative, keeps monsters and NPCs, plays music
-  for the table and shares a board everyone can draw on.
-- **Owlbear Rodeo extension**: the same party, live, on an Owlbear map.
-- **Installable**: it can be added to a home screen and opens like an app.
+- **A sheet that keeps up.** Modifiers, saving throws, armor class, spell save
+  DC and the rest are worked out from what the character has and wears, and
+  every number can explain itself. Anything the rules don't cover is written
+  by hand, so homebrew sits as comfortably as anything from the books.
+- **The rules beside you.** Every class, spell, item, feature and monster opens
+  straight from [5e.tools](https://5e.tools/), and <kbd>/</kbd> searches every
+  book.
+- **A table that's live.** In a campaign the DM sees each character's hit
+  points and conditions as they change, runs initiative, keeps monsters and
+  NPCs with their stat blocks and reveals them when the party finds them. The
+  table shares its music and a board to draw on.
+- **Yours to keep.** A sheet saves to a printable PDF that carries the whole
+  character inside it, so the same file can bring it back. Notes and backstory
+  can stay private.
+- **Anywhere you play.** It's laid out for a phone as well as a computer,
+  installs like an app, and joins an [Owlbear Rodeo](https://www.owlbear.rodeo/)
+  map through its extension.
 
 ## Usage
 
 ### In app
 
-1. Open the app and create an account: email and password, Google or Discord.
-2. Press **New sheet** to make a character, then **Edit** to fill it in. It
-   saves as you go; **Done** leaves edit mode. Press <kbd>?</kbd> on a computer
-   for the keyboard shortcuts.
-3. Share a character by copying its link from the sheet's header. Notes and
-   backstory pages can each be kept private, or every sheet at once from the
-   account page (Preferences → Keep my sheets private).
-   The PDF button saves a printable sheet with the character inside it:
-   **Import** in the main menu brings it back as a new sheet. Edits made in
-   the PDF itself don't come back, and saving the PDF again from another app
-   can leave the character out.
-4. **Campaigns:** the DM presses **New campaign** in the main menu's Campaigns
-   area and sends the players the invite link (**Copy invite link**, beside
-   the Characters title on the campaign page). Each player opens it and picks
-   which character joins. The DM's cog, beside **Back**, opens the campaign's
-   settings: its name, next session, crest, banner, Owlbear Rodeo room, font
-   and color, and ending or deleting it.
-5. **Your account:** a name and picture, connected sign-ins (Google, Discord),
-   light, dark or your device's own look, reduced motion, the dice style, and
-   a few statistics.
-6. **Install it:** in your browser's menu choose *Add to Home Screen*
-   (iPhone and iPad: Safari's share button) or *Install app* (Chrome and Edge
-   on a computer).
+1. **Sign up** with an email, Google or Discord.
+2. **Make a character** with **New sheet**, then the pencil to fill it in; it
+   saves as you go. The cog beside it sets the sheet's look: portrait,
+   banner, color, music and sounds. <kbd>?</kbd> lists the keyboard
+   shortcuts.
+3. **Share it** by its link. The PDF button saves a printable copy, and
+   **Import** in the main menu brings the character back from that PDF.
+   Edits made inside the PDF don't come back, and saving the PDF again from
+   another app can leave the character out.
+4. **Start a campaign** from the main menu's Campaigns and send the players its
+   invite link; each picks a character to bring. The DM's cog holds the
+   campaign's settings, from the next session's date to its Owlbear room.
+5. **Install it** from the browser's menu: *Add to Home Screen* on a phone,
+   *Install app* on a computer.
 
 ### In Owlbear Rodeo
 
-1. In an Owlbear room, choose **Extensions → Add custom extension** and paste
-   the manifest link above.
-2. Open the DND Companion button in the toolbar and paste your campaign's link
-   (or its invite link). Every character in it joins the room.
-   **Campaign**, at the top right beside the brand, opens its page; the swap
-   button next to it brings in another campaign in its place.
-3. **Place token** puts a character on the map wearing their portrait, or
-   right-click any character token and **Tie to a character**. Its hit point
-   bar and condition dots follow the sheet. **Find token** brings the view to
-   it. Rolls made on the sheets pop up for everyone in the room.
-4. **Sign in** inside the panel (email, Google or Discord) to change hit
-   points from a token's right-click menu. Owlbear keeps its own sign-in;
-   Google and Discord open a small window, so allow pop-ups for owlbear.rodeo.
-5. **The DM**, signed in, runs the fight from the panel: the initiative order
-   (the card and token whose turn it is light up) and, under the characters,
-   the monsters and NPCs, each with **Stat block** (beside the map),
-   **Find token** and **Place token**. Their bars show on the map only once
-   revealed, and only as hurt as they look.
-6. Everything in the panel follows changes as they happen, made in the room or
-   on the campaign page.
+1. In a room, choose **Extensions → Add custom extension** and paste the
+   manifest link above.
+2. Open DND Companion from the toolbar and paste the campaign's link: its
+   characters join the room, live.
+3. **Place token** puts a character on the map in their portrait (or
+   right-click a token to tie it to one); its hit point bar and conditions
+   follow the sheet, and rolls from the sheets pop up for everyone.
+4. **Signed in as the DM**, the panel runs the fight too: initiative, and the
+   monsters and NPCs with their stat blocks and tokens. Players see a
+   revealed creature only as hurt as it looks.
 
 ## Framework
 
