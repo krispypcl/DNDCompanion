@@ -1,6 +1,6 @@
 /**
  * A character as a text file, and bringing it back: the file rides inside
- * the sheet's PDF (lib/pdf/backup), and older backups were saved on their own.
+ * the sheet's PDF (lib/pdf/backup), the only way a sheet comes back in.
  *
  * The file is meant to be read by a person as well as by the importer, so the
  * long writing (notes, backstory) is stored as itself, in plain lines, rather
@@ -34,7 +34,7 @@ import {
 export const FORMAT = 'dndcompanion-sheet';
 export const VERSION = 1;
 export const TITLE = 'DND Companion sheet';
-/** A character is a few kilobytes; this is for the file someone picked by mistake. */
+/** A character is a few kilobytes; anything bigger inside a PDF is no sheet. */
 export const MAX_BYTES = 2 * 1024 * 1024;
 /** A sheet's PDF carries fonts and a portrait too (lib/pdf/backup); bigger than this, it is no sheet. */
 export const MAX_PDF_BYTES = 25 * 1024 * 1024;

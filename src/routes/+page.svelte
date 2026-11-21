@@ -499,9 +499,9 @@
   }
 
   /**
-   * A PDF from a sheet's PDF button (the sheet rides inside it,
-   * lib/pdf/backup), or a text backup from before the PDF carried one. It always becomes a new sheet: bringing
-   * a backup in never overwrites a character that is already here.
+   * A PDF saved from a sheet (the sheet rides inside it, lib/pdf/backup).
+   * It always becomes a new sheet: bringing one in never overwrites a
+   * character that is already here.
    */
   async function importFile(event: Event) {
     const input = event.currentTarget as HTMLInputElement;
@@ -511,24 +511,21 @@
     if (!file || !user) return;
     error = null;
     notice = null;
-    const pdf = /\.pdf$/i.test(file.name) || file.type === 'application/pdf';
-    if (file.size > (pdf ? MAX_PDF_BYTES : MAX_BYTES)) {
+    if (!/\.pdf$/i.test(file.name) && file.type !== 'application/pdf') {
+      error = 'Only a sheet’s PDF comes back in! Save one with the down arrow on the sheet, then import that.';
+      return;
+    }
+    if (file.size > MAX_PDF_BYTES) {
       error = 'That file is far too heavy to be a character sheet!';
       return;
     }
     importing = true;
     try {
-      let text = '';
-      if (pdf) {
-        const { readPdfBackup } = await import('#lib/pdf/backup.ts');
-        const inside = await readPdfBackup(await file.arrayBuffer());
-        if (inside === null) {
-          error = 'That PDF has no sheet inside! Only a PDF saved from a sheet’s PDF button carries one, and saving it again from another app can strip it out.';
-          return;
-        }
-        text = inside;
-      } else {
-        text = await file.text();
+      const { readPdfBackup } = await import('#lib/pdf/backup.ts');
+      const text = await readPdfBackup(await file.arrayBuffer());
+      if (text === null || text.length > MAX_BYTES) {
+        error = 'That PDF has no sheet inside! Only a PDF saved from a sheet carries one, and saving it again from another app can strip it out.';
+        return;
       }
       const result = importSheet(text);
       if (!result.ok) {
@@ -935,8 +932,8 @@
       bind:this={picker}
       class="file"
       type="file"
-      accept=".txt,.pdf,text/plain,application/pdf"
-      aria-label="Import a sheet file"
+      accept=".pdf,application/pdf"
+      aria-label="Import a sheet’s PDF"
       tabindex="-1"
       onchange={importFile}
     />
