@@ -86,6 +86,8 @@ away, and puts the whole party on one live page for the DM.
 
 ## Local Development
 
+For the author and anyone given permission (see [License](#license)).
+
 The app runs on [Supabase](https://supabase.com/): its database, sign-in and
 live updates all come from one Supabase project.
 
@@ -112,3 +114,7 @@ live updates all come from one Supabase project.
    to the site's public address (it names the link previews), and
    `BASE_PATH` (for example `/DNDCompanion`) when it will be served from a
    sub-folder.
+
+## License
+
+All rights reserved. The code is public to read, not to reuse: copying, changing, hosting or redistributing it needs written permission (see [LICENSE](LICENSE)). Playing on the hosted app is always welcome. The sound effects, fonts and packages it uses keep their own licenses.

@@ -1,0 +1,36 @@
+DND Companion
+Copyright (c) 2026 krispypcl. All rights reserved.
+
+This repository and everything in it (source code, styles, artwork, text and
+documentation) belongs to the copyright holder, except the parts listed under
+"Other people's work" below.
+
+No license is granted. Without the copyright holder's prior written
+permission, you may not copy, modify, adapt, translate, merge, publish,
+distribute, sublicense, sell, host or run copies of this work, in whole or in
+part, or use any of it to train or improve machine-learning or artificial
+intelligence systems.
+
+Viewing and forking on GitHub. Because this repository is public on GitHub,
+GitHub's Terms of Service let you view it and fork it within GitHub. That is
+the only permission given. A fork gives no right to use, change, run or
+distribute the work anywhere else.
+
+Using the app. Playing with the hosted DND Companion website, as a player or a
+DM, is allowed and is not limited by this notice.
+
+Other people's work. These parts belong to others and keep their own licenses;
+nothing in this notice claims them:
+  - the sound effects in static/sounds (see static/sounds/LICENSE.txt);
+  - the fonts in static/pdf (Inter and Cinzel Decorative, under the SIL Open
+    Font License 1.1; see static/pdf/Inter-LICENSE.txt);
+  - the Discord mark in static/brand, a trademark of Discord Inc.;
+  - the open-source packages named in package.json, under their own licenses.
+
+Permission. To ask for permission, open an issue on this repository.
+
+THE WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE WORK OR ITS USE.
