@@ -24,6 +24,7 @@
   import MenuSkeleton from '#lib/components/MenuSkeleton.svelte';
   import PageTurn from '#lib/components/PageTurn.svelte';
   import MenuGreeting from '#lib/components/MenuGreeting.svelte';
+  import InstallTip from '#lib/components/InstallTip.svelte';
   import AreaSwitch from '#lib/components/AreaSwitch.svelte';
   import PhoneBar from '#lib/components/PhoneBar.svelte';
   import ConfirmModal from '#lib/components/ConfirmModal.svelte';
@@ -978,6 +979,7 @@
           {/if}
         </div>
       </div>
+      {#if phone.current}<InstallTip />{/if}
       <div class="areas">
         <Tabs tabs={areaTabs} bind:active={area} bare>
           {#snippet children(tab)}
