@@ -1598,7 +1598,7 @@
     display: grid; place-items: center; pointer-events: none;
     background: radial-gradient(circle, oklch(10% 0.01 25 / 0.55) 0%, oklch(10% 0.01 25 / 0.15) 70%);
     color: oklch(94% 0.01 286);
-    animation: skullIn 0.7s cubic-bezier(0.3, 1.4, 0.5, 1);
+    animation: skullIn 0.7s cubic-bezier(0.33, 1, 0.68, 1);
   }
   .skull svg {
     width: 62%; height: 62%;
@@ -1743,7 +1743,7 @@
   /* The whole box is the button (the number's ::after covers it). Not the
      skills' dashed outline: a d20 sits in the corner, and on hover the box
      rises into the accent while the die gives a turn. */
-  .defbox.rollable { position: relative; cursor: pointer; transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s cubic-bezier(0.3, 1.4, 0.5, 1), box-shadow 0.2s ease; }
+  .defbox.rollable { position: relative; cursor: pointer; transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s cubic-bezier(0.33, 1, 0.68, 1), box-shadow 0.2s ease; }
   .rollnum::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
   .rollnum:focus-visible { outline: none; }
   .defbox.rollable:has(.rollnum:focus-visible) { outline: 2px solid var(--a); outline-offset: 2px; }
@@ -1756,7 +1756,7 @@
   .defbox .d20 {
     position: absolute; top: 0.375rem; right: 0.375rem; width: 0.8125rem; height: 0.8125rem;
     fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; color: var(--faint);
-    transition: color 0.2s ease, transform 0.35s cubic-bezier(0.3, 1.5, 0.5, 1); pointer-events: none;
+    transition: color 0.2s ease, transform 0.35s cubic-bezier(0.33, 1, 0.68, 1); pointer-events: none;
   }
   .defbox.rollable:hover .d20 { color: var(--a); transform: rotate(72deg) scale(1.2); }
   .defbox .adv {

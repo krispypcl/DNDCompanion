@@ -10,6 +10,8 @@
   import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
   import { followSheets } from '#lib/owlbear/live.ts';
   import type { Sheet } from '#lib/types.ts';
+  import { fade } from 'svelte/transition';
+  import { prefersReducedMotion } from '#lib/motion.ts';
 
   let obr = $state.raw<Obr | null>(null);
   let itemId = $state<string | null>(null);
@@ -62,7 +64,7 @@
       {/each}
     </ul>
   {/if}
-  {#if message}<p class="msg" class:bad={!message.ok} role="status">{message.text}</p>{/if}
+  {#if message}<p class="msg" class:bad={!message.ok} role="status" transition:fade={{ duration: prefersReducedMotion() ? 0 : 160 }}>{message.text}</p>{/if}
 </main>
 
 <style>

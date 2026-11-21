@@ -17,6 +17,8 @@
   import { creatureRepo, followCreatures, type Creature } from '#lib/data/creatures.ts';
   import { damage, heal, hpNow } from '#lib/rules/creatures.ts';
   import HpBar from './HpBar.svelte';
+  import { fade } from 'svelte/transition';
+  import { prefersReducedMotion } from '#lib/motion.ts';
 
   let sheet = $state.raw<Sheet | null>(null);
   let gone = $state(false);
@@ -129,7 +131,7 @@
       <button type="button" disabled={busy || !amount} onclick={() => act('heal')}>Heal</button>
       <button type="button" disabled={busy || !amount} onclick={() => act('temp')}>Temp HP</button>
     </div>
-    {#if message}<p class="msg" class:bad={!message.ok} role="status">{message.text}</p>{/if}
+    {#if message}<p class="msg" class:bad={!message.ok} role="status" transition:fade={{ duration: prefersReducedMotion() ? 0 : 160 }}>{message.text}</p>{/if}
   {/if}
 </main>
 

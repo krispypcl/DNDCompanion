@@ -971,7 +971,7 @@
     background: none; border: 1px solid var(--line); border-radius: var(--r-sm); color: var(--faint);
     cursor: pointer; transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
   }
-  .toggle svg { fill: none; transition: fill 0.2s ease, transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1); }
+  .toggle svg { fill: none; transition: fill 0.2s ease, transform 0.25s cubic-bezier(0.33, 1, 0.68, 1); }
   .toggle:hover:not(:disabled) { color: var(--a); border-color: var(--a-edge); }
   .toggle.on { color: var(--a); border-color: var(--a-edge); background: var(--a-wash); }
   .toggle.on svg { fill: currentColor; transform: rotate(45deg); }

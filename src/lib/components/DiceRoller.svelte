@@ -244,7 +244,7 @@
     position: absolute; top: -0.5rem; right: -0.375rem; min-width: 1.125rem; height: 1.125rem;
     padding: 0 0.25rem; border-radius: 999px; background: var(--a); color: var(--bg);
     font-size: 0.6875rem; line-height: 1.125rem; text-align: center;
-    animation: bump 0.25s cubic-bezier(0.3, 1.5, 0.5, 1);
+    animation: bump 0.25s cubic-bezier(0.33, 1, 0.68, 1);
   }
   @keyframes bump { from { transform: scale(0.5); } }
   /* On the die's corner, opposite the count, so adding the first one does
@@ -253,7 +253,7 @@
     position: absolute; bottom: -0.5rem; right: -0.375rem; width: 1.125rem; height: 1.125rem;
     display: grid; place-items: center; padding: 0; line-height: 1; font-size: 0.8125rem;
     background: var(--surface); border: 1px solid var(--line); color: var(--dim); border-radius: 50%;
-    animation: bump 0.25s cubic-bezier(0.3, 1.5, 0.5, 1);
+    animation: bump 0.25s cubic-bezier(0.33, 1, 0.68, 1);
   }
   .less:hover { color: var(--danger); border-color: var(--danger); }
   .dice { row-gap: 0.75rem; }
@@ -309,7 +309,7 @@
   /* A natural 20 bursts gold; a natural 1 sinks and grays. */
   .result { position: relative; --gold: oklch(86% 0.15 90); }
   .result.crit { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 0 26px -6px var(--gold); }
-  .result.crit .total { color: var(--gold); animation: critPop 0.6s cubic-bezier(0.3, 1.6, 0.5, 1); }
+  .result.crit .total { color: var(--gold); animation: critPop 0.6s cubic-bezier(0.33, 1, 0.68, 1); }
   @keyframes critPop { from { transform: scale(0.5); } 55% { transform: scale(1.25); } }
   .result.crit::after {
     content: ''; position: absolute; left: 2.25rem; top: 50%; width: 1px; height: 1px; border-radius: 50%;
@@ -328,14 +328,14 @@
     100% { transform: none; }
   }
   .total { grid-row: span 2; font-size: 2.25rem; line-height: 1; font-weight: 650; color: var(--a-hi); font-variant-numeric: tabular-nums; }
-  .total.settled { animation: pop 0.3s cubic-bezier(0.3, 1.5, 0.5, 1); }
+  .total.settled { animation: pop 0.3s cubic-bezier(0.33, 1, 0.68, 1); }
   @keyframes pop { from { transform: scale(0.6); opacity: 0.3; } }
   .faces { display: flex; flex-wrap: wrap; gap: 0.3125rem; align-items: flex-end; }
   .face {
     display: inline-flex; flex-direction: column; align-items: center; min-width: 2rem;
     padding: 0.1875rem 0.375rem; border-radius: var(--r-sm); border: 1px solid var(--line);
     background: var(--surface); font-variant-numeric: tabular-nums;
-    animation: drop 0.36s cubic-bezier(0.3, 1.4, 0.5, 1) backwards;
+    animation: drop 0.36s cubic-bezier(0.33, 1, 0.68, 1) backwards;
     animation-delay: calc(var(--i) * 35ms);
   }
   @keyframes drop { from { transform: translateY(-8px) rotate(-12deg); opacity: 0; } }

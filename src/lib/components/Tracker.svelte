@@ -251,7 +251,7 @@
     100% { opacity: 0; transform: scale(2); }
   }
   /* The last one gone: a small shake of the whole tracker. */
-  .tracker.emptied { animation: emptyShake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+  .tracker.emptied { animation: emptyShake 0.5s cubic-bezier(0.33, 1, 0.68, 1); }
   @keyframes emptyShake {
     0%, 100% { transform: translateX(0); }
     20% { transform: translateX(-4px); }

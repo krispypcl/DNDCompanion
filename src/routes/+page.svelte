@@ -1325,12 +1325,12 @@
   .star {
     flex: none; background: none; border: 0; padding: 0.5rem 0 0.5rem 0.75rem; cursor: pointer;
     color: var(--faint); display: grid; place-items: center;
-    transition: color 0.15s ease, transform 0.2s cubic-bezier(0.3, 1.5, 0.5, 1);
+    transition: color 0.15s ease, transform 0.2s cubic-bezier(0.33, 1, 0.68, 1);
   }
   .star svg { fill: none; transition: fill 0.2s ease; }
   .star:hover { color: var(--a); transform: scale(1.15); }
   .star.on { color: oklch(84% 0.15 90); }
-  .star.on svg { fill: currentColor; animation: starPop 0.4s cubic-bezier(0.3, 1.6, 0.5, 1); }
+  .star.on svg { fill: currentColor; animation: starPop 0.4s cubic-bezier(0.33, 1, 0.68, 1); }
   @keyframes starPop { from { transform: scale(0.4) rotate(-40deg); } }
   :global([data-mode='light']) .star.on { color: oklch(66% 0.16 80); }
   .grip {

@@ -145,7 +145,7 @@
   .route { position: relative; }
   /* The old page leaves; the new one brings its own arrival (the rise above). */
   :global(::view-transition-old(root)) {
-    animation: leave-page 0.2s cubic-bezier(0.4, 0, 1, 1) both;
+    animation: leave-page 0.2s cubic-bezier(0.33, 1, 0.68, 1) both;
   }
   :global(::view-transition-new(root)) { animation: none; }
   @keyframes -global-leave-page {

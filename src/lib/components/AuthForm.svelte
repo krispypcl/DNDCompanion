@@ -160,7 +160,7 @@
   .bars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.25rem; }
   .bars i {
     height: 4px; border-radius: 2px; background: var(--track);
-    transition: background-color 0.3s ease, transform 0.3s cubic-bezier(0.3, 1.4, 0.5, 1);
+    transition: background-color 0.3s ease, transform 0.3s cubic-bezier(0.33, 1, 0.68, 1);
     transform-origin: left center;
   }
   .meter[data-score='0'] .bars i.lit, .meter[data-score='1'] .bars i.lit { background: var(--danger); }

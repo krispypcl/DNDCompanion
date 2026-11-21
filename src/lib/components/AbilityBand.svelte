@@ -132,7 +132,7 @@
      outline, the whole chip is the button: a d20 waits in its corner, and on
      hover the chip rises, takes the accent and the die gives a turn. */
   .toggle.rolls { cursor: pointer; }
-  .save.rollable { transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s cubic-bezier(0.3, 1.4, 0.5, 1), box-shadow 0.2s ease; }
+  .save.rollable { transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s cubic-bezier(0.33, 1, 0.68, 1), box-shadow 0.2s ease; }
   .save.rollable:hover {
     border-color: var(--a-edge); transform: translateY(-2px);
     box-shadow: 0 6px 14px -8px color-mix(in oklch, var(--a) 70%, transparent);
@@ -142,7 +142,7 @@
   .d20 {
     position: absolute; top: 0.3125rem; right: 0.3125rem; width: 0.75rem; height: 0.75rem;
     fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; color: var(--faint);
-    transition: color 0.2s ease, transform 0.35s cubic-bezier(0.3, 1.5, 0.5, 1);
+    transition: color 0.2s ease, transform 0.35s cubic-bezier(0.33, 1, 0.68, 1);
   }
   /* Advantage, from a feature or an item: a small tag beside the number. */
   .adv {

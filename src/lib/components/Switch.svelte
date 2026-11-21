@@ -38,7 +38,7 @@
     position: absolute; top: 1px; left: 1px; width: calc(1.25rem - 4px); height: calc(1.25rem - 4px);
     border-radius: 50%; background: var(--text);
     box-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
-    transition: transform 0.24s cubic-bezier(0.3, 1.4, 0.5, 1), background-color 0.22s ease;
+    transition: transform 0.24s cubic-bezier(0.33, 1, 0.68, 1), background-color 0.22s ease;
   }
   .switch[aria-checked='true'] .track { background: var(--a); border-color: var(--a); }
   .switch[aria-checked='true'] .knob { transform: translateX(0.875rem); background: #fff; }

@@ -471,17 +471,17 @@
           {#if !characters.length}
             <p class="note" in:fade={appear()}>No characters in this campaign yet.</p>
           {:else}
-            <ul class="chars cascade" class:can-reorder={canArrange}
+            <ul class="chars" class:can-reorder={canArrange}
                 use:reorder={{ enabled: canArrange, keys: characters.map((s) => s.id), onpreview: (k) => (preview = k), oncommit: arrange, scale: 1.02 }}>
-              {#each shown as s, i (s.id)}
+              {#each shown as s (s.id)}
                 {@const def = s.definition}
                 {@const max = Number(def?.combat?.hpMax) || 0}
                 {@const cur = Number(s.state?.hpCurrent) || 0}
                 {@const v = vitalStatus(cur, max, s.state?.deathSaves)}
                 {@const conds = s.state?.conditions ?? []}
                 {@const face = fontFace(def?.identity?.nameFont)}
-                <li class="card themed {v.vital}" class:onturn={init.turn === `pc:${s.id}`} data-key={s.id} style={themeStyle(def?.identity?.theme)} style:--i={i}
-                    animate:flip={{ duration: still ? 0 : 280, easing: cubicOut }} out:fade={appear()}>
+                <li class="card themed {v.vital}" class:onturn={init.turn === `pc:${s.id}`} data-key={s.id} style={themeStyle(def?.identity?.theme)}
+                    animate:flip={{ duration: still ? 0 : 280, easing: cubicOut }} transition:fade={appear()}>
                   <div class="top">
                     {@render portraitOf(resolveImageUrl(def?.identity?.portraitUrl).url, ringOf(conds, def?.conditionLooks), false, null, def ? mainClass(def) : false)}
                     <span class="who">
@@ -519,14 +519,14 @@
             {:else if !table.list.length}
               <p class="note" in:fade={appear()}>No monsters or NPCs yet. Add them on the campaign page.</p>
             {:else}
-              <ul class="chars cascade" in:fade={appear()}>
-                {#each table.list as c, i (c.id)}
+              <ul class="chars" in:fade={appear()}>
+                {#each table.list as c (c.id)}
                   {@const max = c.hp_max ?? 0}
                   {@const now = hpNow(c)}
                   {@const v = vitalStatus(now, max)}
                   {@const kind = kindLine(c.statblock ?? {})}
-                  <li class="card {v.vital}" class:onturn={init.turn === `cr:${c.id}`} style:--i={i}
-                      animate:flip={{ duration: still ? 0 : 280, easing: cubicOut }} out:fade={appear()}>
+                  <li class="card {v.vital}" class:onturn={init.turn === `cr:${c.id}`}
+                      animate:flip={{ duration: still ? 0 : 280, easing: cubicOut }} transition:fade={appear()}>
                     <div class="top">
                       {@render portraitOf(resolveImageUrl(c.portrait).url, ringOf(c.conditions, c.condition_looks), true, c.kind, false)}
                       <span class="who">
