@@ -147,6 +147,23 @@ export function makeCreatureRepo(client: SupabaseClient) {
 
 export const creatureRepo = makeCreatureRepo(supabase);
 
+/**
+ * What the players see of the DM's creatures, worked out on the DM's page
+ * the way revealed_creatures does it in the database (database/0018, 0023):
+ * only the revealed ones, and how hurt they look rather than their numbers.
+ */
+export function asRevealed(list: Creature[]): Revealed[] {
+  return list.filter((c) => c.visible).map((c) => {
+    const max = c.hp_max ?? 0;
+    const now = c.hp_current ?? max;
+    const vital: Revealed['vital'] = max <= 0 ? 'unknown' : now <= 0 ? 'down' : now / max <= 0.25 ? 'critical' : now / max <= 0.5 ? 'bloodied' : 'healthy';
+    return {
+      id: c.id, name: c.name, kind: c.kind, vital, conditions: c.conditions, initiative: c.initiative, position: c.position,
+      portrait: c.portrait, condition_looks: c.condition_looks, expression: c.expression
+    };
+  });
+}
+
 /** In the DM's order: by place, then oldest first. */
 export const inOrder = (list: Creature[]): Creature[] =>
   [...list].sort((a, b) => a.position - b.position || a.created_at.localeCompare(b.created_at));

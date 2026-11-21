@@ -1,9 +1,11 @@
 <!--
   What the players see of the DM's monsters and NPCs (database/0018, 0020,
   revealed_creatures): only those the DM revealed, by name and portrait,
-  their conditions, their expression as the DM describes it (database/0023) and
-  how hurt they look (in words, and on the card's edge as on every campaign
-  card), never their numbers or notes. A portrait opens full screen.
+  their conditions, how hurt they look and their expression as the DM
+  describes it (database/0023), on one line ("Bloodied, Snarling"), and on
+  the card's edge as on every campaign card; never their numbers or notes.
+  The DM sees the same cards (`dm`), to know what the table sees. A
+  portrait opens full screen.
 -->
 <script lang="ts">
   import { flip } from 'svelte/animate';
@@ -17,7 +19,7 @@
   import { prefersReducedMotion } from '#lib/motion.ts';
   import SectionHead from './SectionHead.svelte';
 
-  let { list }: { list: Revealed[] } = $props();
+  let { list, dm = false }: { list: Revealed[]; dm?: boolean } = $props();
   const still = prefersReducedMotion();
   const LOOKS: Record<Revealed['vital'], string> = {
     healthy: 'Unhurt', bloodied: 'Bloodied', critical: 'Barely standing', down: 'Down', unknown: 'Hard to tell'
@@ -28,7 +30,7 @@
 {#if list.length}
   <section class="foes" aria-label="Monsters and NPCs in sight" transition:fade={{ duration: still ? 0 : 180 }}>
     <SectionHead title="In sight" infoLabel="About these">
-      {#snippet info()}The monsters and NPCs your DM has shown you: their expressions, and how hurt they look.{/snippet}
+      {#snippet info()}{#if dm}What your players see of the monsters and NPCs you’ve revealed: how hurt they look, and their expressions.{:else}The monsters and NPCs your DM has shown you: how hurt they look, and their expressions.{/if}{/snippet}
     </SectionHead>
     <ul>
       {#each list as c (c.id)}
@@ -47,13 +49,7 @@
               <span class="foekind" class:npc={c.kind === 'npc'}>{c.kind === 'npc' ? 'NPC' : 'Monster'}</span>
             </span>
           </div>
-          <span class="foelook"><i aria-hidden="true"></i>{LOOKS[c.vital]}</span>
-          {#if c.expression}
-            <span class="foeexpr" title="Its expression">
-              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M9 10h.01M15 10h.01M9 15.5c1.8-1.4 4.2-1.4 6 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
-              {c.expression}
-            </span>
-          {/if}
+          <span class="foelook"><i aria-hidden="true"></i>{LOOKS[c.vital]}{#if c.expression?.trim()}, {c.expression.trim()}{/if}</span>
           {#if c.conditions.length}
             <ul class="foeconds">
               {#each c.conditions as name (name)}
@@ -96,8 +92,6 @@
   button.foepic:hover { transform: scale(1.05); }
   button.foepic:active { transform: scale(0.98); }
   button.foepic:focus-visible { outline: 2px solid var(--a); outline-offset: 3px; }
-  .foeexpr { display: inline-flex; align-items: center; gap: 0.4375rem; font-size: 0.8125rem; font-style: italic; color: var(--text); }
-  .foeexpr svg { flex: none; color: var(--dim); }
   .foepic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
   .foehead strong { overflow-wrap: anywhere; }
   .foekind {

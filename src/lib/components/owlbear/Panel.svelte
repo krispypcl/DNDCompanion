@@ -30,7 +30,7 @@
   import { profile } from '#lib/stores/profile.ts';
   import { enabledProviders, PROVIDER_NAMES, profileOf, signIn, signOut, type OAuthProvider } from '#lib/data/session.ts';
   import { signInFromOwlbear } from '#lib/owlbear/signin.ts';
-  import { followRevealed, type Revealed } from '#lib/data/creatures.ts';
+  import { asRevealed, followRevealed, type Revealed } from '#lib/data/creatures.ts';
   import { CreatureTable } from '#lib/creatureTable.svelte.ts';
   import { LiveInitiative } from '#lib/initiative.svelte.ts';
   import { advantageFrom } from '#lib/rules/equipment.ts';
@@ -558,7 +558,7 @@
           </section>
         {/if}
 
-        {#if !isDm}<RevealedCreatures list={revealed} />{/if}
+        <RevealedCreatures list={isDm && table ? asRevealed(table.list) : revealed} dm={isDm} />
       </div>
     {/if}
 

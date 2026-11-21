@@ -20,7 +20,7 @@
   import { session } from '#lib/stores/session.ts';
   import { classLine, initiativeParts } from '#lib/rules/derived.ts';
   import { advantageFrom } from '#lib/rules/equipment.ts';
-  import { followRevealed, type Revealed } from '#lib/data/creatures.ts';
+  import { asRevealed, followRevealed, type Revealed } from '#lib/data/creatures.ts';
   import { CreatureTable } from '#lib/creatureTable.svelte.ts';
   import { next as nextTurn, previous as previousTurn, rollInitiative, settleAll, start as startTurns, unsettled, type InitiativeRow } from '#lib/rules/initiative.ts';
   import { LiveInitiative } from '#lib/initiative.svelte.ts';
@@ -133,6 +133,8 @@
   const creatureCount = $derived(table?.list.length ?? 0);
   /** What the players see of them: only the revealed ones (database/0018), live (0025). */
   let revealed = $state<Revealed[]>([]);
+  /** The same, worked out from the DM's own list (lib/data/creatures asRevealed). */
+  const dmRevealed = $derived(table ? asRevealed(table.list) : []);
   const revealedFor = $derived(isMember && !isDm && campaign ? campaign.id : null);
   $effect(() => {
     const id = revealedFor;
@@ -701,8 +703,9 @@
       </div>
     {/if}
 
-    {#if !isDm && revealed.length}
-      <section class="campsec" data-places="fight"><RevealedCreatures list={revealed} /></section>
+    <!-- The DM sees In sight too: what the table sees of the revealed ones. -->
+    {#if isDm ? dmRevealed.length : revealed.length}
+      <section class="campsec" data-places="fight" transition:slide={unfold()}><RevealedCreatures list={isDm ? dmRevealed : revealed} dm={isDm} /></section>
     {/if}
 
     {#if retired.length}
