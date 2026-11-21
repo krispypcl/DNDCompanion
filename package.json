@@ -2,7 +2,7 @@
   "name": "dndcompanion",
   "version": "0.10.0",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "scripts": {
     "prepare": "svelte-kit sync",

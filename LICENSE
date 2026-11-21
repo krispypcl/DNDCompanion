@@ -1,36 +1,112 @@
-DND Companion
-Copyright (c) 2026 krispypcl. All rights reserved.
+DND Companion Personal Use License 1.0
 
-This repository and everything in it (source code, styles, artwork, text and
-documentation) belongs to the copyright holder, except the parts listed under
-"Other people's work" below.
+Copyright (c) 2026 krispypcl
 
-No license is granted. Without the copyright holder's prior written
-permission, you may not copy, modify, adapt, translate, merge, publish,
-distribute, sublicense, sell, host or run copies of this work, in whole or in
-part, or use any of it to train or improve machine-learning or artificial
-intelligence systems.
+This license is modeled on the PolyForm Strict License 1.0.0, changed to
+allow changes and a copy run for your own table.
 
-Viewing and forking on GitHub. Because this repository is public on GitHub,
-GitHub's Terms of Service let you view it and fork it within GitHub. That is
-the only permission given. A fork gives no right to use, change, run or
-distribute the work anywhere else.
+Acceptance
 
-Using the app. Playing with the hosted DND Companion website, as a player or a
-DM, is allowed and is not limited by this notice.
+In order to get any license under these terms, you must agree to them as
+both strict obligations and conditions to all your licenses.
 
-Other people's work. These parts belong to others and keep their own licenses;
-nothing in this notice claims them:
-  - the sound effects in static/sounds (see static/sounds/LICENSE.txt);
-  - the fonts in static/pdf (Inter and Cinzel Decorative, under the SIL Open
-    Font License 1.1; see static/pdf/Inter-LICENSE.txt);
-  - the Discord mark in static/brand, a trademark of Discord Inc.;
-  - the open-source packages named in package.json, under their own licenses.
+Copyright License
 
-Permission. To ask for permission, open an issue on this repository.
+The licensor grants you a copyright license for the software to do
+everything you might do with the software that would otherwise infringe the
+licensor's copyright in it, for any permitted purpose, other than
+distributing the software or making changes or new works based on the
+software, except as allowed below.
 
-THE WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING
-FROM, OUT OF OR IN CONNECTION WITH THE WORK OR ITS USE.
+Changes and New Works
+
+The licensor grants you an additional copyright license to make changes and
+new works based on the software, for any permitted purpose. You may not
+publish or distribute your changes or new works to anyone.
+
+Running Your Own Copy
+
+You may run your own copy of the software, changed or not, for yourself and
+the people you play with (your table). Everyone at your table may use that
+copy. It must not be offered to the public: no open sign-up, no listing or
+advertising it, and no one outside your table invited to use it.
+
+Permitted Purpose
+
+A permitted purpose is any purpose other than a commercial one. You may not:
+
+- sell the software, or a copy, change or new work based on it;
+- charge for access to it, or for anything it does;
+- run advertising, sponsorship, donations or paid features on or around it;
+- use any part of it to train or improve machine-learning or artificial
+  intelligence systems.
+
+No Distribution
+
+Beyond the copy your table uses, you may not publish, distribute, share,
+sublicense or otherwise make the software, or any changes or new works based
+on it, available to anyone else, whether as source code, as built files or
+as a hosted service. This includes publishing a fork or a changed version on
+GitHub or anywhere else. GitHub's Terms of Service let you view and fork this
+repository within GitHub; that fork must stay unused outside these terms and
+must not be published with your changes.
+
+Notices
+
+Any copy of the software you make must keep this license and its copyright
+notice.
+
+Other People's Work
+
+These parts belong to others and keep their own licenses; this license does
+not cover them:
+
+- the sound effects in static/sounds (see static/sounds/LICENSE.txt);
+- the fonts in static/pdf (Inter and Cinzel Decorative, under the SIL Open
+  Font License 1.1; see static/pdf/Inter-LICENSE.txt);
+- the Discord mark in static/brand, a trademark of Discord Inc.;
+- the open-source packages named in package.json, under their own licenses.
+
+Using the Hosted App
+
+Playing on the hosted DND Companion website, as a player or a DM, is allowed
+and is not limited by this license.
+
+Permission
+
+To ask for anything this license does not allow, open an issue on this
+repository. Any further permission must be given in writing by the licensor.
+
+Patent Defense
+
+If you make any written claim that the software infringes or contributes to
+infringement of any patent, your licenses for the software granted under
+these terms end immediately.
+
+Violations
+
+The first time you are notified in writing that you have violated any of
+these terms, or done anything with the software not covered by your
+licenses, your licenses can nonetheless continue if you come into full
+compliance with these terms, and take practical steps to correct past
+violations, within 32 days of receiving notice. Otherwise, all your licenses
+end immediately.
+
+No Liability
+
+As far as the law allows, the software comes as is, without any warranty or
+condition, and the licensor will not be liable to you for any damages arising
+out of these terms or the use or nature of the software, under any kind of
+legal claim.
+
+Definitions
+
+The licensor is the individual offering these terms, and the software is the
+software and other material the licensor makes available under these terms.
+
+You refers to the individual or entity agreeing to these terms.
+
+Your licenses are all the licenses granted to you for the software under
+these terms.
+
+Use means anything you do with the software requiring one of your licenses.

@@ -86,7 +86,7 @@ away, and puts the whole party on one live page for the DM.
 
 ## Local Development
 
-For the author and anyone given permission (see [License](#license)).
+To run your own copy for yourself and your table (see [License](#license)).
 
 The app runs on [Supabase](https://supabase.com/): its database, sign-in and
 live updates all come from one Supabase project.
@@ -117,4 +117,4 @@ live updates all come from one Supabase project.
 
 ## License
 
-All rights reserved. The code is public to read, not to reuse: copying, changing, hosting or redistributing it needs written permission (see [LICENSE](LICENSE)). Playing on the hosted app is always welcome. The sound effects, fonts and packages it uses keep their own licenses.
+The DND Companion Personal Use License (see [LICENSE](LICENSE)). You may use the code, change it and run your own copy for yourself and the people you play with, free of charge. You may not sell it, charge for it or put ads on it, publish or share it or your changes, offer a copy to the public, or train AI on it. Playing on the hosted app is always welcome. The sound effects, fonts and packages it uses keep their own licenses.
