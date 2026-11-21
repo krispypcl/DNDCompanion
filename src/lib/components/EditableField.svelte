@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { fitText } from '#lib/actions.ts';
   import { flipKey } from '#lib/flip.ts';
 
   let {
@@ -33,19 +34,6 @@
   const key = flipKey();
   const empty = $derived(value === '' || value === undefined);
 
-  /** `rows` is the floor; beyond that the box follows the text, so a long
-      answer is all on screen rather than hidden behind an inner scrollbar. */
-  function autosize(node: HTMLTextAreaElement, enabled: boolean) {
-    if (!enabled) return;
-    const fit = () => {
-      node.style.height = 'auto';
-      node.style.height = `${node.scrollHeight}px`;
-    };
-    fit();
-    node.addEventListener('input', fit);
-    return { destroy: () => node.removeEventListener('input', fit) };
-  }
-
   function commit(event: Event) {
     const el = event.target as HTMLInputElement | HTMLTextAreaElement;
     // An emptied number field reports '' rather than 0: Number('') is 0, which
@@ -74,7 +62,7 @@
     value={String(value ?? '')}
     onchange={commit}
     {rows}
-    use:autosize={grow}
+    use:fitText={grow}
   ></textarea>
 {:else}
   <input

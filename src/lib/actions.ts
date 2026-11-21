@@ -147,3 +147,31 @@ export function movable(node: HTMLElement, opts: MovableOptions = {}) {
     }
   };
 }
+
+/**
+ * A text box that follows its words: at least its `rows`, and taller as the
+ * text grows, so a long answer is all on screen rather than behind an inner
+ * scrollbar. Pass the value (or anything that changes with it) so a value
+ * set from outside fits too; `false` leaves the box alone.
+ */
+export function fitText(node: HTMLTextAreaElement, value: unknown = true) {
+  let on = value !== false;
+  const fit = () => {
+    if (!on) return;
+    node.style.height = 'auto';
+    const cs = getComputedStyle(node);
+    const edge = cs.boxSizing === 'border-box'
+      ? parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth)
+      : -(parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom));
+    node.style.height = `${node.scrollHeight + edge}px`;
+  };
+  fit();
+  node.addEventListener('input', fit);
+  return {
+    update(next: unknown) {
+      on = next !== false;
+      if (on) requestAnimationFrame(fit);
+    },
+    destroy: () => node.removeEventListener('input', fit)
+  };
+}
