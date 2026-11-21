@@ -1897,25 +1897,27 @@
     .defense { gap: 0.4375rem; }
   }
   /*
-   * A phone: the portrait at the left, the name and the class, species and
-   * background beside it, together in the middle of its height; the
-   * campaign under them across the header, so a long name has the room; then
-   * the music. The controls are in the top bar. (Wrapped as a
-   * row, the portrait sat alone above the name.)
+   * A phone: the campaign across the top, so a long name has the room; then
+   * the portrait at the left with the name and the class, species and
+   * background beside it, together in the middle of its height; then the
+   * music, the width of the screen. The controls are in the top bar. (Wrapped
+   * as a row, the portrait sat alone above the name.)
    */
   @media (max-width: 700px) {
-    /* The portrait and the words beside it sit in the middle as one block, the words still left-aligned to the portrait. */
-    .identity { display: grid; grid-template-columns: 5.5rem minmax(0, max-content); justify-content: center; column-gap: 0.875rem; row-gap: 0.25rem; align-items: center; }
-    .identity .portrait { width: 5.5rem; grid-column: 1; grid-row: 1 / 3; align-self: center; }
+    /* The portrait and the words beside it sit in the middle as one block, the words still
+       left-aligned to the portrait; the outer columns let the campaign and the music run edge to edge. */
+    .identity { display: grid; grid-template-columns: minmax(0, 1fr) 5.5rem minmax(0, max-content) minmax(0, 1fr); column-gap: 0; row-gap: 0.25rem; align-items: center; }
+    .identity .portrait { width: 5.5rem; grid-column: 2; grid-row: 2 / 4; align-self: center; margin-right: 0.875rem; }
     .identity .idleft, .identity .who { display: contents; }
-    .identity .who > h1 { grid-column: 2; grid-row: 1; align-self: end; min-width: 0; }
-    .identity .who > .sub { grid-column: 2; grid-row: 2; align-self: start; margin-top: 0.125rem; }
-    .identity .who > .campaign { grid-column: 1 / -1; grid-row: 3; align-self: start; justify-self: center; margin: 0.875rem 0 0; max-width: 100%; }
+    .identity .who > h1 { grid-column: 3; grid-row: 2; align-self: end; min-width: 0; }
+    .identity .who > .sub { grid-column: 3; grid-row: 3; align-self: start; margin-top: 0.125rem; }
+    .identity .who > .campaign { grid-column: 1 / -1; grid-row: 1; align-self: start; justify-self: center; margin: 0 0 0.875rem; max-width: 100%; }
     /* A long campaign name wraps inside its pill: a rounded box, not a
        stretched capsule, with a little less spacing between the letters. */
     .identity .campaign { letter-spacing: 0.08em; line-height: 1.35; }
     .identity .campaign a, .identity button.campaign { border-radius: var(--r-sm); padding: 0.1875rem 0.5rem; }
-    .identity .musicslot { grid-column: 1 / -1; justify-self: center; margin-top: 0.75rem; }
+    /* Below the portrait's level badge, as wide as the screen. */
+    .identity .musicslot { grid-column: 1 / -1; grid-row: 4; justify-self: stretch; margin-top: 1rem; }
   }
 
   /* ── A phone's places (the rules for showing one are in app.css) ── */
