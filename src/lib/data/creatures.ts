@@ -24,7 +24,7 @@ export type Creature = {
   position: number;
   /** Its place in the initiative order, once rolled or written (database/0018). */
   initiative: number | null;
-  /** Shown to the players (by name, conditions and how hurt it looks). */
+  /** Shown to the players (by name, conditions, and how hurt it looks). */
   visible: boolean;
   statblock: StatBlock;
   /** A picture link (database/0020): the DM's, or a 5e.tools monster's token art. */

@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
    * The character's class, read rather than edited: a card per class, with
-   * its level large, the subclass under the name, the hit die and the book,
+   * its level large, the subclass under the name, the hit die, and the book,
    * and a track of the twenty levels filled to where they are. Most
    * characters have one class, so one card is the usual look; a multiclass
    * character gets a card each and their total under them.

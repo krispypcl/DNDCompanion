@@ -23,7 +23,7 @@ const hasLegacyText = (definition: Definition) =>
 
 /**
  * The parts of a sheet others may change while its owner has it open: hit
- * points, temporary hit points, conditions and death saves (from the
+ * points, temporary hit points, conditions, and death saves (from the
  * Owlbear Rodeo map, or the DM on the campaign page), and how the DM's
  * conditions look. A change to these elsewhere is folded in, never a
  * conflict.

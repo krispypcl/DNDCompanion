@@ -2,7 +2,7 @@
 // can find on 5e.tools, by its proper name, in every book (not only the 2024
 // rules): spells, items and magic variants, feats, optional features, species
 // and subraces, backgrounds, classes, subclasses, conditions and monsters,
-// 5e.tools' other pages (rules/fiveMore: gifts, deities, languages, traps and
+// 5e.tools' other pages (rules/fiveMore: gifts, deities, languages, traps, and
 // the rest), and the classes and subclasses of 5e.tools' homebrew library
 // (a Gunslinger, say), each with its book and a few words on what it is
 // ("Level 3 Evocation", "CR 1 Fey"). Loaded only when the search opens.
@@ -59,7 +59,7 @@ for (const file of Object.values(classIndex)) {
   const data = await get(`class/${file}`);
   for (const c of data.class ?? []) add(c.name, 'c', c.source, 'Class');
   // A subclass opens on its class's page, so its row also carries the class,
-  // the class's book and the subclass's short name (5e.tools links by those).
+  // the class's book, and the subclass's short name (5e.tools links by those).
   for (const sc of data.subclass ?? []) {
     if (!sc.className || !sc.shortName) continue;
     add(sc.name, 'u', sc.source, `${sc.className} Subclass`, `${sc.className}|${sc.classSource ?? sc.source}|${sc.shortName}`);

@@ -531,7 +531,7 @@ function pageTwo(k: Kit) {
   });
   line(p, 110, 500, 110, 738, SOFT, 0.6);
 
-  // Each table is a band [x, x + width]: name, amount and weight side by
+  // Each table is a band [x, x + width]: name, amount, and weight side by
   // side, the two tables a clear gap apart.
   const QTY = 24;
   const WEIGHT = 32;

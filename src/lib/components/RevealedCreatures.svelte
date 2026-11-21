@@ -1,7 +1,7 @@
 <!--
   What the players see of the DM's monsters and NPCs (database/0018, 0020,
   revealed_creatures): only those the DM revealed, by name and portrait,
-  their conditions, how hurt they look and their expression as the DM
+  their conditions, how hurt they look, and their expression as the DM
   describes it (database/0023), on one line ("Bloodied, Snarling"), and on
   the card's edge as on every campaign card; never their numbers or notes.
   The DM sees the same cards (`dm`), to know what the table sees. A

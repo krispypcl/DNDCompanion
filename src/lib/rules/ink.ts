@@ -1,7 +1,7 @@
 /**
  * Drawing over a page of notes or backstory. A page's drawing is kept on a
  * last line of its own, after the writing (`INK_MARK` + JSON), so the page
- * stays one piece of text: saved, made private and exported with the words.
+ * stays one piece of text: saved, made private, and exported with the words.
  * Points are in units of the page's width (0 to 1000), so a drawing scales
  * with the page.
  */

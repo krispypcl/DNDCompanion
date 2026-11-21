@@ -284,7 +284,7 @@
   /*
    * Fading. Songs come in softly and go out softly: each new song rises from
    * silence, the last seconds of one sink into the next, and pausing,
-   * skipping or the speaker going off dip the sound first. What the player
+   * skipping, or the speaker going off dip the sound first. What the player
    * hears is the volume times the fade times the song's tail.
    */
   const FADE_IN = 1.4;
@@ -703,7 +703,7 @@
 <!--
   The whole player: the bars, the song's name (centered) and, for the DM,
   Minimize, on one line; the timeline; then one row of controls on a single
-  middle line: shuffle and loop on the left, back, play and next in the
+  middle line: shuffle and loop on the left, back, play, and next in the
   center, the speaker on the right. At rest (no song yet) it is the same
   player, still, so nothing changes size when a song arrives.
 -->
@@ -938,7 +938,7 @@
   }
   .time input:hover::-webkit-slider-thumb, .time input:active::-webkit-slider-thumb { transform: scale(1.1); }
   .time input::-moz-range-thumb { width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--a); border: 0; }
-  /* One line of controls: shuffle and loop, back, play and next, the speaker. */
+  /* One line of controls: shuffle and loop; back, play, and next; the speaker. */
   .row { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 0.25rem; }
   .side { display: flex; align-items: center; gap: 0.125rem; min-width: 0; }
   .side.end { justify-content: flex-end; }

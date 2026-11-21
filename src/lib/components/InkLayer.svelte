@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
    * Drawing over a page of notes or backstory: pen strokes on top of the
-   * writing, and the paper under it (plain, lines, a grid or dots). Shown
+   * writing, and the paper under it (plain, lines, a grid, or dots). Shown
    * always; drawn on only while `drawing` is on, when it takes the pointer
    * and the writing underneath waits. Points are in page-width units, so the
    * drawing grows and shrinks with the page.
@@ -37,7 +37,7 @@
   $effect(() => {
     if (!box) return;
     // Both sides, so the drawing's frame is always the page's: a frame drawn
-    // for a shorter page shrank every line towards the top left.
+    // for a shorter page shrank every line toward the top left.
     const ro = new ResizeObserver(() => {
       width = Math.max(1, box!.clientWidth);
       height = Math.max(1, box!.clientHeight);

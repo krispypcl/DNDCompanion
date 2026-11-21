@@ -2,7 +2,7 @@
   /**
    * The app's mark: a plain twenty-sided die, the shape of the hobby rather
    * than anyone's logo. The same drawing is the home-screen icon, the
-   * favicon, the splash and the link preview (see static/ and app.html).
+   * favicon, the splash, and the link preview (see static/ and app.html).
    */
   let { size = 40 }: { size?: number } = $props();
 </script>

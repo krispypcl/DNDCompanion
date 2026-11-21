@@ -71,7 +71,7 @@
     };
   }
 
-  /** A deleted sheet folds away: fades, slides aside and closes its gap. */
+  /** A deleted sheet folds away: fades, slides aside, and closes its gap. */
   function fold(node: Element) {
     const h = (node as HTMLElement).offsetHeight;
     return {
@@ -799,7 +799,7 @@
 {/snippet}
 
 <!--
-  One area's cards, a page at a time: its groups (Pinned, the rest, Retired
+  One area's cards, a page at a time: its groups (Pinned, the rest, Retired,
   or Archived) each named where they start, and a pager under them when there
   is more than one page.
 -->
@@ -1100,7 +1100,7 @@
   li { container-type: inline-size; }
   /*
    * A banner, when the character or campaign has one: a corner of the card,
-   * bottom right, fading out towards the left and the top, under everything
+   * bottom right, fading out toward the left and the top, under everything
    * in the card (the star, the grip, the ×, the words all stay on top), and
    * fading in once it has loaded.
    */
@@ -1193,7 +1193,7 @@
   .campnext .soon { color: var(--a); font-weight: 600; }
   /*
    * A narrow card (a phone, two to a row on a small laptop): the square beside
-   * the name, class and campaign, and the dates as the card's foot.
+   * the name, class, and campaign, and the dates as the card's foot.
    */
   @container (max-width: 36rem) {
     .withface {

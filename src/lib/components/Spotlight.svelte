@@ -1,7 +1,7 @@
 <!--
   The search: / on a sheet or a campaign page, or its button in the header.
   Type a name; every spell, item, feat, option, species, background, class,
-  subclass, condition and monster on 5e.tools is there, best matches first.
+  subclass, condition, and monster on 5e.tools is there, best matches first.
   Enter (or a press) opens one in a pop-up of its own, and the search stays
   for the next, its field still ready to type in (on a phone it steps aside,
   and its × stands in for Esc). On the campaign page the DM can also put a
@@ -99,7 +99,7 @@
     }
     const theme = themeAt(document.querySelector('.themed') ?? document.body);
     peek.open({ name: r.hit.name, url: r.hit.url, anchor: new DOMRect(), ...theme });
-    // The field keeps the keyboard, so Esc, the arrows and typing still work.
+    // The field keeps the keyboard, so Esc, the arrows, and typing still work.
     input?.focus();
   }
   function key(e: KeyboardEvent) {
@@ -147,7 +147,7 @@
          in:drop out:drop={{ out: true }}>
       <div class="spotfield">
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
-        <input bind:this={input} bind:value={query} placeholder="Search spells, items, monsters and more"
+        <input bind:this={input} bind:value={query} placeholder="Search spells, items, monsters, and more"
                aria-label="Search 5e.tools" aria-controls="spot-results" aria-activedescendant={results.length ? `spot-${at}` : undefined}
                autocomplete="off" spellcheck="false" />
         <kbd class="spotesc">Esc</kbd>

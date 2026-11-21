@@ -184,7 +184,7 @@
   /** Optional: with no banner the sheet renders exactly as it did before. */
   const banner = $derived(resolveImageUrl(definition?.identity?.bannerUrl).url);
   const portraitSrc = $derived(resolveImageUrl(definition?.identity?.portraitUrl).url);
-  /** The writing lives in its own rows, so its edits count towards "updated" too. */
+  /** The writing lives in its own rows, so its edits count toward "updated" too. */
   const updated = $derived(
     latest(sheet?.updated_at, sheet?.texts?.notes.updatedAt, sheet?.texts?.backstory.updatedAt)
   );
@@ -202,7 +202,7 @@
   /** The sheet's panels arrive one after another when it first appears. */
   // On from the start, so the sheet's very first frame is already the start
   // of the animation; switched on only once it showed, the panels appeared,
-  // vanished and faded in again.
+  // vanished, and faded in again.
   let entering = $state(true);
   $effect(() => {
     if (!revealed) {
@@ -245,10 +245,10 @@
   /*
    * A phone: the sheet in places, chosen on a bar at the bottom, in place of
    * one long column. Play is the fight (hit points, defenses, conditions,
-   * the Combat tab); Abilities the six and the skills; Spells, Gear and
+   * the Combat tab); Abilities the six and the skills; Spells, Gear, and
    * Features their tabs; More the rest of the tabs. Search on the bar opens
    * the search. A top bar, held at the top while the page scrolls, has Edit,
-   * the cog and light or dark (left) and share, PDF and Back (right). The
+   * the cog, and light or dark (left) and share, PDF, and Back (right). The
    * same parts as the desktop's, shown a place at a time.
    */
   type Place = 'play' | 'abilities' | 'spells' | 'gear' | 'features' | 'more';
@@ -796,8 +796,8 @@
   <div class="sheet themed" class:entering class:bannered={banner} style={themeStyle(themePreview ?? definition.identity.theme)}
        data-place={phoneOn ? place : undefined} data-moved={phoneOn && moved ? '' : undefined}>
     {#if phoneOn}
-      <!-- The top bar, held at the top of the screen: Edit, the cog and the mode at the left, the
-           app's mark in the middle, the link, the PDF and Back at the right. -->
+      <!-- The top bar, held at the top of the screen: Edit, the cog, and the mode at the left, the
+           app's mark in the middle, and the link, the PDF, and Back at the right. -->
       <div class="topmark" bind:this={topEl} aria-hidden="true"></div>
       <div class="phonetop" class:stuck={topStuck}>
         <div class="topleft">{#if isOwner}{@render editButton()}{/if}{@render appearanceButton()}<ModeToggle /></div>
@@ -854,7 +854,7 @@
              editing it opens the campaign dialog (join, start, leave, retire). -->
         {#if editable}
           <button class="campaign pick" data-flip="identity:campaign-at" onclick={() => (campaignOpen = true)}
-                  title="Join, start or leave a campaign">
+                  title="Join, start, or leave a campaign">
             {@render flag()}
             <span style:font-family={campaign ? faceFamily(campaignFace) : undefined}>{campaign?.name ?? definition.identity.campaign?.trim() ?? 'Add to a campaign'}</span>
           </button>
@@ -875,7 +875,7 @@
                          onchange={(v) => patchIdentity('name', v)} />
         </h1>
         <p class="sub">
-          <!-- Class, species and background are all written on the Character
+          <!-- Class, species, and background are all written on the Character
                tab; here they are only read, each with its 5e.tools link. -->
           <!-- Each part of the line has its own 5e.tools link beside it. The
                class link opens the subclass when one is written, which on
@@ -923,7 +923,7 @@
             <div><dt>Last updated</dt><dd>{friendlyDate(updated)}</dd></div>
           </dl>
         {/if}
-        <!-- One row, as the campaign's: Back, Edit and the cog, then the sheet's tools. -->
+        <!-- One row, as the campaign's: Back, Edit, and the cog, then the sheet's tools. -->
         <div class="ctlrow">
         <!-- Opened from a campaign (?from=<campaign>): back goes to that campaign. -->
         <BackLink href={cameFrom ? `${base}/c/${cameFrom}` : `${base}/`} title={cameFrom ? 'Back to the campaign' : 'Back to your characters'} />
@@ -1164,7 +1164,7 @@
                 onchange={(features) => setDefinition({ ...definition, features: features as Feature[] })}
               >
                 {#snippet info()}
-                  Class features, feats and anything an item grants. Source <code>homebrew</code>
+                  Class features, feats, and anything an item grants. Source <code>homebrew</code>
                   marks an entry as yours and drops the 5e.tools link.
                 {/snippet}
               </EntryTable>
@@ -1195,7 +1195,7 @@
                   <code>prof + 1</code>, <code>classlevel / 2</code>, <code>classlevel * 5</code>.
                   <code>at(1, 2, 3, 3)</code> is 2 from 1st level and 3 from 3rd;
                   <code>full(1)</code>, <code>half(1)</code>, <code>third(1)</code> and
-                  <code>pact()</code> are spell slots. <b>From</b> is the class, feat or species
+                  <code>pact()</code> are spell slots. <b>From</b> is the class, feat, or species
                   it comes from: a class makes <code>classlevel</code> that class's level (so
                   multiclassing doesn't inflate it) and links to the feature on 5e.tools; a feat
                   or species links to that.
@@ -1240,7 +1240,7 @@
 
       <section class="panel rail-right" style:--i=4 data-places="play gear">
         <!-- On a phone, Play keeps the conditions, trackers, defenses,
-             proficiencies and languages; the purse goes to Gear. -->
+             proficiencies, and languages; the purse goes to Gear. -->
         <div class="railfight" data-places="play">
         <Conditions state={sheetState} editable={isOwner} onchange={setState}
                     looks={definition.conditionLooks ?? {}}
@@ -1348,7 +1348,7 @@
             rows={4}
             label="Proficiencies"
             placeholder="—"
-            hint="The armor, weapons, tools and saves you are trained in."
+            hint="The armor, weapons, tools, and saves you are trained in."
             onchange={(v) =>
               setDefinition({
                 ...definition,
@@ -1366,7 +1366,7 @@
             rows={2}
             label="Languages"
             placeholder="—"
-            hint="Every language you speak, read or sign."
+            hint="Every language you speak, read, or sign."
             onchange={(v) =>
               setDefinition({
                 ...definition,
@@ -1877,7 +1877,7 @@
   @media (max-width: 860px) {
     .sheet { padding: 0.875rem; }
     .band, .main { grid-template-columns: 1fr; }
-    /* Proficiencies, languages and senses are long free text; at 13px they
+    /* Proficiencies, languages, and senses are long free text; at 13px they
        are both hard to read and small enough that a phone zooms in on focus. */
     .profs :global(.field) { font-size: 1rem; }
     /* On a phone the attacks must come before an 18-row skill list. */

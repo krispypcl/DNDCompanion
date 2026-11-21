@@ -1,5 +1,5 @@
 <script lang="ts">
-  /** Bold, italic and the rest, for the page being written. */
+  /** Bold, italic, and the rest, for the page being written. */
   import { scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import { MARKS, type Format, type MarkKind } from '#lib/rules/richtext.ts';
@@ -12,7 +12,7 @@
   }: {
     active: Partial<Record<Format, boolean>>;
     onformat: (f: Format) => void;
-    /** Color, highlight or size for the selection. */
+    /** Color, highlight, or size for the selection. */
     onmark?: (kind: MarkKind, value: string) => void;
   } = $props();
 

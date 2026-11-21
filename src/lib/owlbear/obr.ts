@@ -1,7 +1,7 @@
 /**
  * Everything that talks to Owlbear Rodeo itself: the room's campaign, the
  * tokens tied to sheets and creatures and what they carry, the context menu
- * entries and the stat block popover.
+ * entries, and the stat block popover.
  * Only the /owlbear pages load this (they are the extension), so the rest of
  * the site never ships the SDK.
  */

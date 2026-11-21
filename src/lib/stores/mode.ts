@@ -55,7 +55,7 @@ function mark(next: Mode) {
   else root.removeAttribute('data-mode');
 }
 
-/** Light, dark or the device's own (account page, Preferences). */
+/** Light, dark, or the device's own (account page, Preferences). */
 export function chooseMode(choice: ModeChoice) {
   try {
     localStorage.setItem(MODE_KEY, choice);

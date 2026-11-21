@@ -95,7 +95,7 @@
     {#if !ended}
       <div class="row">
         <span class="label">Invite link
-          <InfoTip label="About the invite link">Players open it, sign in and pick which character joins. Anyone with this page’s own link can watch, but only the invite lets a character in. A new link stops the old one working.</InfoTip>
+          <InfoTip label="About the invite link">Players open it, sign in, and pick which character joins. Anyone with this page’s own link can watch, but only the invite lets a character in. A new link stops the old one working.</InfoTip>
         </span>
         <div class="inline">
           <input readonly value={inviteLink || 'Fetching the link'} aria-label="Invite link" onfocus={(e) => e.currentTarget.select()} />

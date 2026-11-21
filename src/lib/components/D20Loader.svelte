@@ -95,7 +95,7 @@
     40% { filter: drop-shadow(0 0 14px oklch(84% 0.15 90 / 0.8)); }
     100% { filter: drop-shadow(0 0 4px oklch(84% 0.15 90 / 0.3)); }
   }
-  /* A natural 1 is grey: a shrug, not an alarm. */
+  /* A natural 1 is gray: a shrug, not an alarm. */
   .fumble { color: var(--faint); }
   .fumble text { fill: var(--dim); }
   :global([data-mode='light']) .crit { color: oklch(68% 0.16 80); }

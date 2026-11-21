@@ -125,7 +125,7 @@ export type ItemEffect =
 export type ClassEntry = { name: string; subclass?: string; level: number; source?: string };
 
 export type Traits = {
-  /** Armor, weapons, tools and saving throws. Languages are separate: a
+  /** Armor, weapons, tools, and saving throws. Languages are separate: a
       sheet written before they were split keeps both here. */
   proficiencies?: string;
   languages?: string;

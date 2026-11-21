@@ -2,7 +2,7 @@
   /**
    * Equipping an item asks what it does while worn: armor (its base AC and
    * how much Dexterity it allows), a shield, a bonus to AC, speed,
-   * initiative or saving throws, or an ability score it sets or raises.
+   * initiative, or saving throws, or an ability score it sets or raises.
    * The name gives a first guess ("Leather armor" starts as armor 11 + Dex).
    * What is chosen is kept on the item, so equipping it again is one press.
    *

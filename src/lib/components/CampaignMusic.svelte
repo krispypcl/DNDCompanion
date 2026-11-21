@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
    * The campaign's jukebox: the DM's list of songs and the sheet's own music
-   * player for whichever is chosen. The DM chooses, plays, pauses and skips;
+   * player for whichever is chosen. The DM chooses, plays, pauses, and skips;
    * everyone else's page follows along (database/0008, campaign_live), with
    * only their own volume and speaker. A playlist pasted in is added song by
    * song. When one ends, the next follows unless the DM's loop is on. Adding
@@ -10,7 +10,7 @@
    * Whole, it is the player beside the list of songs (the list in a frosted
    * box as tall as the player). For the DM, the field to add one sits above
    * the list, on the title's line and as wide as the list, always there. Compact, it is
-   * the little capsule (MusicPlayer's): the song playing, a mute and a volume
+   * the little capsule (MusicPlayer's): the song playing, a mute, and a volume
    * slider. The players only ever see that; the DM folds the jukebox into it
    * with the icon beside the song's name and opens it again, in view or edit
    * mode alike. The same player plays underneath either way, so the music

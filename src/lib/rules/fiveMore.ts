@@ -35,5 +35,5 @@ const MORE_PAGES: MorePage[] = [
 
 export const morePage = (page: string): MorePage | undefined => MORE_PAGES.find((p) => p.page === page);
 
-/** What a trap, a hazard, a cult or a boon is, from its own list where one file holds two. */
+/** What a trap, a hazard, a cult, or a boon is, from its own list where one file holds two. */
 export const MORE_WORD: Record<string, string> = { trap: 'Trap', hazard: 'Hazard', cult: 'Cult', boon: 'Boon', vehicleUpgrade: 'Vehicle Upgrade' };

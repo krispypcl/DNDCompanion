@@ -2,7 +2,7 @@
   /**
    * The character's own options, gathered from the Features tab for the
    * moment in play they are wanted: maneuvers, weapon masteries, feats,
-   * fighting styles, invocations and metamagic. Laid out like General
+   * fighting styles, invocations, and metamagic. Laid out like General
    * actions; each one is a button that opens it where it is written.
    */
   import { featuresOpen } from '#lib/stores/tray.ts';

@@ -10,7 +10,7 @@ import { friendlyError } from '#lib/errors.ts';
 import type { ConditionLook } from '#lib/types.ts';
 
 /** A song on the DM's list: a YouTube link, and what to call it. */
-/** A song on a campaign's list: its link, its name and its length in seconds (each found once). */
+/** A song on a campaign's list: its link, its name, and its length in seconds (each found once). */
 export type Song = { url: string; name?: string; length?: number };
 /** What a campaign's page shows beyond its name. */
 export type CampaignDetails = {
@@ -201,7 +201,7 @@ function makeCampaignRepo(client: SupabaseClient) {
     followState,
 
     /**
-     * The campaign, read now and again whenever its name, details or ended
+     * The campaign, read now and again whenever its name, details, or ended
      * state change (database/0025 counts them), on waking and after a dropped
      * connection. Null once it is gone. Returns how to stop.
      */

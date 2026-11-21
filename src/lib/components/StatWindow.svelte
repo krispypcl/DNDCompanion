@@ -35,7 +35,7 @@
      in:fade={{ duration: prefersReducedMotion() ? 0 : 160 }} out:fade={{ duration: prefersReducedMotion() ? 0 : 160 }}>
   <!-- Laid out as a 5e.tools window from the search is (PeekWindow, PeekContent): the
        name heading it with the window's buttons beside it, then the kind, the
-       stat block and its book. -->
+       stat block, and its book. -->
   <header>
     <h3 class="statname">{name}</h3>
     <div class="stattools">
@@ -58,7 +58,7 @@
 </div>
 
 <style>
-  /* The same size, frame and shadow as a 5e.tools window (PeekWindow). */
+  /* The same size, frame, and shadow as a 5e.tools window (PeekWindow). */
   .statwindow {
     position: fixed; z-index: 70; width: min(400px, calc(100vw - 24px)); max-height: min(560px, calc(100vh - 24px));
     display: flex; flex-direction: column; overflow: hidden;

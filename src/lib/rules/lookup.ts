@@ -14,7 +14,7 @@
  *   https://5e.tools/search.html?q=<name> in:<category> source:<source>&lucky
  *
  * The search leaves out "legacy" books (the 2014 Player's Handbook, Mordenkainen's
- * Tome of Foes and the rest) unless a reader has switched them on, which is
+ * Tome of Foes, and the rest) unless a reader has switched them on, which is
  * why anything with a book written gets the direct link.
  *
  * Either way the name is first stripped of what is the player's and not the
@@ -84,7 +84,7 @@ export type LookupCategory =
   | 'any';
 
 /** 5e.tools search's own category words. A feature may be a feat, a class
-    feature or an optional feature, so it is not narrowed. */
+    feature, or an optional feature, so it is not narrowed. */
 const IN_CATEGORY: Record<LookupCategory, string | null> = {
   spells: 'sp',
   items: 'itm',
@@ -118,7 +118,7 @@ const BONUS = /[+\-−]\s?\d|(?:^|[\s(])[x×]\s?\d|\d\s?[x×](?:$|[\s)])/i;
 
 /**
  * The name as the book has it. Checked against every spell, item, species,
- * background, feat and class on 5e.tools: the books' own brackets stay
+ * background, feat, and class on 5e.tools: the books' own brackets stay
  * ("Tiefling (Glasya)", "Potion of Healing (Greater)", "Arrows (20)"), and
  * so does the "+1" that starts a magic item's name ("+1 Longsword"). What
  * goes is the player's: notes in square or curly brackets, and a bonus or
@@ -200,7 +200,7 @@ const ENTRY_ORDER: EntryKind[] = ['s', 'o', 'f', 'i', 'r', 'b'];
 const OLD_RULES = new Set(['phb', 'mtf', 'xge', 'tce', 'vgm', 'scag', 'egw', 'ftd', 'mpmm', 'dmg', 'mm', 'ggr', 'ai', 'scc']);
 
 /**
- * A spell, item, feat, optional feature, species or background by name,
+ * A spell, item, feat, optional feature, species, or background by name,
  * straight to its page: the book written beside it if it is in that one,
  * else the edition the sheet's other books are from, else the newest.
  */

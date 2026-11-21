@@ -111,7 +111,7 @@ export function trackerUrl(
   // The search names the class's book, so a homebrew class's own feature
   // (a Gunslinger's Grit) is looked for where it is written.
   if (ownClass) return own() ?? lookupUrl(tracker.label, tracker.source || ownClass.source, 'any');
-  // From a species, feat, item or background: the tracker's own page if it
+  // From a species, feat, item, or background: the tracker's own page if it
   // has one (Invisibility from a Tiefling), else what it comes from.
   return own() ?? entryUrl(from, tracker.source, sheetBooks) ?? lookupUrl(from, tracker.source, 'any');
 }

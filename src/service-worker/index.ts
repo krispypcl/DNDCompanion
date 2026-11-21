@@ -24,7 +24,7 @@ const BUILT = new Set([...immutable, ...assets].map(({ path }) => scoped(path)))
 /**
  * What is fetched at install: the entry, the pages' own code, styles and
  * icons. Not the PDF's fonts, the Owlbear tokens, the email picture, the link
- * preview or the sounds, which wait until they are used.
+ * preview, or the sounds, which wait until they are used.
  */
 const UP_FRONT = [
   ...[...immutable].map(({ path }) => path).filter((p) => /(^|\/)(entry|nodes)\//.test(p) || /\.css$/.test(p)),

@@ -54,7 +54,7 @@
   let tray: HTMLDetailsElement | undefined = $state();
 
   // An attack tapped in the table: take its roll, keep the chosen advantage,
-  // open the tray and roll it where it can be seen.
+  // open the tray, and roll it where it can be seen.
   let handled = 0;
   $effect(() => {
     const req = $diceRequest;

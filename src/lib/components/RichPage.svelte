@@ -142,7 +142,7 @@
   }
 
   /**
-   * Color, highlight or size for the selection. The browser's own font-name
+   * Color, highlight, or size for the selection. The browser's own font-name
    * command does the hard part (wrapping a selection that crosses lines and
    * other marks); the wrapping it leaves is then made into the sheet's own.
    */
@@ -170,7 +170,7 @@
     const mod = e.ctrlKey || e.metaKey;
     if (!mod) return;
     const key = e.key.toLowerCase();
-    // Bold, italic and underline are the browser's own; these three are not.
+    // Bold, italic, and underline are the browser's own; these three are not.
     if (e.shiftKey && key === 'x') {
       e.preventDefault();
       apply('strike');

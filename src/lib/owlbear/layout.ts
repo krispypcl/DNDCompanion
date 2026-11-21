@@ -26,7 +26,7 @@ export type Part = {
   z: number;
 };
 
-/** The token's drawn box on the map, from its image, grid and scale. */
+/** The token's drawn box on the map, from its image, grid, and scale. */
 export function tokenBox(
   item: { position: { x: number; y: number }; scale: { x: number; y: number }; image: { width: number; height: number }; grid: { dpi: number; offset: { x: number; y: number } } },
   sceneDpi: number

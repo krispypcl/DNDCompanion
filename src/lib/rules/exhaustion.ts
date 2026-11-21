@@ -1,6 +1,6 @@
 /**
  * Exhaustion, by the 2024 rules: each level takes 2 from every d20 test
- * (ability checks, attack rolls and saving throws) and 5 feet from Speed;
+ * (ability checks, attack rolls, and saving throws) and 5 feet from Speed;
  * a sixth level is death. A long rest removes one level.
  *
  * The level is read from the Exhaustion tracker when the sheet has one (its

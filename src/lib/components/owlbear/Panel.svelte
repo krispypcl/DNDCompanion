@@ -12,7 +12,7 @@
    * monsters and NPCs, each with its stat block (a popover beside the map)
    * and its tokens. Players see the order while it runs and the creatures
    * the DM has revealed. Everything follows changes as they land, wherever
-   * they are made. Signing in works with an email, Google or Discord
+   * they are made. Signing in works with an email, Google, or Discord
    * (lib/owlbear/signin).
    */
   import { onMount, untrack } from 'svelte';
@@ -618,7 +618,7 @@
 <style>
   :global(html.in-owlbear), :global(html.in-owlbear body) { background: var(--bg); }
   .panel { padding: 1.125rem 1.125rem 1.5rem; font-size: 0.9375rem; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 1.125rem; }
-  /* The brand on the left; the bubble, the room's campaign and the swap on the right, on one line. */
+  /* The brand on the left; the bubble, the room's campaign, and the swap on the right, on one line. */
   header { display: flex; align-items: center; gap: 0.5rem; min-height: 2rem; color: var(--text); }
   header .brandname { font-size: 1.1875rem; white-space: nowrap; }
   .roomtools { margin-left: auto; display: flex; align-items: center; gap: 0.375rem; }

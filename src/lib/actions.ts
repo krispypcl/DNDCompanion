@@ -65,7 +65,7 @@ export const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 /**
  * A pop-up the reader can move out of the way: pressed on its title (or
  * header) and dragged, it follows the pointer, kept on the screen. Buttons,
- * fields and links in the title still work as they are. It moves by the
+ * fields, and links in the title still work as they are. It moves by the
  * `translate` property, so it never fights the pop-up's own placing or its
  * opening animation. A new `key` (the pop-up opening on something else)
  * puts it back where it would be when it next opens.

@@ -28,24 +28,24 @@
   <h1>Privacy</h1>
   <p class="dim">Last updated November 21, 2026. DND Companion {appVersion}, in alpha.</p>
 
-  <p>DND Companion is a free, hobby D&amp;D 5e character sheet. It keeps only what it needs to run your sheets and campaigns, and it never sells, rents or shares it for advertising.</p>
+  <p>DND Companion is a free, hobby D&amp;D 5e character sheet. It keeps only what it needs to run your sheets and campaigns, and it never sells, rents, or shares it for advertising.</p>
 
   <h2>What It Keeps</h2>
   <ul>
-    <li><b>Your account:</b> your email address, the display name you choose, and a profile picture if you add one. If you sign in with Google, it receives your name, email address and profile picture from Google, and nothing else from your Google account.</li>
+    <li><b>Your account:</b> your email address, the display name you choose, and a profile picture if you add one. If you sign in with Google, it receives your name, email address, and profile picture from Google, and nothing else from your Google account.</li>
     <li><b>What you write:</b> your character sheets, notes, backstories, campaigns (with their monsters and NPCs, and the links you give them), and anything you put on a campaign's board.</li>
-    <li><b>On your device:</b> small settings such as light or dark mode and the music's volume, shuffle and mute, and the app's own files (its code and sound effects) so it opens quickly.</li>
+    <li><b>On your device:</b> small settings such as light or dark mode and the music's volume, shuffle, and mute, and the app's own files (its code and sound effects) so it opens quickly.</li>
   </ul>
 
   <h2>Who Can See It</h2>
   <p>A sheet or campaign page can be opened by anyone who has its link. Private notes on a sheet can be read by you, and by the DM of a campaign the sheet is in. A campaign's board can be changed by the people in that campaign.</p>
-  <p>The rows on your sheets (attacks, spells, items, features and trackers) are shared in a library that other players can pick from while they type, without your name. Only players you share a campaign with can see that you wrote one. You can turn this off on the <a href="{base}/account">Account</a> page, which takes your rows back out of it. A row another player has also put on their own sheet stays, as theirs, without your name.</p>
+  <p>The rows on your sheets (attacks, spells, items, features, and trackers) are shared in a library that other players can pick from while they type, without your name. Only players you share a campaign with can see that you wrote one. You can turn this off on the <a href="{base}/account">Account</a> page, which takes your rows back out of it. A row another player has also put on their own sheet stays, as theirs, without your name.</p>
 
   <h2>In Owlbear Rodeo</h2>
   <p>The extension keeps its campaign's link and the order of its characters in the room, and a token placed or tied from it carries the character's or creature's id. Owlbear Rodeo stores these with the room, under its own privacy policy. Rolls made on a sheet are sent as they happen to the rooms its character is in, and aren't kept. A DM's monsters and NPCs are read only by that DM; players see a revealed one only as hurt as it looks.</p>
 
   <h2>Where It Is Stored</h2>
-  <p>Accounts and sheets are stored with <a href="https://supabase.com/privacy" rel="noopener">Supabase</a>, which runs the database and sign-in. The site itself is served by GitHub Pages, through Cloudflare. Pictures, music and the Owlbear Rodeo room you link to stay where they are: the page loads them from those sites (for example YouTube for music), and those sites' own policies apply. Fonts are loaded from Google Fonts. Searching and looking up a spell, item, feature or monster reads 5e.tools' published data (and its homebrew library) from GitHub, which sees only that the file was asked for.</p>
+  <p>Accounts and sheets are stored with <a href="https://supabase.com/privacy" rel="noopener">Supabase</a>, which runs the database and sign-in. The site itself is served by GitHub Pages, through Cloudflare. Pictures, music, and the Owlbear Rodeo room you link to stay where they are: the page loads them from those sites (for example YouTube for music), and those sites' own policies apply. Fonts are loaded from Google Fonts. Searching and looking up a spell, item, feature, or monster reads 5e.tools' published data (and its homebrew library) from GitHub, which sees only that the file was asked for.</p>
 
   <h2>The Code</h2>
   <p>DND Companion’s code is open for anyone to read, so you can see exactly what it does with what you give it.</p>

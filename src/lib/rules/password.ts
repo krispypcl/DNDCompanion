@@ -64,7 +64,7 @@ export function passwordStrength(pw: string, email = ''): Strength {
   }
 
   const classes = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter((r) => r.test(pw)).length;
-  // Only the unpredictable part counts towards length.
+  // Only the unpredictable part counts toward length.
   const effective = pw.length - Math.max(0, predictable(pw) - 2);
 
   let points = 0;
@@ -81,7 +81,7 @@ export function passwordStrength(pw: string, email = ''): Strength {
       : effective < 12
         ? 'Longer is stronger: a few unrelated words make a good one.'
         : classes < 3
-          ? 'Mix in capitals, numbers or symbols.'
+          ? 'Mix in capitals, numbers, or symbols.'
           : null;
   return make(score, hint);
 }

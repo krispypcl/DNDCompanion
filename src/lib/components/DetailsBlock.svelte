@@ -35,7 +35,7 @@
     { key: 'size', label: 'Size', placeholder: 'Small or Medium' },
     { key: 'height', label: 'Height', placeholder: 'Feet and inches' },
     { key: 'weight', label: 'Weight', placeholder: 'In pounds' },
-    { key: 'faith', label: 'Faith', placeholder: 'A god, a cause or none' },
+    { key: 'faith', label: 'Faith', placeholder: 'A god, a cause, or none' },
     { key: 'skin', label: 'Skin', placeholder: 'Tone and markings' },
     { key: 'eyes', label: 'Eyes', placeholder: 'Color' },
     { key: 'hair', label: 'Hair', placeholder: 'Color and style' }

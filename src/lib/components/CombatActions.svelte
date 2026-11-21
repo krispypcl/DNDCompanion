@@ -28,7 +28,7 @@
     },
     {
       label: 'Bonus action',
-      note: 'You only have a bonus action when a feature, spell or item grants one.',
+      note: 'You only have a bonus action when a feature, spell, or item grants one.',
       items: ['Off-hand attack', 'Class feature', 'A spell cast as a bonus action']
     },
     {

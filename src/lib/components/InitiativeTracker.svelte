@@ -2,7 +2,7 @@
   The initiative order (rules/initiative, lib/initiative): everyone at the
   table, highest first, whose turn it is lit, and the round. The DM calls for
   initiative, the players roll (or write) their own characters' numbers, the
-  DM rolls the rest, starts the fight and moves the turn on; everyone
+  DM rolls the rest, starts the fight, and moves the turn on; everyone
   follows it live. A tie is settled by dragging (rules/initiative): the DM
   moves a monster or NPC, a player their own character among the characters.
 -->

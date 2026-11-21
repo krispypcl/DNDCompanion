@@ -1,8 +1,8 @@
 /**
  * Preferences (account page): the look and feel a player chooses.
  *
- * - Light, dark or the device's own (stores/mode.ts), reduced motion and the
- *   dice style apply to this device at once and are kept on it, so they
+ * - Light, dark, or the device's own (stores/mode.ts), reduced motion, and
+ *   the dice style apply to this device at once and are kept on it, so they
  *   work signed out and before the page has loaded (src/app.html reads them).
  * - They are also saved on the account (profiles.preferences), so a
  *   device that has never chosen starts with them.
@@ -22,7 +22,7 @@ export type Prefs = {
   dice?: DiceStyle;
 };
 
-/** The look, motion and dice kept in the player's profile (preferences). */
+/** The look, motion, and dice kept in the player's profile (preferences). */
 function prefsOf(row: ProfileRow | null | undefined): Prefs {
   const p = row?.preferences ?? {};
   return {

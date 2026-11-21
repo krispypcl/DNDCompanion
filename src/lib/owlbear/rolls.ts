@@ -1,6 +1,6 @@
 /**
  * Rolls made on a sheet, as the Owlbear room hears of them: who rolled, what
- * for, the total and the dice, shown to everyone in the room as a pop-up.
+ * for, the total, and the dice, shown to everyone in the room as a pop-up.
  * Kept small, as they travel on a broadcast.
  */
 import type { Roll } from '#lib/rules/dice.ts';

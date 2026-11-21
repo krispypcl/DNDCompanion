@@ -157,7 +157,7 @@
   }
 
   /*
-   * Preferences: the look, dice and motion apply to this device at once and
+   * Preferences: the look, dice, and motion apply to this device at once and
    * are kept on the account.
    */
   /** Follows the header's own switch too. */
@@ -261,7 +261,7 @@
 {#if !$session.loading && !$session.user}
   <!-- Signed out: the same page as a link that leads nowhere, with the way in. -->
   <NotFound tab="Sign in needed" title="Who goes there?"
-            message="This door only opens for its owner. Sign in to see your account, your connections and your privacy settings."
+            message="This door only opens for its owner. Sign in to see your account, your connections, and your privacy settings."
             action={{ href: `${base}/login?next=${encodeURIComponent('/account')}`, label: 'Sign in' }} home={false} />
 {:else}
 <main>
@@ -292,7 +292,7 @@
         </div>
       </div>
       <label for="pic">Profile picture URL</label>
-      <input id="pic" bind:value={picture} placeholder="Paste an image link: Google Drive, Imgur, Pinterest or Dropbox" />
+      <input id="pic" bind:value={picture} placeholder="Paste an image link: Google Drive, Imgur, Pinterest, or Dropbox" />
       {#if link.url}
         <img class="probe" src={link.url} alt="" onload={() => (loaded[link.url] = 'ok')} onerror={() => (loaded[link.url] = 'failed')} />
       {/if}
@@ -371,12 +371,12 @@
 
     <section class="card" aria-labelledby="pref-h">
       <h2 id="pref-h">Preferences
-        <InfoTip label="About preferences">The look, motion and dice apply to this device straight away and are
+        <InfoTip label="About preferences">The look, motion, and dice apply to this device straight away and are
           saved to your account, so a device you sign in on for the first time starts the same way.</InfoTip>
       </h2>
       <div class="prefs">
         <span class="pref-name">Look</span>
-        <Choice label="Light, dark or your device's own" value={look} onchange={setLook}
+        <Choice label="Light, dark, or your device's own" value={look} onchange={setLook}
                 options={[{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }, { value: 'system', label: 'System' }]} />
         <span class="pref-name">Dice
           <InfoTip label="About the dice style">How the dice roller shows a roll. <b>Tumble</b>: the dice spin through
@@ -392,7 +392,7 @@
 
       <h3 class="sub-h">Privacy
         <InfoTip label="About privacy"><b>Share my rows.</b> When you type a name in a table (an attack, spell, item,
-          feature or tracker), rows other players have written are offered, ready to use. Your own rows are shared the
+          feature, or tracker), rows other players have written are offered, ready to use. Your own rows are shared the
           same way, without your name: only players you share a campaign with can see who wrote them. Turning it off
           takes back everything you have shared.<br /><br /><b>Keep my sheets private.</b> Every sheet you have, and every
           one you make, can then be opened only by you and by the DM of the campaign it is in. Other players, your

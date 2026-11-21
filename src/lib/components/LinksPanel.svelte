@@ -105,7 +105,7 @@
 </script>
 
 <div class="links">
-  <!-- Media: the portrait, the banner and the music. Reading, the pictures
+  <!-- Media: the portrait, the banner, and the music. Reading, the pictures
        are to look at and the music goes by its name. -->
   <section>
     <h3 class="cap" data-flip="links:h:media">Media</h3>
@@ -120,7 +120,7 @@
             <InfoTip label="About the {field.role}">
               {#if field.role === 'portrait'}
                 The character's picture, beside their name and on the campaign page. Paste any image link: Google Drive,
-                Dropbox, OneDrive, Imgur or a direct image address. A Drive file has to be shared as "Anyone with the link".
+                Dropbox, OneDrive, Imgur, or a direct image address. A Drive file has to be shared as "Anyone with the link".
               {:else}
                 A wide picture shown behind the top of the sheet. Optional: without one the sheet looks as it always has.
                 The same links work as for the portrait.
@@ -148,7 +148,7 @@
             <p class="urlnote bad" role="status">
               That link didn’t turn into a picture! {field.link.source === 'drive' || field.link.source === 'onedrive'
                 ? 'Check it is shared with anyone who has the link.'
-                : 'Open the picture itself, copy its image address and paste that instead.'}
+                : 'Open the picture itself, copy its image address, and paste that instead.'}
             </p>
           {:else if field.link.source === 'invalid' && field.link.note}
             <p class="urlnote bad" role="status">{field.link.note}</p>
@@ -259,7 +259,7 @@
         Swap any built-in sound for your own: a link to a sound file (mp3, ogg or wav; a Google Drive or Dropbox share
         link works), or a YouTube video. Leave a field blank for the built-in sound; the speaker beside each name plays it.
         <br /><br />
-        <b>Part of a YouTube video:</b> pause it where the sound begins, right-click the video and choose “Copy video URL
+        <b>Part of a YouTube video:</b> pause it where the sound begins, right-click the video, and choose “Copy video URL
         at current time” (or Share → tick “Start at”). That link ends in <code>t=</code> and the start. Add
         <code>&amp;end=</code> and the second it should stop, e.g. <code>https://youtu.be/abc123?t=42&amp;end=47</code>
         plays from 0:42 to 0:47. Times can be seconds (<code>95</code>) or minutes and seconds (<code>1m35s</code>).
@@ -401,7 +401,7 @@
   .go:hover { border-color: var(--a-edge); background: var(--hover-bg); }
   .go:hover svg { color: var(--a); }
   /* The saved links and the new one share one set of columns, so the name,
-     the address and the end button line up row after row, all one height. */
+     the address, and the end button line up row after row, all one height. */
   .linkedit, .add {
     display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) 2.125rem; gap: 0.5rem; align-items: center;
   }

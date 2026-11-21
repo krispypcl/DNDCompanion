@@ -17,7 +17,7 @@
 
 export type Format = 'bold' | 'italic' | 'underline' | 'strike' | 'heading' | 'bullets' | 'numbers';
 
-/** Color, highlight and size: a kind and one of its named values. */
+/** Color, highlight, and size: a kind and one of its named values. */
 export type MarkKind = 'c' | 'h' | 's';
 export const MARKS: Record<MarkKind, readonly string[]> = {
   c: ['red', 'orange', 'gold', 'lime', 'green', 'teal', 'blue', 'purple', 'pink', 'brown', 'grey', 'none'],
@@ -45,7 +45,7 @@ function inline(text: string): string {
   s = s.replace(/__(\S(?:[^]*?\S)?)__/g, '<u>$1</u>');
   s = s.replace(/~~(\S(?:[^]*?\S)?)~~/g, '<s>$1</s>');
   s = s.replace(/\*(\S(?:[^]*?\S)?)\*/g, '<em>$1</em>');
-  // Color, highlight and size, innermost first, so they can sit inside each other.
+  // Color, highlight, and size, innermost first, so they can sit inside each other.
   for (let guard = 0; guard < 8; guard++) {
     const next = s.replace(MARK, (_, k: MarkKind, v: string, inner: string) =>
       MARKS[k].includes(v) ? `<span data-${k}="${v}">${inner}</span>` : inner

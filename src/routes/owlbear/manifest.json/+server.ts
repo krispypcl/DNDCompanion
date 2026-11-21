@@ -17,7 +17,7 @@ export function GET() {
     version: appVersion,
     manifest_version: 1,
     author: 'DND Companion',
-    description: 'Your DND Companion table in the room: live hit points, tokens, rolls, initiative, monsters and NPCs.',
+    description: 'Your DND Companion table in the room: live hit points, tokens, rolls, initiative, and your monsters and NPCs.',
     ...(site ? { homepage_url: `${site}/` } : {}),
     icon: at('icon.svg'),
     background_url: at('background'),

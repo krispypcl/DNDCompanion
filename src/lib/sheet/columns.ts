@@ -1,6 +1,6 @@
 /**
  * What each of the sheet's tables shows: its columns, in order, with their
- * widths, placeholders and what can be pressed. Plain data, so the sheet's
+ * widths, placeholders, and what can be pressed. Plain data, so the sheet's
  * component keeps to behavior and layout.
  */
 import { parseRoll } from '#lib/rules/dice.ts';

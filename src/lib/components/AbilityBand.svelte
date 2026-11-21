@@ -130,7 +130,7 @@
 <style>
   /* Out of edit mode a save is a die to roll. Unlike a skill's dashed
      outline, the whole chip is the button: a d20 waits in its corner, and on
-     hover the chip rises, takes the accent and the die gives a turn. */
+     hover the chip rises, takes the accent, and the die gives a turn. */
   .toggle.rolls { cursor: pointer; }
   .save.rollable { transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s cubic-bezier(0.33, 1, 0.68, 1), box-shadow 0.2s ease; }
   .save.rollable:hover {

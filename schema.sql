@@ -885,7 +885,7 @@ end;
 $$;
 
 -- A character's rows, shared: p_rows is [{ kind, name, data }, ...], all it
--- has now. Returns how many shared rows the character uses afterwards.
+-- has now. Returns how many shared rows the character uses afterward.
 create or replace function private.sync_shared_rows(p_character uuid, p_rows jsonb)
 returns integer
 language plpgsql

@@ -6,7 +6,7 @@
    *
    * It lives behind the sheet: fixed to the viewport, beneath every module
    * and line of text, so it only ever colors the page's own background. It
-   * starts faint and grayish-red and ends deep, saturated and nearly opaque,
+   * starts faint and grayish-red and ends deep, saturated, and nearly opaque,
    * and every step between is a transition rather than a jump.
    */
   import { hurtLevel } from '#lib/rules/hp.ts';
@@ -26,7 +26,7 @@
 <style>
   /* z-index 0, below the sheet's sections (which sit at 1) and above only the
      page background and banner. */
-  /* Registered, so the number itself eases and the color, width and
+  /* Registered, so the number itself eases and the color, width, and
      opacity all follow it smoothly; a gradient alone cannot transition. */
   @property --hurt { syntax: '<number>'; inherits: true; initial-value: 0; }
   .edges {

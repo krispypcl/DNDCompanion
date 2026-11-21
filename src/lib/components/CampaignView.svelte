@@ -415,7 +415,7 @@
 
   /*
    * Initiative (lib/initiative, database/0019): the characters' numbers,
-   * whose turn it is and whether the DM has called for it, live for the whole
+   * whose turn it is, and whether the DM has called for it, live for the whole
    * table; the creatures' numbers are on each creature. The DM runs it; a
    * player rolls or writes their own characters'.
    */
@@ -594,8 +594,8 @@
   <main class="themed campaignpage" style={themeCss} in:fade={{ duration: prefersReducedMotion() ? 0 : 200 }} data-place={phoneOn ? place : undefined} data-moved={phoneOn && moved ? '' : undefined}>
     {#if bannerLink.url}<Banner url={bannerLink.url} />{/if}
     {#if phoneOn}
-      <!-- A phone's top bar, held at the top of the screen as the sheet's: the cog, the search and
-           the mode at the left, the app's mark in the middle, Owlbear, the link and Back at the right. -->
+      <!-- A phone's top bar, held at the top of the screen as the sheet's: the cog, the search, and
+           the mode at the left, the app's mark in the middle, and Owlbear, the link, and Back at the right. -->
       <div class="topmark" bind:this={topEl} aria-hidden="true"></div>
       <div class="phonetop" class:stuck={topStuck}>
         <div class="topleft">{#if isDm}{@render cog()}{/if}{@render search()}<ModeToggle /></div>

@@ -1,6 +1,6 @@
 /**
  * The signed-in player's profile (database: profiles): their name and
- * picture, privacy, preferences and pinned lists. Loaded when they sign in,
+ * picture, privacy, preferences, and pinned lists. Loaded when they sign in,
  * changed here first and then saved, so the page answers at once.
  */
 import { get, writable } from 'svelte/store';

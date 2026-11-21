@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
    * A tied token's right-click menu in Owlbear: its character's hit points,
-   * and damage, healing or temporary hit points written straight to the
+   * and damage, healing, or temporary hit points written straight to the
    * sheet (lib/owlbear/hp.ts). With `?creature=1`, the GM's menu on one of
    * the DM's monsters or NPCs instead (database/0017), read and changed as
    * the DM, with its stat block a press away. Both follow changes made

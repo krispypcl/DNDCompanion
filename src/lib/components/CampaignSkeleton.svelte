@@ -2,7 +2,7 @@
   /** Opened from another page: the page fades in as a whole, so this doesn't fade in again inside it. */
   const arrived = typeof document !== 'undefined' && document.documentElement.hasAttribute('data-arriving');
   /** The campaign page's outline while it loads (the header, three character
-      cards and the board, each under its title as the page has them, and the line with the next
+      cards, and the board, each under its title as the page has them, and the line with the next
       session and the music's capsule), shimmering, so nothing jumps when it arrives. */
 </script>
 

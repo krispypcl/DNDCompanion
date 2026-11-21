@@ -76,7 +76,7 @@ export function peekTarget(url: string): PeekTarget | null {
     return name ? { page, name, source } : null;
   }
 
-  // One of 5e.tools' other pages (rules/fiveMore): rewards, deities, languages and the rest.
+  // One of 5e.tools' other pages (rules/fiveMore): rewards, deities, languages, and the rest.
   const more = morePage(file.replace(/\.html$/, ''));
   const page = more ? 'more' : PAGES[file];
   if (!page || !u.hash) return null;

@@ -1,7 +1,7 @@
 /**
  * The initiative order, live (database/0019, campaign_state.initiative): read
  * once, then followed as it changes, on the campaign page, a character's
- * sheet and in Owlbear alike. The DM saves the whole order; a player puts in
+ * sheet, and in Owlbear alike. The DM saves the whole order; a player puts in
  * their own character's number.
  *
  * The DM's saves never overlap: a quick run of presses (Next, Next, Back)

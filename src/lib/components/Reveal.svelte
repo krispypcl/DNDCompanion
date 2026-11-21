@@ -93,7 +93,7 @@
     class:veiled={!open}
     role="group"
     tabindex="0"
-    aria-label={open ? undefined : 'Hidden. Hover, focus or tap to reveal.'}
+    aria-label={open ? undefined : 'Hidden. Hover, focus, or tap to reveal.'}
     onclickcapture={capture}
     {onclick}
     onkeydown={onkey}

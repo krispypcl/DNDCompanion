@@ -133,7 +133,7 @@
   --danger-wash: oklch(93.5% calc(0.042 * var(--c)) var(--h));
 
   /* Hover darkens here, where it lightened in the dark: either way it moves
-     away from the page and towards the ink. */
+     away from the page and toward the ink. */
   --hover-bg: oklch(94.5% 0.004 286);
   --hover-line: oklch(78% 0.005 286);
 
@@ -169,7 +169,7 @@
 @keyframes place-in { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { [data-place][data-moved] [data-places] { animation: none; } }
 /* A phone's top bar (the sheet and the campaign page): buttons at the left,
-   the app's mark in the middle, buttons and Back at the right. It stays at
+   the app's mark in the middle, and buttons and Back at the right. It stays at
    the top of the screen from edge to edge (the page's own padding, given as
    --pad-top and --pad-side, is pulled back); once the page runs under it
    (.stuck, from the .topmark above it), it takes a nearly solid ground (no
@@ -215,7 +215,7 @@
 :root { interpolate-size: allow-keywords; }
 
 /* The usable width of a page on a wide screen, the same everywhere: the
-   sheet, a campaign and the main menu. */
+   sheet, a campaign, and the main menu. */
 :root { --page-width: 110rem; --page-pad: 1.5rem; }
 
 * { box-sizing: border-box; }

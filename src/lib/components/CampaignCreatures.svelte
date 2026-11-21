@@ -232,7 +232,7 @@
 <SectionHead title="Monsters & NPCs" infoLabel="About monsters and NPCs">
   {#snippet info()}
     Only you see these, unless you reveal one with its eye: your players then see its name, portrait, conditions, its
-    expression and how hurt it looks, never its numbers or notes. Drag a card by its grip to move it.
+    expression, and how hurt it looks, never its numbers or notes. Drag a card by its grip to move it.
   {/snippet}
   {#if table.notice}<span class="creaturenotice" role="status" transition:fade={{ duration: still ? 0 : 160 }}>{table.notice}</span>{/if}
   {#snippet end()}
@@ -469,7 +469,7 @@
         {/each}
       </ul>
     {:else}
-      <!-- The creature in a band across the top (its portrait, name, kind and how
+      <!-- The creature in a band across the top (its portrait, name, kind, and how
            many, then its links), its stat block across the whole width below. -->
       {@const draftPic = resolveImageUrl(e.draft.portrait).url}
       <form class="cform" onsubmit={(ev) => { ev.preventDefault(); void save(); }}>
@@ -498,7 +498,7 @@
               <input bind:value={e.draft.link} maxlength="500" placeholder="Left empty, its name is searched" /></label>
           {/if}
           <label><span>Portrait (a picture link, optional)</span>
-            <input bind:value={e.draft.portrait} maxlength="2000" placeholder="Drive, Imgur, Pinterest or any image link" /></label>
+            <input bind:value={e.draft.portrait} maxlength="2000" placeholder="Drive, Imgur, Pinterest, or any image link" /></label>
           {#if !e.homebrewId}
             <label class="keep"><input type="checkbox" bind:checked={e.draft.keep} />
               <span>Keep it in your homebrew too</span>
@@ -531,8 +531,8 @@
     grid-template-columns: repeat(auto-fill, minmax(min(22rem, 100%), 1fr));
   }
   /* Each card spans five of the list's rows and shares them (subgrid): its
-     head, hit points, numbers, conditions and note line up with its
-     neighbors', however many lines a name, a kind or the conditions take. */
+     head, hit points, numbers, conditions, and note line up with its
+     neighbors', however many lines a name, a kind, or the conditions take. */
   .creature {
     position: relative; display: grid; grid-row: span 6; grid-template-rows: subgrid; row-gap: 0.75rem; min-width: 0;
     padding: 0.875rem; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line-soft);
@@ -674,7 +674,7 @@
   /* One column on a narrow screen; on a wide one the creature on the left and
      its stat block across the rest, as the account page sets its cards out. */
   .cform { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.125rem; align-items: start; }
-  /* The band: portrait, name, kind, how many and the six scores on one line, centered on it; the links on the next. */
+  /* The band: portrait, name, kind, how many, and the six scores on one line, centered on it; the links on the next. */
   .cformtop { display: grid; grid-template-columns: auto minmax(10rem, 1fr) auto auto minmax(18rem, 26rem); align-items: center; gap: 0.875rem; }
   .cformtop:not(:has(.cmany)) { grid-template-columns: auto minmax(10rem, 1fr) auto minmax(18rem, 26rem); }
   .cscores { min-width: 0; }

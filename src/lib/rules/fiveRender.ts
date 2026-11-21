@@ -1,6 +1,6 @@
 /**
  * An entry from 5e.tools' data, made readable: its name, a line saying what
- * it is, its facts (casting time, cost…), its text and its book. The text is
+ * it is, its facts (casting time, cost…), its text, and its book. The text is
  * built as HTML from the data's own structure with every piece of text
  * escaped, so it is safe to place in the page.
  */

@@ -1,6 +1,6 @@
 <!--
   A 5e.tools peek moved aside (stores/peek `keep`): a window of its own that
-  stays where it was put, can be dragged again and comes to the front when
+  stays where it was put, can be dragged again, and comes to the front when
   pressed, until its × (or Esc) closes it, and it fades as it goes. Asked for
   again, it glides from where it is to where it was asked to open.
 -->

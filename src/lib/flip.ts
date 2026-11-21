@@ -1,7 +1,7 @@
 /**
  * Switching a sheet between reading and editing swaps every readout for an
  * input. They are built to take the same room, but around them rows grow,
- * edit-only fields appear and tables change columns, so words still move.
+ * edit-only fields appear, and tables change columns, so words still move.
  * Rather than jump, each one glides from where it was to where it now is.
  *
  * Anything that should glide carries `data-flip="<key>"`, with the same key

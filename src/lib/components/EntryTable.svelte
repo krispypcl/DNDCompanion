@@ -1,7 +1,7 @@
 <script lang="ts" generics="T extends Record<string, unknown>">
   /**
-   * One table for attacks, spells, equipment and features. They were four
-   * different shapes — a table, a read-only table, a list and a separate
+   * One table for attacks, spells, equipment, and features. They were four
+   * different shapes — a table, a read-only table, a list, and a separate
    * editor — which is why they behaved differently from each other.
    *
    * The layout is fixed and the widths declared, so the columns do not resize

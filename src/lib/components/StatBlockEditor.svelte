@@ -1,7 +1,7 @@
 <!--
   Writing a stat block (rules/statblock): the top lines, the six scores,
   the defenses and senses, then the traits, actions, bonus actions,
-  reactions and legendary actions, each a list of named entries to add to
+  reactions, and legendary actions, each a list of named entries to add to
   or take from. For a homebrew monster or NPC, or to change one from a book.
   Every text box grows with its words (actions fitText), so nothing hides
   behind a scrollbar; the one-line ones wrap rather than scroll sideways.

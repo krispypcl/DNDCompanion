@@ -1,12 +1,12 @@
 <script lang="ts">
   /**
-   * The table's board, like a Jamboard: sticky notes, writing and drawing
-   * that everyone in the campaign can add to, move and clear, and that
+   * The table's board, like a Jamboard: sticky notes, writing, and drawing
+   * that everyone in the campaign can add to, move, and clear, and that
    * everyone with the page sees change as it happens (campaign_board).
    *
    * A board has pages (database/0009), each an endless sheet: dragged
    * around, zoomed in and out (buttons, the scroll wheel, or two fingers), and
-   * on its own paper (plain, dots, grid or lines). Opening a page fits the
+   * on its own paper (plain, dots, grid, or lines). Opening a page fits the
    * part that has anything on it, with a little room around it. Units are
    * pixels at 100%.
    */
@@ -376,7 +376,7 @@
     return { destroy: () => { node.removeEventListener('wheel', on); window.removeEventListener('pointerdown', outside); } };
   }
 
-  // ── Pointers: one draws, drags or pans; two pinch ──
+  // ── Pointers: one draws, drags, or pans; two pinch ──
   //
   // With a stylus (an Apple Pencil on an iPad) the hand holding it rests on
   // the glass too, and each touch of the palm arrived as one more pointer:

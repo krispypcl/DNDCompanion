@@ -51,7 +51,7 @@ export type TrackerRow = {
   resetAmount: string;
   group: string;
   source: string;
-  /** Where it comes from: a class (whose level `classlevel` means), a feat or a species. */
+  /** Where it comes from: a class (whose level `classlevel` means), a feat, or a species. */
   cls: string;
   /** Shown as its link; never saved. */
   lookupUrl?: string;

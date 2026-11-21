@@ -144,7 +144,7 @@
     if (damaged) {
       replay((on) => (wounded = on), 950, 'hurt');
       floatUp(`−${lost}`, 'hurt');
-      // A heavier blow moves the gauge further, longer and with more weight:
+      // A heavier blow moves the gauge further, longer, and with more weight:
       // sideways, then up and down, then a lean, then a thickening. A scratch
       // keeps the small nudge it always had.
       const sev = hitSeverity(lost, hpMax);
@@ -425,7 +425,7 @@
   /* Healing: green, always, whatever the character's colors. The gauge
      glows, a light runs along the filled part, and the number brightens. */
   .hpwrap { --heal-green: oklch(74% 0.17 150); --shield: oklch(91% 0.11 95); }
-  /* On a light page, pale gold vanishes; a deeper gold, green and red read. */
+  /* On a light page, pale gold vanishes; a deeper gold, green, and red read. */
   :global([data-mode='light']) .hpwrap { --heal-green: oklch(58% 0.16 150); --shield: oklch(76% 0.15 85); }
   .gauge { position: relative; }
   .healed .bar { animation: healGlow 0.95s ease-out; }
