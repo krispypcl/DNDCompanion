@@ -173,15 +173,16 @@
     .slash { height: calc(28rem + var(--reach, 0px)); }
     /* One column, so the header text runs the full width and the sideways
        relief has nowhere to put it. The tint stays even across instead. */
-    /* No side fades, which darkened the top bar's buttons at either edge, and a thinner veil at
-       the very top, where the bar and the mark sit; deeper again under them, where the name is. */
+    /* No veil at all behind the top bar (no side fades, nothing at the top), only under it,
+       deepening where the name is. */
     .tint {
-      --tint-top: color-mix(in oklch, var(--bg) 42%, transparent);
+      --tint-top: transparent;
       background:
         linear-gradient(
           to bottom,
-          var(--tint-top) 0%,
-          color-mix(in oklch, var(--bg) 66%, transparent) 30%,
+          transparent 0%,
+          transparent 14%,
+          color-mix(in oklch, var(--bg) 66%, transparent) 34%,
           color-mix(in oklch, var(--bg) 40%, transparent) 60%,
           color-mix(in oklch, var(--bg) 34%, transparent) 90%,
           var(--bg) 100%
@@ -219,12 +220,13 @@
   }
   @media (max-width: 700px) {
     :global(:root[data-mode='light']) .tint {
-      --tint-top: color-mix(in oklch, var(--bg) 22%, transparent);
+      --tint-top: transparent;
       background:
         linear-gradient(
           to bottom,
-          var(--tint-top) 0%,
-          color-mix(in oklch, var(--bg) 32%, transparent) 30%,
+          transparent 0%,
+          transparent 14%,
+          color-mix(in oklch, var(--bg) 32%, transparent) 34%,
           color-mix(in oklch, var(--bg) 8%, transparent) 60%,
           color-mix(in oklch, var(--bg) 5%, transparent) 90%,
           var(--bg) 100%
