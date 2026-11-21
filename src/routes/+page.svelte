@@ -499,8 +499,8 @@
   }
 
   /**
-   * A file made by Export, or a PDF from a sheet's PDF button (the same file
-   * rides inside it, lib/pdf/backup). It always becomes a new sheet: bringing
+   * A PDF from a sheet's PDF button (the sheet rides inside it,
+   * lib/pdf/backup), or a text backup from before the PDF carried one. It always becomes a new sheet: bringing
    * a backup in never overwrites a character that is already here.
    */
   async function importFile(event: Event) {
@@ -965,7 +965,7 @@
           <div class="actions">
             {#if area === AREA_SHEETS}
               <button class="ghost" onclick={() => picker?.click()} disabled={importing}
-                      title="Bring back a character from its PDF or an Export file. Edits made in the PDF don’t come back, and a PDF saved again from another app may have lost the sheet.">
+                      title="Bring back a character from its PDF. Edits made in the PDF don’t come back, and a PDF saved again from another app may have lost the sheet.">
                 {importing ? 'Importing' : 'Import'}
               </button>
               <button onclick={create} disabled={creating}>{creating ? 'Creating' : phone.current ? 'New character' : 'New sheet'}</button>

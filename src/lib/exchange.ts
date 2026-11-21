@@ -1,5 +1,6 @@
 /**
- * Taking a character out of the site as a text file, and bringing it back.
+ * A character as a text file, and bringing it back: the file rides inside
+ * the sheet's PDF (lib/pdf/backup), and older backups were saved on their own.
  *
  * The file is meant to be read by a person as well as by the importer, so the
  * long writing (notes, backstory) is stored as itself, in plain lines, rather
@@ -403,7 +404,7 @@ export function importSheet(input: string): ImportResult {
     current?.lines.push(lines[at]);
   }
   if (!ended) {
-    return { ok: false, error: 'That file looks cut short, with no end marker! Export it again.' };
+    return { ok: false, error: 'That file looks cut short, with no end marker! Save the sheet’s PDF again.' };
   }
 
   const body = (name: string) => {

@@ -31,7 +31,6 @@
   import SaveAlert from '#lib/components/SaveAlert.svelte';
   import SkillRail from '#lib/components/SkillRail.svelte';
   import EntryTable from '#lib/components/EntryTable.svelte';
-  import DownloadButton from '#lib/components/DownloadButton.svelte';
   import LeaveDialog from '#lib/components/LeaveDialog.svelte';
   import NotFound from '#lib/components/NotFound.svelte';
   import { pageTitle } from '#lib/title.ts';
@@ -90,7 +89,7 @@
   import { advantageFrom } from '#lib/rules/equipment.ts';
   import { faceFamily, fontFace, nameFont } from '#lib/rules/fonts.ts';
   import { shareRoll } from '#lib/owlbear/channel.ts';
-  import { downloadBlob, downloadText } from '#lib/download.ts';
+  import { downloadBlob } from '#lib/download.ts';
   import { parseRoll, type Pool, type Roll } from '#lib/rules/dice.ts';
   import { d20Penalty, requestRoll } from '#lib/stores/dice.ts';
   import { conditionsFor, d20Penalty as d20PenaltyOf, exhaustionLevel, exhaustionTracker } from '#lib/rules/exhaustion.ts';
@@ -694,15 +693,6 @@
     }
   }
 
-  function exportNow() {
-    if (!definition || !sheetState) return;
-    downloadText(
-      exportFileName(definition),
-      exportSheet({ definition, state: sheetState, texts: sheet?.texts ?? null })
-    );
-    say('Downloaded');
-  }
-
   function patchIdentity(key: string, value: string | number) {
     if (!definition) return;
     setDefinition({ ...definition, identity: { ...definition.identity, [key]: value } });
@@ -968,7 +958,6 @@
         <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
         {#if isOwner}
           <PrintButton onprint={makePdf} busy={makingPdf} />
-          <DownloadButton ondownload={exportNow} />
         {/if}
         <button class="keys searchbtn" onclick={() => (searching = true)} aria-label="Search 5e.tools" title="Search 5e.tools (/)">
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
@@ -992,7 +981,6 @@
         <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
         {#if isOwner}
           <PrintButton onprint={makePdf} busy={makingPdf} />
-          <DownloadButton ondownload={exportNow} />
         {/if}
         <ModeToggle />
         {#if !isOwner}
@@ -1866,7 +1854,7 @@
   /* The narrowest phones: the icon buttons and the dates draw in a little so
      every control still fits on one row. */
   @media (max-width: 400px) {
-    .identity .controls :global(:is(.share, .print, .dl, .sound, .mode)) { width: 1.875rem; height: 1.875rem; }
+    .identity .controls :global(:is(.share, .print, .sound, .mode)) { width: 1.875rem; height: 1.875rem; }
     .identity .stamps { gap: 0.625rem; margin-right: 0.25rem; }
   }
   /* Opening a sheet: the panels fill in one after another, where the outline had them. */
