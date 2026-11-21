@@ -265,7 +265,8 @@
     border-radius: var(--r-sm); background: var(--raised); border: 1px solid var(--line-soft); padding: 0;
   }
   .initrow.now .initscore { background: var(--a); border-color: var(--a); color: var(--bg); }
-  input.initscore { border-color: var(--line); background: var(--bg); text-align: center; transition: border-color 0.15s ease; }
+  /* A plain block: centering its items as a grid moved Chrome's placeholder box, and the dash sat left. */
+  input.initscore { display: block; place-items: normal; border-color: var(--line); background: var(--bg); text-align: center; transition: border-color 0.15s ease; }
   input.initscore:hover { border-color: var(--a-edge); }
   input.initscore:focus { outline: none; border-color: var(--a); }
   input.initscore::placeholder { color: var(--dim); }
