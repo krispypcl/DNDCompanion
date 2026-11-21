@@ -35,16 +35,19 @@ away, and puts the whole party on one live page for the DM.
   installs like an app, and joins an [Owlbear Rodeo](https://www.owlbear.rodeo/)
   map through its extension.
 
-## Screenshots
+## Preview
+
+Dave, a level 5 Battle Master fighter, in a campaign named Vox Machina.
 
 <p align="center">
-  <img src=".github/readme/desktop-sheet.png" alt="A character sheet on a computer: hit points, abilities, skills, attacks, and defenses" width="49%">
-  <img src=".github/readme/desktop-campaign.png" alt="The campaign page as the DM sees it: the party's cards, the initiative order mid-fight, and the monsters in sight" width="49%">
+  <img src=".github/readme/desktop-sheet.png" alt="Dave's character sheet on a computer: hit points, abilities, saving throws, skills, attacks, trackers, and defenses" width="100%">
 </p>
 <p align="center">
-  <img src=".github/readme/phone-sheet.png" alt="The same character sheet on a phone, with its places on a bar at the bottom" width="260">
-  &nbsp;&nbsp;
-  <img src=".github/readme/phone-campaign.png" alt="The initiative order on a phone in light mode, with Back and Next Turn at the thumb" width="260">
+  <img src=".github/readme/desktop-campaign.png" alt="The Vox Machina campaign page as the DM sees it: the party's cards, the initiative order mid-fight, and the monsters in sight" width="100%">
+</p>
+<p align="center">
+  <img src=".github/readme/phone-sheet.png" alt="Dave's sheet on a phone, with its places on a bar at the bottom" width="49%">
+  <img src=".github/readme/phone-campaign.png" alt="The initiative order on a phone in light mode, with Back and Next Turn under the thumb" width="49%">
 </p>
 
 ## Usage
