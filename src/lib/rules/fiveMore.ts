@@ -15,7 +15,7 @@ export type MorePage = {
   word: string;
 };
 
-export const MORE_PAGES: MorePage[] = [
+const MORE_PAGES: MorePage[] = [
   { page: 'rewards', file: 'rewards.json', keys: ['reward'], word: 'Supernatural Gift' },
   { page: 'deities', file: 'deities.json', keys: ['deity'], word: 'Deity' },
   { page: 'vehicles', file: 'vehicles.json', keys: ['vehicle', 'vehicleUpgrade'], word: 'Vehicle' },

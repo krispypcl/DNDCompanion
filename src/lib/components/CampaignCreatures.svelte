@@ -569,7 +569,6 @@
   button.cportrait:active { transform: scale(0.98); }
   button.cportrait:focus-visible { outline: 2px solid var(--a); outline-offset: 3px; }
   /* The grip: the only place a card is picked up by. */
-  /* The grip: the only place a card is picked up by. */
   .cgrip { color: var(--faint); cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none; }
   .cgrip svg { fill: currentColor; }
   .cexpr { display: flex; align-items: center; gap: 0.4375rem; color: var(--dim); min-width: 0; }

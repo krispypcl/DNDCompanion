@@ -58,7 +58,7 @@ export type Vitals = {
   max: number; cur: number; temp: number; deathSaves?: State['deathSaves'];
   conditions: string[]; looks: Record<string, ConditionLook>;
 };
-export const vitalsOfSheet = (sheet: Sheet): Vitals => ({
+const vitalsOfSheet = (sheet: Sheet): Vitals => ({
   max: Number(sheet.definition?.combat?.hpMax) || 0,
   cur: Math.max(0, Number(sheet.state?.hpCurrent) || 0),
   temp: Math.max(0, Number(sheet.state?.hpTemp) || 0),

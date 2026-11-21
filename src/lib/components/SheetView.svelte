@@ -1576,7 +1576,7 @@
     color: var(--a); border-radius: var(--r-sm); font-size: 0.6875rem; font-weight: 650;
     padding: 0.0625rem 0.5rem; letter-spacing: 0.02em; white-space: nowrap;
   }
-  /* Dead: the portrait drains of color and a skull sits on its top edge. */
+  /* Dead: the portrait drains of color. */
   .portrait.fallen img { filter: grayscale(1) brightness(0.65); }
   /* Dead: a big skull in front of the grayed portrait, not a badge. */
   .skull {

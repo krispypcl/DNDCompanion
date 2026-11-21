@@ -14,7 +14,7 @@ import { morePage } from './fiveMore.ts';
 export type IndexRow = [string, string, string, string] | [string, string, string, string, string];
 export type Hit = { name: string; kind: string; source: string; words: string; label: string; url: string };
 
-export const KIND_LABEL: Record<string, string> = {
+const KIND_LABEL: Record<string, string> = {
   s: 'Spell', i: 'Item', f: 'Feat', o: 'Option', r: 'Species', b: 'Background', c: 'Class', u: 'Subclass', d: 'Condition',
   m: 'Creature', g: 'Reference'
 };
