@@ -7,6 +7,7 @@
   import { base } from '#lib/base.ts';
   import { appVersion } from '#lib/version.ts';
   import Logo from '#lib/components/Logo.svelte';
+  import BackLink from '#lib/components/BackLink.svelte';
 
   /** Opened from the account page (?from=account): Back goes there. */
   let back = $state(`${base}/`);
@@ -18,7 +19,7 @@
 <svelte:head><title>Privacy | DND Companion</title></svelte:head>
 
 <main class="policy">
-  <a class="smallbtn back" href={back}>Back</a>
+  <BackLink href={back} />
   <!-- The same mark as signing in, so it reads as the same place. -->
   <div class="policybrand">
     <Logo size={60} />

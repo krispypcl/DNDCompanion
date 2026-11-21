@@ -13,6 +13,7 @@
   import Avatar from '#lib/components/Avatar.svelte';
   import Lightbox from '#lib/components/Lightbox.svelte';
   import ModeToggle from '#lib/components/ModeToggle.svelte';
+  import BackLink from '#lib/components/BackLink.svelte';
   import D20Loader from '#lib/components/D20Loader.svelte';
   import {
     deleteAccount, enabledProviders, profileOf, PROVIDER_NAMES, providersOf, sheetsPrivate,
@@ -264,8 +265,9 @@
             action={{ href: `${base}/login?next=${encodeURIComponent('/account')}`, label: 'Sign in' }} home={false} />
 {:else}
 <main>
+  <!-- Back at the left and the mode at the right; on a phone the other way round, as every page's top bar. -->
   <header>
-    <a class="back" href="{base}/">Back</a>
+    <BackLink href="{base}/" title="Back to your characters and campaigns" />
     <ModeToggle />
   </header>
 
@@ -529,15 +531,10 @@
   .cards > :global(*) { break-inside: avoid; }
   @media (max-width: 600px) { main { padding-left: 1rem; padding-right: 1rem; } }
   header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-  /* The same Back as on a sheet. */
-  .back {
-    background: var(--raised); border: 1px solid var(--line); color: var(--text);
-    border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font-size: 0.8125rem;
-    text-decoration: none; line-height: 1.5;
-    transition: border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+  @media (max-width: 700px) {
+    header { flex-direction: row-reverse; }
+    header > :global(.mode) { width: 2.25rem; height: 2.25rem; }
   }
-  .back:hover { border-color: var(--a-edge); color: var(--a); }
-  .back:active { transform: translateY(1px); }
   .title { font-size: 1.5rem; font-weight: 650; margin: 0 0 1rem; letter-spacing: -0.01em; }
   .card {
     background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--r);
