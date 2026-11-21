@@ -2,6 +2,7 @@ import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { defineConfig } from 'vite';
+import pkg from './package.json' with { type: 'json' };
 
 /** The path the site is served under: '' locally, '/DNDCompanion' on GitHub Pages. */
 const basePath = (process.env.BASE_PATH ?? '') as '' | `/${string}`;
@@ -21,8 +22,9 @@ export default defineConfig({
       version: { pollInterval: 60_000 }
     })
   ],
-  // SvelteKit 3 no longer exports the base path; #lib/base reads this.
-  define: { __BASE_PATH__: JSON.stringify(basePath) },
+  // SvelteKit 3 no longer exports the base path; #lib/base reads this. The
+  // app's version is package.json's, the one number everything shows (#lib/version).
+  define: { __BASE_PATH__: JSON.stringify(basePath), __APP_VERSION__: JSON.stringify(pkg.version) },
   // Read PUBLIC_* at build time without SvelteKit's $env/static/public, which
   // hard-fails a build when the variables are absent (e.g. a CI run with no secrets).
   envPrefix: ['PUBLIC_', 'VITE_']

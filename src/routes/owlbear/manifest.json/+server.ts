@@ -4,6 +4,7 @@
  * paths carry the site's base path.
  */
 import { base } from '#lib/base.ts';
+import { appVersion } from '#lib/version.ts';
 import { version } from '$app/env';
 
 export const prerender = true;
@@ -13,7 +14,7 @@ export function GET() {
   const site = String(import.meta.env.PUBLIC_SITE_URL ?? '').trim().replace(/\/+$/, '');
   const manifest = {
     name: 'DND Companion',
-    version: '1.4.0',
+    version: appVersion,
     manifest_version: 1,
     author: 'DND Companion',
     description: 'Your DND Companion table in the room: live hit points, tokens, rolls, initiative, monsters and NPCs.',
