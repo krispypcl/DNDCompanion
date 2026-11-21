@@ -406,9 +406,8 @@
 
 {#if giver}
   <!-- Giving conditions; a new one of the DM's own asks its color in the same window. -->
-  <DimModal id="creature-conds" title="Conditions for {giver.name}" onclose={() => { giving = null; tinting = null; }}>
-    <ConditionGiver given={giver.conditions} ontoggle={(name) => toggleCondition(giver, name)} onadd={(name) => addCondition(giver, name)}
-                    ondone={() => { giving = null; tinting = null; }} />
+  <DimModal id="creature-conds" title="Conditions for {giver.name}" closer fixed onclose={() => { giving = null; tinting = null; }}>
+    <ConditionGiver given={giver.conditions} ontoggle={(name) => toggleCondition(giver, name)} onadd={(name) => addCondition(giver, name)} />
     {#if tinted && tinted.id === giver.id && tinting && has(giver.conditions, tinting.name)}
       <div class="lookin">
         <ConditionLookPicker colorOnly name={tinting.name} who={giver.name} look={lookFor(giver, tinting.name)}

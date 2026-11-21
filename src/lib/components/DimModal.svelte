@@ -17,11 +17,15 @@
   import { phone } from '#lib/stores/phone.svelte.ts';
 
   let {
-    id, title, wide = false, broad = false, onclose, children
+    id, title, wide = false, broad = false, closer = false, fixed = false, onclose, children
   }: {
     id: string; title: string; wide?: boolean;
     /** Wider still, for a long form (a monster and its stat block). */
     broad?: boolean;
+    /** A × at the top right on a computer too (a phone's sheet always has one), in place of a Done button. */
+    closer?: boolean;
+    /** Stays in the middle: not moved by its title. */
+    fixed?: boolean;
     onclose: () => void; children: Snippet;
   } = $props();
 
@@ -73,7 +77,7 @@
 <div class="dimscrim" class:sheet={asSheet} use:portal transition:fade={{ duration: prefersReducedMotion() ? 0 : 200, easing: cubicOut }}
      use:backdrop={onclose}>
   <div class="dimwindow themed-scroll" class:wide class:broad class:sheet={asSheet} class:pulling={pull > 0} role="dialog" aria-modal="true" aria-labelledby={id}
-       use:movable={{ enabled: !asSheet }} use:focusFirst style:transform={pull ? `translateY(${pull}px)` : undefined}
+       use:movable={{ enabled: !asSheet && !fixed }} use:focusFirst style:transform={pull ? `translateY(${pull}px)` : undefined}
        in:rise out:rise={{ out: true }}>
     {#if asSheet}
       <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -83,6 +87,11 @@
           <h2 {id}>{title}</h2>
           <button class="closex" aria-label="Close" title="Close" onclick={onclose}>×</button>
         </div>
+      </div>
+    {:else if closer}
+      <div class="sheethead">
+        <h2 {id}>{title}</h2>
+        <button class="closex" aria-label="Close" title="Close (Esc)" onclick={onclose}>×</button>
       </div>
     {:else}
       <h2 {id}>{title}</h2>
@@ -122,5 +131,7 @@
   .grab { display: block; width: 2.5rem; height: 0.3125rem; margin: 0 auto 0.5rem; border-radius: 999px; background: var(--line); }
   .sheethead { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
   .sheethead h2 { margin: 0; }
-  .sheethead .closex { flex: none; }
+  .sheethead .closex { flex: none; --x-size: 1.875rem; }
+  /* On a computer, with its ×: the title's own space below it. */
+  .dimwindow > .sheethead { margin-bottom: 0.875rem; }
 </style>

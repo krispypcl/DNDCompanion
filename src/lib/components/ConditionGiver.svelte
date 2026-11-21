@@ -1,16 +1,16 @@
 <!--
   Giving conditions (in a DimModal): every standard condition as a chip in
   its own color, pressed when given, and a field for one of your own. The
-  campaign page uses it for characters and for monsters and NPCs alike.
+  campaign page uses it for characters and for monsters and NPCs alike; the
+  window's × closes it.
 -->
 <script lang="ts">
   import { STANDARD_CONDITIONS, lookOf } from '#lib/rules/conditions.ts';
 
-  let { given, ontoggle, onadd, ondone }: {
+  let { given, ontoggle, onadd }: {
     given: string[];
     ontoggle: (name: string) => void;
     onadd: (name: string) => void;
-    ondone: () => void;
   } = $props();
 
   let custom = $state('');
@@ -32,7 +32,6 @@
   <input bind:value={custom} placeholder="Something else, e.g. Bless" aria-label="Another condition"
          onkeydown={(e) => { if (e.key === 'Enter') add(); }} />
   <button class="give" onclick={add} disabled={!custom.trim()}>Give</button>
-  <button class="done" onclick={ondone}>Done</button>
 </div>
 
 <style>
@@ -49,7 +48,9 @@
     border: 1px solid var(--line-soft); background: var(--surface);
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
-  .opt:hover { color: var(--text); border-color: color-mix(in oklch, var(--cc) 50%, var(--line)); }
+  .opt:hover { color: var(--text); border-color: color-mix(in oklab, var(--cc) 50%, var(--line)); }
+  .opt:active, .own button:active:not(:disabled) { transform: translateY(1px); }
+  .opt:focus-visible, .own button:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
   /* Given: tinted in its color and ringed, the ring mixed toward the text so
      a dark color (Blinded, Dead) still shows on a dark page, as a light one does on a light page. */
   .opt.on {
@@ -66,8 +67,9 @@
   .own button {
     font: inherit; font-size: 0.8125rem; cursor: pointer; border-radius: var(--r-sm); padding: 0.3125rem 0.625rem;
     border: 1px solid var(--a-edge); background: var(--a-wash); color: var(--a);
+    transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
   }
-  .own .done { border-color: var(--line); background: var(--surface); color: var(--text); }
+  .own button:hover:not(:disabled) { border-color: var(--a); }
   .own button:disabled { opacity: 0.5; cursor: default; }
 
 </style>

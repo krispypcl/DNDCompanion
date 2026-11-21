@@ -52,9 +52,12 @@
      use:backdrop={onclose}>
   <div class="box" use:movable role="dialog" data-keys aria-modal="true" aria-labelledby="keys-title"
        transition:scale={{ start: 0.96, duration: still ? 0 : 180, easing: cubicOut }}>
-    <h2 id="keys-title">Keyboard shortcuts
-      <InfoTip label="About shortcuts">They work anywhere on the {place === 'campaign' ? 'page' : 'sheet'} except while typing in a field.</InfoTip>
-    </h2>
+    <div class="keyshead">
+      <h2 id="keys-title">Keyboard shortcuts
+        <InfoTip label="About shortcuts">They work anywhere on the {place === 'campaign' ? 'page' : 'sheet'} except while typing in a field.</InfoTip>
+      </h2>
+      <button class="closex" bind:this={closer} aria-label="Close" title="Close (Esc)" onclick={onclose}>×</button>
+    </div>
     <dl>
       {#each rows as row (row.what)}
         <div>
@@ -63,7 +66,6 @@
         </div>
       {/each}
     </dl>
-    <div class="row"><button bind:this={closer} onclick={onclose}>Got it</button></div>
   </div>
 </div>
 
@@ -76,7 +78,9 @@
     width: min(26rem, 100%); background: var(--surface); border: 1px solid var(--line);
     border-radius: var(--r); padding: 1.25rem; box-shadow: 0 20px 60px rgb(0 0 0 / 0.45);
   }
-  h2 { margin: 0; font-size: 1.0625rem; font-weight: 650; }
+  /* The title and its ×, with room under them before the list. */
+  .keyshead { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1rem; --x-size: 1.875rem; }
+  h2 { margin: 0; display: flex; align-items: center; gap: 0.375rem; font-size: 1.0625rem; font-weight: 650; }
   dl { margin: 0; display: grid; gap: 0.5rem; }
   dl > div { display: grid; grid-template-columns: 7rem 1fr; align-items: center; gap: 0.75rem; }
   dt { display: flex; gap: 0.25rem; align-items: center; }
@@ -87,10 +91,4 @@
     border: 1px solid var(--line); border-bottom-width: 2px; color: var(--text);
   }
   .to { color: var(--faint); font-size: 0.75rem; }
-  .row { display: flex; justify-content: flex-end; margin-top: 1.125rem; }
-  button {
-    font: inherit; font-size: 0.875rem; border-radius: var(--r-sm); padding: 0.5rem 0.875rem; cursor: pointer;
-    background: var(--a); border: 1px solid var(--a); color: var(--bg); font-weight: 650;
-  }
-  button:hover { filter: brightness(1.1); }
 </style>

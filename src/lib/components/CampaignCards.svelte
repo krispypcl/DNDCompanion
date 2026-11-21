@@ -267,9 +267,8 @@
           <!-- Giving conditions, in a window over the dimmed page so the card
                keeps its size; a new one's color and motion are asked in the
                same window. -->
-          <DimModal id="give-{s.id}" title="Conditions for {nameOf(s)}" onclose={() => { picking = null; tinting = null; }}>
-            <ConditionGiver given={conds} ontoggle={(name) => toggle(s, name)} onadd={(name) => addCustom(s, name)}
-                            ondone={() => { picking = null; tinting = null; }} />
+          <DimModal id="give-{s.id}" title="Conditions for {nameOf(s)}" closer fixed onclose={() => { picking = null; tinting = null; }}>
+            <ConditionGiver given={conds} ontoggle={(name) => toggle(s, name)} onadd={(name) => addCustom(s, name)} />
             {#if tinting?.sheet === s.id && has(s.state?.conditions ?? [], tinting.name)}
               <div class="lookin">
                 <ConditionLookPicker name={tinting.name} look={lookFor(s, tinting.name)} who={nameOf(s)}
