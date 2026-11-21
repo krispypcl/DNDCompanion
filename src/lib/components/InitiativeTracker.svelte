@@ -12,7 +12,9 @@
   import { fade } from 'svelte/transition';
   import { prefersReducedMotion } from '#lib/motion.ts';
   import { reorder } from '#lib/reorder.ts';
-  import { canSettle, ordered, settleOrder, settleScores, type InitiativeRow } from '#lib/rules/initiative.ts';
+  import { canSettle, next as nextTurn, ordered, settleOrder, settleScores, type InitiativeRow } from '#lib/rules/initiative.ts';
+  import ClassIcon from './ClassIcon.svelte';
+  import CreatureMark from './CreatureMark.svelte';
   import SectionHead from './SectionHead.svelte';
 
   let {
@@ -69,6 +71,12 @@
   });
   const settleable = (key: string) => Boolean(onsettle) && canSettle(combatants, key, isDm);
   const running = $derived(Boolean(turn));
+  /** Who has had their turn this round (before whoever's it is), and who comes next. */
+  const played = $derived(list.filter((c) => c.value !== null).map((c) => c.key));
+  const turnAt = $derived(turn ? played.indexOf(turn) : -1);
+  const acted = (key: string) => turnAt > 0 && played.indexOf(key) > -1 && played.indexOf(key) < turnAt;
+  const upNext = $derived(running && played.length > 1 ? nextTurn(combatants, { turn, round }).turn : null);
+  const sideOf = (c: InitiativeRow) => (c.side === 'pc' ? 'Character' : c.kind === 'npc' ? 'NPC' : 'Monster');
   /** Whose turn it is is someone the players can't see. */
   const unseenTurn = $derived(running && !list.some((c) => c.key === turn));
   const waiting = $derived(list.filter((c) => c.side === 'pc' && c.value === null).length);
@@ -119,7 +127,7 @@
         Tied with another character? Drag yours to settle who goes first.
       {/if}
     {/snippet}
-    {#if running}<span class="round" in:fade={quick}>Round {round}</span>{/if}
+    {#if running}<span class="round" in:fade={quick}>Round {round}{#if turnAt > -1}<span class="roundof">, turn {turnAt + 1} of {played.length}</span>{/if}</span>{/if}
     {#snippet end()}
       {#if status}
         {#key status}<span class="initcall" role="status" in:fade={quick}>{status}</span>{/key}
@@ -134,16 +142,16 @@
           {/if}
           <button class="smallbtn quiet" onclick={onend}>End</button>
         {:else if !asking}
-          <button class="smallbtn" onclick={onask}>Call for initiative</button>
+          <button class="smallbtn dicebtn" onclick={onask}>{@render die(14)}Call for initiative</button>
           {#if !folded}
-            {#if onrollrest && list.some((c) => c.value === null)}<button class="smallbtn" onclick={onrollrest}>Roll the rest</button>{/if}
+            {#if onrollrest && list.some((c) => c.value === null)}<button class="smallbtn dicebtn" onclick={onrollrest}>{@render die(14)}Roll the rest</button>{/if}
             <button class="smallbtn accent" onclick={onstart} disabled={!list.some((c) => c.value !== null)}>Start</button>
           {/if}
         {:else}
           {#if oncancel}
             <button class="smallbtn quiet" onclick={oncancel} title="Stop calling for initiative and clear what was rolled">Cancel</button>
           {/if}
-          {#if onrollrest && list.some((c) => c.value === null)}<button class="smallbtn" onclick={onrollrest}>Roll the rest</button>{/if}
+          {#if onrollrest && list.some((c) => c.value === null)}<button class="smallbtn dicebtn" onclick={onrollrest}>{@render die(14)}Roll the rest</button>{/if}
           <button class="smallbtn accent" onclick={onstart} disabled={!list.some((c) => c.value !== null)}>Start</button>
         {/if}
       {/if}
@@ -168,83 +176,133 @@
     }
   }}>
     {#each shown as c (c.key)}
-      <li class="initrow" class:initcr={c.side === 'creature'} class:now={c.key === turn} class:waiting={c.value === null}
+      <li class="initrow" class:initcr={c.side === 'creature'} class:now={c.key === turn} class:acted={acted(c.key)} class:waiting={c.value === null}
           class:hiddenone={c.hidden} class:mine={c.mine} class:tied={settleable(c.key)} data-key={c.key}
           title={settleable(c.key) ? 'Tied: drag to settle who goes first' : undefined}
           animate:flip={{ duration: still ? 0 : 260, easing: cubicOut }} in:fade={{ duration: still ? 0 : 160 }}>
+        <!-- The number first, big, so the order reads down the left. -->
         {#if canWrite(c)}
-          <input class="numfield" type="number" inputmode="numeric" aria-label="{c.name}’s initiative" value={c.value ?? ''} placeholder="–"
+          <input class="numfield initscore" type="number" inputmode="numeric" aria-label="{c.name}’s initiative" value={c.value ?? ''} placeholder="–"
                  onchange={(e) => write(c.key, e.currentTarget.value)} />
         {:else}
-          <b class="initvalue">{c.value ?? '–'}</b>
+          <b class="initscore">{c.value ?? '–'}</b>
         {/if}
-        <span class="initname">{c.name}</span>
+        <!-- Characters' portraits are rounded squares, monsters' and NPCs' round, as on their cards. -->
+        <span class="initpic" class:round={c.side === 'creature'} class:npc={c.kind === 'npc'} aria-hidden="true">
+          {#if c.side === 'pc'}<ClassIcon cls={c.cls} />{:else if !c.pic}<CreatureMark kind={c.kind ?? 'monster'} size="1.25rem" />{/if}
+          {#if c.pic}<img src={c.pic} alt="" loading="lazy" draggable="false" />{/if}
+        </span>
+        <span class="initwho">
+          <span class="initname">{c.name}</span>
+          <span class="initside">{sideOf(c)}{#if c.hidden}, hidden{/if}{#if c.key === upNext}<span class="initnext">, up next</span>{/if}</span>
+        </span>
         {#if c.value === null && canWrite(c) && onrollone && c.side === 'pc'}
-          <button class="initroll" onclick={() => onrollone?.(c.key)} aria-label="Roll {c.name}’s initiative" title="Roll a d20 with what it adds">
-            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 2.5 20.5 7.5v9L12 21.5 3.5 16.5v-9z M12 2.5 7.5 15h9z M3.5 7.5 7.5 15 3.5 16.5 M20.5 7.5 16.5 15l4 1.5 M7.5 15 12 21.5 16.5 15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" /></svg>
-            Roll
-          </button>
+          <button class="initroll" onclick={() => onrollone?.(c.key)} aria-label="Roll {c.name}’s initiative" title="Roll a d20 with what it adds">{@render die(16)}</button>
+        {:else if c.key === turn}
+          <span class="initnow" in:fade={quick}>Now</span>
         {/if}
-        {#if c.hidden}<span class="inittag" title="Hidden from your players">hidden</span>{/if}
-        {#if c.key === turn}<span class="initnow" in:fade={quick}>Now</span>{/if}
       </li>
     {/each}
     {#if unseenTurn}
-      <li class="initrow now unseen" in:fade={quick}><span class="initname">Something unseen acts</span><span class="initnow">Now</span></li>
+      <li class="initrow now unseen" in:fade={quick}>
+        <b class="initscore">?</b>
+        <span class="initwho"><span class="initname">Something unseen acts</span></span>
+        <span class="initnow">Now</span>
+      </li>
     {/if}
   </ol>
   </div>
   </div>
 </section>
 
+<!-- A d20, for every button that rolls. -->
+{#snippet die(size: number)}
+  <svg class="initdie" viewBox="0 0 24 24" width={size} height={size} aria-hidden="true"><path d="M12 2.5 20.5 7.4v9.2L12 21.5 3.5 16.6V7.4zM12 7.5l4.3 7.4H7.7zM12 2.5v5M20.5 7.4l-4.2 7.5M3.5 7.4l4.2 7.5M7.7 14.9 3.5 16.6M16.3 14.9l4.2 1.7M7.7 14.9 12 21.5l4.3-6.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" /></svg>
+{/snippet}
+
 <style>
   .initiative { min-width: 0; }
   .round { font-size: 0.8125rem; color: var(--a); font-weight: 650; }
+  .roundof { color: var(--dim); font-weight: 500; }
   .initcall { font-size: 0.8125rem; font-weight: 600; color: var(--a); margin-right: 0.25rem; }
-  .initfold { overflow: clip; overflow-clip-margin: 6px; transition: height 0.32s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.26s ease; }
+  .initfold { overflow: clip; overflow-clip-margin: 8px; transition: height 0.32s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.26s ease; }
   .initfold.folded { opacity: 0; }
-  /* While a row is dragged it may leave the list's box: nothing clips it. */
+  /* While a tile is dragged it may leave the list's box: nothing clips it. */
   .initfold:has(:global(.reordering)) { overflow: visible; }
   @media (prefers-reduced-motion: reduce) { .initfold { transition: none; } }
-  .initlist { position: relative; list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.375rem; }
-  .initrow {
-    display: inline-flex; align-items: center; gap: 0.4375rem; padding: 0.25rem 0.625rem 0.25rem 0.25rem;
-    border-radius: 999px; border: 1px solid var(--line-soft); background: var(--raised); font-size: 0.8125rem;
-    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  /* The order in reading order, a tile each: highest first, left to right, then down. */
+  .initlist {
+    position: relative; list-style: none; margin: 0; padding: 2px; display: grid; gap: 0.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
   }
-  .initrow.initcr { border-style: dashed; }
+  .initrow {
+    position: relative; display: flex; align-items: center; gap: 0.625rem; min-width: 0; min-height: 3.25rem;
+    padding: 0.375rem 0.625rem 0.375rem 0.375rem; border-radius: var(--r); border: 1px solid var(--line-soft);
+    background: var(--surface); font-size: 0.875rem;
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.25s ease, opacity 0.25s ease;
+  }
+  .initrow.initcr { background: color-mix(in oklab, var(--surface) 88%, var(--raised)); }
   /* A tie this viewer can settle: picked up and moved. */
   .initrow.tied { cursor: grab; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
   .initrow.tied:hover { border-color: var(--a-edge); }
   .initrow.waiting:not(.mine) { opacity: 0.6; }
+  /* Gone already this round: a step back. */
+  .initrow.acted { opacity: 0.62; }
   .initrow.mine { border-color: var(--a-edge); }
   .initrow.hiddenone .initname { color: var(--dim); }
-  .initrow.unseen { padding-left: 0.625rem; font-style: italic; }
-  .initrow.now { border-color: var(--a-edge); background: var(--a-wash); box-shadow: 0 0 0 2px color-mix(in oklch, var(--a) 30%, transparent); }
-  .initrow input {
-    width: 2.75rem; padding: 0.125rem 0.25rem; text-align: center; font: inherit; font-size: 0.8125rem; font-weight: 650;
-    color: var(--text); border: 1px solid var(--line); border-radius: 999px; background: var(--bg);
+  .initrow.unseen { font-style: italic; }
+  /* Whose turn it is: lit, with a bar down its left edge. */
+  .initrow.now {
+    border-color: var(--a-edge); background: color-mix(in oklab, var(--a) 12%, var(--surface));
+    box-shadow: 0 0 0 1px var(--a-edge), 0 6px 18px -8px color-mix(in oklab, var(--a) 55%, transparent);
   }
-  .initrow input:focus { outline: none; border-color: var(--a-edge); }
-  .initvalue { min-width: 1.75rem; text-align: center; font-variant-numeric: tabular-nums; }
-  .initname { font-weight: 600; overflow-wrap: anywhere; }
+  .initrow.now::before {
+    content: ''; position: absolute; left: -1px; top: 0.5rem; bottom: 0.5rem; width: 3px; border-radius: 0 3px 3px 0; background: var(--a);
+  }
+  .initscore {
+    flex: none; box-sizing: border-box; width: 2.625rem; height: 2.375rem; display: grid; place-items: center;
+    font: inherit; font-size: 1.0625rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text);
+    border-radius: var(--r-sm); background: var(--raised); border: 1px solid var(--line-soft); padding: 0;
+  }
+  .initrow.now .initscore { background: var(--a); border-color: var(--a); color: var(--bg); }
+  input.initscore { border-color: var(--line); background: var(--bg); text-align: center; transition: border-color 0.15s ease; }
+  input.initscore:hover { border-color: var(--a-edge); }
+  input.initscore:focus { outline: none; border-color: var(--a); }
+  input.initscore::placeholder { color: var(--dim); }
+  .initrow.now input.initscore { background: var(--bg); color: var(--a); border: 2px solid var(--a); }
+  .initpic {
+    position: relative; flex: none; width: 2.25rem; height: 2.25rem; border-radius: var(--r-sm); overflow: hidden;
+    display: grid; place-items: center; color: var(--dim); border: 1px solid var(--a-edge);
+    background: linear-gradient(150deg, var(--portrait-from, var(--raised)), var(--portrait-to, var(--raised)));
+  }
+  .initpic.round { border-radius: 50%; background: var(--raised); border-color: color-mix(in oklab, oklch(62% 0.21 25) 45%, var(--line)); }
+  .initpic.npc { border-color: var(--a-edge); }
+  .initpic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .initwho { flex: 1; min-width: 0; display: grid; gap: 0.0625rem; }
+  .initname { font-weight: 600; overflow-wrap: anywhere; line-height: 1.25; }
+  .initside { font-size: 0.6875rem; color: var(--dim); letter-spacing: 0.02em; }
+  .initnext { color: var(--a); font-weight: 600; }
+  /* Rolling is a die, nothing else: it turns a little on hover. */
   .initroll {
-    display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.0625rem 0.5rem; font: inherit; font-size: 0.75rem; font-weight: 600;
-    color: var(--a); background: var(--a-wash); border: 1px solid var(--a-edge); border-radius: 999px; cursor: pointer;
-    transition: background-color 0.15s ease, transform 0.08s ease;
+    flex: none; width: 2.125rem; height: 2.125rem; display: grid; place-items: center; padding: 0; cursor: pointer;
+    color: var(--a); background: var(--a-wash); border: 1px solid var(--a-edge); border-radius: var(--r-sm);
+    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
   }
-  .initroll:hover { background: color-mix(in oklch, var(--a) 22%, transparent); }
+  .initroll:hover { background: color-mix(in oklab, var(--a) 22%, transparent); border-color: var(--a); }
   .initroll:active { transform: translateY(1px); }
   .initroll:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
-  .inittag { font-size: 0.625rem; color: var(--dim); letter-spacing: 0.06em; text-transform: uppercase; }
-  .initnow { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--a); }
-  /* A phone: one row each, the width of the screen, easy to read and to tap. */
+  .initdie { flex: none; transition: transform 0.4s cubic-bezier(0.33, 1, 0.68, 1); }
+  .initroll:hover .initdie, :global(.dicebtn:hover:not(:disabled)) .initdie { transform: rotate(72deg); }
+  @media (prefers-reduced-motion: reduce) { .initdie { transition: none; } }
+  .initnow {
+    flex: none; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--a);
+    padding: 0.125rem 0.4375rem; border-radius: 999px; border: 1px solid var(--a-edge); background: var(--a-wash);
+  }
+  /* A phone: one tile a row, the width of the screen, easy to read and to tap. */
   @media (max-width: 700px) {
-    .initlist { flex-direction: column; flex-wrap: nowrap; gap: 0.4375rem; }
-    .initrow { display: flex; width: 100%; min-height: 2.875rem; padding: 0.3125rem 0.875rem 0.3125rem 0.3125rem; font-size: 0.9375rem; }
-    .initrow .initname { flex: 1; min-width: 0; }
-    .initvalue { min-width: 3.25rem; font-size: 1rem; }
-    .initrow input { width: 3.25rem; padding: 0.3125rem 0.25rem; font-size: 0.9375rem; }
-    .initnow { font-size: 0.6875rem; }
+    .initlist { grid-template-columns: minmax(0, 1fr); gap: 0.4375rem; }
+    .initrow { min-height: 3.5rem; font-size: 0.9375rem; }
+    .initscore { width: 3rem; height: 2.625rem; font-size: 1.125rem; }
+    .initroll { width: 2.75rem; height: 2.75rem; }
   }
 </style>

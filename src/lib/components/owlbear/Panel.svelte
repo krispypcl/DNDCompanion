@@ -235,11 +235,12 @@
     ...characters.map((s) => ({
       key: `pc:${s.id}`, name: obr?.nameOf(s) ?? s.name, value: init.pcs[s.id] ?? null, tie: init.ties[`pc:${s.id}`],
       // Players roll on the campaign page (one place for the whole table); here they watch.
-      dex: s.definition ? initiativeParts(s.definition).total : 0, side: 'pc' as const
+      dex: s.definition ? initiativeParts(s.definition).total : 0, side: 'pc' as const,
+      pic: resolveImageUrl(s.definition?.identity?.portraitUrl).url ?? undefined, cls: s.definition ? mainClass(s.definition) : undefined
     })),
     ...(table
-      ? table.list.map((c) => ({ key: `cr:${c.id}`, name: c.name, value: c.initiative, dex: initiativeBonus(c.statblock), tie: init.ties[`cr:${c.id}`], side: 'creature' as const, hidden: !c.visible }))
-      : revealed.map((c) => ({ key: `cr:${c.id}`, name: c.name, value: c.initiative, tie: init.ties[`cr:${c.id}`], side: 'creature' as const })))
+      ? table.list.map((c) => ({ key: `cr:${c.id}`, name: c.name, value: c.initiative, dex: initiativeBonus(c.statblock), tie: init.ties[`cr:${c.id}`], side: 'creature' as const, hidden: !c.visible, pic: resolveImageUrl(c.portrait).url ?? undefined, kind: c.kind }))
+      : revealed.map((c) => ({ key: `cr:${c.id}`, name: c.name, value: c.initiative, tie: init.ties[`cr:${c.id}`], side: 'creature' as const, pic: resolveImageUrl(c.portrait ?? '').url ?? undefined, kind: c.kind })))
   ]);
   const showOrder = $derived(Boolean(live && combatants.length && (isDm || init.turn || init.asking)));
   const orderFail = (e: unknown) => (error = e instanceof Error ? e.message : 'The order slipped! Try again.');

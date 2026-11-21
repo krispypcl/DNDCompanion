@@ -18,7 +18,7 @@
   import { sheetRepo } from '#lib/data/sheets.ts';
   import { isConfigured, supabase } from '#lib/supabase.ts';
   import { session } from '#lib/stores/session.ts';
-  import { classLine, initiativeParts } from '#lib/rules/derived.ts';
+  import { classLine, initiativeParts, mainClass } from '#lib/rules/derived.ts';
   import { advantageFrom } from '#lib/rules/equipment.ts';
   import { asRevealed, followRevealed, type Revealed } from '#lib/data/creatures.ts';
   import { CreatureTable } from '#lib/creatureTable.svelte.ts';
@@ -416,14 +416,17 @@
   const combatants = $derived<InitiativeRow[]>([
     ...active.map((s) => ({
       key: `pc:${s.id}`, name: s.definition?.identity?.name || s.name, value: init.pcs[s.id] ?? null, tie: init.ties[`pc:${s.id}`],
-      dex: s.definition ? initiativeParts(s.definition).total : 0, side: 'pc' as const, mine: Boolean(me && s.owner_id === me)
+      dex: s.definition ? initiativeParts(s.definition).total : 0, side: 'pc' as const, mine: Boolean(me && s.owner_id === me),
+      pic: resolveImageUrl(s.definition?.identity?.portraitUrl).url ?? undefined, cls: s.definition ? mainClass(s.definition) : undefined
     })),
     ...(table
       ? table.list.map((c) => ({
           key: `cr:${c.id}`, name: c.name, value: c.initiative, dex: initiativeBonus(c.statblock), tie: init.ties[`cr:${c.id}`],
-          side: 'creature' as const, hidden: !c.visible
+          side: 'creature' as const, hidden: !c.visible,
+          pic: resolveImageUrl(c.portrait).url ?? undefined, kind: c.kind
         }))
-      : revealed.map((c) => ({ key: `cr:${c.id}`, name: c.name, value: c.initiative, tie: init.ties[`cr:${c.id}`], side: 'creature' as const })))
+      : revealed.map((c) => ({ key: `cr:${c.id}`, name: c.name, value: c.initiative, tie: init.ties[`cr:${c.id}`], side: 'creature' as const,
+          pic: resolveImageUrl(c.portrait ?? '').url ?? undefined, kind: c.kind })))
   ]);
   const fighting = $derived(Boolean(init.turn));
   const myTurn = $derived(Boolean(me && init.turn && combatants.some((c) => c.key === init.turn && c.mine)));
@@ -729,9 +732,9 @@
             {:else if isDm && init.asking}
               <button class="smallbtn accent" onclick={startFight} disabled={!combatants.some((c) => c.value !== null)}>Start the fight</button>
             {:else if isDm && combatants.length}
-              <button class="smallbtn accent" onclick={callForInitiative}>Call for initiative</button>
+              <button class="smallbtn accent" onclick={callForInitiative}><svg class="dockdie" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 2.5 20.5 7.4v9.2L12 21.5 3.5 16.6V7.4zM12 7.5l4.3 7.4H7.7zM12 2.5v5M20.5 7.4l-4.2 7.5M3.5 7.4l4.2 7.5M7.7 14.9 3.5 16.6M16.3 14.9l4.2 1.7M7.7 14.9 12 21.5l4.3-6.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" /></svg>Call for initiative</button>
             {:else if !isDm && init.asking && mineToRoll.length}
-              <button class="smallbtn accent" onclick={() => rollOne(mineToRoll[0].key)}>Roll initiative{mineToRoll.length > 1 ? ` for ${mineToRoll[0].name}` : ''}</button>
+              <button class="smallbtn accent" onclick={() => rollOne(mineToRoll[0].key)}><svg class="dockdie" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 2.5 20.5 7.4v9.2L12 21.5 3.5 16.6V7.4zM12 7.5l4.3 7.4H7.7zM12 2.5v5M20.5 7.4l-4.2 7.5M3.5 7.4l4.2 7.5M7.7 14.9 3.5 16.6M16.3 14.9l4.2 1.7M7.7 14.9 12 21.5l4.3-6.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" /></svg>Roll initiative{mineToRoll.length > 1 ? ` for ${mineToRoll[0].name}` : ''}</button>
             {/if}
           {/if}
         {/snippet}
