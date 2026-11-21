@@ -44,15 +44,15 @@ away, and puts the whole party on one live page for the DM.
    saves as you go. The cog beside it sets the sheet's look: portrait,
    banner, color, music and sounds. <kbd>?</kbd> lists the keyboard
    shortcuts.
-3. **Share it** by its link. The PDF button saves a printable copy, and
+3. **Share it** by its link. The down arrow saves it as a printable PDF, and
    **Import** in the main menu brings the character back from that PDF.
    Edits made inside the PDF don't come back, and saving the PDF again from
    another app can leave the character out.
 4. **Start a campaign** from the main menu's Campaigns and send the players its
-   invite link; each picks a character to bring. The DM's cog holds the
+   invite (**Invite a player**); each picks a character to bring. The DM's cog holds the
    campaign's settings, from the next session's date to its Owlbear room.
 5. **Install it** from the browser's menu: *Add to Home Screen* on a phone,
-   *Install app* on a computer.
+   *Install app* on a computer. On a phone the main menu shows the way.
 
 ### In Owlbear Rodeo
 
