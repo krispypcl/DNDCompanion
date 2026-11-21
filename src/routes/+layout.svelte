@@ -42,10 +42,36 @@
   $effect(() => installSettle());
 
   /*
+   * Looking for a new version: SvelteKit asks every minute, but a phone
+   * freezes that timer while the app is out of sight, and a phone's app is
+   * mostly opened for a moment and put away. So it also asks the moment the
+   * page is seen again, comes back from the browser's back-forward memory,
+   * or the device is back online (at most every 15 seconds).
+   */
+  $effect(() => {
+    let last = 0;
+    const ask = () => {
+      if (document.hidden || updated.current || Date.now() - last < 15_000) return;
+      last = Date.now();
+      void updated.check();
+    };
+    const onPageShow = (e: PageTransitionEvent) => { if (e.persisted) ask(); };
+    document.addEventListener('visibilitychange', ask);
+    window.addEventListener('pageshow', onPageShow);
+    window.addEventListener('online', ask);
+    return () => {
+      document.removeEventListener('visibilitychange', ask);
+      window.removeEventListener('pageshow', onPageShow);
+      window.removeEventListener('online', ask);
+    };
+  });
+
+  /*
    * A new version was deployed: everyone's page reloads into it, but never
    * over something being written. It waits until nothing is typed into, no
    * change is still on its way to the database, and the reader has paused
-   * for a few seconds (or straight away while the tab is out of sight).
+   * for a few seconds (or straight away while the tab is out of sight, or
+   * the moment it is seen again, before anything has been touched).
    */
   $effect(() => {
     if (!updated.current) return;
@@ -63,16 +89,23 @@
       }, document.hidden ? 0 : 4000);
     };
     const nudge = () => tryReload();
+    // Seen again: nothing has been touched yet, so now is the quietest moment.
+    const shown = () => {
+      if (document.hidden) return tryReload();
+      if (busy()) return tryReload();
+      clearTimeout(quietTimer);
+      location.reload();
+    };
     tryReload();
     // Any input pushes the moment back; seeing the tab again checks at once.
     window.addEventListener('pointerdown', nudge, true);
     window.addEventListener('keydown', nudge, true);
-    document.addEventListener('visibilitychange', nudge);
+    document.addEventListener('visibilitychange', shown);
     return () => {
       clearTimeout(quietTimer);
       window.removeEventListener('pointerdown', nudge, true);
       window.removeEventListener('keydown', nudge, true);
-      document.removeEventListener('visibilitychange', nudge);
+      document.removeEventListener('visibilitychange', shown);
     };
   });
 

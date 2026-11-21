@@ -57,6 +57,14 @@ sw.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin !== sw.location.origin) return;
 
+  // The app's version, asked to find out whether a new one was deployed: always
+  // from the network, past the browser's own cache too. SvelteKit only asks
+  // with a header, which Safari may answer from a copy up to ten minutes old.
+  if (url.pathname.endsWith('/_app/version.json')) {
+    event.respondWith(fetch(req, { cache: 'no-store' }));
+    return;
+  }
+
   // The app's own files: from the device, or kept the first time they are fetched.
   if (BUILT.has(url.pathname)) {
     event.respondWith(
