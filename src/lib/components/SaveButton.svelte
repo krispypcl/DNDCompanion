@@ -6,7 +6,7 @@
    * to a check once it is saved.
    */
   let { onsave, busy = false, saved = false }: { onsave: () => void; busy?: boolean; saved?: boolean } = $props();
-  const TIP = 'Save as a PDF, to print or keep (P). Import brings the character back from it. Edits made in the PDF don’t come back, and saving it again from another app can leave the sheet out of it.';
+  const TIP = 'Save as a PDF, to print or keep. Import brings the character back from it. Edits made in the PDF don’t come back, and saving it again from another app can leave the sheet out of it.';
 </script>
 
 <button class="savepdf" class:busy class:saved onclick={onsave} disabled={busy} aria-busy={busy}

@@ -117,7 +117,7 @@
   import { friendlyError } from '#lib/errors.ts';
   import { session } from '#lib/stores/session.ts';
   import { sheetStore } from '#lib/stores/sheet.ts';
-  import { canUndo, resetUndo, snapshot, undo } from '#lib/stores/undo.ts';
+  import { resetUndo, snapshot, undo } from '#lib/stores/undo.ts';
   import { ABILITIES } from '#lib/types.ts';
   import type { SheetTexts, TextKey } from '#lib/types.ts';
   import type {
@@ -610,22 +610,7 @@
     const t = e.target as HTMLElement | null;
     if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
     if (document.querySelector('.lightbox, [role="dialog"]:not([data-keys]), [role="alertdialog"]')) return;
-    const mod = e.ctrlKey || e.metaKey;
-    // Printing the page itself would print the app: the sheet's PDF is what
-    // prints, for its owner (exporting is theirs alone).
-    if (mod && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'p' && isOwner) {
-      e.preventDefault();
-      void makePdf();
-      return;
-    }
-    if (mod && !e.shiftKey && e.key.toLowerCase() === 'z') {
-      if (isOwner && $canUndo) {
-        e.preventDefault();
-        doUndo();
-      }
-      return;
-    }
-    if (mod || e.altKey) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.key === '?') {
       e.preventDefault();
       showKeys = true;
@@ -636,9 +621,6 @@
       // The music's speaker, on or off.
       e.preventDefault();
       setMusicOn(!get(musicOn));
-    } else if (e.key.toLowerCase() === 'p' && isOwner) {
-      e.preventDefault();
-      void makePdf();
     } else if (/^[1-8]$/.test(e.key)) {
       activeTab = TABS[Number(e.key) - 1];
     }
@@ -750,7 +732,7 @@
   </svg>
 {/snippet}
 
-<!-- Edit (a pencil, a check while editing), the owner's; Ctrl+Z undoes. -->
+<!-- Edit (a pencil, a check while editing), the owner's. -->
 {#snippet editButton()}
   <button class="edit iconbtn" aria-pressed={editing} aria-label={editing ? 'Done editing' : 'Edit the sheet'} title={editing ? 'Done (E)' : 'Edit (E)'}
           onclick={() => glide(() => (editing = !editing))}>

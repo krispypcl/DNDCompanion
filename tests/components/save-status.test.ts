@@ -100,13 +100,13 @@ describe('save alert', () => {
 });
 
 describe('the controls row', () => {
-  it('has no Undo button, but Ctrl+Z still undoes', () => {
+  it('has no Undo button and no undo or PDF shortcut', () => {
     const row = sheet.slice(sheet.indexOf('<div class="controls">'), sheet.indexOf('</header>'));
     expect(row).not.toMatch(/class="undo"/);
-    // Two rows: Back, Edit and the cog first, the tools after.
+    // One row: Back, Edit and the cog first, the tools after.
     expect(row.indexOf('class="back"')).toBeLessThan(row.indexOf('editButton'));
     expect(row.indexOf('editButton')).toBeLessThan(row.indexOf('ModeToggle'));
-    expect(sheet).toMatch(/e\.key\.toLowerCase\(\) === 'z'[\s\S]{0,80}isOwner && \$canUndo/);
+    expect(sheet).not.toMatch(/e\.key\.toLowerCase\(\) === '[zp]'/);
   });
 
   it('keeps the status out of the header entirely', () => {

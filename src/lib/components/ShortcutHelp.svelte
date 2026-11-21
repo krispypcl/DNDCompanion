@@ -13,7 +13,6 @@
     onclose
   }: { owner: boolean; place?: 'sheet' | 'campaign'; onclose: () => void } = $props();
   const still = prefersReducedMotion();
-  const mac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 
   const rows = $derived(
     place === 'campaign'
@@ -24,13 +23,7 @@
           { keys: ['Esc'], what: 'Close this, or a question' }
         ]
       : [
-          ...(owner
-            ? [
-                { keys: ['E'], what: 'Edit, or finish editing' },
-                { keys: [mac ? '⌘' : 'Ctrl', 'Z'], what: 'Undo the last change' },
-                { keys: ['P'], what: 'Save the sheet as a PDF, to print or keep' }
-              ]
-            : []),
+          ...(owner ? [{ keys: ['E'], what: 'Edit, or finish editing' }] : []),
           { keys: ['1', '–', '8'], what: 'Switch tabs, Combat to Backstory' },
           { keys: ['/'], what: 'Search 5e.tools' },
           { keys: ['M'], what: 'Music on or off' },
