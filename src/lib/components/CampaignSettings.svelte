@@ -44,7 +44,6 @@
 
   const ended = $derived(campaign.archived);
   const next = $derived(sessionWhen(campaign.details.nextSession));
-  const room = $derived(webLink(campaign.details.owlbearUrl));
   const bannerLink = $derived(resolveImageUrl(campaign.details.bannerUrl));
   const crestLink = $derived(resolveImageUrl(campaign.details.crestUrl));
   const owlbearBad = $derived(Boolean(campaign.details.owlbearUrl?.trim()) && !webLink(campaign.details.owlbearUrl));
@@ -79,7 +78,15 @@
   }
 </script>
 
-<DimModal id="campaign-settings" title="Campaign settings" wide onclose={close}>
+<!-- The crest and the banner as they look, for everyone. -->
+{#snippet crestPic()}
+  {#if crestLink.url}<img class="crestpic" src={crestLink.url} alt="The campaign's crest" />{/if}
+{/snippet}
+{#snippet bannerPic()}
+  {#if bannerLink.url}<img class="bannerpic" src={bannerLink.url} alt="The campaign's banner" />{/if}
+{/snippet}
+
+<DimModal id="campaign-settings" title="Campaign Settings" wide closer onclose={close}>
   <div class="settings">
   {#if !dm}
     <!-- A player: what the DM set, to read, and the invite to pass on. -->
@@ -103,16 +110,19 @@
         {#if copyFailed}<p class="hint bad" role="status">The clipboard said no! Select the link and copy it yourself.</p>{/if}
       </div>
     {/if}
-    <div class="row">
-      <span class="label">Owlbear Rodeo room</span>
-      {#if room}
-        <a class="smallbtn roomlink" href={room} target="_blank" rel="noopener noreferrer">Open the Room</a>
-      {:else}
-        <p class="value dim">Not set yet</p>
-      {/if}
-    </div>
+    {#if crestLink.url}
+      <div class="row">
+        <span class="label">Crest</span>
+        {@render crestPic()}
+      </div>
+    {/if}
+    {#if bannerLink.url}
+      <div class="row">
+        <span class="label">Banner</span>
+        {@render bannerPic()}
+      </div>
+    {/if}
     <p class="hint">Only your DM can change these.</p>
-    <div class="foot"><span></span><button class="smallbtn accent" onclick={close}>Done</button></div>
   {:else}
     <label class="row">
       <span class="label">Name</span>
@@ -153,6 +163,7 @@
       <input value={campaign.details.crestUrl ?? ''} placeholder="Optional: a picture link" aria-label="Crest link"
              onchange={(e) => onsave({ crestUrl: e.currentTarget.value.trim() })} />
       {#if crestLink.note}<p class="hint" class:bad={crestLink.source === 'invalid'}>{crestLink.note}</p>{/if}
+      {@render crestPic()}
     </div>
 
     <div class="row">
@@ -160,6 +171,7 @@
       <input id="campaign-banner" value={campaign.details.bannerUrl ?? ''} placeholder="Optional: a wide picture link"
              onchange={(e) => onsave({ bannerUrl: e.currentTarget.value.trim() })} />
       {#if bannerLink.note}<p class="hint" class:bad={bannerLink.source === 'invalid'}>{bannerLink.note}</p>{/if}
+      {@render bannerPic()}
     </div>
 
     <div class="row">
@@ -215,7 +227,6 @@
           <button class="smallbtn dangerish" onclick={() => (confirming = 'delete')}>Delete Campaign</button>
         {/if}
       </div>
-      <button class="smallbtn accent" onclick={close}>Done</button>
     </div>
   {/if}
   </div>
@@ -238,8 +249,9 @@
   input:focus { outline: none; border-color: var(--a-edge); }
   .hint { margin: 0; font-size: 0.8125rem; color: var(--dim); line-height: 1.45; }
   .value { margin: 0; font-size: 0.9375rem; color: var(--text); overflow-wrap: anywhere; }
-  .value.dim { color: var(--dim); }
-  .roomlink { justify-self: start; }
+  /* The crest as on the page, a rounded square; the banner a wide strip, cut to fit. */
+  .crestpic { width: 4.5rem; height: 4.5rem; object-fit: cover; border-radius: var(--r); border: 1px solid var(--a-edge); justify-self: start; }
+  .bannerpic { width: 100%; height: 6rem; object-fit: cover; border-radius: var(--r); border: 1px solid var(--line-soft); }
   .hint.bad { color: var(--bad); }
   .foot {
     display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;
