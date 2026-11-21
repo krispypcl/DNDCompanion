@@ -407,6 +407,11 @@
                 onchange={togglePrivate} />
         {#if privateMsg}<span class="msg" class:bad={!privateMsg.ok} role="status">{privateMsg.text}</span>{/if}
       </div>
+      <!-- The whole policy: what is kept, where, and how to remove it. -->
+      <a class="smallbtn policylink" href="{base}/privacy?from=account">
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 3.5 5 6v5.5c0 4.3 3 7.6 7 9 4-1.4 7-4.7 7-9V6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /><path d="m9 12 2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        Privacy policy
+      </a>
     </section>
 
     <section class="card" aria-labelledby="stats-h">
@@ -475,6 +480,10 @@
   .conns li :global(.err) { flex-basis: 100%; text-align: right; }
   /* The switches sit at the left, each with its message under it. */
   .switches { display: grid; justify-items: start; gap: 0.375rem; margin-top: 0.25rem; }
+  .policylink { justify-self: start; margin-top: 0.875rem; }
+  .policylink svg { flex: none; transition: transform 0.35s cubic-bezier(0.33, 1, 0.68, 1); }
+  .policylink:hover svg { transform: translateY(-1px) scale(1.08); }
+  @media (prefers-reduced-motion: reduce) { .policylink svg { transition: none; } }
   /* Preferences: a name at the left, its control beside it. */
   .prefs { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 0.625rem 1rem; margin-top: 0.25rem; }
   .pref-name { font-size: 0.8125rem; color: var(--dim); display: inline-flex; align-items: center; gap: 0.125rem; }

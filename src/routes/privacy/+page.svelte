@@ -3,21 +3,29 @@
    * The privacy policy: what the site keeps, where, and how to remove it.
    * Linked from Google's sign-in screen, so it must stay true to the code.
    */
+  import { onMount } from 'svelte';
   import { base } from '#lib/base.ts';
+  import { appVersion } from '#lib/version.ts';
   import Logo from '#lib/components/Logo.svelte';
+
+  /** Opened from the account page (?from=account): Back goes there. */
+  let back = $state(`${base}/`);
+  onMount(() => {
+    if (new URLSearchParams(location.search).get('from') === 'account') back = `${base}/account`;
+  });
 </script>
 
 <svelte:head><title>Privacy | DND Companion</title></svelte:head>
 
 <main class="policy">
-  <a class="smallbtn back" href="{base}/">Back</a>
+  <a class="smallbtn back" href={back}>Back</a>
   <!-- The same mark as signing in, so it reads as the same place. -->
   <div class="policybrand">
     <Logo size={60} />
     <span>DND Companion</span>
   </div>
   <h1>Privacy</h1>
-  <p class="dim">Last updated November 21, 2026.</p>
+  <p class="dim">Last updated November 21, 2026. DND Companion {appVersion}, in alpha.</p>
 
   <p>DND Companion is a free, hobby D&amp;D 5e character sheet. It keeps only what it needs to run your sheets and campaigns, and it never sells, rents or shares it for advertising.</p>
 
