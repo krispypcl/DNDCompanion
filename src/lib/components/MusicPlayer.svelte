@@ -614,7 +614,7 @@
           : title || (playing ? 'Playing' : 'Paused')
   );
   // ── The title and the speaker ──
-  /** How far the title outruns its line; past it, the title scrolls back and forth. */
+  /** How far the title outruns its line; past it, the title runs from right to left without end. */
   let capBox = $state(0);
   let capText = $state(0);
   const capOver = $derived(Math.max(0, capText - capBox));
@@ -661,11 +661,14 @@
   {/if}
 {/snippet}
 
-<!-- The song's name on one line: past its room it scrolls back and forth. -->
+<!-- The song's name on one line. Past its room it runs from right to left without end: drawn
+     twice, a gap between, and moved by exactly one name and its gap, so each turn starts where the
+     last one ended. -->
 {#snippet scroller(text: string)}
   <span class="capbox" class:rolling={capOver > 2} bind:clientWidth={capBox} title={text}>
-    <span class="captext" class:bad={failed} bind:clientWidth={capText}
-          style:--shift="-{capOver}px" style:--dur="{Math.max(7, 4 + capOver / 22)}s">{text}</span>
+    <span class="track" style:--shift="-{capText}px" style:--dur="{Math.max(6, capText / 34)}s">
+      <span class="captext" class:bad={failed} bind:clientWidth={capText}>{text}</span>{#if capOver > 2}<span class="captext copy" class:bad={failed} aria-hidden="true">{text}</span>{/if}
+    </span>
   </span>
 {/snippet}
 
@@ -869,18 +872,23 @@
   .capsule.playing { color: var(--text); }
   .capbox { flex: 1 1 auto; min-width: 3rem; overflow: clip; white-space: nowrap; }
   .capbox.rolling { mask-image: linear-gradient(to right, transparent 0, #000 0.625rem, #000 calc(100% - 0.625rem), transparent 100%); }
+  .track { display: inline-block; white-space: nowrap; }
   .captext { display: inline-block; padding: 0 0.625rem 0 0; }
-  .rolling .captext { padding-left: 0.625rem; animation: capscroll var(--dur) ease-in-out infinite alternate; }
+  /* Running: the gap after each name is the same, so the loop never shows its seam. */
+  .capbox.rolling .track { padding-left: 0.625rem; animation: capscroll var(--dur) linear infinite; }
+  .capbox.rolling .captext { padding: 0 2.5rem 0 0; }
   .captext.bad { color: var(--bad); }
   /* A name that fits sits in the middle of its room; a long one scrolls from its start. */
   .capbox:not(.rolling) { text-align: center; }
   .capbox:not(.rolling) .captext { padding: 0 0.3125rem; }
-  @keyframes capscroll { 0%, 18% { transform: translateX(0); } 82%, 100% { transform: translateX(var(--shift)); } }
+  @keyframes capscroll { to { transform: translateX(var(--shift)); } }
   /* Without motion the title wraps instead: it is never cut short. */
   @media (prefers-reduced-motion: reduce) {
     .capsule { height: auto; min-height: 2.25rem; padding-block: 0.25rem; border-radius: 1.125rem; }
-    .capbox { white-space: normal; overflow-wrap: anywhere; mask-image: none; }
-    .rolling .captext { animation: none; padding-left: 0; }
+    .capbox, .track { white-space: normal; overflow-wrap: anywhere; mask-image: none; }
+    .capbox.rolling .track { animation: none; padding-left: 0; }
+    .capbox.rolling .captext { padding: 0; }
+    .captext.copy { display: none; }
   }
   .capbtn {
     flex: none; width: 1.75rem; height: 1.75rem; border-radius: 50%; display: grid; place-items: center; padding: 0;
@@ -912,7 +920,6 @@
   .title .capbox { text-align: center; }
   .title .captext { padding: 0; }
   .title .rolling { text-align: left; }
-  .title .rolling .captext { padding: 0 0.625rem; }
   .playing .title { color: var(--text); }
   /* Three small bars that dance while it plays and rest while it doesn't. */
   .eq { flex: none; display: inline-flex; align-items: flex-end; gap: 2px; height: 0.75rem; }
