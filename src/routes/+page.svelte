@@ -1159,8 +1159,10 @@
     transition: opacity 0.3s ease;
   }
   li:hover .cardbanner { opacity: 0.5; }
-  :global([data-mode='light']) .cardbanner { opacity: 0.3; }
-  :global([data-mode='light']) li:hover .cardbanner { opacity: 0.42; }
+  /* A light card: at a low opacity over white the picture came out milky; multiplied into the
+     card instead, it keeps its own color, deepening rather than whitening. */
+  :global([data-mode='light']) .cardbanner { opacity: 0.5; mix-blend-mode: multiply; }
+  :global([data-mode='light']) li:hover .cardbanner { opacity: 0.62; }
   @keyframes bannerIn { from { opacity: 0; } }
   .withface {
     --face: 4.75rem;

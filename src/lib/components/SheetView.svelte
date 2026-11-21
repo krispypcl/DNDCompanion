@@ -1095,7 +1095,7 @@
                      total={castAb ? String(spellSaveDC(definition, castAb)) : '—'}
                      hint={castAb ? '8 + proficiency + spellcasting modifier.' : 'Choose a spellcasting ability to work it out.'}>
                   <div>
-                    <h3>Spell save DC</h3>
+                    <h3>Spell Save DC</h3>
                     <p class="castval" use:bump={castAb ? spellSaveDC(definition, castAb) : 0}>{castAb ? spellSaveDC(definition, castAb) : '—'}</p>
                   </div>
                 </Why>
@@ -1103,7 +1103,7 @@
                      total={castAb ? sign(spellAttackBonus(definition, castAb)) : '—'}
                      hint={castAb ? `Spellcasting modifier + proficiency.${!editable && isOwner ? ' Press it to roll a spell attack.' : ''}` : 'Choose a spellcasting ability to work it out.'}>
                   <div class:rolls-hover={castAb && !editable && isOwner}>
-                    <h3>Spell attack bonus{#if castAb && !editable && isOwner}<DieMark label="Rolls a spell attack" />{/if}</h3>
+                    <h3>Spell Attack Bonus{#if castAb && !editable && isOwner}<DieMark label="Rolls a spell attack" />{/if}</h3>
                     {#if castAb && !editable && isOwner}
                       <button class="castval castroll" title="Roll a spell attack: d20 {sign(spellAttackBonus(definition, castAb))}"
                               use:bump={spellAttackBonus(definition, castAb)}
@@ -1519,6 +1519,11 @@
    * Measured over a deliberately bright test image rather than guessed.
    */
   .bannered .sub { color: var(--text); }
+  /* A light page holds back the white over a banner (Banner); the header's words carry a soft
+     halo of the page instead, so they read on the picture without milking it. */
+  :global([data-mode='light']) .bannered .identity :is(h1, .sub, .campaign) {
+    text-shadow: 0 0 10px color-mix(in oklab, var(--bg) 85%, transparent), 0 0 3px color-mix(in oklab, var(--bg) 70%, transparent);
+  }
   .bannered .sub :global(.field.readout.empty) { color: var(--label); }
   /* On a phone the frost is dropped for a nearly solid module: blurring the
      banner behind every module again on each animated frame (a gauge, a pip,

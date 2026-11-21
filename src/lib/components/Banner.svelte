@@ -197,23 +197,25 @@
    * light ground) and open elsewhere, with the picture's own color brought
    * back up.
    */
-  :global(:root[data-mode='light']) img { filter: saturate(1.2) contrast(1.08); }
+  /* White mixed into a picture milks it: on a light page the veil is the least the words need (they
+     carry a soft halo of their own, set by the page), and the picture keeps its own color and depth. */
+  :global(:root[data-mode='light']) img { filter: saturate(1.15) contrast(1.06) brightness(0.97); }
   :global(:root[data-mode='light']) .tint {
-    --tint-top: color-mix(in oklch, var(--bg) 26%, transparent);
+    --tint-top: color-mix(in oklch, var(--bg) 10%, transparent);
     background:
       linear-gradient(
         to bottom,
-        color-mix(in oklch, var(--bg) 26%, transparent) 0%,
-        color-mix(in oklch, var(--bg) 16%, transparent) 22%,
-        color-mix(in oklch, var(--bg) 6%, transparent) 52%,
-        color-mix(in oklch, var(--bg) 6%, transparent) 86%,
+        color-mix(in oklch, var(--bg) 10%, transparent) 0%,
+        color-mix(in oklch, var(--bg) 4%, transparent) 22%,
+        transparent 52%,
+        transparent 86%,
         var(--bg) 100%
       ),
       linear-gradient(
         to right,
-        color-mix(in oklch, var(--bg) 80%, transparent) 0%,
-        color-mix(in oklch, var(--bg) 40%, transparent) 26%,
-        transparent 62%,
+        color-mix(in oklch, var(--bg) 58%, transparent) 0%,
+        color-mix(in oklch, var(--bg) 22%, transparent) 24%,
+        transparent 48%,
         transparent 100%
       ),
       linear-gradient(to right, var(--bg) 0%, transparent 8%, transparent 90%, var(--bg) 100%);
@@ -226,9 +228,9 @@
           to bottom,
           transparent 0%,
           transparent 14%,
-          color-mix(in oklch, var(--bg) 32%, transparent) 34%,
-          color-mix(in oklch, var(--bg) 8%, transparent) 60%,
-          color-mix(in oklch, var(--bg) 5%, transparent) 90%,
+          color-mix(in oklch, var(--bg) 16%, transparent) 34%,
+          color-mix(in oklch, var(--bg) 4%, transparent) 60%,
+          transparent 90%,
           var(--bg) 100%
         );
     }
