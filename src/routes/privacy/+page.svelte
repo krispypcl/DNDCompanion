@@ -8,6 +8,9 @@
   import { appVersion } from '#lib/version.ts';
   import Logo from '#lib/components/Logo.svelte';
   import BackLink from '#lib/components/BackLink.svelte';
+  import ModeToggle from '#lib/components/ModeToggle.svelte';
+  import PhoneTop from '#lib/components/PhoneTop.svelte';
+  import { phone } from '#lib/stores/phone.svelte.ts';
 
   /** Opened from the account page (?from=account): Back goes there. */
   let back = $state(`${base}/`);
@@ -19,7 +22,15 @@
 <svelte:head><title>Privacy | DND Companion</title></svelte:head>
 
 <main class="policy">
-  <BackLink href={back} />
+  {#if phone.current}
+    <!-- A phone's top bar, as every page's: the mode at the left, Back at the right. -->
+    <PhoneTop>
+      {#snippet left()}<ModeToggle />{/snippet}
+      {#snippet right()}<BackLink href={back} />{/snippet}
+    </PhoneTop>
+  {:else}
+    <BackLink href={back} />
+  {/if}
   <!-- The same mark as signing in, so it reads as the same place. -->
   <div class="policybrand">
     <Logo size={60} />
@@ -60,7 +71,7 @@
 
 <style>
   /* Its buttons as tall as the campaign page's (app.css --btn-h). */
-  .policy { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; line-height: 1.6; --btn-h: 2.125rem; }
+  .policy { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; line-height: 1.6; --btn-h: 2.125rem; --pad-top: 2.5rem; --pad-side: 1.25rem; }
   .policy .smallbtn { padding-inline: 0.875rem; }
   h1 { margin: 1.5rem 0 0.25rem; font-size: 2rem; }
   .policybrand {

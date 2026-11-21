@@ -9,7 +9,6 @@
   import { base } from '#lib/base.ts';
   import AbilityBand from '#lib/components/AbilityBand.svelte';
   import ModeToggle from '#lib/components/ModeToggle.svelte';
-  import Logo from '#lib/components/Logo.svelte';
   import CogIcon from '#lib/components/CogIcon.svelte';
   import DimModal from '#lib/components/DimModal.svelte';
   import { setCustomSounds, warmSounds } from '#lib/sound.ts';
@@ -44,6 +43,7 @@
   import { phone } from '#lib/stores/phone.svelte.ts';
   import PhoneBar, { type PhonePlace } from '#lib/components/PhoneBar.svelte';
   import BackLink from '#lib/components/BackLink.svelte';
+  import PhoneTop from '#lib/components/PhoneTop.svelte';
   import Flash from '#lib/components/Flash.svelte';
   import ShareButton from '#lib/components/ShareButton.svelte';
   import Tabs from '#lib/components/Tabs.svelte';
@@ -294,15 +294,6 @@
     { key: 'features', label: 'Features', icon: 'features' },
     { key: 'more', label: 'More', icon: 'more' }
   ]);
-  /** The page scrolled under the top bar: it takes its solid ground and edge (a mark just above it says when). */
-  let topStuck = $state(false);
-  let topEl = $state<HTMLElement>();
-  $effect(() => {
-    if (!phoneOn || !topEl || typeof IntersectionObserver === 'undefined') return;
-    const watch = new IntersectionObserver(([e]) => (topStuck = !e.isIntersecting));
-    watch.observe(topEl);
-    return () => watch.disconnect();
-  });
   const castParts = $derived(definition && castAb
     ? [{ label: `${castAb.toUpperCase()} modifier`, value: modifierOf(definition, castAb) }, { label: 'Proficiency', value: proficiencyBonus(definition) }]
     : []);
@@ -798,16 +789,14 @@
     {#if phoneOn}
       <!-- The top bar, held at the top of the screen: Edit, the cog, and the mode at the left, the
            app's mark in the middle, and the link, the PDF, and Back at the right. -->
-      <div class="topmark" bind:this={topEl} aria-hidden="true"></div>
-      <div class="phonetop" class:stuck={topStuck}>
-        <div class="topleft">{#if isOwner}{@render editButton()}{/if}{@render appearanceButton()}<ModeToggle /></div>
-        <span class="toplogo"><Logo size={26} /></span>
-        <div class="topright">
+      <PhoneTop>
+        {#snippet left()}{#if isOwner}{@render editButton()}{/if}{@render appearanceButton()}<ModeToggle />{/snippet}
+        {#snippet right()}
           <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
           {#if isOwner}<SaveButton onsave={makePdf} busy={makingPdf} saved={pdfSaved} />{/if}
           <BackLink href={cameFrom ? `${base}/c/${cameFrom}` : `${base}/`} title={cameFrom ? 'Back to the campaign' : 'Back to your characters'} />
-        </div>
-      </div>
+        {/snippet}
+      </PhoneTop>
     {/if}
     {#if banner}<Banner url={banner} />{/if}
     <!-- Away from Play on a phone the header steps aside, still there, so its music plays on. -->

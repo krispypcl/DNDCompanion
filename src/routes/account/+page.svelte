@@ -14,6 +14,8 @@
   import Lightbox from '#lib/components/Lightbox.svelte';
   import ModeToggle from '#lib/components/ModeToggle.svelte';
   import BackLink from '#lib/components/BackLink.svelte';
+  import PhoneTop from '#lib/components/PhoneTop.svelte';
+  import { phone } from '#lib/stores/phone.svelte.ts';
   import D20Loader from '#lib/components/D20Loader.svelte';
   import {
     deleteAccount, enabledProviders, profileOf, PROVIDER_NAMES, providersOf, sheetsPrivate,
@@ -265,11 +267,18 @@
             action={{ href: `${base}/login?next=${encodeURIComponent('/account')}`, label: 'Sign in' }} home={false} />
 {:else}
 <main>
-  <!-- Back at the left and the mode at the right; on a phone the other way round, as every page's top bar. -->
-  <header>
-    <BackLink href="{base}/" title="Back to your characters and campaigns" />
-    <ModeToggle />
-  </header>
+  {#if phone.current}
+    <!-- A phone's top bar, as every page's: the mode at the left, Back at the right. -->
+    <PhoneTop>
+      {#snippet left()}<ModeToggle />{/snippet}
+      {#snippet right()}<BackLink href="{base}/" title="Back to your characters and campaigns" />{/snippet}
+    </PhoneTop>
+  {:else}
+    <header>
+      <BackLink href="{base}/" title="Back to your characters and campaigns" />
+      <ModeToggle />
+    </header>
+  {/if}
 
   {#if $session.loading || !$session.user}
     <div class="screen-center"><D20Loader size={56} label="Loading your account" /></div>
@@ -539,10 +548,8 @@
   .cards > :global(*) { break-inside: avoid; }
   @media (max-width: 600px) { main { padding-left: 1rem; padding-right: 1rem; } }
   header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-  @media (max-width: 700px) {
-    header { flex-direction: row-reverse; }
-    header > :global(.mode) { width: 2.25rem; height: 2.25rem; }
-  }
+  /* A phone: the top bar pulls the page's padding back (PhoneTop). */
+  @media (max-width: 700px) { main { padding-left: 1rem; padding-right: 1rem; --pad-top: 1.5rem; --pad-side: 1rem; } }
   .title { font-size: 1.5rem; font-weight: 650; margin: 0 0 1rem; letter-spacing: -0.01em; }
   .card {
     background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--r);

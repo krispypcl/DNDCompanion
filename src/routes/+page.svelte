@@ -3,6 +3,7 @@
   import { base } from '#lib/base.ts';
   import AuthForm from '#lib/components/AuthForm.svelte';
   import ModeToggle from '#lib/components/ModeToggle.svelte';
+  import PhoneTop from '#lib/components/PhoneTop.svelte';
   import { sheetName, sheetRepo, type PartyMember } from '#lib/data/sheets.ts';
   import { campaignMessage, campaignRepo, lastSessionOf, type Campaign } from '#lib/data/campaigns.ts';
   import { MAX_BYTES, MAX_PDF_BYTES, importSheet } from '#lib/exchange.ts';
@@ -879,6 +880,21 @@
   </AuthForm>
 {:else}
 <main class:switched>
+  {#if phone.current}
+    <!-- A phone's top bar, as every page's: the mode at the left, your account at the right. -->
+    <h1 class="vh">DND Companion</h1>
+    <PhoneTop>
+      {#snippet left()}<ModeToggle />{/snippet}
+      {#snippet right()}
+        {#if $session.user}
+          {@const me = profileOf($session.user, $profile)}
+          <a class="me phoneme" href="{base}/account" title="Your account" aria-label="Your account">
+            <Avatar url={me.avatarUrl} name={me.displayName || $session.user.email || '?'} size={36} />
+          </a>
+        {/if}
+      {/snippet}
+    </PhoneTop>
+  {:else}
   <header>
     <h1><Logo size={30} /><span class="brandname">DND Companion</span></h1>
     <div class="tools">
@@ -892,6 +908,7 @@
       {/if}
     </div>
   </header>
+  {/if}
 
   {#if !isConfigured}
     <p class="app-alert bad">
@@ -1310,6 +1327,13 @@
     transition: border-color 0.15s ease, color 0.15s ease;
   }
   .me:hover { border-color: var(--a-edge); color: var(--a); }
+  /* In a phone's top bar: the picture alone, round. */
+  .me.phoneme { padding: 0; border: 0; background: none; border-radius: 50%; display: grid; place-items: center; }
+  .phoneme:hover :global(.avatar), .phoneme:focus-visible :global(.avatar) { box-shadow: 0 0 0 2px var(--a-edge); }
+  .phoneme:active { transform: translateY(1px); }
+  .vh { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  /* A phone: the top bar pulls the page's padding back (PhoneTop). */
+  @media (max-width: 700px) { main { --pad-top: 2.5rem; --pad-side: 1rem; } }
   .menuloading > :global(.mskel) { opacity: 0.45; }
   .dim { color: var(--dim); }
   code { font-size: 0.85em; }
