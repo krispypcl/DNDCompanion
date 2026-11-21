@@ -17,7 +17,7 @@
    */
   import { onMount, untrack } from 'svelte';
   import { flip } from 'svelte/animate';
-  import { fade } from 'svelte/transition';
+  import { fade, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import { armorClass, classLine, initiativeParts, mainClass } from '#lib/rules/derived.ts';
   import { vitalStatus } from '#lib/rules/hp.ts';
@@ -75,6 +75,11 @@
 
   const still = prefersReducedMotion();
   const appear = (delay = 0) => ({ duration: still ? 0 : 200, delay: still ? 0 : delay, easing: cubicOut });
+  /** The swap field rolls down out of the header and back up into it, the panel below moving with it. */
+  function roll(node: Element) {
+    const s = slide(node, { duration: still ? 0 : 220, easing: cubicOut });
+    return { ...s, css: (t: number, u: number) => `${s.css?.(t, u) ?? ''}opacity: ${t};` };
+  }
 
   onMount(() => {
     const stops: (() => void)[] = [];
@@ -397,6 +402,8 @@
 </svelte:head>
 
 <main class="panel">
+  <!-- The header and the swap field under it share one place in the panel, so a shut field takes no room at all. -->
+  <div class="headbox">
   <header>
     <Logo size={22} />
     <span class="brandname">DND Companion</span>
@@ -417,22 +424,17 @@
       </div>
     {/if}
   </header>
+  <!-- Swapping the campaign: a field that rolls down from the header and back up into it, the
+       panel below moving with it both ways. -->
+  {#if inOwlbear && campaignId && swapping}
+    <div class="swapform" transition:roll>{@render campaignForm(false)}</div>
+  {/if}
+  </div>
 
   {#if !inOwlbear}
     <p class="note">This page is the DND Companion extension for Owlbear Rodeo. Add it in Owlbear (Extensions → Add custom extension) with this address:
       <code>{location.origin}{location.pathname.replace(/panel\/?$/, 'manifest.json')}</code></p>
   {:else}
-    <!-- Swapping the campaign: a field under the header that eases open, so nothing below jumps. -->
-    {#if campaignId}
-      <div class="swapbox smooth-height" use:smoothHeight>
-        <div class="swap-cell">
-          {#if swapping}
-            <div class="swapform" in:fade={appear(90)} out:fade={appear()}>{@render campaignForm(false)}</div>
-          {/if}
-        </div>
-      </div>
-    {/if}
-
     {#if !loaded}
       <ul class="chars partyskel" aria-busy="true" aria-label="Gathering the party">
         {#each [0, 1, 2] as i (i)}
@@ -615,7 +617,7 @@
 
 <style>
   :global(html.in-owlbear), :global(html.in-owlbear body) { background: var(--bg); }
-  .panel { padding: 1.125rem 1.125rem 1.5rem; font-size: 0.9375rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.125rem; }
+  .panel { padding: 1.125rem 1.125rem 1.5rem; font-size: 0.9375rem; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 1.125rem; }
   /* The brand on the left; the bubble, the room's campaign and the swap on the right, on one line. */
   header { display: flex; align-items: center; gap: 0.5rem; min-height: 2rem; color: var(--text); }
   header .brandname { font-size: 1.1875rem; white-space: nowrap; }
@@ -635,9 +637,9 @@
     background: color-mix(in oklab, var(--a) 6%, var(--surface));
   }
   .start .lead { margin: 0; font-size: 1rem; letter-spacing: 0.01em; color: var(--text); font-weight: 600; }
-  /* The swap field folds open under the header; shut, it takes no room (the panel's gap included). */
-  .swapbox { display: grid; grid-template-columns: minmax(0, 1fr); margin-top: -1.125rem; }
-  .swapform { display: grid; gap: 0.5rem; padding-top: 1.125rem; }
+  /* The swap field folds open under the header; shut, it takes no room. */
+  .headbox { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; }
+  .swapform { display: grid; gap: 0.5rem; padding-top: 1.125rem; min-width: 0; }
   input {
     flex: 1; min-width: 0; font: inherit; font-size: 0.875rem; padding: 0.5rem 0.6875rem; color: var(--text);
     border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface);
