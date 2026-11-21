@@ -29,11 +29,12 @@
       {#snippet right()}<BackLink href={back} />{/snippet}
     </PhoneTop>
   {:else}
-    <BackLink href={back} />
+    <!-- Back at the left, light or dark at the right. -->
+    <div class="policyhead"><BackLink href={back} /><ModeToggle /></div>
   {/if}
-  <!-- The same mark as signing in, so it reads as the same place. -->
+  <!-- The same mark as signing in, so it reads as the same place; a phone has it in its top bar already. -->
   <div class="policybrand">
-    <Logo size={60} />
+    {#if !phone.current}<Logo size={60} />{/if}
     <span>DND Companion</span>
   </div>
   <h1>Privacy</h1>
@@ -60,7 +61,7 @@
 
   <h2>The Code</h2>
   <p>DND Companion’s code is open for anyone to read, so you can see exactly what it does with what you give it.</p>
-  <p><a class="smallbtn" href="https://github.com/krispypcl/DNDCompanion" target="_blank" rel="noopener noreferrer">GitHub repository</a></p>
+  <p><a class="smallbtn" href="https://github.com/krispypcl/DNDCompanion" target="_blank" rel="noopener noreferrer">GitHub Repository</a></p>
 
   <h2>Removing It</h2>
   <p>You can delete any sheet or campaign yourself. Deleting your account on the <a href="{base}/account">Account</a> page removes the account and its sheets for good, along with their rows in the shared library. You can also remove the site's access to your Google account at <a href="https://myaccount.google.com/connections" rel="noopener">myaccount.google.com/connections</a>.</p>
@@ -74,6 +75,7 @@
   .policy { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; line-height: 1.6; --btn-h: 2.125rem; --pad-top: 2.5rem; --pad-side: 1.25rem; }
   .policy .smallbtn { padding-inline: 0.875rem; }
   h1 { margin: 1.5rem 0 0.25rem; font-size: 2rem; }
+  .policyhead { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
   .policybrand {
     display: flex; flex-direction: column; align-items: center; gap: 0.625rem; margin: 0.5rem 0 0; color: var(--text);
   }
