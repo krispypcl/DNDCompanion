@@ -28,7 +28,8 @@
     ['senses', 'Senses', 'Darkvision 60 ft., Passive Perception 9'],
     ['languages', 'Languages', 'Common, Goblin']
   ];
-  const ONE: Record<Section, string> = { traits: 'trait', actions: 'action', bonus: 'bonus action', reactions: 'reaction', legendary: 'legendary action' };
+  /** One of each, with its article: "Add an action". */
+  const ONE: Record<Section, string> = { traits: 'a trait', actions: 'an action', bonus: 'a bonus action', reactions: 'a reaction', legendary: 'a legendary action' };
 
   const text = (k: keyof StatBlock) => (typeof value[k] === 'string' ? (value[k] as string) : '');
   function setText(k: keyof StatBlock, v: string) {
@@ -86,12 +87,12 @@
         <div class="sbefeature">
           <input class="fname" value={f.name} placeholder="Name" maxlength="120" aria-label="{title}: name"
                  oninput={(e) => setFeature(k, i, 'name', e.currentTarget.value)} />
-          <button type="button" class="fdrop" aria-label="Remove {f.name || `this ${ONE[k]}`}" title="Remove" onclick={() => dropFeature(k, i)}>×</button>
+          <button type="button" class="fdrop" aria-label="Remove {f.name || ONE[k]}" title="Remove" onclick={() => dropFeature(k, i)}>×</button>
           <textarea rows="2" value={f.text} placeholder="What it does" maxlength="3000" aria-label="{title}: what it does"
                     oninput={(e) => setFeature(k, i, 'text', e.currentTarget.value)}></textarea>
         </div>
       {/each}
-      <button type="button" class="smallbtn quiet" onclick={() => addFeature(k)}>Add a {ONE[k]}</button>
+      <button type="button" class="smallbtn quiet" onclick={() => addFeature(k)}>Add {ONE[k]}</button>
     </section>
   {/each}
   </div>
@@ -101,13 +102,13 @@
   .sbe { display: grid; gap: 1rem; }
   .sbesections { display: grid; gap: 1rem; }
   /* Spread (a wide window): the basics and scores beside the longer lines,
-     then the traits and actions in columns, each kept whole. */
+     then the traits and actions in as many columns as fit, each kept whole. */
   @media (min-width: 900px) {
-    .sbe.spread { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 1.25rem; align-items: start; }
-    .sbe.spread > .sbegrid:first-child { grid-column: 1; grid-row: 1; }
+    .sbe.spread { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 1.5rem; align-items: start; }
+    .sbe.spread > .sbegrid:first-child { grid-column: 1; grid-row: 1; grid-template-columns: repeat(auto-fill, minmax(min(10rem, 100%), 1fr)); }
     .sbe.spread > .sbescores { grid-column: 1; grid-row: 2; }
-    .sbe.spread > .sbegrid.two { grid-column: 2; grid-row: 1 / span 2; grid-template-columns: repeat(auto-fill, minmax(min(13rem, 100%), 1fr)); }
-    .sbe.spread > .sbesections { grid-column: 1 / -1; display: block; columns: 2 20rem; column-gap: 1.25rem; }
+    .sbe.spread > .sbegrid.two { grid-column: 2; grid-row: 1 / span 2; grid-template-columns: repeat(auto-fill, minmax(min(14rem, 100%), 1fr)); }
+    .sbe.spread > .sbesections { grid-column: 1 / -1; display: block; columns: 3 18rem; column-gap: 1.5rem; }
     .sbe.spread .sbesection { break-inside: avoid; margin-bottom: 1rem; }
   }
   .sbegrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(12rem, 100%), 1fr)); gap: 0.625rem; }

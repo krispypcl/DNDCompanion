@@ -111,7 +111,7 @@
     background: var(--surface); border: 1px solid var(--line); box-shadow: 0 24px 60px rgb(0 0 0 / 0.5);
   }
   .dimwindow.wide { width: min(46rem, 100%); }
-  .dimwindow.broad { width: min(84rem, 100%); }
+  .dimwindow.broad { width: min(112rem, 100%); }
   h2 { margin: 0 0 0.875rem; font-size: 1rem; font-weight: 650; color: var(--a); overflow-wrap: anywhere; }
 
   /* A phone: a sheet from the bottom, the full width, its top rounded. */

@@ -129,17 +129,13 @@
 
   // ── Adding, and changing one: one window, three ways in.
   // Number fields bound with bind:value hold numbers once typed in, strings before.
-  type Draft = { name: string; kind: CreatureKind; hp: string | number; ac: string | number; howMany: string | number; link: string; portrait: string; statblock: StatBlock; keep: boolean };
+  type Draft = { name: string; kind: CreatureKind; howMany: string | number; link: string; portrait: string; statblock: StatBlock; keep: boolean };
   type Way = 'book' | 'homebrew' | 'write';
   type Editing = { id: string | null; homebrewId?: string; way: Way; draft: Draft };
   const WAYS: [Way, string][] = [['book', 'From 5e.tools'], ['homebrew', 'Your homebrew'], ['write', 'Write one']];
   let editing = $state<Editing | null>(null);
   let saving = $state(false);
-  const blank = (): Draft => ({ name: '', kind: 'monster', hp: '', ac: '', howMany: 1, link: '', portrait: '', statblock: {}, keep: false });
-  const num = (v: string | number | null | undefined) => {
-    const s = String(v ?? '').trim();
-    return s === '' || !Number.isFinite(Number(s)) ? null : Math.max(0, Math.round(Number(s)));
-  };
+  const blank = (): Draft => ({ name: '', kind: 'monster', howMany: 1, link: '', portrait: '', statblock: {}, keep: false });
   const count = (v: string | number) => Math.max(1, Math.min(20, Math.round(Number(v)) || 1));
   function startAdd() {
     editing = { id: null, way: 'book', draft: blank() };
@@ -147,7 +143,7 @@
   function startEdit(c: Creature) {
     editing = {
       id: c.id, way: 'write',
-      draft: { name: c.name, kind: c.kind, hp: c.hp_max ?? '', ac: c.ac ?? '', howMany: 1, link: c.link, portrait: c.portrait ?? '', statblock: c.statblock ?? {}, keep: false }
+      draft: { name: c.name, kind: c.kind, howMany: 1, link: c.link, portrait: c.portrait ?? '', statblock: c.statblock ?? {}, keep: false }
     };
   }
   function editHomebrew(id: string) {
@@ -163,9 +159,13 @@
     const e = editing;
     const d = e.draft;
     const statblock = cleanStatBlock({ ...d.statblock, source: d.statblock.source || 'Homebrew' });
-    // Hit points and armor class from the boxes, else from the stat block.
-    const hpMax = num(d.hp) ?? leadingNumber(statblock.hp);
-    const ac = num(d.ac) ?? leadingNumber(statblock.ac);
+    // Hit points and armor class come from the stat block; one already here keeps
+    // its own (rolled hit points, a shield put down) unless the stat block's number changed.
+    const was = e.id ? table.list.find((x) => x.id === e.id) : undefined;
+    const sbHp = leadingNumber(statblock.hp);
+    const sbAc = leadingNumber(statblock.ac);
+    const hpMax = was && leadingNumber(was.statblock?.hp) === sbHp ? was.hp_max : sbHp;
+    const ac = was && leadingNumber(was.statblock?.ac) === sbAc ? was.ac : sbAc;
     const name = d.name.trim();
     const portrait = d.portrait.trim();
     saving = true;
@@ -473,26 +473,32 @@
         {/each}
       </ul>
     {:else}
-      <!-- On a wide screen, two columns as the account page has: the creature on the
-           left, its stat block across the rest (spread over columns of its own). -->
+      <!-- The creature in a band across the top (its portrait, name, kind and how
+           many, then its links), its stat block across the whole width below. -->
+      {@const draftPic = resolveImageUrl(e.draft.portrait).url}
       <form class="cform" onsubmit={(ev) => { ev.preventDefault(); void save(); }}>
-        <div class="cformside">
-          <h3 class="sbtitle">The creature</h3>
-          <label><span>Name</span><input bind:value={e.draft.name} maxlength="80" placeholder="Mud Imp" required /></label>
+        <div class="cformtop">
+          <span class="cformpic" class:npc={e.draft.kind === 'npc'} aria-hidden="true">
+            {#if draftPic}<img src={draftPic} alt="" draggable="false" />{:else}
+              <svg viewBox="0 0 24 24">
+                {#if e.draft.kind === 'npc'}<circle cx="12" cy="8.5" r="3.75" /><path d="M4.75 20c.6-3.9 3.6-6.25 7.25-6.25s6.65 2.35 7.25 6.25" />
+                {:else}<path d="M8.25 8.5 5 3.25l.75 6.25M15.75 8.5 19 3.25l-.75 6.25" /><circle cx="12" cy="14" r="6.25" /><path d="M9.75 13.5h.01M14.25 13.5h.01M10 17.25h4" />{/if}
+              </svg>
+            {/if}
+          </span>
+          <label class="cname"><span>Name</span><input bind:value={e.draft.name} maxlength="80" placeholder="Mud Imp" required /></label>
           <div class="kindpick" role="radiogroup" aria-label="Kind">
             {#each [['monster', 'Monster'], ['npc', 'NPC']] as [value, label] (value)}
               <button type="button" role="radio" aria-checked={e.draft.kind === value} class:on={e.draft.kind === value}
                       onclick={() => (e.draft.kind = value as CreatureKind)}>{label}</button>
             {/each}
           </div>
+          {#if !e.id && !e.homebrewId}
+            <label class="cmany"><span>How many</span><input class="numfield" type="number" min="1" max="20" inputmode="numeric" bind:value={e.draft.howMany} /></label>
+          {/if}
+        </div>
+        <div class="cformlinks">
           {#if !e.homebrewId}
-            <div class="cnums">
-              <label><span>Hit points</span><input class="numfield" type="number" min="0" inputmode="numeric" bind:value={e.draft.hp} placeholder="Stat block" /></label>
-              <label><span>Armor class</span><input class="numfield" type="number" min="0" inputmode="numeric" bind:value={e.draft.ac} placeholder="Stat block" /></label>
-              {#if !e.id}
-                <label><span>How many</span><input class="numfield" type="number" min="1" max="20" inputmode="numeric" bind:value={e.draft.howMany} /></label>
-              {/if}
-            </div>
             <label><span>5e.tools link (optional)</span>
               <input bind:value={e.draft.link} maxlength="500" placeholder="Left empty, its name is searched" /></label>
           {/if}
@@ -506,7 +512,9 @@
           {/if}
         </div>
         <div class="sbwrap">
-          <h3 class="sbtitle">Stat block</h3>
+          <h3 class="sbtitle">Stat block
+            <InfoTip label="About its hit points and armor class">Its hit points and armor class are the stat block’s first numbers. One already in the fight keeps its own until those change.</InfoTip>
+          </h3>
           <StatBlockEditor bind:value={e.draft.statblock} spread />
         </div>
         <div class="cformdo">
@@ -674,10 +682,23 @@
   .picklist li.pickempty { color: var(--dim); font-size: 0.8125rem; justify-content: center; border-style: dashed; background: none; padding: 1rem; }
   /* One column on a narrow screen; on a wide one the creature on the left and
      its stat block across the rest, as the account page sets its cards out. */
-  .cform { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; align-items: start; }
-  @media (min-width: 900px) { .cform { grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr); } }
-  .cformside { display: grid; gap: 0.75rem; align-content: start; }
-  .cnums { display: grid; grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr)); gap: 0.5rem; }
+  .cform { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.125rem; align-items: start; }
+  /* The band: portrait, name, kind and how many on one line; the links on the next. */
+  .cformtop { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: end; gap: 0.875rem; }
+  .cformlinks { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; align-items: end; gap: 0.875rem; }
+  .cformpic {
+    width: 3.25rem; height: 3.25rem; border-radius: 50%; overflow: hidden; display: grid; place-items: center;
+    border: 1px solid var(--a-edge); background: var(--raised); color: var(--dim);
+  }
+  .cformpic img { width: 100%; height: 100%; object-fit: cover; }
+  .cformpic svg { width: 1.75rem; height: 1.75rem; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .cmany input { width: 5rem; }
+  .cformlinks .keep { padding-bottom: 0.4375rem; }
+  @media (max-width: 899px) {
+    .cformtop { grid-template-columns: auto minmax(0, 1fr); }
+    .cformtop .kindpick, .cformtop .cmany { grid-column: 1 / -1; }
+    .cformlinks { grid-template-columns: minmax(0, 1fr); }
+  }
   .cform label { display: grid; gap: 0.3125rem; font-size: 0.75rem; color: var(--label); }
   .cform label > input:not([type='checkbox']) {
     font: inherit; font-size: 0.875rem; padding: 0.4375rem 0.5625rem; color: var(--text); min-width: 0;
@@ -685,9 +706,8 @@
   }
   .cform label > input:focus { outline: none; border-color: var(--a-edge); }
   .kindpick { display: inline-grid; grid-template-columns: 1fr 1fr; gap: 0.25rem; padding: 3px; border-radius: 999px; border: 1px solid var(--line); background: var(--raised); justify-self: start; }
-  .sbwrap { min-width: 0; }
-  @media (max-width: 899px) { .sbwrap { border-top: 1px solid var(--line-soft); padding-top: 0.875rem; } }
-  .sbtitle { margin: 0 0 0.75rem; font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600; }
+  .sbwrap { min-width: 0; border-top: 1px solid var(--line-soft); padding-top: 1rem; }
+  .sbtitle { margin: 0 0 0.75rem; display: flex; align-items: center; gap: 0.375rem; font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600; }
   .cform label.keep { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; color: var(--text); }
   .keep input { accent-color: var(--a); width: 1rem; height: 1rem; margin: 0; }
   .cformdo { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 0.5rem; padding-top: 0.875rem; border-top: 1px solid var(--line-soft); }
