@@ -12,11 +12,10 @@
   import { adoptAccountPrefs } from '#lib/prefs.ts';
   import { installSettle } from '#lib/settle.ts';
   import PullRefresh from '#lib/components/PullRefresh.svelte';
+  import { pull } from '#lib/stores/pull.svelte.ts';
+  import { phone } from '#lib/stores/phone.svelte.ts';
 
   let { children } = $props();
-  /** A phone's pull to refresh: how far the page is pulled down, and whether a finger is on it. */
-  let pull = $state(0);
-  let pulling = $state(false);
 
   /*
    * The 5e.tools peek (and the 5e.tools reader behind it) loads on its own,
@@ -164,7 +163,7 @@
 
 <Splash />
 <ConnectionNotice />
-<PullRefresh bind:offset={pull} bind:pulling busy={() => sheetStore.hasUnsaved()} />
+<PullRefresh busy={() => sheetStore.hasUnsaved()} />
 {#if LookupPeek}<LookupPeek />{/if}
 
 <!--
@@ -174,7 +173,9 @@
   would jump.
 -->
 {#key page.url.pathname}
-  <div class="route" class:pulling style:top={pull ? `${pull}px` : undefined} in:arrive={{ y: 10, duration: 260, delay: 30 }}>
+  <!-- A phone: no rise of its own. The page before fades over this one (the view transition), and its
+       bars stay put, so a rise here would only dip the screen to its ground halfway. -->
+  <div class="route" class:pulling={pull.pulling} style:top="{pull.offset}px" in:arrive={{ y: 10, duration: phone.current ? 0 : 260, delay: phone.current ? 0 : 30 }}>
     {@render children()}
   </div>
 {/key}
