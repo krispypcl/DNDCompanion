@@ -569,8 +569,8 @@
             </svg>
           </button>
         {/if}
-        {#if owlbear && (isDm || phoneOn)}
-          <!-- The table's Owlbear Rodeo room (set in Campaign settings); on a computer the players' is on the table's line. -->
+        {#if owlbear}
+          <!-- The table's Owlbear Rodeo room (set in Campaign settings), for the DM and the players alike. -->
           <a class="keys owlbtn" href={owlbear} target="_blank" rel="noopener noreferrer" aria-label="Open the table's Owlbear Rodeo room" title="Open the table's Owlbear Rodeo room">
             <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <path d="M5 5.5 7.5 8M19 5.5 16.5 8M6 9.5c0-2.2 2.7-3.5 6-3.5s6 1.3 6 3.5V14c0 3.3-2.7 6-6 6s-6-2.7-6-6z" />
@@ -596,10 +596,9 @@
     </header>
 
     <!-- When the table next meets at the left; the table's music in the
-         middle, as a capsule (all the players see of it, at the right for
-         them); the DM's switch between the players and their monsters and
+         middle, as a capsule (all the players see of it); the DM's switch between the players and their monsters and
          NPCs at the right. The DM's whole jukebox takes its own row below. -->
-    {#if (next && !next.past) || isDm || showMusic || owlbear}
+    {#if (next && !next.past) || isDm || showMusic}
       <!-- Its height eases when the jukebox folds into the capsule or opens out of it. -->
       <div class="tablewrap smooth-height" use:smoothHeight transition:slide={unfold()}>
       <div class="tablebar" class:forplayers={!isDm}>
@@ -619,17 +618,6 @@
                            oncompact={isDm && !phoneOn ? () => setMusicCompact(true) : undefined}
                            onexpand={isDm ? () => setMusicCompact(false) : undefined} />
           </div>
-        {/if}
-        {#if !isDm && owlbear && !phoneOn}
-          <!-- A player's line: the next session, the music in the middle, the table's Owlbear Rodeo room at the right. -->
-          <a class="smallbtn owlroom" href={owlbear} target="_blank" rel="noopener noreferrer" data-places="party"
-             title="Open the table's Owlbear Rodeo room">
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M5 5.5 7.5 8M19 5.5 16.5 8M6 9.5c0-2.2 2.7-3.5 6-3.5s6 1.3 6 3.5V14c0 3.3-2.7 6-6 6s-6-2.7-6-6z" />
-              <circle cx="9.25" cy="11" r="1.6" /><circle cx="14.75" cy="11" r="1.6" /><path d="m11 14.2 1 1.3 1-1.3" />
-            </g></svg>
-            Owlbear Rodeo
-          </a>
         {/if}
         {#if isDm && !phoneOn}
           <div class="sideswitch">
@@ -823,19 +811,11 @@
   .nextsession { order: 1; }
   /* The capsule in the middle of the line (at its right for players); the whole jukebox on a row of its own below. */
   .musicslot { order: 2; flex: 1 1 auto; display: flex; justify-content: center; min-width: 0; }
-  /* A player's line in three: the next session, the music in the very middle, the Owlbear room. */
+  /* A player's line in three: the next session, the music in the very middle, an empty third to balance it. */
   .tablebar.forplayers { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
   .tablebar.forplayers > * { grid-row: 1; }
   .tablebar.forplayers .nextsession { grid-column: 1; }
   .tablebar.forplayers .musicslot { grid-column: 2; justify-content: center; }
-  .tablebar.forplayers .owlroom { grid-column: 3; justify-self: end; }
-  /* The same pill as the DM's side switch in this place: its height, its padding, its words' size. */
-  .owlroom {
-    text-decoration: none; box-sizing: border-box; min-height: var(--switch-h); border-radius: 999px;
-    padding: 0 calc(0.875rem + 3px); font-size: 0.875rem; gap: 0.4375rem;
-  }
-  .owlroom svg { transition: transform 0.45s cubic-bezier(0.33, 1, 0.68, 1); }
-  .owlroom:hover svg { transform: translateY(-1px) rotate(-6deg); }
   /* A phone: the next session and the music each centered on a line of their own. */
   @media (max-width: 700px) {
     .tablebar.forplayers { display: flex; }

@@ -280,8 +280,6 @@ button, summary, label:has(> input:is([type='checkbox'], [type='radio'])), [role
 /* On the campaign page every button is as tall as its Back (--btn-h), in its
    windows too (settings, M&N), which open outside its main. */
 html:has(main.campaignpage) { --btn-h: 2.125rem; }
-/* The height of a side switch (AreaSwitch), and of the players' Owlbear Rodeo button in its place. */
-:root { --switch-h: 2.5625rem; }
 .smallbtn:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
 .smallbtn:active:not(:disabled) { transform: translateY(1px); }
 .smallbtn:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
