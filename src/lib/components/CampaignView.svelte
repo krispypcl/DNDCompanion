@@ -39,7 +39,7 @@
   import D20Loader from './D20Loader.svelte';
   import ModeToggle from './ModeToggle.svelte';
   import PhoneTop from './PhoneTop.svelte';
-  import { assetsReady } from '#lib/assets.ts';
+  import { assetsReady, imagesSettled } from '#lib/assets.ts';
   import BackLink from './BackLink.svelte';
   import Crest from './Crest.svelte';
   import Lightbox from './Lightbox.svelte';
@@ -387,11 +387,14 @@
   const crestLink = $derived(resolveImageUrl(campaign?.details.crestUrl));
   /** Its pictures (banner, crest, the characters' portraits) and name font are here (lib/assets): until then the die keeps rolling. */
   let assetsDone = $state(false);
+  /** The page itself, drawn but hidden under its outline until its pictures have settled. */
+  let holdEl = $state<HTMLElement>();
   $effect(() => {
-    if (loading || !campaign || assetsDone) return;
+    if (loading || !campaign || assetsDone || !holdEl) return;
+    const el = holdEl;
     const pics = [bannerLink.url, crestLink.url, ...sheets.map((s) => resolveImageUrl(s.definition?.identity?.portraitUrl).url)];
     let live = true;
-    void assetsReady(pics, [face]).then(() => { if (live) assetsDone = true; });
+    void Promise.all([assetsReady(pics, [face]), imagesSettled(el)]).then(() => { if (live) assetsDone = true; });
     return () => (live = false);
   });
   const owlbear = $derived(webLink(campaign?.details.owlbearUrl));
@@ -599,12 +602,10 @@
   <!-- The page's outline, dimmed, with the die rolling over it (as a sheet). On a phone its two
        bars are already there, so moving here from another page they hold still instead of blinking out. -->
   {#if phoneOn}
-    <div class="loadtop">
-      <PhoneTop>
+    <PhoneTop>
         {#snippet left()}<ModeToggle />{/snippet}
         {#snippet right()}<BackLink href="{base}/" title="Back to your characters and campaigns" />{/snippet}
-      </PhoneTop>
-    </div>
+    </PhoneTop>
     <PhoneBar places={phonePlaces} active={place} onchoose={goPlace} />
   {/if}
   <div class="loading">
@@ -614,17 +615,23 @@
                  onlanded={() => (landed = true)} />
     </div>
   </div>
+{/if}
+{#if loading}
+  <!-- Nothing yet: the outline above is all there is. -->
 {:else if missing}
-  <NotFound tab="Campaign not found" title="No campaign here!" message="This campaign has wandered off the map. It may have ended, or the link is off by a letter, so check it with your DM." />
+  {#if landed}<NotFound tab="Campaign not found" title="No campaign here!" message="This campaign has wandered off the map. It may have ended, or the link is off by a letter, so check it with your DM." />{/if}
 {:else if error && !campaign}
-  <NotFound tab="Campaign didn’t load" title="That’s a critical fail!" message={error} />
+  {#if landed}<NotFound tab="Campaign didn’t load" title="That’s a critical fail!" message={error} />{/if}
 {:else if campaign}
-  <main class="themed campaignpage" style={themeCss} in:fade={{ duration: prefersReducedMotion() ? 0 : 200 }} data-place={phoneOn ? place : undefined} data-moved={phoneOn && moved ? '' : undefined}>
+  <!-- Drawn as soon as it has loaded, but hidden under the outline (and out of reach) until its
+       pictures have settled, so it appears whole; it fades in as the outline goes. -->
+  <div class="holder" class:holding={!landed} inert={!landed} bind:this={holdEl}>
+  <main class="themed campaignpage" class:withbanner={Boolean(bannerLink.url)} style={themeCss} data-place={phoneOn ? place : undefined} data-moved={phoneOn && moved ? '' : undefined}>
     {#if bannerLink.url}<Banner url={bannerLink.url} />{/if}
     {#if phoneOn}
       <!-- A phone's top bar, as every page's: Owlbear, the cog, and the mode at the left, and the
            link, the invite, and Back at the right. -->
-      <PhoneTop>
+      <PhoneTop {themeCss}>
         {#snippet left()}{@render owl()}{#if isMember}{@render cog()}{/if}<ModeToggle />{/snippet}
         {#snippet right()}{@render share()}{#if isMember && !ended}{@render inviteButton(true)}{/if}<BackLink href="{base}/" title="Back to your characters and campaigns" />{/snippet}
       </PhoneTop>
@@ -783,7 +790,7 @@
       <p class="phoneempty" in:fade={{ duration: 200 }}>{isDm ? 'Nothing in sight yet. Reveal a monster or NPC with its eye and the table sees it here.' : 'Nothing in sight yet. Monsters and NPCs your DM reveals show up here.'}</p>
     {/if}
     {#if phoneOn}
-      <PhoneBar places={phonePlaces} active={place} onchoose={goPlace}>
+      <PhoneBar places={phonePlaces} active={place} onchoose={goPlace} {themeCss}>
         {#snippet dock()}
           {#if place === 'initiative' && !ended}
             {#if isDm && fighting}
@@ -814,19 +821,24 @@
                onadd={table && !ended ? (hit) => { void chooseSide(SIDE_CREATURES); void table.addFromFive(hit.name, hit.source); } : undefined}
                onaddhomebrew={table && !ended ? (hid) => { void chooseSide(SIDE_CREATURES); void table.addHomebrew(hid); } : undefined} />
   </main>
+  </div>
 {/if}
 
 <style>
   /* As wide as a sheet (app.css --page-width); its own padding on a phone. */
   main { max-width: var(--page-width); margin: 0 auto; padding: 2rem var(--page-pad) 4rem; }
   @media (max-width: 600px) { main { padding-left: 1rem; padding-right: 1rem; } }
-  /* A phone: the top bar pulls the page's padding back (app.css .phonetop). */
-  @media (max-width: 700px) { main { padding-top: 1.25rem; --pad-top: 1.25rem; --pad-side: 1rem; padding-left: 1rem; padding-right: 1rem; } }
+  /* A phone: a little room under the top bar (the layout keeps the bar's own height free). */
+  @media (max-width: 700px) { main { padding-top: 1rem; padding-left: 1rem; padding-right: 1rem; } }
   /* Above the banner, which lies behind the top of the page. */
   main > :global(*) { position: relative; z-index: 1; }
   .loading { position: relative; min-height: 60vh; }
-  /* The loading top bar sits where the page's will, in the page's own padding. */
-  .loadtop { padding: 1.25rem 1rem 0; --pad-top: 1.25rem; --pad-side: 1rem; }
+  /* The page while its pictures settle: laid out and loading, under the outline, unseen. */
+  .holder.holding { position: absolute; top: 0; left: 0; right: 0; visibility: hidden; pointer-events: none; }
+  /* Shown: it fades in where it stands, as the outline goes. */
+  .holder:not(.holding) > main { animation: campIn 0.2s cubic-bezier(0.33, 1, 0.68, 1) backwards; }
+  @keyframes campIn { from { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .holder:not(.holding) > main { animation: none; } }
   .loading > :global(.cskel) { opacity: 0.45; }
   header { display: flex; align-items: center; gap: 0.875rem; }
   .gear :global(svg), .owlbtn svg { transition: transform 0.45s cubic-bezier(0.33, 1, 0.68, 1); }

@@ -14,8 +14,32 @@
   import PullRefresh from '#lib/components/PullRefresh.svelte';
   import { pull } from '#lib/stores/pull.svelte.ts';
   import { phone } from '#lib/stores/phone.svelte.ts';
+  import { chrome, type BarSpec, type TopSpec } from '#lib/stores/chrome.svelte.ts';
+  import TopBar from '#lib/components/TopBar.svelte';
+  import BottomBar from '#lib/components/BottomBar.svelte';
 
   let { children } = $props();
+
+  /*
+   * A phone's two bars, drawn here once, outside every page (stores/chrome). Moving
+   * between pages, one page takes its buttons back a moment before the next hands
+   * its own over; a bar only goes once none has come back after that moment, so it
+   * stays put between two pages that both have one.
+   */
+  let shownTop = $state.raw<TopSpec | null>(null);
+  let shownBar = $state.raw<BarSpec | null>(null);
+  $effect(() => {
+    const next = chrome.top;
+    if (next) return void (shownTop = next);
+    const t = setTimeout(() => (shownTop = null), 80);
+    return () => clearTimeout(t);
+  });
+  $effect(() => {
+    const next = chrome.bar;
+    if (next) return void (shownBar = next);
+    const t = setTimeout(() => (shownBar = null), 80);
+    return () => clearTimeout(t);
+  });
 
   /*
    * The 5e.tools peek (and the 5e.tools reader behind it) loads on its own,
@@ -173,17 +197,20 @@
   would jump.
 -->
 {#key page.url.pathname}
-  <!-- A phone: no rise of its own. The page before fades over this one (the view transition), and its
-       bars stay put, so a rise here would only dip the screen to its ground halfway. -->
-  <div class="route" class:pulling={pull.pulling} style:top="{pull.offset}px" in:arrive={{ y: 10, duration: phone.current ? 0 : 260, delay: phone.current ? 0 : 30 }}>
+  <div class="route" class:pulling={pull.pulling} style:top="{pull.offset}px" in:arrive={{ y: 10, duration: 260, delay: 30 }}>
     {@render children()}
   </div>
 {/key}
+
+{#if phone.current && shownTop}<TopBar spec={shownTop} />{/if}
+{#if phone.current && shownBar}<BottomBar spec={shownBar} />{/if}
 
 <style>
   /* Pulled down to refresh, the page moves by top (it holds fixed parts, so never a transform)
      and eases back up when let go. */
   .route { position: relative; transition: top 0.28s cubic-bezier(0.33, 1, 0.68, 1); }
+  /* A phone: the page keeps the bars' heights free at its head and foot (TopBar, BottomBar set them). */
+  .route { padding-top: var(--topbar, 0px); padding-bottom: var(--foot, 0px); }
   .route.pulling { transition: none; }
   @media (prefers-reduced-motion: reduce) { .route { transition: none; } }
   /* The old page leaves; the new one brings its own arrival (the rise above). */

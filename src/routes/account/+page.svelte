@@ -548,8 +548,8 @@
   .cards > :global(*) { break-inside: avoid; }
   @media (max-width: 600px) { main { padding-left: 1rem; padding-right: 1rem; } }
   header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-  /* A phone: the top bar pulls the page's padding back (PhoneTop). */
-  @media (max-width: 700px) { main { padding-left: 1rem; padding-right: 1rem; --pad-top: 1.5rem; --pad-side: 1rem; } }
+  /* A phone: a little room under the top bar (the layout keeps the bar's own height free). */
+  @media (max-width: 700px) { main { padding-top: 1rem; padding-left: 1rem; padding-right: 1rem; } }
   .title { font-size: 1.5rem; font-weight: 650; margin: 0 0 1rem; letter-spacing: -0.01em; }
   .card {
     background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--r);

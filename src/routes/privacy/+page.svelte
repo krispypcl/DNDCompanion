@@ -72,7 +72,9 @@
 
 <style>
   /* Its buttons as tall as the campaign page's (app.css --btn-h). */
-  .policy { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; line-height: 1.6; --btn-h: 2.125rem; --pad-top: 2.5rem; --pad-side: 1.25rem; }
+  .policy { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; line-height: 1.6; --btn-h: 2.125rem; }
+  /* A phone: a little room under the top bar (the layout keeps the bar's own height free). */
+  @media (max-width: 700px) { .policy { padding-top: 1rem; } }
   .policy .smallbtn { padding-inline: 0.875rem; }
   h1 { margin: 1.5rem 0 0.25rem; font-size: 2rem; }
   .policyhead { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }

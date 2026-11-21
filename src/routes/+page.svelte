@@ -37,7 +37,7 @@
   import { vitalStatus } from '#lib/rules/hp.ts';
   import { lookOf } from '#lib/rules/conditions.ts';
   import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
-  import { assetsReady } from '#lib/assets.ts';
+  import { assetsReady, imagesSettled } from '#lib/assets.ts';
   import { themeStyle } from '#lib/theme.ts';
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
@@ -96,6 +96,17 @@
   let listShown = $state(false);
   /** Everything loaded and the die has landed: the lists show, all at once. */
   const ready = $derived(listShown && !loading);
+  /** The lists, drawn but hidden under the outline until the cards' pictures have settled (lib/assets). */
+  let holdEl = $state<HTMLElement>();
+  let imagesDone = $state(false);
+  $effect(() => {
+    if (loading) return void (imagesDone = false);
+    if (!holdEl || imagesDone) return;
+    const el = holdEl;
+    let live = true;
+    void imagesSettled(el).then(() => { if (live) imagesDone = true; });
+    return () => (live = false);
+  });
   let error = $state<string | null>(null);
   let creating = $state(false);
   /** id of the sheet awaiting confirmation; deleting is permanent. */
@@ -965,20 +976,30 @@
       onchange={importFile}
     />
 
+    {#if phone.current}
+      <!-- A phone: characters and campaigns on the bar. -->
+      <PhoneBar active={area} onchoose={chooseArea} places={[
+        { key: AREA_SHEETS, label: 'Characters', icon: 'person' },
+        { key: AREA_CAMPAIGNS, label: 'Campaigns', icon: 'flag', badge: area !== AREA_CAMPAIGNS && atTables > 0 }
+      ]} />
+    {/if}
     {#if loading || !listShown}
       <!-- The menu's outline, dimmed, with the die rolling over it. -->
       <div class="menuloading">
         <MenuSkeleton greet={Boolean(profileOf($session.user, $profile).displayName.trim())} />
         <div class="screen-center">
-          <D20Loader size={56} label="Loading your characters" result={loading ? null : error ? 1 : 20}
+          <D20Loader size={56} label="Loading your characters" result={loading || !imagesDone ? null : error ? 1 : 20}
                      onlanded={() => { if (!loading) listShown = true; }} />
         </div>
       </div>
     {/if}
     <!-- Not an {:else}: that would wait for the die to finish leaving while
-         the areas below it arrived, and the page would jump. -->
-    {#if ready}
+         the areas below it arrived, and the page would jump. Drawn as soon as the
+         lists have loaded, but hidden under the outline (and out of reach) until
+         the cards' pictures have settled, so the menu appears whole. -->
+    {#if !loading}
       {@const myName = profileOf($session.user, $profile).displayName.trim().split(/\s+/)[0]}
+      <div class="holder" class:holding={!listShown} inert={!listShown} bind:this={holdEl}>
       <!-- Hello and the next session at the left; at the right, what this
            area can make and the switch between the two areas. -->
       <div class="menuhead">
@@ -1037,13 +1058,6 @@
           {/snippet}
         </Tabs>
       </div>
-      {#if phone.current}
-        <!-- A phone: characters and campaigns on the bar. -->
-        <PhoneBar active={area} onchoose={chooseArea} places={[
-          { key: AREA_SHEETS, label: 'Characters', icon: 'person' },
-          { key: AREA_CAMPAIGNS, label: 'Campaigns', icon: 'flag', badge: area !== AREA_CAMPAIGNS && atTables > 0 }
-        ]} />
-      {/if}
       <!-- A phone's cards have no room for the question beside them: it comes up in a window. -->
       {#if phone.current && confirming}
         {@const doomed = sheets.find((s) => s.id === confirming)}
@@ -1056,6 +1070,7 @@
                         busy={leavingId === leaving.id} busyLabel="Leaving" onyes={() => leave(leaving)} onclose={() => (confirming = null)} />
         {/if}
       {/if}
+      </div>
     {/if}
   {/if}
 </main>
@@ -1279,6 +1294,9 @@
   ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
   /* Rows arrive in order; past the sixth they are all but simultaneous. */
   li { animation: rise 0.28s cubic-bezier(0.2, 0.7, 0.3, 1) backwards; }
+  /* While the menu waits, hidden, its rows hold their entrance for the moment it shows. */
+  .holder.holding { position: absolute; top: 0; left: 0; right: 0; visibility: hidden; pointer-events: none; }
+  .holding li { animation: none; }
   .switched li { animation: none; }
   li:nth-child(2) { animation-delay: 0.04s; }
   li:nth-child(3) { animation-delay: 0.08s; }
@@ -1342,8 +1360,8 @@
   .phoneme:hover :global(.avatar), .phoneme:focus-visible :global(.avatar) { box-shadow: 0 0 0 2px var(--a-edge); }
   .phoneme:active { transform: translateY(1px); }
   .vh { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  /* A phone: the top bar pulls the page's padding back (PhoneTop). */
-  @media (max-width: 700px) { main { --pad-top: 2.5rem; --pad-side: 1rem; } }
+  /* A phone: a little room under the top bar (the layout keeps the bar's own height free). */
+  @media (max-width: 700px) { main { padding-top: 1rem; } }
   .menuloading > :global(.mskel) { opacity: 0.45; }
   .dim { color: var(--dim); }
   code { font-size: 0.85em; }

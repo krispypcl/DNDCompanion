@@ -36,7 +36,7 @@
   import NotFound from '#lib/components/NotFound.svelte';
   import { pageTitle } from '#lib/title.ts';
   import SheetSkeleton from '#lib/components/SheetSkeleton.svelte';
-  import { assetsReady } from '#lib/assets.ts';
+  import { assetsReady, imagesSettled } from '#lib/assets.ts';
   import D20Loader from '#lib/components/D20Loader.svelte';
   import SaveButton from '#lib/components/SaveButton.svelte';
   import { beforeNavigate, goto } from '$app/navigation';
@@ -241,10 +241,13 @@
   });
   /** Its pictures and name fonts are here (lib/assets): until then the die keeps rolling over the outline. */
   let assetsDone = $state(false);
+  /** The sheet itself, drawn but hidden under its outline until its pictures have settled. */
+  let holdEl = $state<HTMLElement>();
   $effect(() => {
-    if (loading || loadError || !definition || assetsDone) return;
+    if (loading || loadError || !definition || assetsDone || !holdEl) return;
+    const el = holdEl;
     let live = true;
-    void assetsReady([portraitSrc, banner], [nameFace]).then(() => { if (live) assetsDone = true; });
+    void Promise.all([assetsReady([portraitSrc, banner], [nameFace]), imagesSettled(el)]).then(() => { if (live) assetsDone = true; });
     return () => (live = false);
   });
   const initAdv = $derived(definition ? advantageFrom(definition, 'init') : []);
@@ -794,12 +797,10 @@
   <!-- The sheet's outline, dimmed, with the die rolling over it. On a phone its two bars are
        already there, so moving here from another page they hold still instead of blinking out. -->
   {#if phoneOn}
-    <div class="loadtop">
-      <PhoneTop>
+    <PhoneTop>
         {#snippet left()}<ModeToggle />{/snippet}
         {#snippet right()}<BackLink href={cameFrom ? `${base}/c/${cameFrom}` : `${base}/`} title={cameFrom ? 'Back to the campaign' : 'Back to your characters'} />{/snippet}
-      </PhoneTop>
-    </div>
+    </PhoneTop>
     <PhoneBar places={phonePlaces} active={place} onchoose={goPlace} />
   {/if}
   <div class="loading">
@@ -809,19 +810,25 @@
                  onlanded={() => (revealed = true)} />
     </div>
   </div>
+{/if}
+{#if loading}
+  <!-- Nothing yet: the outline above is all there is. -->
 {:else if loadError === 'notfound'}
-  <NotFound tab="Sheet not found" title="No sheet here!" message="This sheet has vanished like a rogue in the night. It may have been deleted, kept private by its player, or the link is off by a letter, so check it with whoever sent it." />
+  {#if revealed}<NotFound tab="Sheet not found" title="No sheet here!" message="This sheet has vanished like a rogue in the night. It may have been deleted, kept private by its player, or the link is off by a letter, so check it with whoever sent it." />{/if}
 {:else if loadError}
-  <NotFound tab="Sheet didn’t load" title="That’s a critical fail!" message={loadError} />
+  {#if revealed}<NotFound tab="Sheet didn’t load" title="That’s a critical fail!" message={loadError} />{/if}
 {:else if sheet && definition && sheetState}
+  <!-- Drawn as soon as it has loaded, but hidden under the outline (and out of reach) until its
+       pictures have settled, so it appears whole, nothing popping in after. -->
+  <div class="holder" class:holding={!revealed} inert={!revealed} bind:this={holdEl}>
   <!-- The theme is scoped here, not to :root, so a campaign view can later show
        several characters in their own colors at once. -->
-  <div class="sheet themed" class:entering class:bannered={banner} style={themeStyle(themePreview ?? definition.identity.theme)}
+  <div class="sheet themed" class:entering={entering && revealed} class:bannered={banner} style={themeStyle(themePreview ?? definition.identity.theme)}
        data-place={phoneOn ? place : undefined} data-moved={phoneOn && moved ? '' : undefined}>
     {#if phoneOn}
       <!-- The top bar, held at the top of the screen: Edit, the cog, and the mode at the left, the
            app's mark in the middle, and the link, the PDF, and Back at the right. -->
-      <PhoneTop>
+      <PhoneTop themeCss={themeStyle(themePreview ?? definition.identity.theme)}>
         {#snippet left()}{#if isOwner}{@render editButton()}{/if}{@render appearanceButton()}<ModeToggle />{/snippet}
         {#snippet right()}
           <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
@@ -1455,7 +1462,8 @@
     <SaveAlert />
     <!-- Floating, so saying a word costs the header nothing. -->
     <SaveIndicator />
-    {#if phoneOn}<PhoneBar places={phonePlaces} active={place} onchoose={goPlace} />{/if}
+    {#if phoneOn}<PhoneBar places={phonePlaces} active={place} onchoose={goPlace} themeCss={themeStyle(themePreview ?? definition.identity.theme)} />{/if}
+  </div>
   </div>
   <!-- Only the printer shows this. Private writing a visitor cannot read is
        not passed in, so it is never on their paper either. -->
@@ -1470,8 +1478,8 @@
   .entering .identity { animation: sheetFill 0.3s ease-out backwards; }
 
   .loading { position: relative; }
-  /* The loading top bar sits where the sheet's will, in the sheet's own padding. */
-  .loadtop { padding: 0.75rem 0.75rem 0; }
+  /* The sheet while its pictures settle: laid out and loading, under the outline, unseen. */
+  .holder.holding { position: absolute; top: 0; left: 0; right: 0; visibility: hidden; pointer-events: none; }
   .loading > :global(.skel) { opacity: 0.45; }
     /* Not positioned: the banner inside it is meant to escape this column and
      run the width of the page. */
