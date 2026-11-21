@@ -168,6 +168,34 @@
 [data-place] [data-places] [data-places] { animation: none; }
 @keyframes place-in { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { [data-place][data-moved] [data-places] { animation: none; } }
+/* A phone's top bar (the sheet and the campaign page): buttons at the left,
+   the app's mark in the middle, buttons and Back at the right. It stays at
+   the top of the screen from edge to edge (the page's own padding, given as
+   --pad-top and --pad-side, is pulled back); once the page runs under it
+   (.stuck, from the .topmark above it), it takes a nearly solid ground (no
+   frost: a phone redrawing a blur on every scroll stutters) and a line
+   along its foot. */
+.topmark { height: 0; }
+.phonetop {
+  position: sticky; top: 0; z-index: 30; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 0.5rem;
+  margin: calc(-1 * var(--pad-top, 0.75rem)) calc(-1 * var(--pad-side, 0.75rem)) 1rem;
+  padding: calc(0.75rem + env(safe-area-inset-top, 0px)) max(var(--pad-side, 0.75rem), env(safe-area-inset-right, 0px))
+           0.5rem max(var(--pad-side, 0.75rem), env(safe-area-inset-left, 0px));
+}
+.phonetop::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: 0;
+  border-bottom: 1px solid color-mix(in oklab, var(--line) 80%, transparent);
+  background: color-mix(in oklab, var(--bg) 96%, transparent);
+  transition: opacity 0.2s cubic-bezier(0.33, 1, 0.68, 1);
+}
+.phonetop.stuck::before { opacity: 1; }
+.phonetop > .topleft, .phonetop > .topright { display: flex; align-items: center; gap: 0.375rem; min-width: 0; }
+.phonetop > .topright { justify-content: flex-end; }
+.phonetop > .toplogo { display: grid; place-items: center; color: var(--text); }
+/* Every button in it one square, a little bigger than a computer's, for a
+   thumb. (The class in :is outweighs a component's own size.) */
+.phonetop > div > :is(button, a, .phonetop-btn) { box-sizing: border-box; width: 2.25rem; height: 2.25rem; min-height: 0; padding: 0; }
+
 /* Out of sight but still there (and still playing, for the music): a part
    that has to keep running while its place is elsewhere. */
 .offstage {

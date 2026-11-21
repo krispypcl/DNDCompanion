@@ -43,7 +43,7 @@
   import { onMount, tick, untrack } from 'svelte';
   import { phone } from '#lib/stores/phone.svelte.ts';
   import PhoneBar, { type PhonePlace } from '#lib/components/PhoneBar.svelte';
-  import { vitalStatus } from '#lib/rules/hp.ts';
+  import BackLink from '#lib/components/BackLink.svelte';
   import Flash from '#lib/components/Flash.svelte';
   import ShareButton from '#lib/components/ShareButton.svelte';
   import Tabs from '#lib/components/Tabs.svelte';
@@ -246,11 +246,10 @@
    * A phone: the sheet in places, chosen on a bar at the bottom, in place of
    * one long column. Play is the fight (hit points, defenses, conditions,
    * the Combat tab); Abilities the six and the skills; Spells, Gear and
-   * Features their tabs; More the rest of the tabs and the sheet's own tools
-   * (share, PDF, download, light or dark). Search on the bar opens the search.
-   * A top bar holds Edit and Undo (left) and Back (right); scrolled away, a
-   * slim strip keeps the name, hit points, Edit and Undo in sight. The same
-   * parts as the desktop's, shown a place at a time.
+   * Features their tabs; More the rest of the tabs. Search on the bar opens
+   * the search. A top bar, held at the top while the page scrolls, has Edit,
+   * the cog and light or dark (left) and share, PDF and Back (right). The
+   * same parts as the desktop's, shown a place at a time.
    */
   type Place = 'play' | 'abilities' | 'spells' | 'gear' | 'features' | 'more';
   const MORE_TABS = ['Trackers', 'Character', 'Notes', 'Backstory'];
@@ -295,17 +294,15 @@
     { key: 'features', label: 'Features', icon: 'features' },
     { key: 'more', label: 'More', icon: 'more' }
   ]);
-  /** The top bar scrolled away: the slim strip shows instead. */
-  let topGone = $state(false);
+  /** The page scrolled under the top bar: it takes its solid ground and edge (a mark just above it says when). */
+  let topStuck = $state(false);
   let topEl = $state<HTMLElement>();
   $effect(() => {
     if (!phoneOn || !topEl || typeof IntersectionObserver === 'undefined') return;
-    const watch = new IntersectionObserver(([e]) => (topGone = !e.isIntersecting));
+    const watch = new IntersectionObserver(([e]) => (topStuck = !e.isIntersecting));
     watch.observe(topEl);
     return () => watch.disconnect();
   });
-  const stripShown = $derived(phoneOn && topGone);
-  const phoneVital = $derived(sheetState && definition ? vitalStatus(sheetState.hpCurrent, definition.combat?.hpMax ?? 0, sheetState.deathSaves) : null);
   const castParts = $derived(definition && castAb
     ? [{ label: `${castAb.toUpperCase()} modifier`, value: modifierOf(definition, castAb) }, { label: 'Proficiency', value: proficiencyBonus(definition) }]
     : []);
@@ -799,26 +796,17 @@
   <div class="sheet themed" class:entering class:bannered={banner} style={themeStyle(themePreview ?? definition.identity.theme)}
        data-place={phoneOn ? place : undefined} data-moved={phoneOn && moved ? '' : undefined}>
     {#if phoneOn}
-      <!-- Who, and how hurt, always in sight on a phone; its hit points lead to Play. -->
-      <div class="phonestrip" class:shown={stripShown} aria-hidden={!stripShown} inert={!stripShown}>
-        <span class="strippic">
-          <ClassIcon cls={mainClass(definition)} />
-          {#if portraitSrc}<img src={portraitSrc} alt="" />{/if}
-        </span>
-        <span class="stripname">{definition.identity.name || sheet.name || 'Unnamed'}</span>
-        <!-- The top bar's Edit comes along. -->
-        {#if isOwner}{@render editButton()}{/if}
-        <button class="hppill {phoneVital?.vital ?? ''}" onclick={() => goPlace('play')} aria-label="Hit points {sheetState.hpCurrent} of {definition.combat?.hpMax ?? 0}, {phoneVital?.label ?? ''}">
-          <b>{sheetState.hpCurrent}{#if sheetState.hpTemp}<span class="temp">+{sheetState.hpTemp}</span>{/if}<small>&nbsp;/ {definition.combat?.hpMax ?? 0}</small></b>
-          <span class="pillbar"><i style:width="{Math.max(0, Math.min(100, ((sheetState.hpCurrent) / Math.max(1, definition.combat?.hpMax ?? 0)) * 100))}%"></i></span>
-        </button>
-      </div>
-      <!-- The top bar: Edit and Undo on the left, the app's mark in the middle, Back on the right. -->
-      <div class="phonetop" bind:this={topEl}>
-        <div class="topleft">{#if isOwner}{@render editButton()}{/if}{@render appearanceButton()}</div>
+      <!-- The top bar, held at the top of the screen: Edit, the cog and the mode at the left, the
+           app's mark in the middle, the link, the PDF and Back at the right. -->
+      <div class="topmark" bind:this={topEl} aria-hidden="true"></div>
+      <div class="phonetop" class:stuck={topStuck}>
+        <div class="topleft">{#if isOwner}{@render editButton()}{/if}{@render appearanceButton()}<ModeToggle /></div>
         <span class="toplogo"><Logo size={26} /></span>
-        <a class="back topback" href={cameFrom ? `${base}/c/${cameFrom}` : `${base}/`}
-           title={cameFrom ? 'Back to the campaign' : 'Back to your characters'}>Back</a>
+        <div class="topright">
+          <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
+          {#if isOwner}<SaveButton onsave={makePdf} busy={makingPdf} saved={pdfSaved} />{/if}
+          <BackLink href={cameFrom ? `${base}/c/${cameFrom}` : `${base}/`} title={cameFrom ? 'Back to the campaign' : 'Back to your characters'} />
+        </div>
       </div>
     {/if}
     {#if banner}<Banner url={banner} />{/if}
@@ -938,8 +926,7 @@
         <!-- One row, as the campaign's: Back, Edit and the cog, then the sheet's tools. -->
         <div class="ctlrow">
         <!-- Opened from a campaign (?from=<campaign>): back goes to that campaign. -->
-        <a class="back" href={cameFrom ? `${base}/c/${cameFrom}` : `${base}/`}
-           title={cameFrom ? 'Back to the campaign' : 'Back to your characters'}>Back</a>
+        <BackLink href={cameFrom ? `${base}/c/${cameFrom}` : `${base}/`} title={cameFrom ? 'Back to the campaign' : 'Back to your characters'} />
         {#if isOwner}{@render editButton()}{/if}
         {@render appearanceButton()}
         <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
@@ -963,20 +950,13 @@
       {/if}
     </header>
 
-    {#if phoneOn}
-      <!-- The sheet's own tools, which sit in the header on a computer. -->
+    {#if phoneOn && !isOwner}
+      <!-- For a visitor, when the sheet was made and last touched, which sit in the header on a computer. -->
       <div class="phonetools" data-places="more">
-        <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
-        {#if isOwner}
-          <SaveButton onsave={makePdf} busy={makingPdf} saved={pdfSaved} />
-        {/if}
-        <ModeToggle />
-        {#if !isOwner}
-          <dl class="stamps">
-            <div><dt>Created</dt><dd>{friendlyDate(sheet.created_at)}</dd></div>
-            <div><dt>Last updated</dt><dd>{friendlyDate(updated)}</dd></div>
-          </dl>
-        {/if}
+        <dl class="stamps">
+          <div><dt>Created</dt><dd>{friendlyDate(sheet.created_at)}</dd></div>
+          <div><dt>Last updated</dt><dd>{friendlyDate(updated)}</dd></div>
+        </dl>
       </div>
     {/if}
 
@@ -1674,15 +1654,9 @@
   /* Editing: lit in the accent, its check showing. */
   .edit[aria-pressed='true'] { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
   .edit[aria-pressed='true']:hover { border-color: var(--a); background: var(--a-edge); color: var(--text); }
-  .edit, .back { transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease; }
-  .edit:active, .back:active { transform: translateY(1px); }
-  .edit:focus-visible, .back:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
-  .back {
-    background: var(--raised); border: 1px solid var(--line); color: var(--text);
-    border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font-size: 0.8125rem;
-    text-decoration: none; flex: none; line-height: 1.5;
-  }
-  .back:hover { border-color: var(--a-edge); color: var(--a); }
+  .edit { transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease; }
+  .edit:active { transform: translateY(1px); }
+  .edit:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
   .stamps { display: flex; gap: 1rem; margin: 0 0.5rem 0 0; }
   .stamps div { text-align: right; }
   .stamps dt {
@@ -1926,7 +1900,7 @@
    * A phone: the portrait at the left, the name and the class, species and
    * background beside it, together in the middle of its height; the
    * campaign under them across the header, so a long name has the room; then
-   * the music. The controls are in the top bar and in More. (Wrapped as a
+   * the music. The controls are in the top bar. (Wrapped as a
    * row, the portrait sat alone above the name.)
    */
   @media (max-width: 700px) {
@@ -1954,50 +1928,7 @@
   .sheet[data-place='play'] .rail-right { order: -1; }
   .sheet[data-place]:not([data-place='play']) :global(.sheetinit) { margin-top: 0.25rem; }
 
-  /* The slim strip: who, and how hurt. It slides down from the top. */
-  .phonestrip {
-    position: fixed; left: 0; right: 0; top: 0; z-index: 35; display: flex; align-items: center; gap: 0.625rem;
-    padding: calc(0.5rem + env(safe-area-inset-top, 0px)) max(0.875rem, env(safe-area-inset-right, 0px)) 0.5rem max(0.875rem, env(safe-area-inset-left, 0px));
-    transform: translateY(-110%); transition: transform 0.26s cubic-bezier(0.33, 1, 0.68, 1);
-  }
-  .phonestrip.shown { transform: none; }
-  .phonestrip::before {
-    content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-    border-bottom: 1px solid color-mix(in oklch, var(--line) 80%, transparent);
-    /* Nearly solid, no frost: a phone redrawing a blur under it on every scroll is what stutters. */
-    background: color-mix(in oklch, var(--surface) 97%, transparent);
-  }
-  .strippic {
-    position: relative; flex: none; width: 2.25rem; height: 2.25rem; border-radius: var(--r-sm); overflow: hidden;
-    display: grid; place-items: center; border: 1px solid var(--a-edge); background: var(--raised); color: var(--a);
-  }
-  .strippic :global(svg) { width: 1.25rem; height: 1.25rem; }
-  .strippic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .stripname { flex: 1; min-width: 0; font-weight: 650; font-size: 1rem; color: var(--a); overflow-wrap: anywhere; line-height: 1.2; }
-  .phonestrip .iconbtn { flex: none; }
-  /* The top bar: Edit and Undo at the left, the mark in the middle, Back at the right. */
-  .phonetop { position: relative; z-index: 2; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
-  .topleft { display: flex; align-items: center; gap: 0.375rem; }
-  .toplogo { display: grid; place-items: center; color: var(--text); }
-  .topback { justify-self: end; display: inline-grid; place-items: center; box-sizing: border-box; height: 2.25rem; padding: 0 0.875rem; }
-  /* A phone's are a little bigger, for a thumb. */
-  .phonetop .iconbtn, .phonestrip .iconbtn { width: 2.25rem; height: 2.25rem; }
-  /* More's tools: the sheet's own buttons, in a row in the middle. */
-  .phonetools { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 0.75rem; }
-  .phonetools .stamps { flex-basis: 100%; justify-content: center; }
-  .hppill {
-    flex: none; display: grid; justify-items: end; gap: 0.25rem; padding: 0.3125rem 0.625rem; font: inherit; color: var(--text); cursor: pointer;
-    border: 1px solid var(--line); border-radius: 0.625rem; background: var(--raised);
-    transition: border-color 0.15s ease, transform 0.08s ease;
-  }
-  .hppill:active { transform: translateY(1px); }
-  .hppill:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
-  .hppill b { font-size: 1rem; font-variant-numeric: tabular-nums; line-height: 1; }
-  .hppill small { font-size: 0.6875rem; font-weight: 500; color: var(--dim); }
-  .hppill .temp { font-size: 0.75rem; color: var(--dim); margin-left: 0.125rem; }
-  .pillbar { width: 4rem; height: 4px; border-radius: 2px; background: var(--track); overflow: hidden; }
-  .pillbar i { display: block; height: 100%; background: var(--a); transition: width 0.4s cubic-bezier(0.33, 1, 0.68, 1); }
-  .hppill:is(.bloodied, .critical, .down, .dead) { border-color: color-mix(in oklab, var(--hurt-red) 55%, var(--line)); }
-  .hppill:is(.bloodied, .critical, .down, .dead) b { color: var(--hurt-red); }
-  .hppill:is(.bloodied, .critical, .down, .dead) .pillbar i { background: var(--hurt-red); }
+  /* More's top, for a visitor: when the sheet was made and last touched. */
+  .phonetools { display: flex; justify-content: center; margin-bottom: 0.75rem; }
+  .phonetools .stamps { margin: 0; }
 </style>
