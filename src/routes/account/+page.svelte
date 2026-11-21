@@ -314,15 +314,15 @@
       {#if profileMsg}<p class="msg" class:bad={!profileMsg.ok} role="status">{profileMsg.text}</p>{/if}
       <!-- Signing out at the left, saving at the right, on one line. -->
       <div class="row split">
-        <button type="button" class="btn" onclick={() => leave(false)}>Sign out</button>
+        <button type="button" class="btn" onclick={() => leave(false)}>Sign Out</button>
         {#if confirmEverywhere}
-          <button type="button" class="btn danger" onclick={() => leave(true)}>Yes, sign out everywhere</button>
+          <button type="button" class="btn danger" onclick={() => leave(true)}>Yes, Sign Out Everywhere</button>
         {:else}
-          <button type="button" class="btn" onclick={() => (confirmEverywhere = true)}>Sign out everywhere</button>
+          <button type="button" class="btn" onclick={() => (confirmEverywhere = true)}>Sign Out Everywhere</button>
         {/if}
         <InfoTip label="About signing out everywhere">Signing out everywhere ends every session on every device, this one included,
           which helps after signing in on someone else's phone.</InfoTip>
-        <button class="btn primary save" disabled={savingProfile}>{savingProfile ? 'Saving' : 'Save profile'}</button>
+        <button class="btn primary save" disabled={savingProfile}>{savingProfile ? 'Saving' : 'Save Profile'}</button>
       </div>
     </form>
 
@@ -340,7 +340,7 @@
       <input id="pw2" type="password" bind:value={pw2} autocomplete="new-password" />
       <div class="row">
         {#if pwMsg}<span class="msg" class:bad={!pwMsg.ok} role="status">{pwMsg.text}</span>{/if}
-        <button class="btn primary" disabled={savingPw || !pw}>{savingPw ? 'Changing' : 'Change password'}</button>
+        <button class="btn primary" disabled={savingPw || !pw}>{savingPw ? 'Changing' : 'Change Password'}</button>
       </div>
     </form>
 
@@ -464,9 +464,9 @@
                  placeholder={PHRASE} />
           {#if deleteMsg}<p class="msg bad" role="alert">{deleteMsg}</p>{/if}
           <div class="row">
-            <button type="button" class="btn" onclick={() => { deletingOpen = false; typed = ''; deleteMsg = null; }}>Keep my account</button>
+            <button type="button" class="btn" onclick={() => { deletingOpen = false; typed = ''; deleteMsg = null; }}>Keep My Account</button>
             <button class="btn danger solid" disabled={typed !== PHRASE || deleting}>
-              {deleting ? 'Deleting' : 'Delete everything'}
+              {deleting ? 'Deleting' : 'Delete Everything'}
             </button>
           </div>
         </form>

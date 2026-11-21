@@ -875,8 +875,8 @@
       await signIn(v.email, v.password);
     }}
   >
-    <a class="smallbtn" href="{base}/signup">Create an account</a>
-    <a class="smallbtn" href="{base}/reset">Forgot password</a>
+    <a class="smallbtn" href="{base}/signup">Create an Account</a>
+    <a class="smallbtn" href="{base}/reset">Forgot Password</a>
   </AuthForm>
 {:else}
 <main class:switched>
@@ -935,7 +935,7 @@
       {:else if !me.avatarUrl}
         <div class="hello slim" transition:slide={{ duration: 260 }}>
           <span>Add a profile picture, {me.displayName.split(' ')[0]}? It is how the rest of the table spots you.</span>
-          <a class="smallbtn accent" href="{base}/account">Add one</a>
+          <a class="smallbtn accent" href="{base}/account">Add One</a>
         </div>
       {/if}
     {/if}
@@ -982,9 +982,9 @@
                       title="Bring back a character from its PDF. Edits made in the PDF don’t come back, and a PDF saved again from another app may have lost the sheet.">
                 {importing ? 'Importing' : 'Import'}
               </button>
-              <button onclick={create} disabled={creating}>{creating ? 'Creating' : phone.current ? 'New character' : 'New sheet'}</button>
+              <button onclick={create} disabled={creating}>{creating ? 'Creating' : phone.current ? 'New Character' : 'New Sheet'}</button>
             {:else}
-              <button onclick={() => (naming = true)} disabled={naming}>New campaign</button>
+              <button onclick={() => (naming = true)} disabled={naming}>New Campaign</button>
             {/if}
           </div>
           {#if !phone.current}

@@ -569,7 +569,7 @@
 {#snippet inviteButton(bare: boolean)}
   <button class="smallbtn invitebtn" class:done={copied === 'invite'} onclick={() => copy(inviteLink, 'invite')} disabled={!inviteLink}
           title="Copies the invite link: it lets a player's character join this campaign"
-          aria-label={bare ? (copied === 'invite' ? 'Invite link copied' : 'Invite a player') : undefined}>
+          aria-label={bare ? (copied === 'invite' ? 'Invite link copied' : 'Invite a Player') : undefined}>
     <svg viewBox="0 0 24 24" width={bare ? 17 : 15} height={bare ? 17 : 15} aria-hidden="true">
       <g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
         {#if copied === 'invite'}<path d="m5 12.5 4.5 4.5L19 7.5" stroke-width="2" />{:else}
@@ -577,7 +577,7 @@
         {/if}
       </g>
     </svg>
-    {#if !bare}{copied === 'invite' ? 'Link copied!' : 'Invite a player'}{/if}
+    {#if !bare}{copied === 'invite' ? 'Link Copied!' : 'Invite a Player'}{/if}
   </button>
 {/snippet}
 {#snippet here()}<span class="herenote"><i class="here-dot"></i>{hereLine}</span>{/snippet}
@@ -757,7 +757,7 @@
     </div>
 
     {#if phoneOn && place === 'initiative' && !(!ended && combatants.length && (isDm || fighting || init.asking))}
-      <p class="phoneempty" in:fade={{ duration: 200 }}>No fight right now. {isDm ? 'Call for initiative here once the party is in.' : 'When your DM calls for initiative, you roll yours here.'}</p>
+      <p class="phoneempty" in:fade={{ duration: 200 }}>No fight right now. {isDm ? 'Call for Initiative here once the party is in.' : 'When your DM calls for initiative, you roll yours here.'}</p>
     {/if}
     {#if phoneOn && place === 'sight' && !(isDm ? dmRevealed.length : revealed.length)}
       <p class="phoneempty" in:fade={{ duration: 200 }}>{isDm ? 'Nothing in sight yet. Reveal a monster or NPC with its eye and the table sees it here.' : 'Nothing in sight yet. Monsters and NPCs your DM reveals show up here.'}</p>
@@ -768,11 +768,11 @@
           {#if place === 'initiative' && !ended}
             {#if isDm && fighting}
               <button class="smallbtn" style="flex: 0 0 auto; padding-inline: 1.125rem" onclick={() => moveTurn(previousTurn(combatants, turnNow()))} aria-label="Previous turn">Back</button>
-              <button class="smallbtn accent" onclick={() => moveTurn(nextTurn(combatants, turnNow()))}>Next turn</button>
+              <button class="smallbtn accent" onclick={() => moveTurn(nextTurn(combatants, turnNow()))}>Next Turn</button>
             {:else if isDm && init.asking}
-              <button class="smallbtn accent" onclick={startFight} disabled={!combatants.some((c) => c.value !== null)}>Start the fight</button>
+              <button class="smallbtn accent" onclick={startFight} disabled={!combatants.some((c) => c.value !== null)}>Start the Fight</button>
             {:else if isDm && combatants.length}
-              <button class="smallbtn accent" onclick={callForInitiative}><svg class="dockdie" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 2.5 20.5 7.4v9.2L12 21.5 3.5 16.6V7.4zM12 7.5l4.3 7.4H7.7zM12 2.5v5M20.5 7.4l-4.2 7.5M3.5 7.4l4.2 7.5M7.7 14.9 3.5 16.6M16.3 14.9l4.2 1.7M7.7 14.9 12 21.5l4.3-6.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" /></svg>Call for initiative</button>
+              <button class="smallbtn accent" onclick={callForInitiative}><svg class="dockdie" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 2.5 20.5 7.4v9.2L12 21.5 3.5 16.6V7.4zM12 7.5l4.3 7.4H7.7zM12 2.5v5M20.5 7.4l-4.2 7.5M3.5 7.4l4.2 7.5M7.7 14.9 3.5 16.6M16.3 14.9l4.2 1.7M7.7 14.9 12 21.5l4.3-6.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" /></svg>Call for Initiative</button>
             {:else if !isDm && init.asking && mineToRoll.length}
               <button class="smallbtn accent" onclick={() => rollOne(mineToRoll[0].key)}><svg class="dockdie" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 2.5 20.5 7.4v9.2L12 21.5 3.5 16.6V7.4zM12 7.5l4.3 7.4H7.7zM12 2.5v5M20.5 7.4l-4.2 7.5M3.5 7.4l4.2 7.5M7.7 14.9 3.5 16.6M16.3 14.9l4.2 1.7M7.7 14.9 12 21.5l4.3-6.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" /></svg>Roll initiative{mineToRoll.length > 1 ? ` for ${mineToRoll[0].name}` : ''}</button>
             {/if}

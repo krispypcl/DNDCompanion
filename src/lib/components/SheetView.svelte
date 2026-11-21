@@ -846,7 +846,7 @@
           <button class="campaign pick" data-flip="identity:campaign-at" onclick={() => (campaignOpen = true)}
                   title="Join, start, or leave a campaign">
             {@render flag()}
-            <span style:font-family={campaign ? faceFamily(campaignFace) : undefined}>{campaign?.name ?? definition.identity.campaign?.trim() ?? 'Add to a campaign'}</span>
+            <span style:font-family={campaign ? faceFamily(campaignFace) : undefined}>{campaign?.name ?? definition.identity.campaign?.trim() ?? 'Add to a Campaign'}</span>
           </button>
         {:else if campaign || definition.identity.campaign?.trim()}
           <div class="campaign" data-flip-ghost="identity:campaign" data-flip="identity:campaign-at">

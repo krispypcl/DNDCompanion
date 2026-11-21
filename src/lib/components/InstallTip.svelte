@@ -1,7 +1,7 @@
 <!--
   On a phone's main menu, until it is installed or put away: a small card
   offering the app for the home screen. Android's offer installs it in one
-  press (lib/install); otherwise "Show me" opens the steps for this phone,
+  press (lib/install); otherwise "Show Me" opens the steps for this phone,
   an iPhone's Share then Add to Home Screen, or Android's menu then Install.
 -->
 <script lang="ts">
@@ -77,7 +77,7 @@
     {#if offered}
       <button class="smallbtn accent" onclick={install}>Install</button>
     {:else}
-      <button class="smallbtn accent" onclick={() => (showing = true)} aria-haspopup="dialog">Show me</button>
+      <button class="smallbtn accent" onclick={() => (showing = true)} aria-haspopup="dialog">Show Me</button>
     {/if}
     <button class="closex" aria-label="Hide this tip" title="Hide this tip" onclick={putAway}>×</button>
   </div>
@@ -102,7 +102,7 @@
       {/each}
     </ol>
     {#if offered}
-      <button class="smallbtn accent installnow" onclick={install}>Install now</button>
+      <button class="smallbtn accent installnow" onclick={install}>Install Now</button>
     {/if}
   </DimModal>
 {/if}

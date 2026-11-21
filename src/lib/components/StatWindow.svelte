@@ -41,7 +41,7 @@
     <div class="stattools">
       {#if link}
         <a class="smallbtn quiet" href={link} target="_blank" rel="noopener noreferrer" onclick={(e) => onlink?.(e)}
-           title={onFive ? 'Its page on 5e.tools, with the lore and pictures' : 'Your link for it'}>{onFive ? 'Open on 5e.tools' : 'Open your link'}</a>
+           title={onFive ? 'Its page on 5e.tools, with the lore and pictures' : 'Your link for it'}>{onFive ? 'Open on 5e.tools' : 'Open Your Link'}</a>
       {/if}
       <button type="button" class="closex" aria-label="Close" onclick={onclose}>×</button>
     </div>

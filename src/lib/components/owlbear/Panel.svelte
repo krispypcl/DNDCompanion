@@ -350,7 +350,7 @@
   <form class="add" onsubmit={(e) => { e.preventDefault(); void bringIn(); }}>
     <input bind:value={draft} use:focusIf={!first} aria-label="A campaign’s link" placeholder="Paste your campaign’s link"
            onkeydown={(e) => { if (e.key === 'Escape' && !first) toggleSwap(); }} />
-    <button class="go" disabled={!draft.trim() || addBusy}>{addBusy ? 'Bringing it in' : first ? 'Bring in' : 'Swap'}</button>
+    <button class="go" disabled={!draft.trim() || addBusy}>{addBusy ? 'Bringing It In' : first ? 'Bring in' : 'Swap'}</button>
     {#if !first}<button type="button" class="smallbtn" onclick={toggleSwap}>Cancel</button>{/if}
     <InfoTip label="Where to find the link">
       On the campaign’s page, copy its link from the top of the page, or use its invite link. Every character in it
@@ -387,12 +387,12 @@
   {#if ids?.length}
     <button class="btn" onclick={() => find(ids)} transition:fade={appear()}>
       <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="12" cy="12" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
-      Find token
+      Find Token
     </button>
   {/if}
   <button class="btn" disabled={busy === key} onclick={() => place(key, put)}>
     <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="12" cy="10" r="5.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M12 15.5V21M9 21h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
-    {busy === key ? 'Placing' : ids?.length ? 'Another token' : 'Place token'}
+    {busy === key ? 'Placing' : ids?.length ? 'Another Token' : 'Place Token'}
   </button>
 {/snippet}
 
@@ -498,7 +498,7 @@
                   <div class="acts">
                     <a class="btn" href={obr?.sheetUrl(s.id)} target="_blank" rel="noopener noreferrer">
                       <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 3.5h9l3 3v14H6zM9 9h6M9 12.5h6M9 16h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                      Open sheet
+                      Open Sheet
                     </a>
                     {@render tokenButtons(s.id, onMap[s.id], () => obr!.placeToken(s))}
                   </div>
@@ -548,7 +548,7 @@
                     <div class="acts">
                       <button class="btn" onclick={() => obr?.openStats(c.campaign_id, c.id)}>
                         <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 3.5h9l3 3v14H6zM9 9h6M9 12.5h6M9 16h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                        Stat block
+                        Stat Block
                       </button>
                       {@render tokenButtons(c.id, creaturesOnMap[c.id], () => obr!.placeCreatureToken(c))}
                     </div>
@@ -576,7 +576,7 @@
                 {/each}
               </div>
               <div class="row">
-                <button type="button" class="smallbtn" onclick={() => (withEmail = true)}>Use an email instead</button>
+                <button type="button" class="smallbtn" onclick={() => (withEmail = true)}>Use an Email Instead</button>
                 <button type="button" class="smallbtn" onclick={() => { signing = false; authError = null; }}>Cancel</button>
                 <InfoTip label="About signing in here">A small window opens for {services.map((p) => PROVIDER_NAMES[p]).join(' or ')}; once you’re in, it closes and you’re signed in here. If nothing opens, allow pop-ups for owlbear.rodeo.</InfoTip>
               </div>
@@ -585,7 +585,7 @@
                 <input type="email" bind:value={email} placeholder="Email" autocomplete="email" aria-label="Email" required use:focusIf={true} />
                 <input type="password" bind:value={password} placeholder="Password" autocomplete="current-password" aria-label="Password" required />
                 <div class="row">
-                  <button class="go" disabled={authBusy}>{authBusy ? 'Signing in' : 'Sign in'}</button>
+                  <button class="go" disabled={authBusy}>{authBusy ? 'Signing in' : 'Sign In'}</button>
                   {#if services.length}<button type="button" class="smallbtn" onclick={() => (withEmail = false)}>Back</button>{/if}
                   <button type="button" class="smallbtn" onclick={() => { signing = false; withEmail = false; authError = null; }}>Cancel</button>
                 </div>
@@ -599,14 +599,14 @@
               <span class="me">Signed in as {myName}
                 <InfoTip label="What signing in does">You can change hit points from a token’s right-click menu. As the campaign’s DM, you run the fight and see your monsters and NPCs here.</InfoTip>
               </span>
-              <button class="smallbtn" onclick={() => signOut()}>Sign out</button>
+              <button class="smallbtn" onclick={() => signOut()}>Sign Out</button>
             {:else}
               <span class="me">Not signed in
                 <InfoTip label="Why sign in">
                   Sign in to change hit points from a token; the DM signs in to run the fight. Owlbear keeps its own sign-in, apart from the site’s.
                 </InfoTip>
               </span>
-              <button class="smallbtn" onclick={() => (signing = true)}>Sign in</button>
+              <button class="smallbtn" onclick={() => (signing = true)}>Sign In</button>
             {/if}
           </div>
         {/if}

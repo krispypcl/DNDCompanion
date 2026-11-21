@@ -239,7 +239,7 @@
     {#if !ended}
       <button class="smallbtn addcreature" onclick={startAdd}>
         <svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 1.5v9M1.5 6h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
-        Add a monster or NPC
+        Add a Monster or NPC
       </button>
     {/if}
   {/snippet}
@@ -421,7 +421,7 @@
 {#if editing}
   {@const e = editing}
   <DimModal id="creature-edit" broad onclose={() => (editing = null)}
-            title={e.id ? `Change ${e.draft.name || 'it'}` : e.homebrewId ? `Change ${e.draft.name || 'it'} in your homebrew` : 'Add a monster or NPC'}>
+            title={e.id ? `Change ${e.draft.name || 'it'}` : e.homebrewId ? `Change ${e.draft.name || 'it'} in your homebrew` : 'Add a Monster or NPC'}>
     {#if !e.id && !e.homebrewId}
       <div class="ways" role="tablist" aria-label="Where it comes from">
         {#each WAYS as [way, label] (way)}

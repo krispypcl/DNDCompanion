@@ -36,5 +36,5 @@
     return 'Check your email to confirm the address, then sign in.';
   }}
 >
-  <a class="smallbtn" href="{base}/login">Already have an account</a>
+  <a class="smallbtn" href="{base}/login">Already Have an Account</a>
 </AuthForm>

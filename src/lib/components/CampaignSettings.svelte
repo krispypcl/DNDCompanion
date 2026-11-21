@@ -106,7 +106,7 @@
     <div class="row">
       <span class="label">Owlbear Rodeo room</span>
       {#if room}
-        <a class="smallbtn roomlink" href={room} target="_blank" rel="noopener noreferrer">Open the room</a>
+        <a class="smallbtn roomlink" href={room} target="_blank" rel="noopener noreferrer">Open the Room</a>
       {:else}
         <p class="value dim">Not set yet</p>
       {/if}
@@ -140,7 +140,7 @@
         <div class="inline">
           <input readonly value={inviteLink || 'Fetching the link'} aria-label="Invite link" onfocus={(e) => e.currentTarget.select()} />
           <button class="smallbtn accent" onclick={copyInvite} disabled={!inviteLink}>{copied ? 'Copied!' : 'Copy'}</button>
-          <button class="smallbtn" onclick={onnewinvite} title="Make a new link; the old one stops working">New link</button>
+          <button class="smallbtn" onclick={onnewinvite} title="Make a new link; the old one stops working">New Link</button>
         </div>
         {#if copyFailed}<p class="hint bad" role="status">The clipboard said no! Select the link and copy it yourself.</p>{/if}
       </div>
@@ -200,19 +200,19 @@
       <div class="ending">
         {#if confirming === 'end'}
           <span class="ask">End this campaign? It moves to your archived campaigns, its characters stay in it, and you can reopen it later.</span>
-          <button class="smallbtn danger" onclick={async () => { await onended(true); confirming = null; }}>End it</button>
-          <button class="smallbtn quiet" onclick={() => (confirming = null)}>Keep playing</button>
+          <button class="smallbtn danger" onclick={async () => { await onended(true); confirming = null; }}>End It</button>
+          <button class="smallbtn quiet" onclick={() => (confirming = null)}>Keep Playing</button>
         {:else if confirming === 'delete'}
           <span class="ask">Delete this campaign for good? Its characters stay, out of any campaign.</span>
-          <button class="smallbtn danger" onclick={ondelete}>Delete it</button>
+          <button class="smallbtn danger" onclick={ondelete}>Delete It</button>
           <button class="smallbtn quiet" onclick={() => (confirming = null)}>Keep</button>
         {:else}
           {#if ended}
-            <button class="smallbtn" onclick={() => onended(false)}>Reopen campaign</button>
+            <button class="smallbtn" onclick={() => onended(false)}>Reopen Campaign</button>
           {:else}
-            <button class="smallbtn" onclick={() => (confirming = 'end')}>End campaign</button>
+            <button class="smallbtn" onclick={() => (confirming = 'end')}>End Campaign</button>
           {/if}
-          <button class="smallbtn dangerish" onclick={() => (confirming = 'delete')}>Delete campaign</button>
+          <button class="smallbtn dangerish" onclick={() => (confirming = 'delete')}>Delete Campaign</button>
         {/if}
       </div>
       <button class="smallbtn accent" onclick={close}>Done</button>

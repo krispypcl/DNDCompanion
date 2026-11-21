@@ -14,7 +14,7 @@ describe('InitiativeTracker', () => {
   it('folds away while no one calls for it, leaving the DM only Call for initiative', () => {
     const { container } = render(InitiativeTracker, { props: { combatants: party, turn: null, round: 0, isDm: true } });
     expect(container.querySelector('#init-fold')?.classList.contains('folded')).toBe(true);
-    expect(buttons(container)).toEqual(['Call for initiative']);
+    expect(buttons(container)).toEqual(['Call for Initiative']);
   });
 
   it('opens while calling, says who it waits on beside the buttons, and can be canceled', async () => {
@@ -24,7 +24,7 @@ describe('InitiativeTracker', () => {
     });
     expect(container.querySelector('#init-fold')?.classList.contains('folded')).toBe(false);
     expect(container.querySelector('.secend .initcall')?.textContent).toBe('Waiting on 1 character.');
-    expect(buttons(container)).toEqual(['Cancel', 'Roll the rest', 'Start']);
+    expect(buttons(container)).toEqual(['Cancel', 'Roll the Rest', 'Start']);
     await fireEvent.click(container.querySelector('.secend button')!);
     expect(oncancel).toHaveBeenCalledOnce();
   });
@@ -33,7 +33,7 @@ describe('InitiativeTracker', () => {
     const { container } = render(InitiativeTracker, { props: { combatants: party, turn: null, round: 0, isDm: true, onrollrest: () => {} } });
     await fireEvent.click(container.querySelector('.secfold')!);
     expect(container.querySelector('#init-fold')?.classList.contains('folded')).toBe(false);
-    expect(buttons(container)).toEqual(['Call for initiative', 'Roll the rest', 'Start']);
+    expect(buttons(container)).toEqual(['Call for Initiative', 'Roll the Rest', 'Start']);
   });
 
   it('tells a player to roll, with nothing folded', () => {

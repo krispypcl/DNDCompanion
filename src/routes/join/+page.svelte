@@ -80,11 +80,11 @@
       <p>Sign in to bring a character along.</p>
       <div class="row">
         <a class="btn" href="{base}/login?next={encodeURIComponent(back)}">Sign in</a>
-        <a class="btn ghost" href="{base}/signup">Create an account</a>
+        <a class="btn ghost" href="{base}/signup">Create an Account</a>
       </div>
     {:else if sheets.length === 0}
       <p>You have no characters yet. Make one, then open this link again.</p>
-      <div class="row"><a class="btn" href="{base}/">Your characters</a></div>
+      <div class="row"><a class="btn" href="{base}/">Your Characters</a></div>
     {:else}
       <p>Which character joins?</p>
       <ul>

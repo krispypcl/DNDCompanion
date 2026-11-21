@@ -34,6 +34,6 @@
     await goto(to).catch(() => location.assign(to));
   }}
 >
-  <a class="smallbtn" href="{base}/signup">Create an account</a>
-  <a class="smallbtn" href="{base}/reset">Forgot password</a>
+  <a class="smallbtn" href="{base}/signup">Create an Account</a>
+  <a class="smallbtn" href="{base}/reset">Forgot Password</a>
 </AuthForm>

@@ -118,8 +118,8 @@
                ontoggle={isDm ? () => (byHand = !folded) : undefined}>
     {#snippet info()}
       {#if isDm}
-        Call for initiative and your players roll theirs here, on the campaign page. Write any number in yourself, or
-        roll the rest. Start, then Next turn moves it on; your players see the order and whose turn it is, with only
+        Call for Initiative and your players roll theirs here, on the campaign page. Write any number in yourself, or
+        Roll the Rest. Start, then Next Turn moves it on; your players see the order and whose turn it is, with only
         the monsters and NPCs you’ve revealed. A tie goes to the higher Dexterity: drag a monster or NPC to settle it
         your way. Your players settle ties among their own characters.
       {:else}
@@ -138,20 +138,20 @@
             <button class="smallbtn" onclick={onprevious} aria-label="Previous turn" title="Previous turn">
               <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M10 3.5 5.5 8l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
             </button>
-            <button class="smallbtn accent" onclick={onnext}>Next turn</button>
+            <button class="smallbtn accent" onclick={onnext}>Next Turn</button>
           {/if}
           <button class="smallbtn quiet" onclick={onend}>End</button>
         {:else if !asking}
-          <button class="smallbtn dicebtn" onclick={onask}>{@render die(14)}Call for initiative</button>
+          <button class="smallbtn dicebtn" onclick={onask}>{@render die(14)}Call for Initiative</button>
           {#if !folded}
-            {#if onrollrest && list.some((c) => c.value === null)}<button class="smallbtn dicebtn" onclick={onrollrest}>{@render die(14)}Roll the rest</button>{/if}
+            {#if onrollrest && list.some((c) => c.value === null)}<button class="smallbtn dicebtn" onclick={onrollrest}>{@render die(14)}Roll the Rest</button>{/if}
             <button class="smallbtn accent" onclick={onstart} disabled={!list.some((c) => c.value !== null)}>Start</button>
           {/if}
         {:else}
           {#if oncancel}
             <button class="smallbtn quiet" onclick={oncancel} title="Stop calling for initiative and clear what was rolled">Cancel</button>
           {/if}
-          {#if onrollrest && list.some((c) => c.value === null)}<button class="smallbtn dicebtn" onclick={onrollrest}>{@render die(14)}Roll the rest</button>{/if}
+          {#if onrollrest && list.some((c) => c.value === null)}<button class="smallbtn dicebtn" onclick={onrollrest}>{@render die(14)}Roll the Rest</button>{/if}
           <button class="smallbtn accent" onclick={onstart} disabled={!list.some((c) => c.value !== null)}>Start</button>
         {/if}
       {/if}

@@ -122,10 +122,10 @@ describe('clearing the roll history', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Roll' }));
     await fireEvent.click(screen.getByRole('button', { name: 'Roll' }));
     expect(screen.getByRole('list', { name: 'Earlier rolls' })).toBeTruthy();
-    await fireEvent.click(screen.getByRole('button', { name: 'Clear history' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Clear History' }));
     expect(container.querySelector('.result')).toBeNull();
     expect(screen.queryByRole('list', { name: 'Earlier rolls' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Clear history' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Clear History' })).toBeNull();
     expect(container.querySelector('.formula')!.textContent).toMatch('1d6');
   });
 });

@@ -712,8 +712,8 @@
           <button onclick={() => (clearing = false)}>Keep</button>
         </span>
       {:else}
-        {#if here.length}<button class="clear" onclick={() => (clearing = true)}>Clear page</button>{/if}
-        {#if page.id !== MAIN}<button class="clear" onclick={() => (deleting = page.id)}>Delete page</button>{/if}
+        {#if here.length}<button class="clear" onclick={() => (clearing = true)}>Clear Page</button>{/if}
+        {#if page.id !== MAIN}<button class="clear" onclick={() => (deleting = page.id)}>Delete Page</button>{/if}
       {/if}
     </div>
   {/if}

@@ -39,7 +39,7 @@
       <span class="simeta">The fight starts soon.</span>
     {/if}
     <span class="sido">
-      <a class="smallbtn" class:accent={calling} href="{base}/c/{live.campaignId}">{calling ? 'Roll it on the campaign page' : 'Campaign'}</a>
+      <a class="smallbtn" class:accent={calling} href="{base}/c/{live.campaignId}">{calling ? 'Roll It on the Campaign Page' : 'Campaign'}</a>
       <InfoTip label="About the fight">Your DM runs the initiative order on the campaign page, and that’s where everyone rolls theirs, so every number comes from one place.</InfoTip>
     </span>
   </div>

@@ -28,7 +28,7 @@
       Leave, and they’re lost to the void.
     </p>
     <div class="row">
-      <button class="leave" onclick={onleave}>Leave anyway</button>
+      <button class="leave" onclick={onleave}>Leave Anyway</button>
       <button class="stay" bind:this={stay} onclick={onstay}>Stay</button>
     </div>
   </div>

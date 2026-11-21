@@ -84,7 +84,7 @@ describe('TextPanel', () => {
 
     it('adds a page after the current one', async () => {
       const { props } = mount({ editable: true, value: 'A\fB' });
-      await fireEvent.click(screen.getByRole('button', { name: 'Add page' }));
+      await fireEvent.click(screen.getByRole('button', { name: 'Add Page' }));
       expect(props.onbody).toHaveBeenCalledWith('A\f\fB');
     });
 
@@ -101,7 +101,7 @@ describe('TextPanel', () => {
 
     it('asks once before removing a page with writing on it', async () => {
       const { props } = mount({ editable: true, value: 'A\fB' });
-      const remove = screen.getByRole('button', { name: 'Remove page' });
+      const remove = screen.getByRole('button', { name: 'Remove Page' });
       await fireEvent.click(remove);
       expect(props.onbody).not.toHaveBeenCalled();
       expect(remove.textContent).toMatch(/remove it\?/i);
@@ -111,7 +111,7 @@ describe('TextPanel', () => {
 
     it('removes a blank page straight away', async () => {
       const { props } = mount({ editable: true, value: '\fB' });
-      await fireEvent.click(screen.getByRole('button', { name: 'Remove page' }));
+      await fireEvent.click(screen.getByRole('button', { name: 'Remove Page' }));
       expect(props.onbody).toHaveBeenCalledWith('B');
     });
   });

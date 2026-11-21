@@ -142,10 +142,10 @@
                  onfocus={(e) => e.currentTarget.select()} />
           <button onclick={copy} disabled={!inviteLink} data-first="">{copied ? 'Copied!' : 'Copy'}</button>
         </div>
-        <button class="quiet" onclick={resetInvite} disabled={busy}>New link</button>
+        <button class="quiet" onclick={resetInvite} disabled={busy}>New Link</button>
       {/if}
       <div class="row end">
-        <a class="btn" href="{base}/c/{campaign.id}">Open the campaign page</a>
+        <a class="btn" href="{base}/c/{campaign.id}">Open the Campaign Page</a>
         <button class="danger" onclick={leave} disabled={busy} data-first={isDm ? undefined : ''}>Leave</button>
       </div>
     {:else}

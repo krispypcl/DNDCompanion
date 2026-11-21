@@ -217,10 +217,10 @@
             onchange={(on) => onpublic(!on)}
           />
         {/if}
-        <button class="pg" onclick={add}>Add page</button>
+        <button class="pg" onclick={add}>Add Page</button>
         {#if many || pages[current].trim() !== ''}
           <button class="pg remove" class:confirming onclick={remove}>
-            {confirming ? 'Remove it?' : 'Remove page'}
+            {confirming ? 'Remove It?' : 'Remove Page'}
           </button>
         {/if}
       </div>

@@ -168,7 +168,7 @@
               </button>
               {#if r.kind === 'homebrew' || (onadd && r.hit.kind === 'm')}
                 <button class="smallbtn accent spotadd" tabindex="-1" onmousedown={(e) => e.preventDefault()} onclick={() => choose(r, true)}
-                        title={r.kind === 'homebrew' ? 'Add to the table' : 'Add to the table (Shift Enter)'}>Add to table</button>
+                        title={r.kind === 'homebrew' ? 'Add to the table' : 'Add to the table (Shift Enter)'}>Add to Table</button>
               {/if}
             </li>
           {:else}
