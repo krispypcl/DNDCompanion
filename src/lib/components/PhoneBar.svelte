@@ -61,18 +61,19 @@
       {:else if icon === 'abilities'}
         <path d="M12 3.5l1.9 4.6 4.6 1.9-4.6 1.9L12 16.5l-1.9-4.6L5.5 10l4.6-1.9zM18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" />
       {:else if icon === 'spells'}
-        <!-- A scroll rolled shut, lying on a slant: the curl at its near end, a ribbon round its middle, and the seal hanging from it. -->
+        <!-- A scroll rolled shut, lying on a slant: the curl of its near end, its far end, and a ribbon tied round
+             its middle with two tails hanging. -->
         <g transform="rotate(-35 12 12)">
-          <path d="M5 8.75h14M5 15.25h14" /><ellipse cx="5" cy="12" rx="1.9" ry="3.25" /><path d="M19 8.75a1.9 3.25 0 0 1 0 6.5" />
-          <circle cx="5" cy="12" r=".7" fill="currentColor" stroke="none" /><path d="M12 8.75v8" /><circle cx="12" cy="18.5" r="1.75" fill="currentColor" stroke="none" />
+          <path d="M4.25 7.75h15M4.25 16.25h15" /><ellipse cx="4.25" cy="12" rx="2.25" ry="4.25" /><path d="M19.25 7.75a2.25 4.25 0 0 1 0 8.5" />
+          <path d="M4.9 13.1a1.05 1.6 0 1 1 .35-1.85" /><path d="M10.9 7.75v8.5M13.4 7.75v8.5" /><path d="M11.55 16.25l-1 3.6M12.75 16.25l1 3.6" />
         </g>
       {:else if icon === 'search'}
         <circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" />
       {:else if icon === 'features'}
         <path d="M12 3.5 14.4 8.4l5.4.8-3.9 3.8.9 5.4-4.8-2.6-4.8 2.6.9-5.4-3.9-3.8 5.4-.8z" />
       {:else if icon === 'gear'}
-        <!-- A shield. -->
-        <path d="M12 3.25 19 5.75v5.75c0 4.4-2.9 7.6-7 9.25-4.1-1.65-7-4.85-7-9.25V5.75z" />
+        <!-- A shield, a smaller one inside its rim. -->
+        <path d="M12 3.25 19 5.75v5.75c0 4.4-2.9 7.6-7 9.25-4.1-1.65-7-4.85-7-9.25V5.75z" /><path d="M12 6.6 16 8.05v3.5c0 2.6-1.65 4.5-4 5.5-2.35-1-4-2.9-4-5.5v-3.5z" />
       {:else if icon === 'more'}
         <path d="M5 7h14M5 12h14M5 17h14" />
       {:else if icon === 'party'}
