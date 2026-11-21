@@ -235,7 +235,7 @@
   {#if !compact}
     <!-- The title over the player, and (the DM's) the field to add a song over the list. -->
     <div class="jhead">
-      <SectionHead title="Table music">
+      <SectionHead title="Table Music">
         {#snippet info()}
           You play the table’s music here and everyone on the campaign page hears it, each at their own volume. Your players
           only see the song playing, in a small capsule. Paste a song or a playlist from YouTube to add it.

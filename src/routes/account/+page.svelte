@@ -450,7 +450,7 @@
     </section>
 
     <section class="card danger-zone" aria-labelledby="del-h">
-      <h2 id="del-h">Delete account</h2>
+      <h2 id="del-h">Delete Account</h2>
       <p class="dim">Deletes your account and every sheet you have made, with all their notes and
         lore. Shared links to them stop working.</p>
       {#if !deletingOpen}

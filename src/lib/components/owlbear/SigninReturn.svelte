@@ -51,7 +51,7 @@
   {#key step}
     <div class="sbtext" in:fade={{ duration: 180 }}>
       {#if step === 'sending'}
-        <h1>Almost there</h1>
+        <h1>Almost There</h1>
         <p>Handing your sign-in to Owlbear.</p>
       {:else if step === 'done'}
         <h1>You’re signed in!</h1>
@@ -60,7 +60,7 @@
         <h1>That didn’t take!</h1>
         <p>{said || 'The sign-in couldn’t reach Owlbear.'} Close this window and try again from the panel.</p>
       {:else}
-        <h1>Nothing to do here</h1>
+        <h1>Nothing to Do Here</h1>
         <p>This window is for signing in from the DND Companion panel in Owlbear Rodeo.</p>
       {/if}
     </div>

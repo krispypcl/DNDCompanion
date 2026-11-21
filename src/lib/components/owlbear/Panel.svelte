@@ -443,7 +443,7 @@
       </ul>
     {:else if !campaignId}
       <section class="start" in:fade={appear()}>
-        <h2 class="lead">Bring your campaign to the table</h2>
+        <h2 class="lead">Bring Your Campaign to the Table</h2>
         <p class="note">Paste your campaign’s link and every character in it joins this room, live.</p>
         {@render campaignForm(true)}
       </section>

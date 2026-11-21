@@ -507,7 +507,7 @@
           {/if}
         </div>
         <div class="sbwrap">
-          <h3 class="sbtitle">Stat block
+          <h3 class="sbtitle">Stat Block
             <InfoTip label="About its hit points and armor class">Its hit points and armor class are the stat block’s first numbers. One already in the fight keeps its own until those change.</InfoTip>
           </h3>
           <StatBlockEditor bind:value={e.draft.statblock} spread scores={false} />
@@ -573,9 +573,7 @@
   .cgrip svg { fill: currentColor; }
   .cexpr { display: flex; align-items: center; gap: 0.4375rem; color: var(--dim); min-width: 0; }
   .cexpr .k { font-size: 0.5625rem; font-weight: 650; letter-spacing: 0.08em; color: var(--label); }
-  .addcreature svg { flex: none; transition: transform 0.35s cubic-bezier(0.33, 1, 0.68, 1); }
-  .addcreature:hover svg { transform: rotate(90deg); }
-  @media (prefers-reduced-motion: reduce) { .addcreature svg { transition: none; } }
+  .addcreature svg { flex: none; }
   .cportrait.ringed { border-color: transparent; }
   .cportrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
   .cdot.tint { padding: 0; border: 0; cursor: pointer; width: 0.625rem; height: 0.625rem; transition: transform 0.15s ease; }

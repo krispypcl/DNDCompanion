@@ -87,7 +87,8 @@
      use:backdrop={oncancel}>
   <div class="box" bind:this={box} use:movable role="dialog" aria-modal="true" aria-labelledby="cast-title"
        transition:scale={{ start: 0.95, duration: still ? 0 : 180, easing: cubicOut }}>
-    <h2 id="cast-title">Cast {spell.name || 'this spell'}</h2>
+    <!-- Closed by the × at the top right (or Esc, or a press outside). -->
+    <div class="head"><h2 id="cast-title">Cast {spell.name || 'this spell'}</h2><button class="closex" aria-label={spent ? 'Close' : 'Cancel'} title="Close (Esc)" onclick={oncancel}>×</button></div>
     {#if save}
       <p class="hint">{save} save{saveDc != null && !/\d/.test(save) ? `, DC ${saveDc}` : ''}</p>
     {/if}
@@ -129,7 +130,6 @@
         </button>
       {/if}
     </div>
-    <div class="row"><button class="cancel" onclick={oncancel}>{spent ? 'Done' : 'Cancel'}</button></div>
   </div>
 </div>
 
@@ -143,6 +143,7 @@
     border-radius: var(--r); padding: 1.125rem; box-shadow: 0 20px 60px rgb(0 0 0 / 0.45);
   }
   h2 { margin: 0; font-size: 1.0625rem; font-weight: 650; }
+  .head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
   h3 {
     margin: 0.875rem 0 0.4375rem; font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
     color: var(--label); font-weight: 600;
@@ -175,10 +176,4 @@
   .actions .roll { border-color: var(--a-edge); background: var(--a-wash); color: var(--a); }
   .actions button:hover { border-color: var(--a); }
   .actions button:active { transform: translateY(1px); }
-  .row { display: flex; justify-content: flex-end; margin-top: 0.75rem; }
-  .cancel {
-    font: inherit; font-size: 0.875rem; background: none; border: 1px solid var(--line); color: var(--dim);
-    border-radius: var(--r-sm); padding: 0.4375rem 0.875rem; cursor: pointer;
-  }
-  .cancel:hover { color: var(--text); border-color: var(--a-edge); }
 </style>

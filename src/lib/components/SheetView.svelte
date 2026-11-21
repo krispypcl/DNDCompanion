@@ -1069,7 +1069,7 @@
             {:else if tab === 'Spells'}
               <div class="casting">
                 <div>
-                  <h3>Spellcasting ability</h3>
+                  <h3>Spellcasting Ability</h3>
                   {#if editable}
                     <select
                       aria-label="Spellcasting ability"

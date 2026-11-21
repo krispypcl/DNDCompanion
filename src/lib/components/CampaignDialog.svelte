@@ -127,14 +127,15 @@
      use:backdrop={onclose}>
   <div class="box" bind:this={box} use:movable role="dialog" aria-modal="true" aria-labelledby="campaign-title"
        transition:scale={{ start: 0.95, duration: still ? 0 : 180, easing: cubicOut }}>
-    <h2 id="campaign-title">Campaign</h2>
+    <!-- Closed by the × at the top right (or Esc, or a press outside). -->
+    <div class="head"><h2 id="campaign-title">Campaign</h2><button class="closex" aria-label="Close" title="Close (Esc)" onclick={onclose}>×</button></div>
 
     {#if campaign}
       <p class="lead">
         In <b>{campaign.name}</b>{#if isDm}<span class="dm">You’re the DM</span>{/if}
       </p>
       {#if isDm}
-        <h3>Invite link
+        <h3>Invite Link
           <InfoTip label="About the invite link">Anyone with it can bring a character in. Make a new one to stop the old one working.</InfoTip>
         </h3>
         <div class="row">
@@ -149,7 +150,7 @@
         <button class="danger" onclick={leave} disabled={busy} data-first={isDm ? undefined : ''}>Leave</button>
       </div>
     {:else}
-      <h3>Join with an invite</h3>
+      <h3>Join with an Invite</h3>
       <div class="row">
         <input bind:value={code} placeholder="Paste the invite link or code" aria-label="Invite link or code" data-first=""
                onkeydown={(e) => e.key === 'Enter' && inviteCode(code) && join()} />
@@ -157,7 +158,7 @@
       </div>
       {#if preview}<p class="found" in:fade={{ duration: 160 }}>That’s the invite to <b>{preview.name}</b>.</p>{/if}
 
-      <h3>Or start one
+      <h3>Or Start One
         <InfoTip label="About starting a campaign">You run it as its DM, and get a link to invite the others.</InfoTip>
       </h3>
       <div class="row">
@@ -173,7 +174,6 @@
     </div>
 
     {#if error}<p class="err" role="alert">{error}</p>{/if}
-    <div class="row end"><button class="quiet" onclick={onclose}>Done</button></div>
   </div>
 </div>
 
@@ -187,6 +187,7 @@
     border-radius: var(--r); padding: 1.125rem; box-shadow: 0 20px 60px rgb(0 0 0 / 0.45);
   }
   h2 { margin: 0; font-size: 1.0625rem; font-weight: 650; }
+  .head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
   h3 {
     margin: 1rem 0 0.4375rem; font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
     color: var(--label); font-weight: 600;

@@ -212,7 +212,7 @@
 
   <!-- The player's own links. -->
   <section>
-    <h3 class="cap" data-flip="links:h:links">Your links
+    <h3 class="cap" data-flip="links:h:links">Your Links
       <InfoTip label="About your links">
         Anything you keep reaching for during a game: a map, the campaign wiki, a character builder. Each opens in a new tab.
       </InfoTip>
@@ -254,7 +254,7 @@
 
   <!-- Sound effects: any of them can be a recording of the player's own. -->
   <section>
-    <h3 class="cap" data-flip="links:h:sounds">Sound effects
+    <h3 class="cap" data-flip="links:h:sounds">Sound Effects
       <InfoTip label="About sound effects">
         Swap any built-in sound for your own: a link to a sound file (mp3, ogg or wav; a Google Drive or Dropbox share
         link works), or a YouTube video. Leave a field blank for the built-in sound; the speaker beside each name plays it.
@@ -301,7 +301,7 @@
 
   <!-- The name's font, from Google Fonts. -->
   <section>
-    <h3 class="cap" data-flip="links:h:font">Name font
+    <h3 class="cap" data-flip="links:h:font">Name Font
       <InfoTip label="About the name font">
         The font of the character's name at the top of the sheet and on the campaign page. On
         <a href="https://fonts.google.com" target="_blank" rel="noopener noreferrer">fonts.google.com</a>, open a font
@@ -330,7 +330,7 @@
   {#if editable}
     <!-- Last, as in the campaign settings, and only while editing; the mode switch fades it (flip.ts), nothing else. -->
     <section data-flip-ghost="links:theme">
-      <h3 class="cap">Character theme</h3>
+      <h3 class="cap">Character Theme</h3>
       <ThemePicker value={definition.identity.theme} onpreview={(hex) => onthemepreview?.(hex)}
                    onchange={(name) => patchIdentity('theme', name)} />
     </section>

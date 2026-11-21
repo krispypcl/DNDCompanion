@@ -46,7 +46,7 @@
   <div class="box" use:movable role="dialog" data-keys aria-modal="true" aria-labelledby="keys-title"
        transition:scale={{ start: 0.96, duration: still ? 0 : 180, easing: cubicOut }}>
     <div class="keyshead">
-      <h2 id="keys-title">Keyboard shortcuts
+      <h2 id="keys-title">Keyboard Shortcuts
         <InfoTip label="About shortcuts">They work anywhere on the {place === 'campaign' ? 'page' : 'sheet'} except while typing in a field.</InfoTip>
       </h2>
       <button class="closex" bind:this={closer} aria-label="Close" title="Close (Esc)" onclick={onclose}>×</button>

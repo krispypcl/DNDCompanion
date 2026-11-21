@@ -30,7 +30,7 @@
 
 {#if list.length}
   <section class="foes" aria-label="Monsters and NPCs in sight" transition:fade={{ duration: still ? 0 : 180 }}>
-    <SectionHead title="In sight" infoLabel="About these">
+    <SectionHead title="In Sight" infoLabel="About these">
       {#snippet info()}{#if dm}What your players see of the monsters and NPCs you’ve revealed: how hurt they look, and their expressions.{:else}The monsters and NPCs your DM has shown you: how hurt they look, and their expressions.{/if}{/snippet}
     </SectionHead>
     <ul>

@@ -619,7 +619,7 @@
 </script>
 
 <section class="boardwrap" aria-label="Table board">
-  <SectionHead title="Table board" infoLabel="How the board works" folded={foldable ? folded : undefined}
+  <SectionHead title="Table Board" infoLabel="How the board works" folded={foldable ? folded : undefined}
                ontoggle={foldable ? toggleFold : undefined} controls="board-fold-{campaignId}">
     {#snippet info()}
       Everyone in the campaign can add to it, and sees changes as they happen: drop sticky notes,

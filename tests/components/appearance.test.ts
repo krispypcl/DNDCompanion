@@ -24,6 +24,6 @@ describe('Appearance', () => {
   });
   it('keeps the theme with the pictures while editing', () => {
     render(LinksPanel, { props: { definition: definition(), editable: true, onchange: () => {} } });
-    expect(screen.getByText('Character theme')).toBeTruthy();
+    expect(screen.getByText('Character Theme')).toBeTruthy();
   });
 });
