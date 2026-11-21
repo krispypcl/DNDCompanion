@@ -105,15 +105,6 @@
 </script>
 
 <div class="links">
-  {#if editable}
-    <!-- Only while editing; the mode switch fades it (flip.ts), nothing else. -->
-    <section data-flip-ghost="links:theme">
-      <h3 class="cap">Character theme</h3>
-      <ThemePicker value={definition.identity.theme} onpreview={(hex) => onthemepreview?.(hex)}
-                   onchange={(name) => patchIdentity('theme', name)} />
-    </section>
-  {/if}
-
   <!-- Media: the portrait, the banner and the music. Reading, the pictures
        are to look at and the music goes by its name. -->
   <section>
@@ -252,7 +243,9 @@
         <input bind:value={draftLabel} placeholder="Name (e.g. Campaign wiki)" aria-label="New link name" />
         <input bind:value={draftUrl} placeholder="Address" aria-label="New link address"
                onkeydown={(e) => { if (e.key === 'Enter') addLink(); }} />
-        <button onclick={addLink} disabled={!draftUrl.trim()}>Add link</button>
+        <button class="plus" aria-label="Add the link" title="Add the link" onclick={addLink} disabled={!draftUrl.trim()}>
+          <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M6 1.5v9M1.5 6h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+        </button>
       </div>
     {:else if !links.length}
       <p class="none" data-flip-ghost="links:none:links">No links yet.</p>
@@ -333,6 +326,15 @@
       <p class="none" data-flip-ghost="links:none:font">The sheet’s own font.</p>
     {/if}
   </section>
+
+  {#if editable}
+    <!-- Last, as in the campaign settings, and only while editing; the mode switch fades it (flip.ts), nothing else. -->
+    <section data-flip-ghost="links:theme">
+      <h3 class="cap">Character theme</h3>
+      <ThemePicker value={definition.identity.theme} onpreview={(hex) => onthemepreview?.(hex)}
+                   onchange={(name) => patchIdentity('theme', name)} />
+    </section>
+  {/if}
 </div>
 
 {#if viewing}
@@ -401,7 +403,7 @@
   /* The saved links and the new one share one set of columns, so the name,
      the address and the end button line up row after row, all one height. */
   .linkedit, .add {
-    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) 5.5rem; gap: 0.5rem; align-items: center;
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) 2.125rem; gap: 0.5rem; align-items: center;
   }
   .add { margin-top: 0.5rem; }
   .linkedit :global(.field), .add input { height: 2.125rem; }
@@ -420,12 +422,16 @@
   .add input:hover { border-color: var(--a-edge); }
   .add input:focus { outline: none; border-color: var(--a-edge); }
   .add input:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
-  .add button {
-    height: 2.125rem; font: inherit; font-size: 0.8125rem; cursor: pointer; border-radius: var(--r-sm); padding: 0 0.75rem;
-    border: 1px solid var(--a-edge); background: var(--a-wash); color: var(--a); white-space: nowrap;
+  /* Add: the remove button's size and shape, in the accent; its plus turns on hover. */
+  .add .plus {
+    justify-self: end; width: 2.125rem; height: 2.125rem; padding: 0; display: grid; place-items: center; cursor: pointer;
+    border-radius: var(--r-sm); border: 1px solid var(--a-edge); background: var(--a-wash); color: var(--a);
     transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
   }
-  .add button:hover:not(:disabled) { border-color: var(--a); }
+  .add .plus svg { transition: transform 0.35s cubic-bezier(0.33, 1, 0.68, 1); }
+  .add .plus:hover:not(:disabled) svg { transform: rotate(90deg); }
+  @media (prefers-reduced-motion: reduce) { .add .plus svg { transition: none; } }
+  .add button:hover:not(:disabled) { border-color: var(--a); background: color-mix(in oklab, var(--a) 18%, transparent); }
   .add button:active:not(:disabled) { transform: translateY(1px); }
   .add button:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
   .add button:disabled { opacity: 0.5; cursor: default; }
@@ -441,7 +447,8 @@
     .linkedit .x { grid-column: 2; grid-row: 1; }
     .add button { grid-column: 2; grid-row: 2; }
     .linkedit { padding-bottom: 0.5rem; border-bottom: 1px solid var(--line-soft); }
-    .linkedit :global(.field), .add input, .add button { height: 2.5rem; }
+    .linkedit :global(.field), .add input { height: 2.5rem; }
+    .linkedit .x, .add .plus { width: 2.5rem; height: 2.5rem; }
     .add input { font-size: 16px; }
   }
 </style>
