@@ -1238,9 +1238,9 @@
         </Tabs>
       </section>
 
-      <section class="panel rail-right" style:--i=4 data-places="play gear more">
-        <!-- On a phone, Play keeps the conditions, trackers and defenses; the
-             purse goes to Gear and the proficiencies to More. -->
+      <section class="panel rail-right" style:--i=4 data-places="play gear">
+        <!-- On a phone, Play keeps the conditions, trackers, defenses,
+             proficiencies and languages; the purse goes to Gear. -->
         <div class="railfight" data-places="play">
         <Conditions state={sheetState} editable={isOwner} onchange={setState}
                     looks={definition.conditionLooks ?? {}}
@@ -1339,7 +1339,7 @@
           </div>
         </div>
 
-        <div class="profs" style:--rows={4} data-places="more">
+        <div class="profs" style:--rows={4} data-places="play">
           <h2 class="cap">Proficiencies</h2>
           <EditableField
             value={definition.traits?.proficiencies ?? ''}
@@ -1357,7 +1357,7 @@
           />
         </div>
 
-        <div class="profs" style:--rows={2} data-places="more">
+        <div class="profs" style:--rows={2} data-places="play">
           <h2 class="cap">Languages</h2>
           <EditableField
             value={definition.traits?.languages ?? ''}
@@ -1922,10 +1922,12 @@
   .railfight { display: contents; }
   /* With no tab row above it (a place with one tab), the tab starts at the panel's top. */
   .sheet[data-place]:not([data-place='more']) .center :global(section[role='tabpanel']) { padding-top: 0; }
-  /* Gear and More: the rail's own heading spacing starts at its first part. */
-  .sheet[data-place='gear'] .rail-right .money, .sheet[data-place='more'] .rail-right .money + .profs { padding-top: 0; }
-  /* Play: the numbers and conditions first, then the attacks. */
-  .sheet[data-place='play'] .rail-right { order: -1; }
+  /* Gear: the rail's own heading spacing starts at the purse. */
+  .sheet[data-place='gear'] .rail-right .money { padding-top: 0; }
+  /* A place's modules run from the shortest to the longest: in Play the
+     numbers and conditions before the attacks, in Gear the purse before the
+     equipment. */
+  .sheet[data-place='play'] .rail-right, .sheet[data-place='gear'] .rail-right { order: -1; }
   .sheet[data-place]:not([data-place='play']) :global(.sheetinit) { margin-top: 0.25rem; }
 
   /* More's top, for a visitor: when the sheet was made and last touched. */
