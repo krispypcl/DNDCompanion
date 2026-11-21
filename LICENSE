@@ -63,7 +63,10 @@ not cover them:
 
 - the sound effects in static/sounds (see static/sounds/LICENSE.txt);
 - the fonts in static/pdf (Inter and Cinzel Decorative, under the SIL Open
-  Font License 1.1; see static/pdf/Inter-LICENSE.txt);
+  Font License 1.1; see static/pdf/Inter-LICENSE.txt and
+  static/pdf/CinzelDecorative-LICENSE.txt);
+- fonts loaded from Google Fonts while the app runs, including any name font
+  a player or DM picks, which stay under their own licenses;
 - the Discord mark in static/brand, a trademark of Discord Inc.;
 - the open-source packages named in package.json, under their own licenses.
 
