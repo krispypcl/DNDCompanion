@@ -80,6 +80,18 @@
       opacity: calc(min(var(--hurt) * 40, 1) * (0.16 + var(--hurt) * 0.3));
     }
   }
+  /* A light page: the same dull red faded into white read as a washed-out
+     pink. Here it is a true, saturated red, and stronger, so the wound reads
+     as color. */
+  :global(:root[data-mode='light']) .edge {
+    opacity: calc(min(var(--hurt) * 40, 1) * (0.42 + var(--hurt) * 0.58));
+  }
+  :global(:root[data-mode='light']) .edge i {
+    --red: oklch(calc(58% - var(--hurt) * 10%) calc(0.17 + var(--hurt) * 0.06) 25);
+  }
+  @media (max-width: 700px) {
+    :global(:root[data-mode='light']) .edge { opacity: calc(min(var(--hurt) * 40, 1) * (0.26 + var(--hurt) * 0.36)); }
+  }
   @media (prefers-reduced-motion: reduce) {
     .edge i, .edge i.critical { animation: none; }
   }

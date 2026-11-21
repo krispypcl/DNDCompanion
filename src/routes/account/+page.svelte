@@ -578,6 +578,8 @@
   .btn.danger { border-color: var(--danger); color: var(--danger); }
   /* Deleting is red whatever the account's theme: it is not a themed action. */
   .danger-zone { --danger: oklch(62% 0.2 25); border-color: oklch(62% 0.2 25 / 0.35); }
+  /* A light page needs the red deeper to be read. */
+  :global([data-mode='light']) .danger-zone { --danger: oklch(52% 0.2 25); }
   .danger-zone .btn.danger:hover:not(:disabled) { background: oklch(62% 0.2 25 / 0.12); color: var(--danger); border-color: var(--danger); }
   .btn.danger.solid { background: var(--danger); color: white; font-weight: 650; }
   .btn.danger.solid:hover:not(:disabled) { background: var(--danger); color: white; filter: brightness(1.1); }

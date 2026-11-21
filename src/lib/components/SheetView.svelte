@@ -1498,6 +1498,8 @@
       background: color-mix(in oklch, var(--surface) 93%, transparent);
     }
   }
+  /* A light page: white frost let a bright picture wash the words out; more solid there. */
+  :global([data-mode='light']) .bannered .panel::before { background: color-mix(in oklab, var(--surface) 90%, transparent); }
   /* No backdrop-filter, no frost: the module stays readable by being solid. */
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .bannered .panel::before { background: var(--surface); }

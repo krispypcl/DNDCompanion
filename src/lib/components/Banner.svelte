@@ -198,10 +198,10 @@
       background:
         linear-gradient(
           to bottom,
-          color-mix(in oklch, var(--bg) 50%, transparent) 0%,
-          color-mix(in oklch, var(--bg) 42%, transparent) 26%,
-          color-mix(in oklch, var(--bg) 12%, transparent) 60%,
-          color-mix(in oklch, var(--bg) 8%, transparent) 90%,
+          color-mix(in oklch, var(--bg) 36%, transparent) 0%,
+          color-mix(in oklch, var(--bg) 30%, transparent) 26%,
+          color-mix(in oklch, var(--bg) 8%, transparent) 60%,
+          color-mix(in oklch, var(--bg) 5%, transparent) 90%,
           var(--bg) 100%
         ),
         linear-gradient(to right, var(--bg) 0%, transparent 10%, transparent 90%, var(--bg) 100%);

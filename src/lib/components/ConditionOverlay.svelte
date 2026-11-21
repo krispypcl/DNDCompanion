@@ -114,6 +114,20 @@
     .tint i { height: clamp(12rem, 42vh, 22rem); }
   }
 
+  /* A light page: faded into white, the condition's own color came out a
+     pale wash. Here it is deepened and stronger, so it reads as that color. */
+  :global(:root[data-mode='light']) .tint i {
+    --deep: color-mix(in oklab, var(--tint) 78%, oklch(30% 0 0));
+    background: linear-gradient(to top,
+      color-mix(in oklab, var(--deep) 72%, transparent) 0%,
+      color-mix(in oklab, var(--deep) 54%, transparent) 12%,
+      color-mix(in oklab, var(--deep) 36%, transparent) 28%,
+      color-mix(in oklab, var(--deep) 20%, transparent) 48%,
+      color-mix(in oklab, var(--deep) 9%, transparent) 70%,
+      color-mix(in oklab, var(--deep) 3%, transparent) 86%,
+      transparent 100%);
+  }
+
   /* Every movement begins and ends at rest (full strength, full height). */
   .pulse i { animation: pulse 2.8s ease-in-out 1s infinite; }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
