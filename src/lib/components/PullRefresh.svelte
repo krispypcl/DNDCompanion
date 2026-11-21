@@ -18,6 +18,7 @@
   import { phone } from '#lib/stores/phone.svelte.ts';
   import { pull } from '#lib/stores/pull.svelte.ts';
   import { prefersReducedMotion } from '#lib/motion.ts';
+  import { page } from '$app/state';
 
   let { busy }: { /** Something still waits to be saved: the reload waits for it. */ busy: () => boolean } = $props();
 
@@ -27,6 +28,10 @@
   const MAX = 120;
   /** The page fading out before it reloads. */
   let leaving = $state(false);
+
+  /** Pages with nothing live to refresh: signing in, signing up, a new password, joining, and the policy. */
+  const STILL = /\/(login|signup|reset|join|privacy)\/?$/;
+  const off = $derived(STILL.test(page.url.pathname));
 
   const SKIP = '[data-nopull], .board, input, textarea, select, [contenteditable="true"], [role="dialog"], .held, .reordering';
   function skipped(target: EventTarget | null): boolean {
@@ -51,7 +56,7 @@
   }
 
   $effect(() => {
-    if (!phone.current) return;
+    if (!phone.current || off) return;
     const root = document.documentElement;
     root.classList.add('pull-refresh');
     let tracking = false;
