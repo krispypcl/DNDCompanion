@@ -16,6 +16,7 @@
   import { storedDice } from '#lib/prefs.ts';
   import { trayMemory } from '#lib/stores/tray.ts';
   import { get } from 'svelte/store';
+  import { phone } from '#lib/stores/phone.svelte.ts';
 
   /** Told of each roll once it lands (the sheet passes it on to Owlbear rooms). */
   let { onrolled }: { onrolled?: (roll: Roll) => void } = $props();
@@ -66,7 +67,9 @@
     open = true;
     const result = go(req.label);
     if (result) req.then?.(result);
-    tick().then(() => tray?.scrollIntoView?.({ block: 'nearest', behavior: prefersReducedMotion() ? 'auto' : 'smooth' }));
+    // On a phone its top comes to just under the top bar, however far it opens below; on a computer it
+    // only moves as far as it must within its module.
+    tick().then(() => tray?.scrollIntoView?.({ block: phone.current ? 'start' : 'nearest', behavior: prefersReducedMotion() ? 'auto' : 'smooth' }));
   });
 
   function go(label?: string) {
@@ -188,7 +191,7 @@
   {#if last}
     <div class="histhead">
       <span class="histcap">{history.length ? 'Earlier rolls' : ''}</span>
-      <button class="clearhist" onclick={clearHistory}>Clear history</button>
+      <button class="clearhist" onclick={clearHistory}>Clear History</button>
     </div>
   {/if}
   {#if history.length}
@@ -203,6 +206,8 @@
 
 <style>
   .tray { padding-top: 1.25rem; }
+  /* A phone: brought into view under the top bar and above the bottom one. */
+  @media (max-width: 700px) { .tray { scroll-margin-top: 4.25rem; scroll-margin-bottom: calc(var(--foot, 0px) + 0.75rem); } }
   summary {
     cursor: pointer; list-style: none; display: flex; align-items: center; gap: 0.375rem;
   }

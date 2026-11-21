@@ -442,8 +442,18 @@
 
   const spellAtk = $derived(spellAttack(definition));
 
+  /**
+   * A phone shows the tray only in Play: a roll asked for from another place
+   * (Abilities, Spells, a tracker in More) goes there first, or it would be
+   * made in a tray out of sight.
+   */
+  function toPlay() {
+    if (phoneOn && place !== 'play') goPlace('play');
+  }
+
   /** Shows a roll in the tray, which lives on the Combat tab. */
   function toTray(pool: Pool, label: string, then?: (r: Roll) => void, mode: 'keep' | 'normal' = 'keep') {
+    toPlay();
     if (activeTab !== 'Combat') {
       activeTab = 'Combat';
       if (typeof location !== 'undefined') history.replaceState(null, '', '#combat');
@@ -523,6 +533,7 @@
 
   /** A skill, pressed: the Combat tab comes up, and the roll is made there. */
   function rollSkill(label: string, bonus: number, mode: 'normal' | 'advantage' = 'normal', then?: (r: Roll) => void) {
+    toPlay();
     if (activeTab !== 'Combat') {
       activeTab = 'Combat';
       if (typeof location !== 'undefined') history.replaceState(null, '', '#combat');
