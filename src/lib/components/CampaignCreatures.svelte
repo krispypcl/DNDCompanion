@@ -16,7 +16,7 @@
   import { fade } from 'svelte/transition';
   import type { Creature } from '#lib/data/creatures.ts';
   import type { CreatureTable } from '#lib/creatureTable.svelte.ts';
-  import { cleanExpression, creatureUrl, damage, EXPRESSIONS, heal, hpNow, type CreatureKind } from '#lib/rules/creatures.ts';
+  import { creatureUrl, damage, heal, hpNow, type CreatureKind } from '#lib/rules/creatures.ts';
   import { cleanName, defaultLook, isStandard, lookKey, lookOf } from '#lib/rules/conditions.ts';
   import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
   import type { ConditionLook } from '#lib/types.ts';
@@ -25,7 +25,7 @@
   import { cleanStatBlock, kindLine, leadingNumber, type StatBlock } from '#lib/rules/statblock.ts';
   import { search, type IndexRow } from '#lib/rules/spotlight.ts';
   import { peek, themeAt } from '#lib/stores/peek.svelte.ts';
-  import { popIn, prefersReducedMotion } from '#lib/motion.ts';
+  import { prefersReducedMotion } from '#lib/motion.ts';
   import { reorder } from '#lib/reorder.ts';
   import CardHp from './CardHp.svelte';
   import CreatureMark from './CreatureMark.svelte';
@@ -35,6 +35,7 @@
   import ConditionGiver from './ConditionGiver.svelte';
   import ConditionLookPicker from './ConditionLookPicker.svelte';
   import ConditionRing from './ConditionRing.svelte';
+  import ExpressionPick from './ExpressionPick.svelte';
   import InfoTip from './InfoTip.svelte';
   import Lightbox from './Lightbox.svelte';
   import SectionHead from './SectionHead.svelte';
@@ -223,21 +224,6 @@
   function saveNote(c: Creature, value: string) {
     if (value !== c.notes) void table.change(c, { notes: value.slice(0, 4000) });
   }
-  /**
-   * The expression, as the sheet's conditions are picked: a suggestion from
-   * the list (it's set as soon as it's chosen), or one written in (set on
-   * Enter or on leaving the field). The field then empties, ready for the next.
-   */
-  function saveExpression(c: Creature, field: HTMLInputElement) {
-    const expression = cleanExpression(field.value);
-    field.value = '';
-    if (expression && expression !== (c.expression ?? '')) void table.change(c, { expression });
-  }
-  function pickedExpression(c: Creature, e: Event & { currentTarget: HTMLInputElement }) {
-    // A suggestion picked from the list arrives whole, not typed.
-    const typed = e instanceof InputEvent && e.inputType !== 'insertReplacementText';
-    if (!typed && (EXPRESSIONS as readonly string[]).includes(e.currentTarget.value)) saveExpression(c, e.currentTarget);
-  }
   /** A portrait full screen, grown out of the card. */
   let viewing = $state<{ src: string; alt: string; from: Element | null } | null>(null);
 </script>
@@ -382,23 +368,11 @@
           {/if}
         </ul>
 
-        <!-- Its expression as a chip, as the sheet's conditions; the field beside it picks or writes the next. -->
+        <!-- Its expression, picked from a dropdown (or written in): the players see it when it's revealed. -->
         <div class="cexpr" title="Its expression: your players see this when it's revealed">
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M9 10h.01M15 10h.01M9 15.5c1.8-1.4 4.2-1.4 6 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
           <span class="k">EXPRESSION</span>
-          {#if c.expression}
-            {#key c.expression}
-              <span class="exprchip" in:popIn>{c.expression}{#if !ended}<button class="cx" aria-label="Clear {c.name}’s expression" onclick={() => table.change(c, { expression: '' })}>×</button>{/if}</span>
-            {/key}
-          {/if}
-          {#if !ended}
-            <input list="creature-expressions" maxlength="40" aria-label="{c.expression ? 'Change' : 'Give'} {c.name}’s expression, as your players see it"
-                   placeholder={c.expression ? 'Change it' : 'Pick or write one'} oninput={(e) => pickedExpression(c, e)}
-                   onchange={(e) => saveExpression(c, e.currentTarget)}
-                   onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveExpression(c, e.currentTarget); } }} />
-          {:else if !c.expression}
-            <span class="exprnone">None</span>
-          {/if}
+          <ExpressionPick value={c.expression ?? ''} who={c.name} disabled={ended} onpick={(expression) => table.change(c, { expression })} />
         </div>
 
         <textarea class="cnote" rows="2" placeholder="A note: tactics, loot, what it wants" aria-label="Note on {c.name}"
@@ -415,10 +389,6 @@
     <ConfirmModal title="Remove {c.name}?" yes="Remove" onyes={() => { confirming = null; closeStats(c.id); void table.remove(c); }} onclose={() => (confirming = null)} />
   {/if}
 {/if}
-
-<datalist id="creature-expressions">
-  {#each EXPRESSIONS as expression (expression)}<option value={expression}></option>{/each}
-</datalist>
 
 {#if viewing}
   <Lightbox src={viewing.src} alt={viewing.alt} from={viewing.from} onclose={() => (viewing = null)} />
@@ -601,24 +571,6 @@
   .cgrip svg { fill: currentColor; }
   .cexpr { display: flex; align-items: center; gap: 0.4375rem; color: var(--dim); min-width: 0; }
   .cexpr .k { font-size: 0.5625rem; font-weight: 650; letter-spacing: 0.08em; color: var(--label); }
-  .cexpr input {
-    flex: 1; min-width: 0; font: inherit; font-size: 0.8125rem; padding: 0.3125rem 0.5rem; color: var(--text);
-    border: 1px solid var(--line-soft); border-radius: var(--r-sm); background: var(--raised);
-  }
-  .cexpr input:hover { border-color: var(--a-edge); }
-  .cexpr input:focus { outline: none; border-color: var(--a-edge); }
-  .cexpr input::placeholder { color: var(--dim); opacity: 0.7; }
-  /* The suggestions stay; Chrome's arrow at the end of the field does not (as the sheet's conditions). */
-  .cexpr input::-webkit-calendar-picker-indicator { display: none !important; }
-  .cexpr input::-webkit-list-button { display: none !important; }
-  .exprchip {
-    display: inline-flex; align-items: center; gap: 0.25rem; flex: none; max-width: 60%; overflow-wrap: anywhere;
-    font-size: 0.8125rem; color: var(--text); padding: 0.125rem 0.5rem 0.125rem 0.625rem; border-radius: 999px;
-    background: var(--a-wash); border: 1px solid var(--a-edge);
-  }
-  .exprchip:not(:has(.cx)) { padding-right: 0.625rem; }
-  .exprchip .cx { margin: 0; }
-  .exprnone { font-size: 0.8125rem; color: var(--dim); }
   .addcreature svg { flex: none; transition: transform 0.35s cubic-bezier(0.33, 1, 0.68, 1); }
   .addcreature:hover svg { transform: rotate(90deg); }
   @media (prefers-reduced-motion: reduce) { .addcreature svg { transition: none; } }
