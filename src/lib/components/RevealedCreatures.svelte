@@ -15,6 +15,7 @@
   import { lookOf } from '#lib/rules/conditions.ts';
   import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
   import ConditionRing from './ConditionRing.svelte';
+  import CreatureMark from './CreatureMark.svelte';
   import Lightbox from './Lightbox.svelte';
   import { prefersReducedMotion } from '#lib/motion.ts';
   import SectionHead from './SectionHead.svelte';
@@ -38,11 +39,14 @@
         {@const ring = c.conditions.flatMap((n) => { const color = lookOf(n, c.condition_looks ?? {})?.color; return color ? [{ key: n.toLowerCase(), color }] : []; })}
         <li class="foe hurtcard {c.vital}" animate:flip={{ duration: still ? 0 : 240, easing: cubicOut }} transition:fade={{ duration: still ? 0 : 160 }}>
           <div class="foehead">
+            <!-- Always a portrait, as on the DM's cards: its mark when it has no picture. -->
             {#if pic}
-              <button class="foepic" class:ringed={ring.length > 0} aria-label="See {c.name}’s portrait" title="See it full screen"
+              <button class="foepic" class:ringed={ring.length > 0} class:npc={c.kind === 'npc'} aria-label="See {c.name}’s portrait" title="See it full screen"
                       onclick={(e) => (viewing = { src: pic, alt: `Portrait of ${c.name}`, from: e.currentTarget })}>
                 <img src={pic} alt="" loading="lazy" /><ConditionRing bands={ring} round />
               </button>
+            {:else}
+              <span class="foepic" class:ringed={ring.length > 0} class:npc={c.kind === 'npc'}><CreatureMark kind={c.kind} /><ConditionRing bands={ring} round /></span>
             {/if}
             <span class="foename">
               <strong>{c.name}</strong>
@@ -50,13 +54,12 @@
             </span>
           </div>
           <span class="foelook"><i aria-hidden="true"></i>{LOOKS[c.vital]}{#if c.expression?.trim()}, {c.expression.trim()}{/if}</span>
-          {#if c.conditions.length}
-            <ul class="foeconds">
-              {#each c.conditions as name (name)}
-                <li style:--cc={lookOf(name, c.condition_looks ?? {})?.color ?? 'var(--dim)'}><span aria-hidden="true"></span>{name}</li>
-              {/each}
-            </ul>
-          {/if}
+          <!-- Always drawn, even empty, so the cards in a row keep their rows level. -->
+          <ul class="foeconds">
+            {#each c.conditions as name (name)}
+              <li style:--cc={lookOf(name, c.condition_looks ?? {})?.color ?? 'var(--dim)'}><span aria-hidden="true"></span>{name}</li>
+            {/each}
+          </ul>
         </li>
       {/each}
     </ul>
@@ -69,10 +72,12 @@
 
 <style>
   .foes { min-width: 0; }
-  .foes > ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.625rem; grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr)); }
+  /* Spaced as the DM's monster and NPC cards; each card shares the list's three rows (subgrid), so a row of them lines up. */
+  .foes > ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.875rem; grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr)); }
   .foe {
     --vc: oklch(68% 0.15 150);
-    display: grid; gap: 0.5rem; align-content: start; padding: 0.75rem 0.875rem; border-radius: var(--r);
+    display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 0.75rem; align-content: start; min-width: 0;
+    padding: 0.875rem; border-radius: var(--r);
     background: var(--surface); border: 1px solid var(--line-soft);
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
@@ -80,20 +85,22 @@
   .foe.critical { --vc: oklch(64% 0.2 35); }
   .foe.down { --vc: oklch(58% 0.2 25); }
   .foe.unknown { --vc: var(--dim); }
-  .foehead { display: flex; align-items: center; gap: 0.75rem; }
+  .foehead { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
   .foename { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; min-width: 0; }
   /* Round, as the 5e.tools tokens most portraits come from are. */
   .foepic {
-    position: relative; flex: none; width: 2.75rem; height: 2.75rem; border-radius: 50%;
-    border: 1px solid var(--line-soft); background: var(--raised); transition: border-color 0.35s ease;
+    position: relative; flex: none; width: 3.25rem; height: 3.25rem; border-radius: 50%; display: grid; place-items: center;
+    border: 1px solid color-mix(in oklab, oklch(62% 0.21 25) 45%, var(--line)); background: var(--raised); color: var(--dim);
+    transition: border-color 0.35s ease;
   }
+  .foepic.npc { border-color: var(--a-edge); }
   .foepic.ringed { border-color: transparent; }
   button.foepic { padding: 0; font: inherit; cursor: zoom-in; transition: border-color 0.35s ease, transform 0.15s ease; }
   button.foepic:hover { transform: scale(1.05); }
   button.foepic:active { transform: scale(0.98); }
   button.foepic:focus-visible { outline: 2px solid var(--a); outline-offset: 3px; }
   .foepic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
-  .foehead strong { overflow-wrap: anywhere; }
+  .foehead strong { font-size: 1.0625rem; overflow-wrap: anywhere; }
   .foekind {
     font-size: 0.625rem; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase;
     padding: 0.125rem 0.4375rem; border-radius: 999px; border: 1px solid color-mix(in oklab, oklch(62% 0.21 25) 45%, var(--line));
@@ -102,7 +109,7 @@
   .foekind.npc { border-color: var(--a-edge); color: var(--a); }
   .foelook { display: inline-flex; align-items: center; gap: 0.4375rem; font-size: 0.8125rem; color: var(--text); }
   .foelook i { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--vc); box-shadow: 0 0 0 3px color-mix(in oklch, var(--vc) 22%, transparent); }
-  .foeconds { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.3125rem; }
+  .foeconds { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.375rem; align-content: start; }
   .foeconds li {
     display: inline-flex; align-items: center; gap: 0.3125rem; font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 999px;
     border: 1px solid color-mix(in oklch, var(--cc) 60%, var(--line)); background: color-mix(in oklch, var(--cc) 18%, var(--raised));
