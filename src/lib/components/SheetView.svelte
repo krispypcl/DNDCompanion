@@ -1227,9 +1227,9 @@
         </Tabs>
       </section>
 
-      <section class="panel rail-right" style:--i=4 data-places="play gear">
-        <!-- On a phone, Play keeps the conditions, trackers, defenses,
-             proficiencies, and languages; the purse goes to Gear. -->
+      <section class="panel rail-right" style:--i=4 data-places="play">
+        <!-- On a phone, Play keeps the whole rail: the conditions, trackers,
+             defenses, purse, proficiencies, and languages. -->
         <div class="railfight" data-places="play">
         <Conditions state={sheetState} editable={isOwner} onchange={setState}
                     looks={definition.conditionLooks ?? {}}
@@ -1319,7 +1319,7 @@
 
         </div>
 
-        <div class="money" data-places="gear">
+        <div class="money">
           <h2 class="cap">Currency</h2>
           <Currency {definition} editable={editable} onchange={setDefinition} />
           <div class="carried">
@@ -1889,19 +1889,19 @@
   }
   /*
    * A phone: the campaign across the top, so a long name has the room; then
-   * the portrait at the left with the name and the class, species and
-   * background beside it, together in the middle of its height; then the
-   * music, the width of the screen. The controls are in the top bar. (Wrapped
+   * the portrait at the left edge and the name with the class, species, and
+   * background at the right edge (their words still left-aligned), together
+   * in the middle of its height; then the music, the width of the screen. The controls are in the top bar. (Wrapped
    * as a row, the portrait sat alone above the name.)
    */
   @media (max-width: 700px) {
-    /* The portrait and the words beside it sit in the middle as one block, the words still
-       left-aligned to the portrait; the outer columns let the campaign and the music run edge to edge. */
-    .identity { display: grid; grid-template-columns: minmax(0, 1fr) 5.5rem minmax(0, max-content) minmax(0, 1fr); column-gap: 0; row-gap: 0.25rem; align-items: center; }
-    .identity .portrait { width: 5.5rem; grid-column: 2; grid-row: 2 / 4; align-self: center; margin-right: 0.875rem; }
+    /* The portrait at the left edge and the words at the right, with room between; the campaign
+       and the music span both columns and the room between them, edge to edge. */
+    .identity { display: grid; grid-template-columns: 5.5rem minmax(0, max-content); justify-content: space-between; column-gap: 1.25rem; row-gap: 0.25rem; align-items: center; }
+    .identity .portrait { width: 5.5rem; grid-column: 1; grid-row: 2 / 4; align-self: center; }
     .identity .idleft, .identity .who { display: contents; }
-    .identity .who > h1 { grid-column: 3; grid-row: 2; align-self: end; min-width: 0; }
-    .identity .who > .sub { grid-column: 3; grid-row: 3; align-self: start; margin-top: 0.125rem; }
+    .identity .who > h1 { grid-column: 2; grid-row: 2; align-self: end; min-width: 0; }
+    .identity .who > .sub { grid-column: 2; grid-row: 3; align-self: start; margin-top: 0.125rem; }
     .identity .who > .campaign { grid-column: 1 / -1; grid-row: 1; align-self: start; justify-self: center; margin: 0 0 0.875rem; max-width: 100%; }
     /* A long campaign name wraps inside its pill: a rounded box, not a
        stretched capsule, with a little less spacing between the letters. */
@@ -1915,12 +1915,9 @@
   .railfight { display: contents; }
   /* With no tab row above it (a place with one tab), the tab starts at the panel's top. */
   .sheet[data-place]:not([data-place='more']) .center :global(section[role='tabpanel']) { padding-top: 0; }
-  /* Gear: the rail's own heading spacing starts at the purse. */
-  .sheet[data-place='gear'] .rail-right .money { padding-top: 0; }
   /* A place's modules run from the shortest to the longest: in Play the
-     numbers and conditions before the attacks, in Gear the purse before the
-     equipment. */
-  .sheet[data-place='play'] .rail-right, .sheet[data-place='gear'] .rail-right { order: -1; }
+     numbers and conditions before the attacks. */
+  .sheet[data-place='play'] .rail-right { order: -1; }
   .sheet[data-place]:not([data-place='play']) :global(.sheetinit) { margin-top: 0.25rem; }
 
   /* More's top, for a visitor: when the sheet was made and last touched. */

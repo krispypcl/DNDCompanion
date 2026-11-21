@@ -104,7 +104,7 @@
 
 {#if !bare}
 <div class="tabwrap">
-<div class="tablist" role="tablist" bind:this={list}>
+<div class="tablist" class:pairs={tabs.length === 4} role="tablist" bind:this={list}>
   {#each tabs as tab, i (tab)}
     <button
       bind:this={buttons[i]}
@@ -187,6 +187,10 @@
   :global([data-mode='light']) button:not(.active) { color: color-mix(in oklch, var(--text) 82%, transparent); }
   :global([data-mode='light']) button:not(.active):hover { color: var(--text); }
   .indicator { display: none; }
+  /* A phone: four tabs sit in two rows of two, never three and one left alone. */
+  @media (max-width: 700px) {
+    .tablist.pairs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
   section { padding: 1rem 0 0; }
   /* A wide screen: the module keeps its height and scrolls within it, on a
      slim scrollbar of its own. */
