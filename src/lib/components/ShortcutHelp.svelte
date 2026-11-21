@@ -31,7 +31,7 @@
                 { keys: ['P'], what: 'Save the sheet as a PDF, to print or keep' }
               ]
             : []),
-          { keys: ['1', '–', '9'], what: 'Switch tabs, Combat to Appearance' },
+          { keys: ['1', '–', '8'], what: 'Switch tabs, Combat to Backstory' },
           { keys: ['/'], what: 'Search 5e.tools' },
           { keys: ['M'], what: 'Music on or off' },
           { keys: ['?'], what: 'Show these shortcuts' },

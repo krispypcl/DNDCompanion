@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * The Appearance tab: how the sheet looks and sounds. The portrait and
+   * The Appearance window (the sheet's cog): how the sheet looks and sounds. The portrait and
    * banner (shown as pictures, pressed for full screen), the theme, the
    * music (by its name on YouTube), the player's own links, and any sound
    * effect swapped for a recording or a YouTube clip of their own. Editing,

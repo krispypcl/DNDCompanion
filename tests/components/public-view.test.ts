@@ -55,8 +55,8 @@ describe('public view', () => {
     expect(container.querySelector('.restrow')).not.toBeNull();
   });
 
-  it('only offers Undo to the owner', () => {
-    const undo = sheet.slice(sheet.indexOf('class="undo"') - 120, sheet.indexOf('class="undo"'));
-    expect(undo).toMatch(/\{#if isOwner\b/);
+  it('only offers Edit to the owner', () => {
+    const header = sheet.slice(sheet.indexOf('<div class="controls">'), sheet.indexOf('</header>'));
+    expect(header).toMatch(/\{#if isOwner\}\{@render editButton\(\)\}\{\/if\}/);
   });
 });

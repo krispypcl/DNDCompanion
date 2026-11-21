@@ -45,6 +45,7 @@
   import CampaignSkeleton from './CampaignSkeleton.svelte';
   import CampaignCreatures from './CampaignCreatures.svelte';
   import AreaSwitch from './AreaSwitch.svelte';
+  import CogIcon from './CogIcon.svelte';
   import { pageTitle } from '#lib/title.ts';
   import { sessionWhen } from '#lib/rules/dates.ts';
   import ShareButton from './ShareButton.svelte';
@@ -564,9 +565,7 @@
           <!-- The cog turns a little on hover, and a quarter turn while its window is open. -->
           <button class="keys gear" class:open={settingsOpen} onclick={() => (settingsOpen = true)} aria-label="Campaign settings" title="Campaign settings"
                   aria-haspopup="dialog" aria-expanded={settingsOpen}>
-            <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
-              <path fill="currentColor" fill-rule="evenodd" d="M10.32 4.49 L10.28 2.15 A10 10 0 0 1 13.72 2.15 L13.68 4.49 A7.7 7.7 0 0 1 16.13 5.50 L16.13 5.50 L17.75 3.82 A10 10 0 0 1 20.18 6.25 L18.50 7.87 A7.7 7.7 0 0 1 19.51 10.32 L19.51 10.32 L21.85 10.28 A10 10 0 0 1 21.85 13.72 L19.51 13.68 A7.7 7.7 0 0 1 18.50 16.13 L18.50 16.13 L20.18 17.75 A10 10 0 0 1 17.75 20.18 L16.13 18.50 A7.7 7.7 0 0 1 13.68 19.51 L13.68 19.51 L13.72 21.85 A10 10 0 0 1 10.28 21.85 L10.32 19.51 A7.7 7.7 0 0 1 7.87 18.50 L7.87 18.50 L6.25 20.18 A10 10 0 0 1 3.82 17.75 L5.50 16.13 A7.7 7.7 0 0 1 4.49 13.68 L4.49 13.68 L2.15 13.72 A10 10 0 0 1 2.15 10.28 L4.49 10.32 A7.7 7.7 0 0 1 5.50 7.87 L5.50 7.87 L3.82 6.25 A10 10 0 0 1 6.25 3.82 L7.87 5.50 A7.7 7.7 0 0 1 10.32 4.49 Z M15.2 12 a3.2 3.2 0 1 0 -6.4 0 a3.2 3.2 0 1 0 6.4 0 Z" />
-            </svg>
+            <CogIcon />
           </button>
         {/if}
         {#if owlbear}
@@ -762,12 +761,12 @@
   .loading { position: relative; min-height: 60vh; }
   .loading > :global(.cskel) { opacity: 0.45; }
   header { display: flex; align-items: center; gap: 0.875rem; }
-  .gear svg, .owlbtn svg { transition: transform 0.45s cubic-bezier(0.33, 1, 0.68, 1); }
-  .gear:hover svg { transform: rotate(45deg); }
-  .gear.open svg { transform: rotate(90deg); }
+  .gear :global(svg), .owlbtn svg { transition: transform 0.45s cubic-bezier(0.33, 1, 0.68, 1); }
+  .gear:hover :global(svg) { transform: rotate(45deg); }
+  .gear.open :global(svg) { transform: rotate(90deg); }
   .owlbtn { text-decoration: none; }
   .owlbtn:hover svg { transform: translateY(-1px) rotate(-6deg); }
-  @media (prefers-reduced-motion: reduce) { .gear svg, .owlbtn svg { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .gear :global(svg), .owlbtn svg { transition: none; } }
   .title { flex: 1; min-width: 0; }
   .sep { margin: 0 0.375rem; }
   .eyebrow { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--a); }

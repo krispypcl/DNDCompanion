@@ -100,24 +100,13 @@ describe('save alert', () => {
 });
 
 describe('the controls row', () => {
-  it('keeps undo in place whether or not there is anything to undo', () => {
+  it('has no Undo button, but Ctrl+Z still undoes', () => {
     const row = sheet.slice(sheet.indexOf('<div class="controls">'), sheet.indexOf('</header>'));
-    // Always rendered, so the row is laid out once; inert until it is useful.
-    expect(row).toMatch(/<button\s+class="undo"\s+disabled=\{!\$canUndo\}/);
-    expect(row).not.toMatch(/\{#if \$canUndo\}/);
-    // First, where it has always been.
-    expect(row.indexOf('class="undo"')).toBeLessThan(row.indexOf('class="edit"'));
-    expect(row.indexOf('class="edit"')).toBeLessThan(row.indexOf('ModeToggle'));
-    // One word, in both states: the muting is the context.
-    expect(row).toMatch(/>Undo<\/button/);
-  });
-
-  it('mutes the undo button rather than hiding it', () => {
-    const css = sheet.slice(sheet.indexOf('  .undo {'), sheet.indexOf('  .back {'));
-    expect(css).toMatch(/\.undo:disabled \{[^}]*color: var\(--faint\)/);
-    expect(css).toMatch(/\.undo:disabled \{[^}]*cursor: default/);
-    // Lit, it has a surface of its own: it sits over the banner.
-    expect(css).toMatch(/background: var\(--a-wash\)/);
+    expect(row).not.toMatch(/class="undo"/);
+    // Two rows: Back, Edit and the cog first, the tools after.
+    expect(row.indexOf('class="back"')).toBeLessThan(row.indexOf('editButton'));
+    expect(row.indexOf('editButton')).toBeLessThan(row.indexOf('ModeToggle'));
+    expect(sheet).toMatch(/e\.key\.toLowerCase\(\) === 'z'[\s\S]{0,80}isOwner && \$canUndo/);
   });
 
   it('keeps the status out of the header entirely', () => {

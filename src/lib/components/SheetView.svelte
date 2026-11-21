@@ -10,6 +10,8 @@
   import AbilityBand from '#lib/components/AbilityBand.svelte';
   import ModeToggle from '#lib/components/ModeToggle.svelte';
   import Logo from '#lib/components/Logo.svelte';
+  import CogIcon from '#lib/components/CogIcon.svelte';
+  import DimModal from '#lib/components/DimModal.svelte';
   import { setCustomSounds, warmSounds } from '#lib/sound.ts';
   import { musicOn, setMusicOn } from '#lib/music.ts';
   import { get } from 'svelte/store';
@@ -115,7 +117,7 @@
   import { friendlyError } from '#lib/errors.ts';
   import { session } from '#lib/stores/session.ts';
   import { sheetStore } from '#lib/stores/sheet.ts';
-  import { canUndo, lastLabel, resetUndo, snapshot, undo } from '#lib/stores/undo.ts';
+  import { canUndo, resetUndo, snapshot, undo } from '#lib/stores/undo.ts';
   import { ABILITIES } from '#lib/types.ts';
   import type { SheetTexts, TextKey } from '#lib/types.ts';
   import type {
@@ -251,7 +253,9 @@
    * parts as the desktop's, shown a place at a time.
    */
   type Place = 'play' | 'abilities' | 'spells' | 'gear' | 'features' | 'more';
-  const MORE_TABS = ['Trackers', 'Character', 'Notes', 'Backstory', 'Appearance'];
+  const MORE_TABS = ['Trackers', 'Character', 'Notes', 'Backstory'];
+  /** The sheet's look and sound (LinksPanel): a window from the cog, not a tab. */
+  let appearanceOpen = $state(false);
   const phoneOn = $derived(phone.current);
   let place = $state<Place>('play');
   /** Moved between places at least once: from then on a place's parts fade in (app.css). */
@@ -389,8 +393,9 @@
   $effect(() => {
     if (typeof location === 'undefined') return;
     const hash = location.hash.slice(1).toLowerCase();
-    // The Appearance tab was called Links.
-    const wanted = TABS.find((t) => t.toLowerCase() === (hash === 'links' ? 'appearance' : hash));
+    // Appearance (once a tab, and before that Links) opens its window.
+    if (hash === 'appearance' || hash === 'links') return void (appearanceOpen = true);
+    const wanted = TABS.find((t) => t.toLowerCase() === hash);
     if (wanted) activeTab = wanted;
   });
 
@@ -634,7 +639,7 @@
     } else if (e.key.toLowerCase() === 'p' && isOwner) {
       e.preventDefault();
       void makePdf();
-    } else if (/^[1-9]$/.test(e.key)) {
+    } else if (/^[1-8]$/.test(e.key)) {
       activeTab = TABS[Number(e.key) - 1];
     }
   }
@@ -740,9 +745,9 @@
   </svg>
 {/snippet}
 
-<!-- A phone's Edit (a pencil, a check while editing) and Undo, in the top bar and the strip. -->
-{#snippet editUndo()}
-  <button class="edit phoneicon" aria-pressed={editing} aria-label={editing ? 'Done editing' : 'Edit the sheet'} title={editing ? 'Done' : 'Edit'}
+<!-- Edit (a pencil, a check while editing), the owner's; Ctrl+Z undoes. -->
+{#snippet editButton()}
+  <button class="edit iconbtn" aria-pressed={editing} aria-label={editing ? 'Done editing' : 'Edit the sheet'} title={editing ? 'Done (E)' : 'Edit (E)'}
           onclick={() => glide(() => (editing = !editing))}>
     {#key editing}
       <svg in:popIn viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -750,8 +755,13 @@
       </g></svg>
     {/key}
   </button>
-  <button class="undo phoneicon" disabled={!$canUndo} aria-label={$canUndo ? `Undo ${$lastLabel}` : 'Nothing to undo'} title={$canUndo ? `Undo ${$lastLabel}` : 'Nothing to undo'} onclick={doUndo}>
-    <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M9 14 4.5 9.5 9 5M4.5 9.5h9.75a5.25 5.25 0 0 1 0 10.5H11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+{/snippet}
+
+<!-- The cog: the sheet's appearance (portrait, banner, theme, music, links, sounds, name font). -->
+{#snippet appearanceButton()}
+  <button class="keys gear iconbtn" class:open={appearanceOpen} onclick={() => (appearanceOpen = true)} aria-label="Appearance" title="Appearance"
+          aria-haspopup="dialog" aria-expanded={appearanceOpen}>
+    <CogIcon />
   </button>
 {/snippet}
 
@@ -809,8 +819,8 @@
           {#if portraitSrc}<img src={portraitSrc} alt="" />{/if}
         </span>
         <span class="stripname">{definition.identity.name || sheet.name || 'Unnamed'}</span>
-        <!-- The top bar's Edit and Undo come along. -->
-        {#if isOwner}{@render editUndo()}{/if}
+        <!-- The top bar's Edit comes along. -->
+        {#if isOwner}{@render editButton()}{/if}
         <button class="hppill {phoneVital?.vital ?? ''}" onclick={() => goPlace('play')} aria-label="Hit points {sheetState.hpCurrent} of {definition.combat?.hpMax ?? 0}, {phoneVital?.label ?? ''}">
           <b>{sheetState.hpCurrent}{#if sheetState.hpTemp}<span class="temp">+{sheetState.hpTemp}</span>{/if}<small>&nbsp;/ {definition.combat?.hpMax ?? 0}</small></b>
           <span class="pillbar"><i style:width="{Math.max(0, Math.min(100, ((sheetState.hpCurrent) / Math.max(1, definition.combat?.hpMax ?? 0)) * 100))}%"></i></span>
@@ -818,7 +828,7 @@
       </div>
       <!-- The top bar: Edit and Undo on the left, the app's mark in the middle, Back on the right. -->
       <div class="phonetop" bind:this={topEl}>
-        <div class="topleft">{#if isOwner}{@render editUndo()}{/if}</div>
+        <div class="topleft">{#if isOwner}{@render editButton()}{/if}{@render appearanceButton()}</div>
         <span class="toplogo"><Logo size={26} /></span>
         <a class="back topback" href={cameFrom ? `${base}/c/${cameFrom}` : `${base}/`}
            title={cameFrom ? 'Back to the campaign' : 'Back to your characters'}>Back</a>
@@ -927,23 +937,6 @@
            dot was left stranded at the end of the name's line on a phone. -->
       {#if !phoneOn}
       <div class="controls">
-        <!-- Only the owner has anything to undo, so a visitor is not shown a
-             control that can never do anything. For the owner it is always
-             here, so the row is laid out once: muted and inert until there
-             is something to undo, and lit when there is. -->
-        {#if isOwner}
-          <button
-            class="undo"
-            disabled={!$canUndo}
-            title={$canUndo ? `Undo ${$lastLabel}` : 'Nothing to undo'}
-            onclick={doUndo}>Undo</button
-          >
-        {/if}
-        {#if isOwner}
-          <button class="edit" aria-pressed={editing} onclick={() => glide(() => (editing = !editing))}>
-            {#key editing}<span class="edlabel" in:popIn>{editing ? 'Done' : 'Edit'}</span>{/key}
-          </button>
-        {/if}
         <!-- For a visitor, when the sheet was made and last touched. The owner
              sees the same on the sheet list instead. -->
         {#if !isOwner}
@@ -952,9 +945,16 @@
             <div><dt>Last updated</dt><dd>{friendlyDate(updated)}</dd></div>
           </dl>
         {/if}
+        <!-- Two rows, right-aligned: Back, Edit and the cog; then the sheet's tools. -->
+        <div class="ctlrows">
+        <div class="ctlrow">
         <!-- Opened from a campaign (?from=<campaign>): back goes to that campaign. -->
         <a class="back" href={cameFrom ? `${base}/c/${cameFrom}` : `${base}/`}
            title={cameFrom ? 'Back to the campaign' : 'Back to your characters'}>Back</a>
+        {#if isOwner}{@render editButton()}{/if}
+        {@render appearanceButton()}
+        </div>
+        <div class="ctlrow">
         <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
         {#if isOwner}
           <PrintButton onprint={makePdf} busy={makingPdf} />
@@ -971,6 +971,8 @@
           </svg>
         </button>
         <ModeToggle />
+        </div>
+        </div>
       </div>
       {/if}
     </header>
@@ -1263,8 +1265,6 @@
               <DetailsBlock {definition} {editable} onchange={setDefinition} />
             {:else if tab === 'Notes'}
               {@render writing('notes', 'Notes')}
-            {:else if tab === 'Appearance'}
-              <LinksPanel {definition} {editable} onchange={setDefinition} onthemepreview={(hex) => (themePreview = hex)} />
             {:else}
               {@render writing('backstory', 'Backstory')}
             {/if}
@@ -1417,6 +1417,11 @@
        toast's Undo is in the character's accent too. -->
   <div class="themed floats" style={themeStyle(themePreview ?? definition.identity.theme)}>
     {#if showKeys}<ShortcutHelp owner={isOwner} onclose={() => (showKeys = false)} />{/if}
+    {#if appearanceOpen}
+      <DimModal id="appearance-title" title="Appearance" wide closer onclose={() => { appearanceOpen = false; themePreview = null; }}>
+        <LinksPanel {definition} editable={isOwner} onchange={setDefinition} onthemepreview={(hex) => (themePreview = hex)} />
+      </DimModal>
+    {/if}
     <Spotlight bind:open={searching} />
     <Flash message={flash} />
     {#if leaving}
@@ -1601,7 +1606,19 @@
   }
   @keyframes skullIn { from { transform: scale(1.6); opacity: 0; } }
   .who { flex: 1 1 auto; min-width: 0; }
-  .controls { display: flex; align-items: center; gap: 0.5rem; flex: none; }
+  .controls { display: flex; align-items: center; gap: 0.75rem; flex: none; }
+  /* The header's buttons in two rows, both against the right edge. */
+  .ctlrows { display: grid; gap: 0.375rem; justify-items: end; }
+  .ctlrow { display: flex; align-items: center; justify-content: flex-end; gap: 0.375rem; }
+  /* Edit and the cog as icons, as tall as the rest. */
+  .iconbtn { box-sizing: border-box; width: 2rem; height: 2rem; min-width: 0; padding: 0; display: inline-grid; place-items: center; }
+  .iconbtn svg { display: block; }
+  .keys.gear { display: inline-grid; }
+  /* The cog turns a little on hover, and a quarter turn while its window is open (as the campaign's). */
+  .gear :global(svg) { transition: transform 0.45s cubic-bezier(0.33, 1, 0.68, 1); }
+  .gear:hover :global(svg) { transform: rotate(45deg); }
+  .gear.open :global(svg) { transform: rotate(90deg); }
+  @media (prefers-reduced-motion: reduce) { .gear :global(svg) { transition: none; } }
   /* The player sits in the middle of the header: the name and the buttons
      each take an equal share either side of it. */
   .musicslot { flex: 1 1 14rem; min-width: 11rem; display: flex; justify-content: center; }
@@ -1661,30 +1678,15 @@
   .details-h { margin-top: 1.75rem; }
   .edit {
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
-    border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font: inherit;
-    font-size: 0.8125rem; cursor: pointer; flex: none; min-width: 4.5rem;
+    border-radius: var(--r-sm); font: inherit; cursor: pointer; flex: none;
   }
   .edit:hover { border-color: var(--a-edge); color: var(--a); }
-  /* Edit and Done cross over rather than swap. */
-  .edlabel { display: inline-block; }
+  /* Editing: lit in the accent, its check showing. */
   .edit[aria-pressed='true'] { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
   .edit[aria-pressed='true']:hover { border-color: var(--a); background: var(--a-edge); color: var(--text); }
-  .edit, .undo, .back { transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease; }
-  .edit:active, .undo:active, .back:active { transform: translateY(1px); }
-  /* A surface of its own: it sits over the banner, where an outline with
-     nothing behind it was hard to pick out. Muted while there is nothing to
-     undo — which is the state it spends most of its life in. */
-  .undo {
-    background: var(--a-wash); border: 1px solid var(--a-edge); color: var(--a);
-    border-radius: var(--r-sm); padding: 0.375rem 0.75rem; font: inherit;
-    font-size: 0.8125rem; cursor: pointer; flex: none;
-    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
-  }
-  .undo:hover:not(:disabled) { border-color: var(--a); background: var(--a-edge); color: var(--text); }
-  .undo:disabled {
-    background: none; border-color: var(--line-soft); color: var(--faint);
-    cursor: default;
-  }
+  .edit, .back { transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease; }
+  .edit:active, .back:active { transform: translateY(1px); }
+  .edit:focus-visible, .back:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
   .back {
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font-size: 0.8125rem;
@@ -1988,14 +1990,14 @@
   .strippic :global(svg) { width: 1.25rem; height: 1.25rem; }
   .strippic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .stripname { flex: 1; min-width: 0; font-weight: 650; font-size: 1rem; color: var(--a); overflow-wrap: anywhere; line-height: 1.2; }
-  .phonestrip .phoneicon { flex: none; }
+  .phonestrip .iconbtn { flex: none; }
   /* The top bar: Edit and Undo at the left, the mark in the middle, Back at the right. */
   .phonetop { position: relative; z-index: 2; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
   .topleft { display: flex; align-items: center; gap: 0.375rem; }
   .toplogo { display: grid; place-items: center; color: var(--text); }
   .topback { justify-self: end; display: inline-grid; place-items: center; box-sizing: border-box; height: 2.25rem; padding: 0 0.875rem; }
-  .phoneicon { box-sizing: border-box; width: 2.25rem; height: 2.25rem; min-width: 0; padding: 0; display: inline-grid; place-items: center; }
-  .phoneicon svg { display: block; }
+  /* A phone's are a little bigger, for a thumb. */
+  .phonetop .iconbtn, .phonestrip .iconbtn { width: 2.25rem; height: 2.25rem; }
   /* More's tools: the sheet's own buttons, in a row in the middle. */
   .phonetools { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 0.75rem; }
   .phonetools .stamps { flex-basis: 100%; justify-content: center; }
