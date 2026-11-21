@@ -674,8 +674,8 @@
   /* One column on a narrow screen; on a wide one the creature on the left and
      its stat block across the rest, as the account page sets its cards out. */
   .cform { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.125rem; align-items: start; }
-  /* The band: portrait, name, kind, how many and the six scores on one line; the links on the next. */
-  .cformtop { display: grid; grid-template-columns: auto minmax(10rem, 1fr) auto auto minmax(18rem, 26rem); align-items: end; gap: 0.875rem; }
+  /* The band: portrait, name, kind, how many and the six scores on one line, centered on it; the links on the next. */
+  .cformtop { display: grid; grid-template-columns: auto minmax(10rem, 1fr) auto auto minmax(18rem, 26rem); align-items: center; gap: 0.875rem; }
   .cformtop:not(:has(.cmany)) { grid-template-columns: auto minmax(10rem, 1fr) auto minmax(18rem, 26rem); }
   .cscores { min-width: 0; }
   .cformlinks { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; align-items: end; gap: 0.875rem; }
