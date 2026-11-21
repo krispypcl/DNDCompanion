@@ -10,6 +10,7 @@
   import { onMount } from 'svelte';
   import { afterNavigate } from '$app/navigation';
   import { peek } from '#lib/stores/peek.svelte.ts';
+  import { phone } from '#lib/stores/phone.svelte.ts';
   import PeekContent from './PeekContent.svelte';
   import PeekWindow from './PeekWindow.svelte';
 
@@ -161,6 +162,8 @@
     {#if target}
       <PeekContent name={target.name} url={target.url}>
         {#snippet tools()}
+          <!-- Keeping it open is for a pointer that hovers names; a phone's peek is a sheet a tap opens and closes, so it has no pin. -->
+          {#if !phone.current}
           <button
             type="button"
             class="peek-pin"
@@ -175,6 +178,7 @@
                     stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round" />
             </svg>
           </button>
+          {/if}
           <a class="smallbtn quiet" href={target.url} target="_blank" rel="noopener noreferrer">Open on 5e.tools</a>
           <button type="button" class="closex" aria-label="Close" onclick={() => peek.close()}>×</button>
         {/snippet}
