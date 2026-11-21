@@ -38,7 +38,7 @@
   import { pageTitle } from '#lib/title.ts';
   import SheetSkeleton from '#lib/components/SheetSkeleton.svelte';
   import D20Loader from '#lib/components/D20Loader.svelte';
-  import PrintButton from '#lib/components/PrintButton.svelte';
+  import SaveButton from '#lib/components/SaveButton.svelte';
   import { beforeNavigate, goto } from '$app/navigation';
   import { onMount, tick, untrack } from 'svelte';
   import { phone } from '#lib/stores/phone.svelte.ts';
@@ -669,12 +669,14 @@
     toast = null;
   }
 
-  /** A copy of the character as it is on screen right now, as a text file. */
   /**
    * The sheet as a fillable PDF (lib/pdf), made in the browser and saved.
    * Writing this reader may not see is left out, as everywhere else.
    */
   let makingPdf = $state(false);
+  /** Just saved: the button shows a check for a moment. */
+  let pdfSaved = $state(false);
+  let pdfTimer: ReturnType<typeof setTimeout> | undefined;
   /** The sheet as a PDF, with the sheet inside it: its owner's alone, as Export is. */
   async function makePdf() {
     if (!definition || !sheetState || makingPdf || !isOwner) return;
@@ -691,6 +693,9 @@
       const name = (definition.identity?.name || 'Character').replace(/[\\/:*?"<>|]+/g, '').trim() || 'Character';
       downloadBlob(`${name}.pdf`, new Blob([bytes as BlobPart], { type: 'application/pdf' }));
       say('PDF saved');
+      pdfSaved = true;
+      clearTimeout(pdfTimer);
+      pdfTimer = setTimeout(() => (pdfSaved = false), 1600);
     } catch {
       say('The printer jammed! Try again.');
     } finally {
@@ -837,6 +842,8 @@
     {#if banner}<Banner url={banner} />{/if}
     <!-- Away from Play on a phone the header steps aside, still there, so its music plays on. -->
     <header class="identity" class:offstage={phoneOn && place !== 'play'}>
+      <!-- The portrait and the words beside it: one side of the header, so the music sits in its very middle. -->
+      <div class="idleft">
       <div class="portrait" class:has={Boolean(portraitSrc)} class:fallen={dead} use:parallax>
         <!-- The picture turns toward the pointer, inside its still frame. -->
         <span class="frame">
@@ -927,6 +934,7 @@
           </span>
         </p>
       </div>
+      </div>
 
       {#if definition.identity.playlistUrl?.trim()}
         <!-- Top center: the sheet's music, the same player as the table's. -->
@@ -945,19 +953,16 @@
             <div><dt>Last updated</dt><dd>{friendlyDate(updated)}</dd></div>
           </dl>
         {/if}
-        <!-- Two rows, right-aligned: Back, Edit and the cog; then the sheet's tools. -->
-        <div class="ctlrows">
+        <!-- One row, as the campaign's: Back, Edit and the cog, then the sheet's tools. -->
         <div class="ctlrow">
         <!-- Opened from a campaign (?from=<campaign>): back goes to that campaign. -->
         <a class="back" href={cameFrom ? `${base}/c/${cameFrom}` : `${base}/`}
            title={cameFrom ? 'Back to the campaign' : 'Back to your characters'}>Back</a>
         {#if isOwner}{@render editButton()}{/if}
         {@render appearanceButton()}
-        </div>
-        <div class="ctlrow">
         <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
         {#if isOwner}
-          <PrintButton onprint={makePdf} busy={makingPdf} />
+          <SaveButton onsave={makePdf} busy={makingPdf} saved={pdfSaved} />
         {/if}
         <button class="keys searchbtn" onclick={() => (searching = true)} aria-label="Search 5e.tools" title="Search 5e.tools (/)">
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
@@ -972,7 +977,6 @@
         </button>
         <ModeToggle />
         </div>
-        </div>
       </div>
       {/if}
     </header>
@@ -982,7 +986,7 @@
       <div class="phonetools" data-places="more">
         <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
         {#if isOwner}
-          <PrintButton onprint={makePdf} busy={makingPdf} />
+          <SaveButton onsave={makePdf} busy={makingPdf} saved={pdfSaved} />
         {/if}
         <ModeToggle />
         {#if !isOwner}
@@ -1605,10 +1609,9 @@
     filter: drop-shadow(0 0 10px oklch(60% 0.22 25 / 0.85)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.6));
   }
   @keyframes skullIn { from { transform: scale(1.6); opacity: 0; } }
+  .idleft { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 1rem; }
   .who { flex: 1 1 auto; min-width: 0; }
   .controls { display: flex; align-items: center; gap: 0.75rem; flex: none; }
-  /* The header's buttons in two rows, both against the right edge. */
-  .ctlrows { display: grid; gap: 0.375rem; justify-items: end; }
   .ctlrow { display: flex; align-items: center; justify-content: flex-end; gap: 0.375rem; }
   /* Edit and the cog as icons, as tall as the rest. */
   .iconbtn { box-sizing: border-box; width: 2rem; height: 2rem; min-width: 0; padding: 0; display: inline-grid; place-items: center; }
@@ -1619,16 +1622,20 @@
   .gear:hover :global(svg) { transform: rotate(45deg); }
   .gear.open :global(svg) { transform: rotate(90deg); }
   @media (prefers-reduced-motion: reduce) { .gear :global(svg) { transition: none; } }
-  /* The player sits in the middle of the header: the name and the buttons
-     each take an equal share either side of it. */
-  .musicslot { flex: 1 1 14rem; min-width: 11rem; display: flex; justify-content: center; }
-  .identity:has(.musicslot) .who { flex: 0 1 auto; }
+  /* The player sits in the very middle of the header: the name and the
+     buttons each take an equal share either side of it (the buttons never
+     less than they need). */
+  .musicslot { display: flex; justify-content: center; min-width: 0; }
+  @media (min-width: 1101px) {
+    /* The middle is the player's own width (19rem, MusicPlayer): sized by its content, a long song's name would widen it. */
+    .identity:has(.musicslot) { display: grid; grid-template-columns: minmax(0, 1fr) 19rem minmax(max-content, 1fr); }
+    .identity:has(.musicslot) .controls { justify-self: end; }
+  }
   /* Without room for all three in a row, the player takes a row of its own
      under the header, full width. */
   @media (max-width: 1100px) {
-    .musicslot { order: 5; flex: 1 1 100%; min-width: 0; }
+    .musicslot { order: 5; flex: 1 1 100%; }
     .musicslot :global(.music) { width: 100%; }
-    .identity:has(.musicslot) .who { flex: 1 1 auto; }
   }
   .who h1 { margin: 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.015em; }
   .campaign {
@@ -1640,9 +1647,10 @@
   /* The campaign it is in opens with a press: a small pill, not bare text. */
   .campaign a {
     color: inherit; text-decoration: none; overflow-wrap: anywhere; border: 1px solid var(--a-edge); border-radius: 999px;
-    padding: 0.0625rem 0.5rem; transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+    padding: 0.0625rem 0.5rem; background: color-mix(in oklab, var(--a) 9%, transparent);
+    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
   }
-  .campaign a:hover { background: color-mix(in oklch, var(--a) 12%, transparent); border-color: var(--a); }
+  .campaign a:hover { background: color-mix(in oklab, var(--a) 17%, transparent); border-color: var(--a); }
   .campaign a:active { transform: translateY(1px); }
   .campaign a:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
   .campaign .retired {
@@ -1652,7 +1660,7 @@
   /* In edit mode the label is a button that opens the campaign dialog. */
   button.campaign {
     font: inherit; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
-    background: none; border: 1px dashed var(--a-edge); border-radius: 999px; padding: 0.125rem 0.625rem 0.125rem 0.5rem;
+    background: color-mix(in oklab, var(--a) 6%, transparent); border: 1px dashed var(--a-edge); border-radius: 999px; padding: 0.125rem 0.625rem 0.125rem 0.5rem;
     color: var(--a); cursor: pointer; transition: background-color 0.15s ease, border-color 0.15s ease;
   }
   button.campaign:hover { background: var(--a-wash); border-style: solid; }
@@ -1943,7 +1951,7 @@
     /* The portrait and the words beside it sit in the middle as one block, the words still left-aligned to the portrait. */
     .identity { display: grid; grid-template-columns: 5.5rem minmax(0, max-content); justify-content: center; column-gap: 0.875rem; row-gap: 0.25rem; align-items: center; }
     .identity .portrait { width: 5.5rem; grid-column: 1; grid-row: 1 / 3; align-self: center; }
-    .identity .who { display: contents; }
+    .identity .idleft, .identity .who { display: contents; }
     .identity .who > h1 { grid-column: 2; grid-row: 1; align-self: end; min-width: 0; }
     .identity .who > .sub { grid-column: 2; grid-row: 2; align-self: start; margin-top: 0.125rem; }
     .identity .who > .campaign { grid-column: 1 / -1; grid-row: 3; align-self: start; justify-self: center; margin: 0.875rem 0 0; max-width: 100%; }

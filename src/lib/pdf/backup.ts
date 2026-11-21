@@ -1,5 +1,5 @@
 /**
- * The sheet inside its PDF: the PDF button attaches the same file Export
+ * The sheet inside its PDF: the save button attaches the same file Export
  * saves (lib/exchange), so Import can rebuild the character from the PDF.
  * Edits typed into the PDF's fields are not read back; the attached file is
  * the sheet as it was when the PDF was made. Loaded only when a PDF is
