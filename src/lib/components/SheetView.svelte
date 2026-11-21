@@ -791,7 +791,17 @@
 </svelte:head>
 
 {#if loading || !revealed}
-  <!-- The sheet's outline, dimmed, with the die rolling over it. -->
+  <!-- The sheet's outline, dimmed, with the die rolling over it. On a phone its two bars are
+       already there, so moving here from another page they hold still instead of blinking out. -->
+  {#if phoneOn}
+    <div class="loadtop">
+      <PhoneTop>
+        {#snippet left()}<ModeToggle />{/snippet}
+        {#snippet right()}<BackLink href={cameFrom ? `${base}/c/${cameFrom}` : `${base}/`} title={cameFrom ? 'Back to the campaign' : 'Back to your characters'} />{/snippet}
+      </PhoneTop>
+    </div>
+    <PhoneBar places={phonePlaces} active={place} onchoose={goPlace} />
+  {/if}
   <div class="loading">
     <SheetSkeleton />
     <div class="screen-center">
@@ -1460,6 +1470,8 @@
   .entering .identity { animation: sheetFill 0.3s ease-out backwards; }
 
   .loading { position: relative; }
+  /* The loading top bar sits where the sheet's will, in the sheet's own padding. */
+  .loadtop { padding: 0.75rem 0.75rem 0; }
   .loading > :global(.skel) { opacity: 0.45; }
     /* Not positioned: the banner inside it is meant to escape this column and
      run the width of the page. */

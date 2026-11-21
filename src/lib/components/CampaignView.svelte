@@ -596,7 +596,17 @@
 <svelte:window onkeydown={onKey} />
 
 {#if loading || !landed}
-  <!-- The page's outline, dimmed, with the die rolling over it (as a sheet). -->
+  <!-- The page's outline, dimmed, with the die rolling over it (as a sheet). On a phone its two
+       bars are already there, so moving here from another page they hold still instead of blinking out. -->
+  {#if phoneOn}
+    <div class="loadtop">
+      <PhoneTop>
+        {#snippet left()}<ModeToggle />{/snippet}
+        {#snippet right()}<BackLink href="{base}/" title="Back to your characters and campaigns" />{/snippet}
+      </PhoneTop>
+    </div>
+    <PhoneBar places={phonePlaces} active={place} onchoose={goPlace} />
+  {/if}
   <div class="loading">
     <CampaignSkeleton />
     <div class="screen-center">
@@ -815,6 +825,8 @@
   /* Above the banner, which lies behind the top of the page. */
   main > :global(*) { position: relative; z-index: 1; }
   .loading { position: relative; min-height: 60vh; }
+  /* The loading top bar sits where the page's will, in the page's own padding. */
+  .loadtop { padding: 1.25rem 1rem 0; --pad-top: 1.25rem; --pad-side: 1rem; }
   .loading > :global(.cskel) { opacity: 0.45; }
   header { display: flex; align-items: center; gap: 0.875rem; }
   .gear :global(svg), .owlbtn svg { transition: transform 0.45s cubic-bezier(0.33, 1, 0.68, 1); }

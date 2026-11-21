@@ -107,8 +107,9 @@
 
 <style>
   .barroom { flex: none; }
+  /* Moving between pages, the bar keeps its place (view-transition-name) instead of fading and lifting with the page. */
   .phonefoot {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; view-transition-name: phonebar;
     padding: 0 max(0.5rem, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(0.5rem, env(safe-area-inset-left, 0px));
   }
   /* Its ground on a layer of its own, nearly solid and without frost: a

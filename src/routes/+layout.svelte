@@ -190,6 +190,10 @@
     animation: leave-page 0.2s cubic-bezier(0.33, 1, 0.68, 1) both;
   }
   :global(::view-transition-new(root)) { animation: none; }
+  /* A phone's top and bottom bars swap in place: the new one shows at once, the old one not at all. */
+  :global(::view-transition-group(phonetop)), :global(::view-transition-group(phonebar)),
+  :global(::view-transition-new(phonetop)), :global(::view-transition-new(phonebar)) { animation: none; }
+  :global(::view-transition-old(phonetop)), :global(::view-transition-old(phonebar)) { animation: none; opacity: 0; }
   @keyframes -global-leave-page {
     to { opacity: 0; transform: translateY(-8px) scale(0.99); }
   }
