@@ -390,15 +390,22 @@
       </div>
       {#if prefMsg}<p class="msg" class:bad={!prefMsg.ok} role="status">{prefMsg.text}</p>{/if}
 
-      <h3 class="sub-h">Privacy
-        <InfoTip label="About privacy"><b>Share my rows.</b> When you type a name in a table (an attack, spell, item,
-          feature, or tracker), rows other players have written are offered, ready to use. Your own rows are shared the
-          same way, without your name: only players you share a campaign with can see who wrote them. Turning it off
-          takes back everything you have shared.<br /><br /><b>Keep my sheets private.</b> Every sheet you have, and every
-          one you make, can then be opened only by you and by the DM of the campaign it is in. Other players, your
-          campaign mates included, no longer see it or its card, and its share link stops working for anyone else.
-          Turning it off opens them again.</InfoTip>
-      </h3>
+      <div class="subrow">
+        <h3 class="sub-h">Privacy
+          <InfoTip label="About privacy"><b>Share my rows.</b> When you type a name in a table (an attack, spell, item,
+            feature, or tracker), rows other players have written are offered, ready to use. Your own rows are shared the
+            same way, without your name: only players you share a campaign with can see who wrote them. Turning it off
+            takes back everything you have shared.<br /><br /><b>Keep my sheets private.</b> Every sheet you have, and every
+            one you make, can then be opened only by you and by the DM of the campaign it is in. Other players, your
+            campaign mates included, no longer see it or its card, and its share link stops working for anyone else.
+            Turning it off opens them again.</InfoTip>
+        </h3>
+        <!-- The whole policy (what is kept, where, and how to remove it), at the right of the title. -->
+        <a class="smallbtn policylink" href="{base}/privacy?from=account">
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 3.5 5 6v5.5c0 4.3 3 7.6 7 9 4-1.4 7-4.7 7-9V6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /><path d="m9 12 2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          Privacy Policy
+        </a>
+      </div>
       <div class="switches">
         <Switch checked={sharing($profile)} label="Share my rows" disabled={shareBusy}
                 title="Turning it off takes back everything you have shared"
@@ -409,11 +416,6 @@
                 onchange={togglePrivate} />
         {#if privateMsg}<span class="msg" class:bad={!privateMsg.ok} role="status">{privateMsg.text}</span>{/if}
       </div>
-      <!-- The whole policy: what is kept, where, and how to remove it. -->
-      <a class="smallbtn policylink" href="{base}/privacy?from=account">
-        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 3.5 5 6v5.5c0 4.3 3 7.6 7 9 4-1.4 7-4.7 7-9V6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /><path d="m9 12 2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
-        Privacy policy
-      </a>
     </section>
 
     <section class="card" aria-labelledby="stats-h">
@@ -482,7 +484,13 @@
   .conns li :global(.err) { flex-basis: 100%; text-align: right; }
   /* The switches sit at the left, each with its message under it. */
   .switches { display: grid; justify-items: start; gap: 0.375rem; margin-top: 0.25rem; }
-  .policylink { justify-self: start; margin-top: 0.875rem; }
+  /* The privacy title with the policy at the far right of its line. */
+  .subrow {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;
+    margin: 1rem 0 0; padding-top: 1rem; border-top: 1px solid var(--line-soft);
+  }
+  .subrow .sub-h { margin: 0; padding: 0; border: 0; }
+  .policylink { flex: none; }
   .policylink svg { flex: none; transition: transform 0.35s cubic-bezier(0.33, 1, 0.68, 1); }
   .policylink:hover svg { transform: translateY(-1px) scale(1.08); }
   @media (prefers-reduced-motion: reduce) { .policylink svg { transition: none; } }
