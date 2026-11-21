@@ -38,6 +38,8 @@
   import CampaignCards from './CampaignCards.svelte';
   import D20Loader from './D20Loader.svelte';
   import ModeToggle from './ModeToggle.svelte';
+  import Logo from './Logo.svelte';
+  import BackLink from './BackLink.svelte';
   import Crest from './Crest.svelte';
   import Lightbox from './Lightbox.svelte';
   import { hereText, webLink } from '#lib/rules/presence.ts';
@@ -387,6 +389,15 @@
   let crestOpen = $state<Element | null>(null);
   /** When the table next meets (set by the DM). */
   const next = $derived(sessionWhen(campaign?.details.nextSession));
+  /** A phone's top bar: the page run under it, it takes its solid ground (a mark just above it says when). */
+  let topStuck = $state(false);
+  let topEl = $state<HTMLElement>();
+  $effect(() => {
+    if (!phoneOn || !topEl || typeof IntersectionObserver === 'undefined') return;
+    const watch = new IntersectionObserver(([e]) => (topStuck = !e.isIntersecting));
+    watch.observe(topEl);
+    return () => watch.disconnect();
+  });
 
   async function saveDetails(patch: Partial<CampaignDetails>) {
     if (!campaign) return;
@@ -533,6 +544,37 @@
   {#if !missing && !(error && !campaign)}<title>{pageTitle(campaign?.name ?? 'Campaign')}</title>{/if}
   {#if face}<link rel="stylesheet" href={face.href} />{/if}
 </svelte:head>
+<!-- The header's buttons, drawn in its row on a computer and in the top bar on a phone. -->
+{#snippet cog()}
+  <!-- The cog turns a little on hover, and a quarter turn while its window is open. -->
+  <button class="keys gear" class:open={settingsOpen} onclick={() => (settingsOpen = true)} aria-label="Campaign settings" title="Campaign settings"
+          aria-haspopup="dialog" aria-expanded={settingsOpen}>
+    <CogIcon />
+  </button>
+{/snippet}
+{#snippet owl()}
+  {#if owlbear}
+    <!-- The table's Owlbear Rodeo room (set in Campaign settings), for the DM and the players alike. -->
+    <a class="keys owlbtn" href={owlbear} target="_blank" rel="noopener noreferrer" aria-label="Open the table's Owlbear Rodeo room" title="Open the table's Owlbear Rodeo room">
+      <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 5.5 7.5 8M19 5.5 16.5 8M6 9.5c0-2.2 2.7-3.5 6-3.5s6 1.3 6 3.5V14c0 3.3-2.7 6-6 6s-6-2.7-6-6z" />
+        <circle cx="9.25" cy="11" r="1.6" /><circle cx="14.75" cy="11" r="1.6" /><path d="m11 14.2 1 1.3 1-1.3" />
+      </g></svg>
+    </a>
+  {/if}
+{/snippet}
+{#snippet share()}
+  <ShareButton link={pageLink} label="Copy link to this page (to watch, not join)"
+               oncopied={(ok) => { if (!ok) error = 'The clipboard said no! Copy the address from the bar above instead.'; }} />
+{/snippet}
+{#snippet search()}
+  <button class="keys searchbtn" onclick={() => (searching = true)} aria-label="Search 5e.tools" title="Search 5e.tools (/)">
+    <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+  </button>
+{/snippet}
+{#snippet here()}<span class="herenote"><i class="here-dot"></i>{hereLine}</span>{/snippet}
+{#snippet nextUp(n: { when: string; until: string })}<span class="nextnote">Next session {n.when}<span class="nextuntil" class:soon={n.until === 'today' || n.until === 'now'}>, {n.until === 'now' ? 'happening now' : n.until}</span></span>{/snippet}
+
 <svelte:window onkeydown={onKey} />
 
 {#if loading || !landed}
@@ -551,50 +593,49 @@
 {:else if campaign}
   <main class="themed campaignpage" style={themeCss} in:fade={{ duration: prefersReducedMotion() ? 0 : 200 }} data-place={phoneOn ? place : undefined} data-moved={phoneOn && moved ? '' : undefined}>
     {#if bannerLink.url}<Banner url={bannerLink.url} />{/if}
+    {#if phoneOn}
+      <!-- A phone's top bar, held at the top of the screen as the sheet's: the cog, the search and
+           the mode at the left, the app's mark in the middle, Owlbear, the link and Back at the right. -->
+      <div class="topmark" bind:this={topEl} aria-hidden="true"></div>
+      <div class="phonetop" class:stuck={topStuck}>
+        <div class="topleft">{#if isDm}{@render cog()}{/if}{@render search()}<ModeToggle /></div>
+        <span class="toplogo"><Logo size={26} /></span>
+        <div class="topright">{@render owl()}{@render share()}<BackLink href="{base}/" title="Back to your characters and campaigns" /></div>
+      </div>
+    {/if}
     <header>
-      <!-- The die, in the campaign's own color: home to the list. -->
       <!-- The campaign's crest, turning toward the pointer as a sheet's portrait does; with none
            set, the d20 a character with no portrait shows. -->
       <Crest src={crestLink.url ?? ''} size={3.25} name={campaign.name} onopen={(from) => (crestOpen = from)} />
       <div class="title">
-        <span class="eyebrow">Campaign{#if ended}<span class="sep">·</span>ended{/if}{#if isDm}<span class="sep">·</span>you’re the DM{/if}{#if hereLine}<span class="sep">·</span><span class="herenote"><i class="here-dot"></i>{hereLine}</span>{/if}{#if next && !next.past}<span class="sep">·</span><span class="nextnote">Next session {next.when}<span class="nextuntil" class:soon={next.until === 'today' || next.until === 'now'}>, {next.until === 'now' ? 'happening now' : next.until}</span></span>{/if}</span>
+        <!-- Who is here and the next session follow in the line above the name; on a phone they
+             go under it instead, as a sheet's class line, so neither line runs long. -->
+        <span class="eyebrow">Campaign{#if ended}<span class="sep">·</span>ended{/if}{#if isDm}<span class="sep">·</span>you’re the DM{/if}{#if !phoneOn}{#if hereLine}<span class="sep">·</span>{@render here()}{/if}{#if next && !next.past}<span class="sep">·</span>{@render nextUp(next)}{/if}{/if}</span>
         <h1 style:font-family={faceFamily(face)}>
           {campaign.name}
         </h1>
+        {#if phoneOn && (hereLine || (next && !next.past))}
+          <p class="phonesub">{#if hereLine}{@render here()}{/if}{#if next && !next.past}{@render nextUp(next)}{/if}</p>
+        {/if}
       </div>
-      <div class="tools">
-        <a class="back" href="{base}/" title="Back to your characters and campaigns">Back</a>
-        {#if isDm}
-          <!-- The cog turns a little on hover, and a quarter turn while its window is open. -->
-          <button class="keys gear" class:open={settingsOpen} onclick={() => (settingsOpen = true)} aria-label="Campaign settings" title="Campaign settings"
-                  aria-haspopup="dialog" aria-expanded={settingsOpen}>
-            <CogIcon />
+      {#if !phoneOn}
+        <div class="tools">
+          <BackLink href="{base}/" title="Back to your characters and campaigns" />
+          {#if isDm}{@render cog()}{/if}
+          {@render owl()}
+          {@render share()}
+          {@render search()}
+          <button class="keys kbd" onclick={() => (showKeys = true)} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
+            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+              <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2.5" y="6" width="19" height="12" rx="2" />
+                <path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M7.5 14h9" />
+              </g>
+            </svg>
           </button>
-        {/if}
-        {#if owlbear}
-          <!-- The table's Owlbear Rodeo room (set in Campaign settings), for the DM and the players alike. -->
-          <a class="keys owlbtn" href={owlbear} target="_blank" rel="noopener noreferrer" aria-label="Open the table's Owlbear Rodeo room" title="Open the table's Owlbear Rodeo room">
-            <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M5 5.5 7.5 8M19 5.5 16.5 8M6 9.5c0-2.2 2.7-3.5 6-3.5s6 1.3 6 3.5V14c0 3.3-2.7 6-6 6s-6-2.7-6-6z" />
-              <circle cx="9.25" cy="11" r="1.6" /><circle cx="14.75" cy="11" r="1.6" /><path d="m11 14.2 1 1.3 1-1.3" />
-            </g></svg>
-          </a>
-        {/if}
-        <ShareButton link={pageLink} label="Copy link to this page (to watch, not join)"
-                     oncopied={(ok) => { if (!ok) error = 'The clipboard said no! Copy the address from the bar above instead.'; }} />
-        <button class="keys searchbtn" onclick={() => (searching = true)} aria-label="Search 5e.tools" title="Search 5e.tools (/)">
-          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
-        </button>
-        <button class="keys kbd" onclick={() => (showKeys = true)} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
-          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-            <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2.5" y="6" width="19" height="12" rx="2" />
-              <path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M7.5 14h9" />
-            </g>
-          </svg>
-        </button>
-        <ModeToggle />
-      </div>
+          <ModeToggle />
+        </div>
+      {/if}
     </header>
 
     <!-- The table's music in the very middle, as a capsule (all the players see of it); the DM's switch between
@@ -760,6 +801,8 @@
   /* As wide as a sheet (app.css --page-width); its own padding on a phone. */
   main { max-width: var(--page-width); margin: 0 auto; padding: 2rem var(--page-pad) 4rem; }
   @media (max-width: 600px) { main { padding-left: 1rem; padding-right: 1rem; } }
+  /* A phone: the top bar pulls the page's padding back (app.css .phonetop). */
+  @media (max-width: 700px) { main { padding-top: 1.25rem; --pad-top: 1.25rem; --pad-side: 1rem; padding-left: 1rem; padding-right: 1rem; } }
   /* Above the banner, which lies behind the top of the page. */
   main > :global(*) { position: relative; z-index: 1; }
   .loading { position: relative; min-height: 60vh; }
@@ -776,15 +819,6 @@
   .eyebrow { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--a); }
   h1 { margin: 0.125rem 0 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.015em; }
   .tools { display: flex; align-items: center; gap: 0.5rem; flex: none; }
-  /* The header's buttons: Back, the DM's gear, then square icons. */
-  .back {
-    background: var(--raised); border: 1px solid var(--line); color: var(--text);
-    border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font-size: 0.8125rem;
-    text-decoration: none; flex: none; line-height: 1.5;
-    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
-  }
-  .back:hover { border-color: var(--a-edge); color: var(--a); }
-  .back:active { transform: translateY(1px); }
   /* Shortcuts are for a keyboard: the button only shows where there is a mouse. */
   .keys {
     display: none; place-items: center; width: 2rem; height: 2rem; flex: none; padding: 0;
@@ -817,6 +851,9 @@
   @media (max-width: 700px) {
     .tablebar { grid-template-columns: minmax(0, 1fr); }
     .musicslot, .musicslot.whole { grid-column: 1; grid-row: auto; }
+    /* The capsule too, edge to edge. */
+    .tablebar .musicslot > :global(*), .tablebar .musicslot :global(.jukebox.compact) { flex: 1 1 auto; width: 100%; max-width: none; }
+    .tablebar .musicslot :global(.capsule), .tablebar .musicslot :global(.jukebox.compact .player) { display: flex; flex: 1 1 auto; width: 100%; max-width: none; }
   }
   .nextnote { white-space: normal; }
   /* The monsters' side slides in from the right, as the players' does from the left. */
@@ -824,7 +861,7 @@
   @keyframes creaturesIn { from { opacity: 0; transform: translate3d(14px, 0, 0); } }
   @media (prefers-reduced-motion: reduce) { .creaturespane:not([hidden]) { animation: none; } }
   /* How far off it is, quieter, unless it is today. */
-  .nextuntil { color: var(--dim); }
+  .nextuntil { color: var(--dim); white-space: nowrap; }
   .nextuntil.soon { color: inherit; }
   /* The invite's plus turns once on hover, a little welcome. */
   .invitebtn svg { flex: none; }
@@ -853,14 +890,21 @@
 
   .retired ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.375rem; }
   .retired .smallbtn { margin-right: 0.5rem; }
-  @media (max-width: 600px) {
-    main { padding-top: 1.25rem; }
-    h1 { font-size: 1.375rem; }
-    header { flex-wrap: wrap; }
-    /* The controls in one row under the name, together in the middle. */
-    .tools { width: 100%; justify-content: center; gap: 0.375rem; flex-wrap: wrap; }
-    /* One height along the row: the icons as tall as Back. */
-    .tools .keys, .tools :global(:is(.share, .mode)) { width: var(--btn-h); height: var(--btn-h); }
-    .back { padding: 0.375rem 0.5rem; }
+  /*
+   * A phone, as a sheet's header: the eyebrow across the top; the crest at the
+   * left with the name beside it, and who is here and the next session under
+   * the name, together in the middle of the screen. The buttons are in the
+   * top bar.
+   */
+  @media (max-width: 700px) {
+    h1 { font-size: 1.375rem; overflow-wrap: anywhere; }
+    header { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, max-content) minmax(0, 1fr); gap: 0; align-items: center; }
+    header .title { display: contents; }
+    header > :global(.crest) { grid-column: 2; grid-row: 2 / 4; align-self: center; margin-right: 0.875rem; }
+    .eyebrow { grid-column: 1 / -1; grid-row: 1; justify-self: center; text-align: center; margin-bottom: 0.875rem; letter-spacing: 0.1em; }
+    header h1 { grid-column: 3; grid-row: 2; align-self: end; margin: 0; }
+    .phonesub { grid-column: 3; grid-row: 3; align-self: start; }
   }
+  /* Under the name: who is here and the next session, each kept whole as a sheet's class line. */
+  .phonesub { margin: 0.3125rem 0 0; display: flex; flex-wrap: wrap; gap: 0.125rem 0.75rem; font-size: 0.8125rem; line-height: 1.4; color: var(--text); }
 </style>
