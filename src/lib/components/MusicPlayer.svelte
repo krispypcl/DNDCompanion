@@ -872,6 +872,9 @@
   .captext { display: inline-block; padding: 0 0.625rem 0 0; }
   .rolling .captext { padding-left: 0.625rem; animation: capscroll var(--dur) ease-in-out infinite alternate; }
   .captext.bad { color: var(--bad); }
+  /* A name that fits sits in the middle of its room; a long one scrolls from its start. */
+  .capbox:not(.rolling) { text-align: center; }
+  .capbox:not(.rolling) .captext { padding: 0 0.3125rem; }
   @keyframes capscroll { 0%, 18% { transform: translateX(0); } 82%, 100% { transform: translateX(var(--shift)); } }
   /* Without motion the title wraps instead: it is never cut short. */
   @media (prefers-reduced-motion: reduce) {
