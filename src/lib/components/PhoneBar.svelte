@@ -8,7 +8,7 @@
 -->
 <script lang="ts" module>
   export type PhonePlace = { key: string; label: string; icon: PlaceIcon; badge?: boolean };
-  export type PlaceIcon = 'play' | 'abilities' | 'spells' | 'search' | 'gear' | 'features' | 'more' | 'party' | 'fight' | 'foes' | 'board' | 'music' | 'person' | 'flag';
+  export type PlaceIcon = 'play' | 'abilities' | 'spells' | 'search' | 'gear' | 'features' | 'more' | 'party' | 'fight' | 'sight' | 'board' | 'person' | 'flag';
 </script>
 
 <script lang="ts">
@@ -36,31 +36,39 @@
   });
 </script>
 
+<!-- One sword, point up, its guard at (0, 14.5), the blade solid so it reads at bar size: drawn twice, leaning apart, for a fight. -->
+{#snippet sword(x: number, lean: number)}
+  <g transform="translate({x} 0) rotate({lean} 0 14.5)">
+    <path d="M0 2.25 1.55 4.5v9.25h-3.1V4.5z" fill="currentColor" stroke-width="1" /><path d="M-3.5 14.5h7M0 14.5v4.5" stroke-width="1.8" /><circle cx="0" cy="20.4" r="1.25" fill="currentColor" stroke="none" />
+  </g>
+{/snippet}
+
 {#snippet glyph(icon: PlaceIcon)}
   <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
     <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
       {#if icon === 'play' || icon === 'fight'}
-        <path d="M14.5 4.5h5v5L10 19l-2.5.5L5 22l-1-1 2.5-2.5L7 16zM9.5 4.5h-5v5L14 19l2.5.5L19 22l1-1-2.5-2.5L17 16z" />
+        <!-- Two swords side by side, leaning apart, never crossing. -->
+        {@render sword(7, -15)}{@render sword(17, 15)}
       {:else if icon === 'abilities'}
-        <rect x="3.5" y="4" width="7" height="7" rx="1.5" /><rect x="13.5" y="4" width="7" height="7" rx="1.5" /><rect x="3.5" y="13" width="7" height="7" rx="1.5" /><rect x="13.5" y="13" width="7" height="7" rx="1.5" />
-      {:else if icon === 'spells'}
         <path d="M12 3.5l1.9 4.6 4.6 1.9-4.6 1.9L12 16.5l-1.9-4.6L5.5 10l4.6-1.9zM18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" />
+      {:else if icon === 'spells'}
+        <!-- A rolled scroll: a roll at each end, the page and its lines between. -->
+        <rect x="4.5" y="3.5" width="15" height="3.5" rx="1.75" /><rect x="4.5" y="17" width="15" height="3.5" rx="1.75" /><path d="M6.5 7v10M17.5 7v10M9.5 10.5h5M9.5 13.5h5" />
       {:else if icon === 'search'}
         <circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" />
       {:else if icon === 'features'}
         <path d="M12 3.5 14.4 8.4l5.4.8-3.9 3.8.9 5.4-4.8-2.6-4.8 2.6.9-5.4-3.9-3.8 5.4-.8z" />
       {:else if icon === 'gear'}
-        <path d="M5.5 8.5h13l-1.2 11h-10.6zM9 8.5V7a3 3 0 0 1 6 0v1.5" />
+        <!-- A shield. -->
+        <path d="M12 3.25 19 5.75v5.75c0 4.4-2.9 7.6-7 9.25-4.1-1.65-7-4.85-7-9.25V5.75z" /><path d="M12 6.5v11.25" />
       {:else if icon === 'more'}
         <path d="M5 7h14M5 12h14M5 17h14" />
       {:else if icon === 'party'}
         <circle cx="9" cy="8.5" r="3" /><path d="M3.5 19c.5-3.4 2.8-5 5.5-5s5 1.6 5.5 5" /><circle cx="16.5" cy="9.5" r="2.5" /><path d="M15.5 14.2c2.6-.3 4.6 1.1 5 4.3" />
-      {:else if icon === 'foes'}
-        <path d="M8.25 8.5 5 3.25l.75 6.25M15.75 8.5 19 3.25l-.75 6.25" /><circle cx="12" cy="14" r="6.25" /><path d="M9.75 13.5h.01M14.25 13.5h.01M10 17.25h4" />
+      {:else if icon === 'sight'}
+        <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z" /><circle cx="12" cy="12" r="2.75" />
       {:else if icon === 'board'}
         <rect x="3.5" y="5" width="17" height="14" rx="2" /><path d="M7 15l3-3.5 2.5 2.5 2-2L17 15" />
-      {:else if icon === 'music'}
-        <path d="M9 17.5V6l10-2v11.5" /><circle cx="6.5" cy="17.5" r="2.5" /><circle cx="16.5" cy="15.5" r="2.5" />
       {:else if icon === 'person'}
         <circle cx="12" cy="8" r="3.5" /><path d="M5 20c.6-3.9 3.6-6 7-6s6.4 2.1 7 6" />
       {:else}

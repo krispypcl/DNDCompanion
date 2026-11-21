@@ -38,7 +38,7 @@
   import CampaignCards from './CampaignCards.svelte';
   import D20Loader from './D20Loader.svelte';
   import ModeToggle from './ModeToggle.svelte';
-  import Logo from './Logo.svelte';
+  import PhoneTop from './PhoneTop.svelte';
   import BackLink from './BackLink.svelte';
   import Crest from './Crest.svelte';
   import Lightbox from './Lightbox.svelte';
@@ -96,7 +96,7 @@
       return false;
     }
   };
-  const compactMusic = $derived(!isDm || (!phone.current && (musicChoice ?? storedCompact(musicKey))));
+  const compactMusic = $derived(!isDm || (musicChoice ?? storedCompact(musicKey)));
   function setMusicCompact(on: boolean) {
     musicChoice = on;
     try {
@@ -175,20 +175,20 @@
   }
 
   /*
-   * A phone: the page in places on a bar at the bottom: the party, the fight
-   * (initiative, and what is in sight), the DM's monsters and NPCs, the
-   * board, and the DM's music. The bar replaces the DM's side switch. The
-   * music keeps playing from whichever place you're in.
+   * A phone: the page in places on a bar at the bottom: the party (with the
+   * music, and for the DM the switch to their monsters and NPCs), the board,
+   * the search (a window, not a place), what is in sight, and the
+   * initiative. The music keeps playing from whichever place you're in.
    */
-  type Place = 'party' | 'fight' | 'foes' | 'board' | 'music';
+  type Place = 'party' | 'board' | 'sight' | 'initiative';
   const phoneOn = $derived(phone.current);
   let place = $state<Place>('party');
   /** Moved between places at least once: from then on a place's parts fade in (app.css). */
   let moved = $state(false);
   function goPlace(next: string) {
+    // Search is on the bar, but it is a window, not a place.
+    if (next === 'search') return void (searching = true);
     const p = next as Place;
-    if (p === 'foes') void chooseSide(SIDE_CREATURES);
-    else if (p === 'party') void chooseSide(SIDE_PLAYERS);
     if (p !== place) moved = true;
     place = p;
     if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
@@ -389,15 +389,8 @@
   let crestOpen = $state<Element | null>(null);
   /** When the table next meets (set by the DM). */
   const next = $derived(sessionWhen(campaign?.details.nextSession));
-  /** A phone's top bar: the page run under it, it takes its solid ground (a mark just above it says when). */
-  let topStuck = $state(false);
-  let topEl = $state<HTMLElement>();
-  $effect(() => {
-    if (!phoneOn || !topEl || typeof IntersectionObserver === 'undefined') return;
-    const watch = new IntersectionObserver(([e]) => (topStuck = !e.isIntersecting));
-    watch.observe(topEl);
-    return () => watch.disconnect();
-  });
+  /** The next session, while it is still to come. */
+  const upcoming = $derived(next && !next.past ? next : null);
 
   async function saveDetails(patch: Partial<CampaignDetails>) {
     if (!campaign) return;
@@ -444,10 +437,10 @@
   const mineToRoll = $derived(combatants.filter((c) => c.mine && c.value === null));
   const phonePlaces = $derived<PhonePlace[]>([
     { key: 'party', label: 'Party', icon: 'party' },
-    { key: 'fight', label: 'Fight', icon: 'fight', badge: place !== 'fight' && (myTurn || (init.asking && mineToRoll.length > 0) || (isDm && fighting)) },
-    ...(isDm ? [{ key: 'foes', label: 'Foes', icon: 'foes' as const }] : []),
     { key: 'board', label: 'Board', icon: 'board' },
-    ...(isDm ? [{ key: 'music', label: 'Music', icon: 'music' as const }] : [])
+    { key: 'search', label: 'Search', icon: 'search' },
+    { key: 'sight', label: 'Sight', icon: 'sight' },
+    { key: 'initiative', label: 'Initiative', icon: 'fight', badge: place !== 'initiative' && (myTurn || (init.asking && mineToRoll.length > 0) || (isDm && fighting)) }
   ]);
   const turnNow = () => ({ turn: init.turn, round: init.round });
   const initFail = (e: unknown) => (error = campaignMessage(e, 'The order slipped! Try again.'));
@@ -553,7 +546,7 @@
   </button>
 {/snippet}
 {#snippet owl()}
-  {#if owlbear}
+  {#if owlbear && isMember}
     <!-- The table's Owlbear Rodeo room (set in Campaign settings), for the DM and the players alike. -->
     <a class="keys owlbtn" href={owlbear} target="_blank" rel="noopener noreferrer" aria-label="Open the table's Owlbear Rodeo room" title="Open the table's Owlbear Rodeo room">
       <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -570,6 +563,21 @@
 {#snippet search()}
   <button class="keys searchbtn" onclick={() => (searching = true)} aria-label="Search 5e.tools" title="Search 5e.tools (/)">
     <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+  </button>
+{/snippet}
+<!-- The invite: the figure and plus with its words on a computer, the icon alone in a phone's top bar. -->
+{#snippet inviteButton(bare: boolean)}
+  <button class="smallbtn invitebtn" class:done={copied === 'invite'} onclick={() => copy(inviteLink, 'invite')} disabled={!inviteLink}
+          title="Copies the invite link: it lets a player's character join this campaign"
+          aria-label={bare ? (copied === 'invite' ? 'Invite link copied' : 'Invite a player') : undefined}>
+    <svg viewBox="0 0 24 24" width={bare ? 17 : 15} height={bare ? 17 : 15} aria-hidden="true">
+      <g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        {#if copied === 'invite'}<path d="m5 12.5 4.5 4.5L19 7.5" stroke-width="2" />{:else}
+          <circle cx="9.5" cy="8.5" r="3.5" /><path d="M3 19.5c.8-3.3 3.4-5 6.5-5s5.7 1.7 6.5 5" /><path class="plus" d="M19 8v6M16 11h6" />
+        {/if}
+      </g>
+    </svg>
+    {#if !bare}{copied === 'invite' ? 'Link copied!' : 'Invite a player'}{/if}
   </button>
 {/snippet}
 {#snippet here()}<span class="herenote"><i class="here-dot"></i>{hereLine}</span>{/snippet}
@@ -594,34 +602,34 @@
   <main class="themed campaignpage" style={themeCss} in:fade={{ duration: prefersReducedMotion() ? 0 : 200 }} data-place={phoneOn ? place : undefined} data-moved={phoneOn && moved ? '' : undefined}>
     {#if bannerLink.url}<Banner url={bannerLink.url} />{/if}
     {#if phoneOn}
-      <!-- A phone's top bar, held at the top of the screen as the sheet's: the cog, the search, and
-           the mode at the left, the app's mark in the middle, and Owlbear, the link, and Back at the right. -->
-      <div class="topmark" bind:this={topEl} aria-hidden="true"></div>
-      <div class="phonetop" class:stuck={topStuck}>
-        <div class="topleft">{#if isDm}{@render cog()}{/if}{@render search()}<ModeToggle /></div>
-        <span class="toplogo"><Logo size={26} /></span>
-        <div class="topright">{@render owl()}{@render share()}<BackLink href="{base}/" title="Back to your characters and campaigns" /></div>
-      </div>
+      <!-- A phone's top bar, as every page's: Owlbear, the cog, and the mode at the left, and the
+           link, the invite, and Back at the right. -->
+      <PhoneTop>
+        {#snippet left()}{@render owl()}{#if isMember}{@render cog()}{/if}<ModeToggle />{/snippet}
+        {#snippet right()}{@render share()}{#if isMember && !ended}{@render inviteButton(true)}{/if}<BackLink href="{base}/" title="Back to your characters and campaigns" />{/snippet}
+      </PhoneTop>
     {/if}
     <header>
       <!-- The campaign's crest, turning toward the pointer as a sheet's portrait does; with none
            set, the d20 a character with no portrait shows. -->
-      <Crest src={crestLink.url ?? ''} size={3.25} name={campaign.name} onopen={(from) => (crestOpen = from)} />
+      <Crest src={crestLink.url ?? ''} size={phoneOn ? 4.75 : 3.25} name={campaign.name} onopen={(from) => (crestOpen = from)} />
       <div class="title">
-        <!-- Who is here and the next session follow in the line above the name; on a phone they
+        <!-- The next session and who is here follow in the line above the name; on a phone they
              go under it instead, as a sheet's class line, so neither line runs long. -->
-        <span class="eyebrow">Campaign{#if ended}<span class="sep">·</span>ended{/if}{#if isDm}<span class="sep">·</span>you’re the DM{/if}{#if !phoneOn}{#if hereLine}<span class="sep">·</span>{@render here()}{/if}{#if next && !next.past}<span class="sep">·</span>{@render nextUp(next)}{/if}{/if}</span>
+        {#if ended || isDm || (!phoneOn && (upcoming || hereLine))}
+          <span class="eyebrow">{#if ended}<span class="seg">Ended</span>{/if}{#if isDm}<span class="seg">You’re the DM</span>{/if}{#if !phoneOn}{#if upcoming}<span class="seg">{@render nextUp(upcoming)}</span>{/if}{#if hereLine}<span class="seg">{@render here()}</span>{/if}{/if}</span>
+        {/if}
         <h1 style:font-family={faceFamily(face)}>
           {campaign.name}
         </h1>
-        {#if phoneOn && (hereLine || (next && !next.past))}
-          <p class="phonesub">{#if hereLine}{@render here()}{/if}{#if next && !next.past}{@render nextUp(next)}{/if}</p>
+        {#if phoneOn && (hereLine || upcoming)}
+          <p class="phonesub">{#if upcoming}{@render nextUp(upcoming)}{/if}{#if hereLine}{@render here()}{/if}</p>
         {/if}
       </div>
       {#if !phoneOn}
         <div class="tools">
           <BackLink href="{base}/" title="Back to your characters and campaigns" />
-          {#if isDm}{@render cog()}{/if}
+          {#if isMember}{@render cog()}{/if}
           {@render owl()}
           {@render share()}
           {@render search()}
@@ -646,16 +654,16 @@
       <div class="tablebar">
         <!-- One jukebox, capsule or whole: switching between them never stops the song. -->
         {#if showMusic}
-          <div class="musicslot" class:whole={!compactMusic} class:offstage={phoneOn && place !== (isDm ? 'music' : 'party')}>
+          <div class="musicslot" class:whole={!compactMusic} class:offstage={phoneOn && place !== 'party'}>
             <CampaignMusic campaignId={campaign.id} songs={campaign.details.songs ?? []} editing={isDm && !ended}
                            lead={isDm} playback={music.table} away={music.away} onplayback={(p) => music.send(p)}
                            onchange={(songs) => saveDetails({ songs })} compact={compactMusic}
-                           oncompact={isDm && !phoneOn ? () => setMusicCompact(true) : undefined}
+                           oncompact={isDm ? () => setMusicCompact(true) : undefined}
                            onexpand={isDm ? () => setMusicCompact(false) : undefined} />
           </div>
         {/if}
-        {#if isDm && !phoneOn}
-          <div class="sideswitch">
+        {#if isDm}
+          <div class="sideswitch" data-places="party">
             <AreaSwitch active={side} onchoose={(k) => void chooseSide(k)} sides={[
               { key: SIDE_PLAYERS, icon: 'person', count: active.length },
               { key: SIDE_CREATURES, icon: 'monster', count: creatureCount }
@@ -676,7 +684,7 @@
          The players' cards, or (the DM's other side) the monsters and NPCs. The creatures stay mounted
          once opened, so their count and what was typed survive a switch back and forth. Switching
          sides eases the height between them, so the initiative order below moves smoothly. -->
-    <div class="sides" bind:this={sidesBox} data-places="party foes">
+    <div class="sides" bind:this={sidesBox} data-places="party">
     {#if side === SIDE_PLAYERS}
       <div class="sidepane" in:sideIn={{ dir: -1 }}>
         <section class="campsec" aria-label="Characters">
@@ -690,19 +698,7 @@
               {/if}
             {/snippet}
             {#snippet end()}
-              {#if isMember && !ended}
-                <button class="smallbtn invitebtn" class:done={copied === 'invite'} onclick={() => copy(inviteLink, 'invite')} disabled={!inviteLink}
-                        title="Copies the invite link: it lets a player's character join this campaign">
-                  <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-                    <g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                      {#if copied === 'invite'}<path d="m5 12.5 4.5 4.5L19 7.5" stroke-width="2" />{:else}
-                        <circle cx="9.5" cy="8.5" r="3.5" /><path d="M3 19.5c.8-3.3 3.4-5 6.5-5s5.7 1.7 6.5 5" /><path class="plus" d="M19 8v6M16 11h6" />
-                      {/if}
-                    </g>
-                  </svg>
-                  {copied === 'invite' ? 'Link copied!' : 'Invite a player'}
-                </button>
-              {/if}
+              {#if isMember && !ended && !phoneOn}{@render inviteButton(false)}{/if}
             {/snippet}
           </SectionHead>
           {#if active.length === 0}
@@ -726,7 +722,7 @@
     <!-- The initiative order, after either side and the same on both, so it stays put while the
          sides switch above it. The players see it while the DM calls for initiative or a fight runs. -->
     {#if !ended && combatants.length && (isDm || fighting || init.asking)}
-      <div class="campsec" transition:slide={unfold()} data-places="fight">
+      <div class="campsec" transition:slide={unfold()} data-places="initiative">
         <InitiativeTracker {combatants} turn={init.turn} round={init.round} asking={init.asking} {isDm}
                            onvalue={setInitiative} onrollone={rollOne} onask={callForInitiative} oncancel={isDm ? endFight : undefined}
                            onrollrest={isDm ? rollRest : undefined}
@@ -737,7 +733,7 @@
 
     <!-- The DM sees In sight too: what the table sees of the revealed ones. -->
     {#if isDm ? dmRevealed.length : revealed.length}
-      <section class="campsec" data-places="fight" transition:slide={unfold()}><RevealedCreatures list={isDm ? dmRevealed : revealed} dm={isDm} /></section>
+      <section class="campsec" data-places="sight" transition:slide={unfold()}><RevealedCreatures list={isDm ? dmRevealed : revealed} dm={isDm} /></section>
     {/if}
 
     {#if retired.length}
@@ -760,13 +756,16 @@
       <CampaignBoard campaignId={campaign.id} userId={$session.user?.id ?? null} canEdit={isMember && !ended} foldable={!phoneOn} />
     </div>
 
-    {#if phoneOn && place === 'fight' && !(!ended && combatants.length && (isDm || fighting || init.asking)) && !(!isDm && revealed.length)}
-      <p class="phoneempty" in:fade={{ duration: 200 }}>No fight right now. When your DM calls for initiative, you roll yours here.</p>
+    {#if phoneOn && place === 'initiative' && !(!ended && combatants.length && (isDm || fighting || init.asking))}
+      <p class="phoneempty" in:fade={{ duration: 200 }}>No fight right now. {isDm ? 'Call for initiative here once the party is in.' : 'When your DM calls for initiative, you roll yours here.'}</p>
+    {/if}
+    {#if phoneOn && place === 'sight' && !(isDm ? dmRevealed.length : revealed.length)}
+      <p class="phoneempty" in:fade={{ duration: 200 }}>{isDm ? 'Nothing in sight yet. Reveal a monster or NPC with its eye and the table sees it here.' : 'Nothing in sight yet. Monsters and NPCs your DM reveals show up here.'}</p>
     {/if}
     {#if phoneOn}
       <PhoneBar places={phonePlaces} active={place} onchoose={goPlace}>
         {#snippet dock()}
-          {#if place === 'fight' && !ended}
+          {#if place === 'initiative' && !ended}
             {#if isDm && fighting}
               <button class="smallbtn" style="flex: 0 0 auto; padding-inline: 1.125rem" onclick={() => moveTurn(previousTurn(combatants, turnNow()))} aria-label="Previous turn">Back</button>
               <button class="smallbtn accent" onclick={() => moveTurn(nextTurn(combatants, turnNow()))}>Next turn</button>
@@ -785,8 +784,8 @@
     {#if crestOpen && crestLink.url}
       <Lightbox src={crestLink.url} alt="{campaign.name}’s crest" from={crestOpen} onclose={() => (crestOpen = null)} />
     {/if}
-    {#if settingsOpen && isDm}
-      <CampaignSettings {campaign} {inviteLink} onrename={rename} onsave={saveDetails} onnewinvite={newInvite}
+    {#if settingsOpen && isMember}
+      <CampaignSettings {campaign} {inviteLink} dm={isDm} onrename={rename} onsave={saveDetails} onnewinvite={newInvite}
                         onended={setEnded} ondelete={destroy} onpreview={(hex) => (themePreview = hex)}
                         onclose={() => (settingsOpen = false)} />
     {/if}
@@ -815,7 +814,8 @@
   .owlbtn:hover svg { transform: translateY(-1px) rotate(-6deg); }
   @media (prefers-reduced-motion: reduce) { .gear :global(svg), .owlbtn svg { transition: none; } }
   .title { flex: 1; min-width: 0; }
-  .sep { margin: 0 0.375rem; }
+  /* The eyebrow's parts, a dot between each two. */
+  .seg + .seg::before { content: '·'; margin: 0 0.375rem; }
   .eyebrow { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--a); }
   h1 { margin: 0.125rem 0 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.015em; }
   .tools { display: flex; align-items: center; gap: 0.5rem; flex: none; }
@@ -851,6 +851,8 @@
   @media (max-width: 700px) {
     .tablebar { grid-template-columns: minmax(0, 1fr); }
     .musicslot, .musicslot.whole { grid-column: 1; grid-row: auto; }
+    /* The DM's switch under the music, the width of the screen. */
+    .sideswitch { grid-column: 1; grid-row: auto; justify-self: stretch; display: grid; }
     /* The capsule too, edge to edge. */
     .tablebar .musicslot > :global(*), .tablebar .musicslot :global(.jukebox.compact) { flex: 1 1 auto; width: 100%; max-width: none; }
     .tablebar .musicslot :global(.capsule), .tablebar .musicslot :global(.jukebox.compact .player) { display: flex; flex: 1 1 auto; width: 100%; max-width: none; }
@@ -876,8 +878,7 @@
   }
   /* ── A phone's places (the rules for showing one are in app.css) ── */
   main[data-place] .creaturespane:not([hidden]) { animation: none; }
-  main[data-place]:not([data-place='party']):not([data-place='music']) .tablewrap { margin-top: 0; }
-  main[data-place='music'] .musicslot.whole { margin-top: 0.5rem; }
+  main[data-place]:not([data-place='party']) .tablewrap { margin-top: 0; }
   /* The places' own first section sits under the header as every section does. */
   main[data-place='board'] .boardslot :global(> *:first-child) { margin-top: 1.5rem; }
   .phoneempty {
@@ -892,18 +893,18 @@
   .retired .smallbtn { margin-right: 0.5rem; }
   /*
    * A phone, as a sheet's header: the eyebrow across the top; the crest at the
-   * left with the name beside it, and who is here and the next session under
-   * the name, together in the middle of the screen. The buttons are in the
-   * top bar.
+   * left edge, and the name with the next session and who is here under it at
+   * the right edge. The buttons are in the top bar.
    */
   @media (max-width: 700px) {
     h1 { font-size: 1.375rem; overflow-wrap: anywhere; }
-    header { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, max-content) minmax(0, 1fr); gap: 0; align-items: center; }
+    /* The crest at the left edge and the name with its line at the right (their words still left-aligned), room between. */
+    header { display: grid; grid-template-columns: auto minmax(0, max-content); justify-content: space-between; column-gap: 1.25rem; row-gap: 0; align-items: center; }
     header .title { display: contents; }
-    header > :global(.crest) { grid-column: 2; grid-row: 2 / 4; align-self: center; margin-right: 0.875rem; }
+    header > :global(.crest) { grid-column: 1; grid-row: 2 / 4; align-self: center; }
     .eyebrow { grid-column: 1 / -1; grid-row: 1; justify-self: center; text-align: center; margin-bottom: 0.875rem; letter-spacing: 0.1em; }
-    header h1 { grid-column: 3; grid-row: 2; align-self: end; margin: 0; }
-    .phonesub { grid-column: 3; grid-row: 3; align-self: start; }
+    header h1 { grid-column: 2; grid-row: 2; align-self: end; margin: 0; }
+    .phonesub { grid-column: 2; grid-row: 3; align-self: start; }
   }
   /* Under the name: who is here and the next session, each kept whole as a sheet's class line. */
   .phonesub { margin: 0.3125rem 0 0; display: flex; flex-wrap: wrap; gap: 0.125rem 0.75rem; font-size: 0.8125rem; line-height: 1.4; color: var(--text); }

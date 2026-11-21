@@ -1,11 +1,13 @@
 <script lang="ts">
   /**
-   * The campaign's settings, the DM's alone, in one window over the dimmed
-   * page (the gear beside Back): its name, the next session, the invite
-   * link, the crest, the banner, the Owlbear Rodeo room, the name's font,
-   * the theme, and ending or deleting it.
-   * Each change is saved as it is made, as on the page before; Done closes.
+   * The campaign's settings in one window over the dimmed page (the cog):
+   * its name, the next session, the invite link, the crest, the banner, the
+   * Owlbear Rodeo room, the name's font, the theme, and ending or deleting
+   * it. The DM changes them, each saved as it is made; a player in the
+   * campaign reads the name, the next session, the invite, and the room.
+   * Done closes.
    */
+  import { sessionWhen } from '#lib/rules/dates.ts';
   import { setNextSession, type Campaign, type CampaignDetails } from '#lib/data/campaigns.ts';
   import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
   import { faceFamily, nameFont } from '#lib/rules/fonts.ts';
@@ -16,6 +18,7 @@
 
   let {
     campaign,
+    dm = true,
     inviteLink,
     onrename,
     onsave,
@@ -26,6 +29,8 @@
     onclose
   }: {
     campaign: Campaign;
+    /** The DM changes the settings; a player only reads them. */
+    dm?: boolean;
     inviteLink: string;
     onrename: (name: string) => Promise<void> | void;
     onsave: (patch: Partial<CampaignDetails>) => Promise<void> | void;
@@ -38,6 +43,8 @@
   } = $props();
 
   const ended = $derived(campaign.archived);
+  const next = $derived(sessionWhen(campaign.details.nextSession));
+  const room = $derived(webLink(campaign.details.owlbearUrl));
   const bannerLink = $derived(resolveImageUrl(campaign.details.bannerUrl));
   const crestLink = $derived(resolveImageUrl(campaign.details.crestUrl));
   const owlbearBad = $derived(Boolean(campaign.details.owlbearUrl?.trim()) && !webLink(campaign.details.owlbearUrl));
@@ -74,6 +81,39 @@
 
 <DimModal id="campaign-settings" title="Campaign settings" wide onclose={close}>
   <div class="settings">
+  {#if !dm}
+    <!-- A player: what the DM set, to read, and the invite to pass on. -->
+    <div class="row">
+      <span class="label">Name</span>
+      <p class="value" style:font-family={faceFamily(face)}>{campaign.name}</p>
+    </div>
+    <div class="row">
+      <span class="label">Next session</span>
+      <p class="value">{next ? `${next.when}${next.past ? '' : `, ${next.until}`}` : 'Not set yet'}</p>
+    </div>
+    {#if !ended}
+      <div class="row">
+        <span class="label">Invite link
+          <InfoTip label="About the invite link">Pass it to a friend: they open it, sign in, and pick which character joins. Only your DM can make a new one.</InfoTip>
+        </span>
+        <div class="inline">
+          <input readonly value={inviteLink || 'Fetching the link'} aria-label="Invite link" onfocus={(e) => e.currentTarget.select()} />
+          <button class="smallbtn accent" onclick={copyInvite} disabled={!inviteLink}>{copied ? 'Copied!' : 'Copy'}</button>
+        </div>
+        {#if copyFailed}<p class="hint bad" role="status">The clipboard said no! Select the link and copy it yourself.</p>{/if}
+      </div>
+    {/if}
+    <div class="row">
+      <span class="label">Owlbear Rodeo room</span>
+      {#if room}
+        <a class="smallbtn roomlink" href={room} target="_blank" rel="noopener noreferrer">Open the room</a>
+      {:else}
+        <p class="value dim">Not set yet</p>
+      {/if}
+    </div>
+    <p class="hint">Only your DM can change these.</p>
+    <div class="foot"><span></span><button class="smallbtn accent" onclick={close}>Done</button></div>
+  {:else}
     <label class="row">
       <span class="label">Name</span>
       <input value={campaign.name} maxlength="80" placeholder="Campaign name" aria-label="Campaign name"
@@ -177,6 +217,7 @@
       </div>
       <button class="smallbtn accent" onclick={close}>Done</button>
     </div>
+  {/if}
   </div>
 </DimModal>
 
@@ -196,6 +237,9 @@
   input[readonly] { color: var(--dim); }
   input:focus { outline: none; border-color: var(--a-edge); }
   .hint { margin: 0; font-size: 0.8125rem; color: var(--dim); line-height: 1.45; }
+  .value { margin: 0; font-size: 0.9375rem; color: var(--text); overflow-wrap: anywhere; }
+  .value.dim { color: var(--dim); }
+  .roomlink { justify-self: start; }
   .hint.bad { color: var(--bad); }
   .foot {
     display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;
