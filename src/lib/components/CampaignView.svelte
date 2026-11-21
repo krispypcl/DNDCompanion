@@ -654,7 +654,7 @@
       <div class="tablebar">
         <!-- One jukebox, capsule or whole: switching between them never stops the song. -->
         {#if showMusic}
-          <div class="musicslot" class:whole={!compactMusic} class:offstage={phoneOn && place !== 'party'}>
+          <div class="musicslot" class:whole={!compactMusic} class:lead={isDm} class:offstage={phoneOn && place !== 'party'}>
             <CampaignMusic campaignId={campaign.id} songs={campaign.details.songs ?? []} editing={isDm && !ended}
                            lead={isDm} playback={music.table} away={music.away} onplayback={(p) => music.send(p)}
                            onchange={(songs) => saveDetails({ songs })} compact={compactMusic}
@@ -847,6 +847,15 @@
   /* The capsule in the middle of the line; the whole jukebox on a row of its own below. */
   .musicslot { grid-column: 2; grid-row: 1; display: flex; justify-content: center; min-width: 0; }
   .musicslot.whole { grid-column: 1 / -1; grid-row: 2; display: block; margin-top: 1.25rem; color: var(--text); font-size: 0.875rem; }
+  /* Folded, the capsule keeps its full width whatever the song's name, and the DM's sits at the far left. */
+  @media (min-width: 701px) {
+    /* A fixed width: a share of an auto-sized grid cell would shrink back to the title. */
+    .musicslot:not(.whole) { width: 24rem; max-width: 100%; }
+    .musicslot:not(.whole) :global(.jukebox.compact) { width: 100%; max-width: none; }
+    .musicslot:not(.whole) :global(.jukebox.compact .player) { flex: 1 1 auto; }
+    .musicslot:not(.whole) :global(.jukebox.compact .capsule) { display: flex; width: 100%; }
+    .musicslot.lead:not(.whole) { grid-column: 1; justify-content: flex-start; }
+  }
   /* A phone: the music alone, the width of the screen. */
   @media (max-width: 700px) {
     .tablebar { grid-template-columns: minmax(0, 1fr); }
