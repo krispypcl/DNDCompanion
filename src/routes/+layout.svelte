@@ -151,6 +151,12 @@
    * change of hash (switching tabs on a sheet) is not a navigation away.
    */
   let arrivingTimer: ReturnType<typeof setTimeout> | undefined;
+  /**
+   * This move runs as a view transition: the page before fades out over the new one, so the new one
+   * shows at once beneath it. Rising from nothing as well, the two were faint together halfway and the
+   * screen dipped to its ground (the flicker). Without view transitions, the new page rises itself.
+   */
+  const move = { crossfading: false }; // read once, as the arriving page is made: not reactive on purpose
   onNavigate((navigation) => {
     if (typeof document === 'undefined') return;
     // The page arriving fades in as a whole (the {#key} below): what it
@@ -161,9 +167,11 @@
       clearTimeout(arrivingTimer);
       arrivingTimer = setTimeout(() => delete root.dataset.arriving, 600);
     }
+    move.crossfading = false;
     if (!('startViewTransition' in document)) return;
     if (prefersReducedMotion()) return;
     if (navigation.from?.url.pathname === navigation.to?.url.pathname) return;
+    move.crossfading = true;
     return new Promise<void>((resolve) => {
       (document as Document & { startViewTransition: (cb: () => Promise<void>) => unknown }).startViewTransition(
         async () => {
@@ -197,7 +205,7 @@
   would jump.
 -->
 {#key page.url.pathname}
-  <div class="route" class:pulling={pull.pulling} style:top="{pull.offset}px" in:arrive={{ y: 10, duration: 260, delay: 30 }}>
+  <div class="route" class:pulling={pull.pulling} style:top="{pull.offset}px" in:arrive={{ y: 10, duration: move.crossfading ? 0 : 260, delay: move.crossfading ? 0 : 30 }}>
     {@render children()}
   </div>
 {/key}

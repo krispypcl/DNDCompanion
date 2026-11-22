@@ -29,7 +29,7 @@
   import { faceFamily, nameFont } from '#lib/rules/fonts.ts';
   import { themeStyle } from '#lib/theme.ts';
   import { friendlyError } from '#lib/errors.ts';
-  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { fadeOver, prefersReducedMotion } from '#lib/motion.ts';
   import { smoothHeight } from '#lib/smoothHeight.ts';
   import Banner from './Banner.svelte';
   import CampaignMusic from './CampaignMusic.svelte';
@@ -608,7 +608,7 @@
     </PhoneTop>
     <PhoneBar places={phonePlaces} active={place} onchoose={goPlace} />
   {/if}
-  <div class="loading">
+  <div class="loading" out:fadeOver>
     <CampaignSkeleton />
     <div class="screen-center">
       <D20Loader size={56} label="Loading the campaign" result={loading || (campaign && !assetsDone) ? null : missing || (error && !campaign) ? 1 : 20}

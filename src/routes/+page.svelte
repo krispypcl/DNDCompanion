@@ -41,7 +41,7 @@
   import { themeStyle } from '#lib/theme.ts';
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
-  import { arrive, prefersReducedMotion, rise } from '#lib/motion.ts';
+  import { arrive, fadeOver, prefersReducedMotion, rise } from '#lib/motion.ts';
   import { blankDefinition, blankState } from '#lib/sample.ts';
   import { session } from '#lib/stores/session.ts';
   import { isConfigured } from '#lib/supabase.ts';
@@ -985,7 +985,7 @@
     {/if}
     {#if loading || !listShown}
       <!-- The menu's outline, dimmed, with the die rolling over it. -->
-      <div class="menuloading">
+      <div class="menuloading" out:fadeOver>
         <MenuSkeleton greet={Boolean(profileOf($session.user, $profile).displayName.trim())} />
         <div class="screen-center">
           <D20Loader size={56} label="Loading your characters" result={loading || !imagesDone ? null : error ? 1 : 20}

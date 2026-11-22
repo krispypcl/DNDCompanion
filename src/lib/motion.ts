@@ -215,3 +215,15 @@ export function parallax(node: HTMLElement) {
     }
   };
 }
+
+/**
+ * A skeleton (and the die over it) leaving as its page appears: lifted out of
+ * the flow where it stood, so the page beneath takes its place at once, and
+ * faded out over it while the page fades in. Taken away in one frame, it left
+ * the screen bare a moment before the page arrived: a flicker.
+ */
+export function fadeOver(node: HTMLElement, { duration = 240 }: { duration?: number } = {}) {
+  const { offsetLeft: left, offsetTop: top, offsetWidth: width } = node;
+  Object.assign(node.style, { position: 'absolute', left: `${left}px`, top: `${top}px`, width: `${width}px`, zIndex: '3', pointerEvents: 'none' });
+  return { duration: prefersReducedMotion() ? 0 : duration, easing: cubicOut, css: (t: number) => `opacity: ${t};` };
+}

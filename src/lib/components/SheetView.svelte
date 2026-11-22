@@ -106,7 +106,7 @@
   import { campaignRepo, type Campaign } from '#lib/data/campaigns.ts';
   import { slotLevel } from '#lib/rules/print.ts';
   import { themeStyle } from '#lib/theme.ts';
-  import { bump, glow, parallax, popIn, sparkle } from '#lib/motion.ts';
+  import { bump, fadeOver, glow, parallax, popIn, sparkle } from '#lib/motion.ts';
   import { glide } from '#lib/flip.ts';
   import { isDead } from '#lib/rules/hp.ts';
   import ConditionOverlay from '#lib/components/ConditionOverlay.svelte';
@@ -803,7 +803,7 @@
     </PhoneTop>
     <PhoneBar places={phonePlaces} active={place} onchoose={goPlace} />
   {/if}
-  <div class="loading">
+  <div class="loading" out:fadeOver>
     <SheetSkeleton />
     <div class="screen-center">
       <D20Loader result={loading || (!loadError && !assetsDone) ? null : loadError ? 1 : 20} label="Loading the sheet"
