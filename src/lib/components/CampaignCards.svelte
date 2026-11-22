@@ -482,6 +482,14 @@
   .stats div { background: var(--raised); border: 1px solid var(--line-soft); border-radius: var(--r-sm); padding: 0.375rem 0.25rem; text-align: center; container-type: inline-size; }
   .stats dt { font-size: 0.5625rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--label); white-space: nowrap; }
   .stats dd { margin: 0.125rem 0 0; font-size: 1.0625rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  /* Pointed at, a stat box lights as the sheet's own boxes do, and its number grows a touch in the
+     character's color. */
+  .stats div { transition: border-color 0.2s ease, background-color 0.2s ease; }
+  .stats dt, .stats dd { transition: color 0.2s ease, transform 0.22s cubic-bezier(0.33, 1, 0.68, 1); }
+  .stats div:hover { border-color: var(--a-edge); background: color-mix(in oklab, var(--a) 7%, var(--raised)); }
+  .stats div:hover dt { color: var(--a); }
+  .stats div:hover dd { color: var(--a-hi, var(--a)); transform: scale(1.08); }
+  @media (prefers-reduced-motion: reduce) { .stats div:hover dd { transform: none; } }
   .stats .long { display: none; }
   /* Each in full once its box (less its padding) holds the whole label. */
   @container (min-width: 5.5rem) {
