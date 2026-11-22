@@ -23,6 +23,8 @@
   const pct = (n: number) => (total > 0 ? Math.max(0, Math.min(100, (n / total) * 100)) : 0);
   /** Short of full, the liquid's end waves: the temporary stretch's when there is one, else the fill's. */
   const short = $derived(cur < max);
+  /** Temporary hit points beyond some of the character's own: their stretch runs under the fill's wave. */
+  const under = $derived(temp > 0 && cur > 0);
   const hurt = $derived(vital === 'bloodied' || vital === 'critical' || vital === 'down' || vital === 'dead');
 
   let ghost = $state<{ left: number; width: number; kind: 'damage' | 'heal' } | null>(null);
@@ -120,8 +122,8 @@
   </div>
   <div class="gauge">
     <div class="bar" class:shielded={temp > 0} aria-hidden="true">
-      <i class="cur hpflow" class:hpwave={short && !temp} style:width="{pct(cur)}%"></i>
-      <i class="tmp" class:hpwave={short && temp > 0} style:width="{pct(temp)}%"></i>
+      <i class="cur hpflow" class:hpwave={short || temp > 0} style:width="{pct(cur)}%"></i>
+      <i class="tmp" class:hpwave={short && temp > 0} class:under style:width={under ? `calc(${pct(temp)}% + 6px)` : `${pct(temp)}%`}></i>
       {#if healed}<i class="sweep"></i>{/if}
       {#if wounded}<i class="sweep back"></i>{/if}
       {#if ghost}
@@ -152,6 +154,11 @@
   .cur { --hp-base: var(--accent, var(--a)); }
   .hurt .cur { --hp-base: var(--hurt-red); }
   .tmp { background: color-mix(in oklch, var(--shield) 85%, transparent); }
+  /* With temporary hit points the fill's end waves too, the temporary stretch running 6px under it
+     so its color shows in the wave's troughs: the seam between the two is liquid as well. */
+  .bar > .cur { position: relative; z-index: 1; }
+  .tmp.under { margin-left: -6px; }
+  .ghost, .sweep { z-index: 2; }
   .bar.shielded { box-shadow: 0 0 0 1px var(--shield), 0 0 8px -2px color-mix(in oklch, var(--shield) 70%, transparent); }
 
   /* The stretch that was lost or gained, fading. */

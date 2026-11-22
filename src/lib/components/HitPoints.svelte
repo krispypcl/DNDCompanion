@@ -175,6 +175,8 @@
   const pct = (n: number) => (barTotal > 0 ? (n / barTotal) * 100 : 0);
   /** Short of full, the liquid's end waves: the temporary stretch's when there is one, else the fill's. */
   const short = $derived(sheetState.hpCurrent < hpMax);
+  /** Temporary hit points beyond some of the character's own: their stretch runs under the fill's wave. */
+  const under = $derived(sheetState.hpTemp > 0 && sheetState.hpCurrent > 0);
   const down = $derived(sheetState.hpCurrent === 0);
   const dead = $derived(isDead(sheetState));
   /** At 0 and still fighting for it: the gauge's red pulse. */
@@ -237,11 +239,11 @@
   {/key}
 {/if}
 <div class="bar" class:shielded={sheetState.hpTemp > 0} aria-hidden="true">
-  <i class="cur hpflow" class:hpwave={short && !sheetState.hpTemp} class:bloodied class:down style:width="{pct(sheetState.hpCurrent)}%"></i>
+  <i class="cur hpflow" class:hpwave={short || sheetState.hpTemp > 0} class:bloodied class:down style:width="{pct(sheetState.hpCurrent)}%"></i>
   {#if healed}<i class="sweep"></i>{/if}
   {#if wounded}<i class="sweep hurt"></i>{/if}
   {#key sheetState.hpTemp}
-    <i class="tmp" class:hpwave={short && sheetState.hpTemp > 0} style:width="{pct(sheetState.hpTemp)}%"></i>
+    <i class="tmp" class:hpwave={short && sheetState.hpTemp > 0} class:under style:width={under ? `calc(${pct(sheetState.hpTemp)}% + 6px)` : `${pct(sheetState.hpTemp)}%`}></i>
   {/key}
   {#if ghost}
     {#key pulse}
@@ -399,6 +401,11 @@
   .bar i { display: block; height: 100%; transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
   .cur { --hp-base: var(--a-mid); }
   .cur.bloodied, .cur.down { --hp-base: var(--danger); }
+  /* With temporary hit points the fill's end waves too, the temporary stretch running 6px under it
+     so its color shows in the wave's troughs: the seam between the two is liquid as well. */
+  .bar > .cur { position: relative; z-index: 1; }
+  .tmp.under { margin-left: -6px; }
+  .ghost, .sweep { z-index: 2; }
   .tmp {
     background: color-mix(in oklch, var(--shield) 85%, transparent);
     animation: tempIn 0.4s ease-out;

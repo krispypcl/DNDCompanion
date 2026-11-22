@@ -61,7 +61,8 @@ describe('HitPoints', () => {
     // The marker carries its own "temp" label for context.
     expect(container.querySelector('.temp')?.textContent?.trim()).toBe('+11temp');
     expect(container.querySelector('.temp small')?.textContent).toBe('temp');
-    expect((container.querySelector('.tmp') as HTMLElement).style.width).toBe('20%');
+    // 6px more, the part that runs under the fill's wavy end.
+    expect((container.querySelector('.tmp') as HTMLElement).style.width).toBe('calc(20% + 6px)');
     expect((container.querySelector('.cur') as HTMLElement).style.width).toBe('80%');
   });
 
