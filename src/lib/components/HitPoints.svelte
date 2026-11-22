@@ -250,7 +250,7 @@
   {#if healed}<i class="sweep"></i>{/if}
   {#if wounded}<i class="sweep hurt"></i>{/if}
   {#key sheetState.hpTemp}
-    <i class="tmp" class:hpwave={short} style:width="{pct(sheetState.hpTemp)}%"></i>
+    <i class="tmp" class:hpwave={short && sheetState.hpTemp > 0} style:width="{pct(sheetState.hpTemp)}%"></i>
   {/key}
   {#if ghost}
     {#key pulse}
