@@ -453,7 +453,7 @@
     { key: 'board', label: 'Board', icon: 'board' },
     { key: 'search', label: 'Search', icon: 'search' },
     { key: 'sight', label: 'Sight', icon: 'sight' },
-    { key: 'initiative', label: 'Initiative', icon: 'fight', badge: place !== 'initiative' && (myTurn || (init.asking && mineToRoll.length > 0) || (isDm && fighting)) }
+    { key: 'initiative', label: 'Initiative', icon: 'hourglass', badge: place !== 'initiative' && (myTurn || (init.asking && mineToRoll.length > 0) || (isDm && fighting)) }
   ]);
   const turnNow = () => ({ turn: init.turn, round: init.round });
   const initFail = (e: unknown) => (error = campaignMessage(e, 'The order slipped! Try again.'));

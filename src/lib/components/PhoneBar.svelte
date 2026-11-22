@@ -6,7 +6,7 @@
 -->
 <script lang="ts" module>
   export type PhonePlace = { key: string; label: string; icon: PlaceIcon; badge?: boolean };
-  export type PlaceIcon = 'play' | 'abilities' | 'spells' | 'search' | 'gear' | 'features' | 'more' | 'party' | 'fight' | 'sight' | 'board' | 'person' | 'flag';
+  export type PlaceIcon = 'play' | 'abilities' | 'spells' | 'search' | 'gear' | 'features' | 'more' | 'party' | 'hourglass' | 'sight' | 'board' | 'person' | 'flag';
 </script>
 
 <script lang="ts">

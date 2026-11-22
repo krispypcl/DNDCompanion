@@ -7,7 +7,7 @@ import { chrome, type BarSpec } from '#lib/stores/chrome.svelte.ts';
 
 const places = [
   { key: 'party', label: 'Party', icon: 'party' as const },
-  { key: 'fight', label: 'Fight', icon: 'fight' as const, badge: true },
+  { key: 'fight', label: 'Fight', icon: 'hourglass' as const, badge: true },
   { key: 'board', label: 'Board', icon: 'board' as const }
 ];
 const spec = (onchoose = () => {}): BarSpec => ({ places, active: 'party', onchoose, owner: Symbol('test') });

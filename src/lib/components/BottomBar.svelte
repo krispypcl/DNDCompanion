@@ -52,7 +52,7 @@
   });
 </script>
 
-<!-- One sword, point up, crossing the middle of the box at the middle of its blade; turned 45 degrees each way for a fight. -->
+<!-- One sword, point up, crossing the middle of the box at the middle of its blade; turned 45 degrees each way to cross two. -->
 {#snippet sword(turn: number)}
   <g transform="rotate({turn} 12 12) translate(0 1.5)">
     <path d="M12 3.25 13.6 5.5v9.75h-3.2V5.5z" /><path d="M8.5 15.25h7M12 15.25v3.75" /><circle cx="12" cy="20.25" r="1.1" />
@@ -62,7 +62,7 @@
 {#snippet glyph(icon: PlaceIcon)}
   <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
     <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      {#if icon === 'play' || icon === 'fight'}
+      {#if icon === 'play'}
         <!-- Two crossed swords. Where they cross, the one behind is hidden under the one in front
              (a mask of the front one, a little wider), so no outline shows through. -->
         <defs>
@@ -72,6 +72,14 @@
           </mask>
         </defs>
         <g mask="url(#{uid}-x)">{@render sword(-45)}</g>{@render sword(45)}
+      {:else if icon === 'hourglass'}
+        <!-- An hourglass half run through: sand left in the bottom of the top bulb, a thread of it
+             falling, and a mound as big in the bottom bulb. -->
+        <path d="M6 3.5h12M6 20.5h12" />
+        <path d="M7.75 3.5c0 4.25 4.25 5.75 4.25 8.5s-4.25 4.25-4.25 8.5M16.25 3.5c0 4.25-4.25 5.75-4.25 8.5s4.25 4.25 4.25 8.5" />
+        <path d="M12 12.5v4" stroke-width="1" />
+        <path d="M9.4 8.4h5.2c-.7 1.25-2.6 2.2-2.6 3.1 0-.9-1.9-1.85-2.6-3.1z" fill="currentColor" stroke-width="1" />
+        <path d="M8.6 19.75c.35-1.9 1.9-2.85 3.4-3.15 1.5.3 3.05 1.25 3.4 3.15z" fill="currentColor" stroke-width="1" />
       {:else if icon === 'abilities'}
         <path d="M12 3.5l1.9 4.6 4.6 1.9-4.6 1.9L12 16.5l-1.9-4.6L5.5 10l4.6-1.9zM18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" />
       {:else if icon === 'spells'}
