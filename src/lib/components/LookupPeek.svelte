@@ -85,13 +85,16 @@
     size();
     const key = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
-      // A window over the dimmed page (the search, say) is closed first, by its own Esc.
-      if (document.querySelector('[aria-modal="true"]')) return;
+      // A window over the dimmed page is closed first, by its own Esc; not the search, whose
+      // results open here: Esc closes them first, top one first, then the search (Spotlight).
+      if (document.querySelector('[aria-modal="true"]:not(.spotbox)')) return;
       // The open peek first, then the windows moved aside, the top one first.
       if (peek.target) {
+        e.preventDefault();
         e.stopPropagation();
         peek.close();
       } else if (peek.kept.length) {
+        e.preventDefault();
         e.stopPropagation();
         peek.drop(peek.kept[peek.kept.length - 1].id);
       }

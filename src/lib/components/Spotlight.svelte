@@ -119,12 +119,29 @@
     }
   }
 
-  /** / opens it, wherever nothing is being typed. */
   // Heard as it opens and as it goes.
   $effect(() => {
     if (open) return windowSounds();
   });
+  /** Its results' windows (lib/stores/peek): one closed by its ×, the search field has the keyboard again. */
+  const windows = $derived(peek.kept.length + (peek.target ? 1 : 0));
+  let hadWindows = 0;
+  $effect(() => {
+    const now = windows;
+    if (open && now < hadWindows && !document.activeElement?.closest('input, textarea, [contenteditable="true"]')) input?.focus();
+    hadWindows = now;
+  });
+  /**
+   * / opens it, wherever nothing is being typed. Esc closes it from anywhere once its results'
+   * windows are closed (they go first, top one first: LookupPeek), not only from inside it: after a
+   * window's × the keyboard may be on the page.
+   */
   function global(e: KeyboardEvent) {
+    if (e.key === 'Escape' && open && !e.defaultPrevented) {
+      e.preventDefault();
+      close();
+      return;
+    }
     const t = e.target as HTMLElement | null;
     const typing = Boolean(t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)));
     if (e.key === '/' && !typing && !e.ctrlKey && !e.metaKey && !e.altKey && !open) {
