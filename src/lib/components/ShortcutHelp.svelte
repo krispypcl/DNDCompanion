@@ -3,9 +3,8 @@
   import InfoTip from './InfoTip.svelte';
   /** The keyboard shortcuts, opened with ? or the keyboard button on a sheet or a campaign. */
   import { onMount } from 'svelte';
-  import { fade, scale } from 'svelte/transition';
-  import { cubicOut } from 'svelte/easing';
-  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { fade } from 'svelte/transition';
+  import { prefersReducedMotion, windowMotion } from '#lib/motion.ts';
 
   let {
     owner,
@@ -44,7 +43,7 @@
 <div class="scrim" role="presentation" transition:fade={{ duration: still ? 0 : 140 }}
      use:backdrop={onclose}>
   <div class="box" use:movable role="dialog" data-keys aria-modal="true" aria-labelledby="keys-title"
-       transition:scale={{ start: 0.96, duration: still ? 0 : 180, easing: cubicOut }}>
+       transition:windowMotion={{ start: 0.96, duration: 180 }}>
     <div class="keyshead">
       <h2 id="keys-title">Keyboard Shortcuts
         <InfoTip label="About shortcuts">They work anywhere on the {place === 'campaign' ? 'page' : 'sheet'} except while typing in a field.</InfoTip>
@@ -84,4 +83,15 @@
     border: 1px solid var(--line); border-bottom-width: 2px; color: var(--text);
   }
   .to { color: var(--faint); font-size: 0.75rem; }
+  /* No frost on a phone: the bars above stay sharp. */
+  @media (max-width: 700px) { .scrim { backdrop-filter: none; -webkit-backdrop-filter: none; } }
+  /* A phone: a sheet from the bottom, the full width, its top rounded. */
+  @media (max-width: 700px) {
+    .scrim { place-items: end stretch; padding: 0; }
+    .box {
+      width: 100%; max-height: 90dvh; overflow-y: auto; overscroll-behavior: contain;
+      border-radius: 1.125rem 1.125rem 0 0; border-bottom: 0;
+      padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
 </style>

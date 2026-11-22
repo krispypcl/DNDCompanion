@@ -10,10 +10,10 @@
    * no equipping. Either can also give advantage on initiative or on saves.
    */
   import { untrack } from 'svelte';
-  import { fade, scale, slide } from 'svelte/transition';
+  import { fade, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import { focusFirst, movable, portal } from '#lib/actions.ts';
-  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { prefersReducedMotion, windowMotion } from '#lib/motion.ts';
   import { guessEffects } from '#lib/rules/equipment.ts';
   import { ABILITIES, type Ability, type Item, type ItemEffect } from '#lib/types.ts';
 
@@ -87,7 +87,7 @@
      onclick={onclose} role="presentation"></div>
 <div class="dialog themed-scroll" use:portal use:focusFirst use:movable role="dialog" aria-modal="true"
      aria-label={feature ? `What ${item.name || 'this feature'} does` : `Equip ${item.name || 'item'}`}
-     transition:scale={{ duration: prefersReducedMotion() ? 0 : 200, start: 0.94, easing: cubicOut }}>
+     transition:windowMotion={{ duration: 200, start: 0.94 }}>
   <h2>{feature ? `What ${item.name || 'This Feature'} Does` : `Equip ${item.name || 'This Item'}`}</h2>
   <p class="lead">
     {feature ? 'What does it change, always? Tick what applies; the sheet works out the rest.'
@@ -198,4 +198,12 @@
   }
   .actions .go { border-color: var(--a-edge); background: var(--a-wash); color: var(--a); }
   .actions button:hover { border-color: var(--a-edge); }
+  /* A phone: a sheet from the bottom, the full width, its top rounded. */
+  @media (max-width: 700px) {
+    .dialog {
+      left: 0; right: 0; top: auto; bottom: 0; translate: none; width: 100%; max-height: 90dvh; overscroll-behavior: contain;
+      border-radius: 1.125rem 1.125rem 0 0; border-bottom: 0;
+      padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
 </style>

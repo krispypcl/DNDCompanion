@@ -227,3 +227,16 @@ export function fadeOver(node: HTMLElement, { duration = 240 }: { duration?: num
   Object.assign(node.style, { position: 'absolute', left: `${left}px`, top: `${top}px`, width: `${width}px`, zIndex: '3', pointerEvents: 'none' });
   return { duration: prefersReducedMotion() ? 0 : duration, easing: cubicOut, css: (t: number) => `opacity: ${t};` };
 }
+
+/**
+ * A window coming and going. On a phone it is a sheet: it rises from the
+ * bottom of the screen and slides back down. On a computer it grows a little
+ * as it fades in, and shrinks a little as it fades out.
+ */
+export function windowMotion(_node: Element, { start = 0.95, duration = 180 }: { start?: number; duration?: number } = {}) {
+  const still = prefersReducedMotion();
+  if (typeof matchMedia === 'function' && matchMedia('(max-width: 700px)').matches) {
+    return { duration: still ? 0 : 280, easing: cubicOut, css: (_t: number, u: number) => `transform: translateY(${u * 100}%);` };
+  }
+  return { duration: still ? 0 : duration, easing: cubicOut, css: (t: number) => `opacity: ${t}; transform: scale(${start + (1 - start) * t});` };
+}

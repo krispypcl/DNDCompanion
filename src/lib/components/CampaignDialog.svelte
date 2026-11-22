@@ -7,11 +7,10 @@
    * also gets the campaign's invite link here to pass round the table.
    */
   import { onMount, untrack } from 'svelte';
-  import { fade, scale } from 'svelte/transition';
-  import { cubicOut } from 'svelte/easing';
+  import { fade } from 'svelte/transition';
   import { base } from '#lib/base.ts';
   import { backdrop, movable, portal } from '#lib/actions.ts';
-  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { prefersReducedMotion, windowMotion } from '#lib/motion.ts';
   import { campaignMessage, campaignRepo, inviteCode, type Campaign } from '#lib/data/campaigns.ts';
   import Switch from './Switch.svelte';
 
@@ -126,7 +125,7 @@
 <div class="scrim themed" style={themeCss} use:portal role="presentation" transition:fade={{ duration: still ? 0 : 140 }}
      use:backdrop={onclose}>
   <div class="box" bind:this={box} use:movable role="dialog" aria-modal="true" aria-labelledby="campaign-title"
-       transition:scale={{ start: 0.95, duration: still ? 0 : 180, easing: cubicOut }}>
+       transition:windowMotion={{ start: 0.95, duration: 180 }}>
     <!-- Closed by the × at the top right (or Esc, or a press outside). -->
     <div class="head"><h2 id="campaign-title">Campaign</h2><button class="closex" aria-label="Close" title="Close (Esc)" onclick={onclose}>×</button></div>
 
@@ -223,4 +222,15 @@
   }
   .retire :global(.switch) { flex: none; }
   .err { margin: 0.75rem 0 0; font-size: 0.8125rem; color: var(--bad); }
+  /* No frost on a phone: the bars above stay sharp. */
+  @media (max-width: 700px) { .scrim { backdrop-filter: none; -webkit-backdrop-filter: none; } }
+  /* A phone: a sheet from the bottom, the full width, its top rounded. */
+  @media (max-width: 700px) {
+    .scrim { place-items: end stretch; padding: 0; }
+    .box {
+      width: 100%; max-height: 90dvh; overflow-y: auto; overscroll-behavior: contain;
+      border-radius: 1.125rem 1.125rem 0 0; border-bottom: 0;
+      padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
 </style>

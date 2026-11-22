@@ -2,9 +2,8 @@
   import { backdrop } from '#lib/actions.ts';
   /** Asked only when leaving would lose something: a change that could not be saved. */
   import { onMount } from 'svelte';
-  import { fade, scale } from 'svelte/transition';
-  import { cubicOut } from 'svelte/easing';
-  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { fade } from 'svelte/transition';
+  import { prefersReducedMotion, windowMotion } from '#lib/motion.ts';
 
   let { onstay, onleave }: { onstay: () => void; onleave: () => void } = $props();
   const still = prefersReducedMotion();
@@ -21,7 +20,7 @@
 <div class="scrim" transition:fade={{ duration: still ? 0 : 160 }}
      use:backdrop={onstay} role="presentation">
   <div class="box" role="alertdialog" aria-modal="true" aria-labelledby="leave-title" aria-describedby="leave-text"
-       transition:scale={{ start: 0.95, duration: still ? 0 : 200, easing: cubicOut }}>
+       transition:windowMotion={{ start: 0.95, duration: 200 }}>
     <h2 id="leave-title">Wait, your latest changes aren’t saved!</h2>
     <p id="leave-text">
       They couldn’t be saved just now. Stay, and they’ll save as soon as they can.
@@ -54,4 +53,15 @@
   .leave:hover { color: var(--danger); border-color: var(--danger); }
   .stay { background: var(--a); border: 1px solid var(--a); color: var(--bg); font-weight: 650; }
   .stay:hover { filter: brightness(1.1); }
+  /* No frost on a phone: the bars above stay sharp. */
+  @media (max-width: 700px) { .scrim { backdrop-filter: none; -webkit-backdrop-filter: none; } }
+  /* A phone: a sheet from the bottom, the full width, its top rounded. */
+  @media (max-width: 700px) {
+    .scrim { place-items: end stretch; padding: 0; }
+    .box {
+      width: 100%; max-height: 90dvh; overflow-y: auto; overscroll-behavior: contain;
+      border-radius: 1.125rem 1.125rem 0 0; border-bottom: 0;
+      padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
 </style>

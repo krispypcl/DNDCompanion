@@ -101,11 +101,7 @@
     <img bind:this={img} {src} {alt} onload={measured} class:ready={ratio !== null} style:--ratio={ratio ?? 1}
          transition:scale={{ start: 0.94, duration: still ? 0 : 220, easing: cubicOut }} />
   {/if}
-  <button bind:this={closer} class="close" aria-label="Close" onclick={close}>
-    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-      <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-    </svg>
-  </button>
+  <button bind:this={closer} class="closex close" aria-label="Close" title="Close (Esc)" onclick={close}>×</button>
 </div>
 
 <style>
@@ -128,11 +124,8 @@
   /* Growing out of its thumbnail: no fade of its own, the zoom is the entrance. */
   img.zoom { transition: none; }
   @media (max-width: 700px) { .lightbox { --gap: 0.75rem; } }
-  .close {
-    position: absolute; top: 0.75rem; right: 0.75rem;
-    width: 2.5rem; height: 2.5rem; border-radius: 50%; display: grid; place-items: center;
-    background: rgb(255 255 255 / 0.12); border: 1px solid rgb(255 255 255 / 0.2); color: #fff;
-    cursor: pointer; transition: background-color 0.15s ease;
-  }
-  .close:hover { background: rgb(255 255 255 / 0.22); }
+  /* The square × every window has (global .closex), in the corner. */
+  .close { position: absolute; top: 0.75rem; right: 0.75rem; --x-size: 2.25rem; cursor: pointer; }
+  /* No frost on a phone: the bars above stay sharp. */
+  @media (max-width: 700px) { .lightbox { backdrop-filter: none; -webkit-backdrop-filter: none; } }
 </style>

@@ -1,8 +1,8 @@
 <!--
   A window over the page, the page dimmed and blurred behind it (as behind a
   picture opened from Appearance). It eases in, rising a little as it grows,
-  and fades back out; a press on the dimmed page, Esc, or the window's own
-  Done closes it. Its title is what you drag to move it.
+  and fades back out; a press on the dimmed page, Esc, or the window's ×
+  closes it. Its title is what you drag to move it.
 
   On a phone it is a sheet rising from the bottom instead, as wide as the
   screen, with a grab handle: dragged down far enough (or flicked) it goes,
@@ -37,9 +37,10 @@
     const still = prefersReducedMotion();
     if (asSheet) {
       return {
-        duration: still ? 0 : out ? 200 : 300,
+        duration: still ? 0 : out ? 260 : 300,
         easing: cubicOut,
-        css: (t: number) => `transform: translateY(${(1 - t) * 100}%);`
+        // Going, it slides down from wherever a drag has left it.
+        css: (t: number) => `transform: translateY(calc(${out ? pull : 0}px + ${(1 - t) * 100}%));`
       };
     }
     return {
@@ -115,7 +116,7 @@
   h2 { margin: 0 0 0.875rem; font-size: 1rem; font-weight: 650; color: var(--a); overflow-wrap: anywhere; }
 
   /* A phone: a sheet from the bottom, the full width, its top rounded. */
-  .dimscrim.sheet { place-items: end stretch; padding: 0; background: rgb(0 0 0 / 0.6); }
+  .dimscrim.sheet { place-items: end stretch; padding: 0; background: rgb(0 0 0 / 0.6); backdrop-filter: none; -webkit-backdrop-filter: none; }
   .dimwindow.sheet {
     width: 100%; max-height: 90dvh; border-radius: 1.125rem 1.125rem 0 0; border-bottom: 0;
     padding: 0 1rem calc(1.25rem + env(safe-area-inset-bottom, 0px));

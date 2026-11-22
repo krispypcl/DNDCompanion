@@ -8,9 +8,8 @@
    */
   import { backdrop, movable, portal } from '#lib/actions.ts';
   import { onMount } from 'svelte';
-  import { fade, scale } from 'svelte/transition';
-  import { cubicOut } from 'svelte/easing';
-  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { fade } from 'svelte/transition';
+  import { prefersReducedMotion, windowMotion } from '#lib/motion.ts';
   import { formula } from '#lib/rules/dice.ts';
   import { ordinal, spellLevel } from '#lib/rules/spells.ts';
   import { spellDamage } from '#lib/rules/spellroll.ts';
@@ -86,7 +85,7 @@
 <div class="scrim themed" style={themeCss} use:portal role="presentation" transition:fade={{ duration: still ? 0 : 140 }}
      use:backdrop={oncancel}>
   <div class="box" bind:this={box} use:movable role="dialog" aria-modal="true" aria-labelledby="cast-title"
-       transition:scale={{ start: 0.95, duration: still ? 0 : 180, easing: cubicOut }}>
+       transition:windowMotion={{ start: 0.95, duration: 180 }}>
     <!-- Closed by the × at the top right (or Esc, or a press outside). -->
     <div class="head"><h2 id="cast-title">Cast {spell.name || 'this spell'}</h2><button class="closex" aria-label={spent ? 'Close' : 'Cancel'} title="Close (Esc)" onclick={oncancel}>×</button></div>
     {#if save}
@@ -176,4 +175,15 @@
   .actions .roll { border-color: var(--a-edge); background: var(--a-wash); color: var(--a); }
   .actions button:hover { border-color: var(--a); }
   .actions button:active { transform: translateY(1px); }
+  /* No frost on a phone: the bars above stay sharp. */
+  @media (max-width: 700px) { .scrim { backdrop-filter: none; -webkit-backdrop-filter: none; } }
+  /* A phone: a sheet from the bottom, the full width, its top rounded. */
+  @media (max-width: 700px) {
+    .scrim { place-items: end stretch; padding: 0; }
+    .box {
+      width: 100%; max-height: 90dvh; overflow-y: auto; overscroll-behavior: contain;
+      border-radius: 1.125rem 1.125rem 0 0; border-bottom: 0;
+      padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
 </style>

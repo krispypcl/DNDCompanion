@@ -221,4 +221,6 @@
     .spotscrim { padding-top: 1rem; }
     .spotwords { display: none; }
   }
+  /* No frost on a phone: the bars above stay sharp. */
+  @media (max-width: 700px) { .spotscrim { backdrop-filter: none; -webkit-backdrop-filter: none; } }
 </style>
