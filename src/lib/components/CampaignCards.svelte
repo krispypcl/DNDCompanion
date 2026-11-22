@@ -466,8 +466,11 @@
   .hpkey:active { transform: translateY(1px); }
   .hpkey:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
   .quickhp {
-    /* Down past the portrait's level badge, which hangs below it; the buttons stay on the head's line. */
-    position: absolute; inset: 0 0 -0.625rem; padding-bottom: 0.625rem; z-index: 2; background: var(--surface);
+    /* Over everything the head shows, past its edges too: the conditions' ring round the portrait
+       and the here light on its corner (out to the top and left), and the level badge hanging below.
+       The padding keeps the buttons on the head's own line. */
+    position: absolute; inset: -0.4375rem -0.4375rem -0.625rem; padding: 0.4375rem 0.4375rem 0.625rem; z-index: 3;
+    background: var(--surface); border-radius: var(--r-sm);
     display: grid; grid-template-columns: 1fr 4rem 1fr 1fr auto; gap: 0.375rem; align-items: center;
   }
   .quickhp input {
