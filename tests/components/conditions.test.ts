@@ -2,8 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 import Conditions from '#lib/components/Conditions.svelte';
-import { canUndo, resetUndo } from '#lib/stores/undo.ts';
-import { get } from 'svelte/store';
+import { resetUndo, undo } from '#lib/stores/undo.ts';
 import { emptyState } from '#lib/types.ts';
 
 describe('Conditions', () => {
@@ -32,7 +31,7 @@ describe('Conditions', () => {
     await fireEvent.keyDown(box, { key: 'Enter' });
     expect(onchange).toHaveBeenCalledTimes(1);
     expect(onchange.mock.calls[0][0].conditions).toEqual(['Stunned']);
-    expect(get(canUndo)).toBe(true);
+    expect(undo()?.label).toBeTruthy();
   });
 
   it('does nothing for a blank entry', async () => {
@@ -40,7 +39,7 @@ describe('Conditions', () => {
     render(Conditions, { props: { state: emptyState(), editable: true, onchange } });
     await fireEvent.keyDown(screen.getByLabelText('Add a condition or effect'), { key: 'Enter' });
     expect(onchange).not.toHaveBeenCalled();
-    expect(get(canUndo)).toBe(false);
+    expect(undo()).toBeNull();
   });
 
   it('lets the owner remove one', async () => {

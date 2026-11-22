@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { get } from 'svelte/store';
-import { canUndo, lastLabel, resetUndo, snapshot, undo } from '#lib/stores/undo.ts';
+import { resetUndo, snapshot, undo } from '#lib/stores/undo.ts';
 import { emptyState, type State } from '#lib/types.ts';
 
 const stateWithHp = (hp: number): State => ({ ...emptyState(), hpCurrent: hp });
@@ -55,13 +54,10 @@ describe('undo stack', () => {
     expect(restored.conditions).toEqual([]);
   });
 
-  test('canUndo and lastLabel track the stack', () => {
-    expect(get(canUndo)).toBe(false);
-    expect(get(lastLabel)).toBeNull();
+  test('undo hands back the last action by its label, then nothing', () => {
+    expect(undo()).toBeNull();
     snapshot(stateWithHp(40), 'Short rest');
-    expect(get(canUndo)).toBe(true);
-    expect(get(lastLabel)).toBe('Short rest');
-    undo();
-    expect(get(canUndo)).toBe(false);
+    expect(undo()?.label).toBe('Short rest');
+    expect(undo()).toBeNull();
   });
 });
