@@ -12,6 +12,10 @@
 
   Not from inside a window, a field, the table board, a box that has
   scrolled, or a card being dragged.
+
+  Felt too, where the phone can buzz (not iPhones, whose browsers have no
+  vibration): a tick as the pull passes the point where letting go refreshes
+  (a lighter one going back under it), and a firmer one as it refreshes.
 -->
 <script lang="ts">
   import Logo from './Logo.svelte';
@@ -42,8 +46,18 @@
     return false;
   }
 
+  /** A buzz of so many milliseconds, where the phone can (some browsers refuse, or ask for a tap first). */
+  function buzz(ms: number) {
+    try {
+      navigator.vibrate?.(ms);
+    } catch {
+      /* Not allowed here. */
+    }
+  }
+
   /** The dice spins a moment, the page fades out under the bar, then the page reloads (once saved). */
   function refresh() {
+    buzz(18);
     pull.refreshing = true;
     pull.offset = HOLD;
     const calm = prefersReducedMotion();
@@ -83,7 +97,9 @@
       if (e.cancelable) e.preventDefault();
       // Half the finger's travel: the page resists, as a pull should.
       pull.offset = Math.min(MAX, Math.max(0, t.clientY - startY) * 0.5);
-      pull.ready = pull.offset >= READY;
+      const ready = pull.offset >= READY;
+      if (ready !== pull.ready) buzz(ready ? 10 : 5);
+      pull.ready = ready;
     };
     const end = () => {
       tracking = false;
