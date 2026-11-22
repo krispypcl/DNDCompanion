@@ -39,14 +39,28 @@ away, and puts the whole party on one live page for the DM.
 
 <p align="center">
   <img src=".github/readme/desktop-sheet.png" alt="Dave's character sheet on a computer in dark mode: hit points, abilities, saving throws, skills, attacks, and trackers with pips and a gauge" width="100%">
+  <br>
+  <sub><b>Character sheet</b> · computer, dark mode</sub>
 </p>
 <p align="center">
   <img src=".github/readme/desktop-campaign.png" alt="The Vox Machina campaign page in light mode as the DM sees it: the party's cards and the initiative order mid-fight" width="100%">
+  <br>
+  <sub><b>Campaign page, as the DM sees it</b> · computer, light mode</sub>
 </p>
-<p align="center">
-  <img src=".github/readme/phone-sheet.png" alt="Dave's sheet on a phone in light mode, with its places on a bar at the bottom" width="49%">
-  <img src=".github/readme/phone-campaign.png" alt="The initiative order on a phone in dark mode, with Back and Next Turn under the thumb" width="49%">
-</p>
+<table align="center">
+  <tr>
+    <td align="center" width="50%">
+      <img src=".github/readme/phone-sheet.png" alt="Dave's sheet on a phone in light mode, with its places on a bar at the bottom" width="88%">
+      <br>
+      <sub><b>Character sheet</b> · phone, light mode</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src=".github/readme/phone-campaign.png" alt="The initiative order on a phone in dark mode, with Back and Next Turn under the thumb" width="88%">
+      <br>
+      <sub><b>Initiative mid-fight</b> · phone, dark mode</sub>
+    </td>
+  </tr>
+</table>
 
 ## Usage
 
