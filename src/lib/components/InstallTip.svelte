@@ -73,7 +73,7 @@
         <rect x="6" y="2.5" width="12" height="19" rx="2.5" /><path d="M12 7.5v7M9 11.5l3 3 3-3M10.5 18.5h3" />
       </g>
     </svg>
-    <b class="installtitle">Play from your home screen</b>
+    <b class="installtitle">Play as an app</b>
     {#if offered}
       <button class="smallbtn accent" onclick={install}>Install</button>
     {:else}

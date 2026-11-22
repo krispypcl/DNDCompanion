@@ -11,6 +11,7 @@
   import { fade, slide } from 'svelte/transition';
   import { tick } from 'svelte';
   import Avatar from '#lib/components/Avatar.svelte';
+  import InfoTip from '#lib/components/InfoTip.svelte';
   import Logo from '#lib/components/Logo.svelte';
   import { friendlyError } from '#lib/errors.ts';
   import { countdown, friendlyDate, numericDate, sessionWhen } from '#lib/rules/dates.ts';
@@ -954,8 +955,14 @@
           </div>
         </form>
       {:else if !me.avatarUrl}
+        <!-- One row, as the install tip: a mark, the question and its tip, and the way there. -->
         <div class="hello slim" transition:slide={{ duration: 260 }}>
-          <span>Add a profile picture, {me.displayName.split(' ')[0]}? It is how the rest of the table spots you.</span>
+          <svg class="hellomark" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9" /><circle cx="12" cy="10" r="3" /><path d="M6.5 18.5c1.2-2.3 3.2-3.5 5.5-3.5s4.3 1.2 5.5 3.5" />
+            </g>
+          </svg>
+          <span class="hellowords">Add a profile picture? <InfoTip label="Why a picture">It’s how the rest of the table spots you, {me.displayName.split(' ')[0]}.</InfoTip></span>
           <a class="smallbtn accent" href="{base}/account">Add One</a>
         </div>
       {/if}
@@ -1086,8 +1093,14 @@
   }
   /* Under the header, everything sits the same distance apart. */
   .hello, .top { margin-top: 1.75rem; }
-  .hello.slim { border-color: var(--line-soft); background: var(--surface); font-size: 0.875rem; color: var(--dim); }
-  .hello.slim span { flex: 1; min-width: 12rem; }
+  .hello.slim {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0.75rem;
+    padding: 0.625rem 0.625rem 0.625rem 0.875rem;
+    border-color: var(--line-soft); background: var(--surface); font-size: 0.9375rem;
+  }
+  .hellomark { color: var(--a); }
+  .hellowords { display: inline-flex; align-items: center; gap: 0.375rem; font-weight: 600; white-space: nowrap; }
+  @media (max-width: 700px) { .hello.slim { font-size: 0.875rem; gap: 0.625rem; } }
   .hellotext { flex: 1 1 16rem; display: grid; gap: 0.125rem; }
   .hellotext span { font-size: 0.8125rem; color: var(--dim); line-height: 1.45; }
   .hellorow { display: flex; gap: 0.5rem; flex: 1 1 16rem; }

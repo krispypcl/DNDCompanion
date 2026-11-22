@@ -11,6 +11,7 @@
   import { base } from '#lib/base.ts';
   import type { LiveInitiative } from '#lib/initiative.svelte.ts';
   import { prefersReducedMotion } from '#lib/motion.ts';
+  import { phone } from '#lib/stores/phone.svelte.ts';
   import InfoTip from './InfoTip.svelte';
 
   let { live, sheetId }: { live: LiveInitiative; sheetId: string } = $props();
@@ -26,20 +27,23 @@
 
 {#if shown}
   <div class="sheetinit" class:myturn={myTurn} class:calling role="status" transition:slide={unfold}>
-    {#if myTurn}
-      <strong class="sitext">Your turn!</strong>
-      <span class="simeta">Round {s.round}{#if mine !== null}, initiative {mine}{/if}</span>
-    {:else if running}
-      <span class="sitext">Round {s.round}</span>
-      <span class="simeta">{mine === null ? 'You’re not in the order.' : `Your initiative: ${mine}`}</span>
-    {:else if calling}
-      <strong class="sitext">Your DM calls for initiative!</strong>
-    {:else}
-      <span class="sitext">Initiative {mine}</span>
-      <span class="simeta">The fight starts soon.</span>
-    {/if}
+    <!-- One row: the words take what the button leaves them (wrapping inside it if they must). -->
+    <span class="siwords">
+      {#if myTurn}
+        <strong class="sitext">Your turn!</strong>
+        <span class="simeta">Round {s.round}{#if mine !== null}, initiative {mine}{/if}</span>
+      {:else if running}
+        <span class="sitext">Round {s.round}</span>
+        <span class="simeta">{mine === null ? 'You’re not in the order.' : `Your initiative: ${mine}`}</span>
+      {:else if calling}
+        <strong class="sitext">Your DM calls for initiative!</strong>
+      {:else}
+        <span class="sitext">Initiative {mine}</span>
+        <span class="simeta">The fight starts soon.</span>
+      {/if}
+    </span>
     <span class="sido">
-      <a class="smallbtn" class:accent={calling} href="{base}/c/{live.campaignId}">{calling ? 'Roll It on the Campaign Page' : 'Campaign'}</a>
+      <a class="smallbtn" class:accent={calling} href="{base}/c/{live.campaignId}">{calling ? (phone.current ? 'Roll It' : 'Roll It on the Campaign Page') : 'Campaign'}</a>
       <InfoTip label="About the fight">Your DM runs the initiative order on the campaign page, and that’s where everyone rolls theirs, so every number comes from one place.</InfoTip>
     </span>
   </div>
@@ -50,7 +54,7 @@
      reads as solid as they do. */
   .sheetinit {
     position: relative; z-index: 1;
-    display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 0.875rem; margin: 0 0 1rem; padding: 0.625rem 0.875rem;
+    display: flex; align-items: center; gap: 0.875rem; margin: 0 0 1rem; padding: 0.625rem 0.875rem;
     border-radius: var(--r); border: 1px solid var(--line-soft); background: var(--surface);
     transition: border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
   }
@@ -58,8 +62,15 @@
     border-color: var(--a-edge); background: color-mix(in oklab, var(--a) 8%, var(--surface));
     box-shadow: 0 0 0 3px color-mix(in oklab, var(--a) 14%, transparent);
   }
+  .siwords { flex: 1; min-width: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.125rem 0.875rem; }
   .sitext { font-size: 0.9375rem; }
   .myturn .sitext, .calling .sitext { color: var(--a); }
   .simeta { font-size: 0.8125rem; color: var(--dim); }
-  .sido { display: inline-flex; align-items: center; gap: 0.5rem; margin-left: auto; }
+  .sido { flex: none; display: inline-flex; align-items: center; gap: 0.5rem; }
+  @media (max-width: 700px) {
+    .sheetinit { gap: 0.625rem; padding: 0.5rem 0.625rem 0.5rem 0.75rem; }
+    .siwords { gap: 0 0.5rem; }
+    .sitext { font-size: 0.875rem; }
+    .simeta { font-size: 0.75rem; }
+  }
 </style>
