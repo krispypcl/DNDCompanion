@@ -48,11 +48,16 @@ export function storedMode(): Mode {
 export const mode = writable<Mode>(typeof document === 'undefined' ? 'dark' : storedMode());
 export const modeChoice = writable<ModeChoice>(typeof document === 'undefined' ? 'dark' : storedChoice());
 
+/** Each mode's ground (app.css --bg), for the phone's own bars: the status bar and the browser's chrome. */
+const GROUND: Record<Mode, string> = { dark: '#060607', light: '#efeff2' };
+
 function mark(next: Mode) {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
   if (next === 'light') root.setAttribute('data-mode', 'light');
   else root.removeAttribute('data-mode');
+  // Safari reads the color again when the tag changes, so its bars follow the page at once.
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', GROUND[next]);
 }
 
 /** Light, dark, or the device's own (account page, Preferences). */
