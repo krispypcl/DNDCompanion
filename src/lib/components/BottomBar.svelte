@@ -7,12 +7,14 @@
   page keeps its height free at its foot, and what else sits at the
   screen's foot (toasts, the save word) rises above it (--foot).
 
-  It rises into place when a page with places arrives and sinks away when
-  one without does; between two pages with places it stays, and only its
-  places cross-fade.
+  It rises into place from below the screen when a page with places
+  arrives, and sinks back out of it when one without does. Between two
+  pages with places it stays: the old places fade out as the new ones come
+  in one after another. A docked action rises in above it and sinks away.
 -->
 <script lang="ts">
-  import { fade, fly } from 'svelte/transition';
+  import { slide as fold } from 'svelte/transition';
+  import { untrack } from 'svelte';
   import { cubicOut } from 'svelte/easing';
   import { prefersReducedMotion } from '#lib/motion.ts';
   import type { BarSpec } from '#lib/stores/chrome.svelte.ts';
@@ -29,8 +31,25 @@
     root.style.setProperty('--foot', `${height}px`);
     return () => root.style.removeProperty('--foot');
   });
-  const motion = () => ({ y: 16, duration: prefersReducedMotion() ? 0 : 260, easing: cubicOut });
-  const swap = () => ({ duration: prefersReducedMotion() ? 0 : 160, easing: cubicOut });
+  /** The bar arriving or leaving: from or to below the screen, its whole height. */
+  function rise(_node: Element, { duration }: { duration: number }) {
+    return { duration: prefersReducedMotion() ? 0 : duration, easing: cubicOut, css: (t: number, u: number) => `transform: translateY(${u * 105}%); opacity: ${0.4 + 0.6 * t};` };
+  }
+  /** The places of the page before, fading out where they stood (the new ones overlap them). */
+  function leave(_node: Element) {
+    return { duration: prefersReducedMotion() ? 0 : 140, easing: cubicOut, css: (t: number, u: number) => `opacity: ${t}; transform: translateY(${u * 4}px);` };
+  }
+  const dockMotion = () => ({ duration: prefersReducedMotion() ? 0 : 220, easing: cubicOut });
+  /** After the first page's places, each next page's places come in one after another. */
+  let swapped = $state(false);
+  let firstOwner: symbol | null = null;
+  $effect(() => {
+    const owner = spec.owner;
+    untrack(() => {
+      if (firstOwner === null) firstOwner = owner;
+      else if (owner !== firstOwner) swapped = true;
+    });
+  });
 </script>
 
 <!-- One sword, point up, crossing the middle of the box at the middle of its blade; turned 45 degrees each way for a fight. -->
@@ -88,10 +107,11 @@
   </svg>
 {/snippet}
 
-<div class="phonefoot themed" style={spec.themeCss} bind:clientHeight={height} in:fly={motion()} out:fly={motion()}>
-  {#if spec.dock}<div class="dock" in:fade={swap()}>{@render spec.dock()}</div>{/if}
+<div class="phonefoot themed" style={spec.themeCss} bind:clientHeight={height} in:rise={{ duration: 320 }} out:rise={{ duration: 240 }}>
+  {#if spec.dock}<div class="dock" transition:fold={dockMotion()}>{@render spec.dock()}</div>{/if}
+  <div class="navcell">
   {#key spec.owner}
-    <nav class="phonebar" aria-label="Places" in:fade={swap()}>
+    <nav class="phonebar" class:swapped aria-label="Places" out:leave>
       {#each spec.places as p (p.key)}
         <button class="place" class:on={p.key === spec.active} aria-current={p.key === spec.active ? 'page' : undefined} onclick={() => spec.onchoose(p.key)}>
           <span class="ic" class:badge={p.badge}>{@render glyph(p.icon)}</span>
@@ -100,6 +120,7 @@
       {/each}
     </nav>
   {/key}
+  </div>
 </div>
 
 <style>
@@ -118,7 +139,20 @@
   .dock { display: flex; gap: 0.5rem; padding: 0.625rem 0.25rem 0.125rem; }
   .dock :global(> *) { flex: 1; }
   .dock :global(.smallbtn) { min-height: 2.75rem; font-size: 0.9375rem; font-weight: 600; justify-content: center; }
+  /* The old places and the new share one cell, so they can cross-fade in place. */
+  .navcell { display: grid; }
+  .navcell > * { grid-area: 1 / 1; }
   .phonebar { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); padding: 0.125rem 0 0.1875rem; }
+  /* A new page's places, one after another (the first page's come in with the bar itself). */
+  .phonebar.swapped > .place { animation: placeIn 0.28s cubic-bezier(0.33, 1, 0.68, 1) backwards; }
+  .phonebar.swapped > .place:nth-child(2) { animation-delay: 30ms; }
+  .phonebar.swapped > .place:nth-child(3) { animation-delay: 60ms; }
+  .phonebar.swapped > .place:nth-child(4) { animation-delay: 90ms; }
+  .phonebar.swapped > .place:nth-child(5) { animation-delay: 120ms; }
+  .phonebar.swapped > .place:nth-child(6) { animation-delay: 150ms; }
+  .phonebar.swapped > .place:nth-child(7) { animation-delay: 180ms; }
+  @keyframes placeIn { from { opacity: 0; transform: translateY(6px); } }
+  @media (prefers-reduced-motion: reduce) { .phonebar.swapped > .place { animation: none; } }
   .place {
     display: grid; justify-items: center; align-content: center; gap: 0.125rem; min-height: 2.875rem; padding: 0.25rem 0 0.125rem;
     font: inherit; font-size: 0.65625rem; color: var(--dim); background: none; border: 0; border-radius: var(--r); cursor: pointer;
