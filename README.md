@@ -38,29 +38,18 @@ away, and puts the whole party on one live page for the DM.
 ## Showcase
 
 <p align="center">
-  <img src=".github/readme/desktop-sheet.png" alt="Dave's character sheet on a computer in dark mode: hit points, abilities, saving throws, skills, attacks, and trackers with pips and a gauge" width="100%">
+  <img src=".github/readme/desktop-sheet.png" alt="Dave's character sheet on a desktop in dark mode: hit points with temporary ones, abilities, saving throws, skills, attacks, and trackers" width="100%">
   <br>
-  <sub><b>Character sheet</b> · computer, dark mode</sub>
+  <sub><b>Character sheet</b> · Desktop, dark mode</sub>
 </p>
 <p align="center">
-  <img src=".github/readme/desktop-campaign.png" alt="The Vox Machina campaign page in light mode as the DM sees it: the party's cards and the initiative order mid-fight" width="100%">
+  <img src=".github/readme/desktop-campaign.png" alt="The Vox Machina campaign page in light mode as Dave's player sees it: the party's cards, Damage, Heal, and Temp on Dave's own card, and the initiative order mid-fight" width="100%">
   <br>
-  <sub><b>Campaign page, as the DM sees it</b> · computer, light mode</sub>
+  <sub><b>Campaign page, as a player sees it</b> · Desktop, light mode</sub>
 </p>
-<table align="center">
-  <tr>
-    <td align="center" width="50%">
-      <img src=".github/readme/phone-sheet.png" alt="Dave's sheet on a phone in light mode, with its places on a bar at the bottom" width="88%">
-      <br>
-      <sub><b>Character sheet</b> · phone, light mode</sub>
-    </td>
-    <td align="center" width="50%">
-      <img src=".github/readme/phone-campaign.png" alt="The initiative order on a phone in dark mode, with Back and Next Turn under the thumb" width="88%">
-      <br>
-      <sub><b>Initiative mid-fight</b> · phone, dark mode</sub>
-    </td>
-  </tr>
-</table>
+<p align="center">
+  <img src=".github/readme/mobile.png" alt="Two mobile screens side by side: Dave's character sheet in light mode, its places on a bar at the bottom; and the DM's initiative order mid-fight in dark mode, with Back and Next Turn under the thumb" width="82%">
+</p>
 
 ## Usage
 
