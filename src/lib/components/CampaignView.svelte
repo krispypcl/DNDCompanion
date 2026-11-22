@@ -909,12 +909,15 @@
   /* The eyebrow's parts, a dot between each two. */
   .seg + .seg::before { content: '·'; margin: 0 0.375rem; }
   .eyebrow { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--a); }
-  /* A light page over a banner: the lines beside the name sit on a solid chip, so they read on any picture. */
+  /* A light page over a banner: the lines beside the name sit on a solid chip, so they read on any
+     picture. The chip is painted round the words (a spread shadow and its edge), never padding, so
+     the header measures the same in light and dark. */
   :global([data-mode='light']) .campaignpage.withbanner :is(.eyebrow, .phonesub) {
-    width: fit-content; padding: 0.1875rem 0.625rem; border-radius: 999px;
-    border: 1px solid var(--line-soft); background: color-mix(in oklab, var(--surface) 94%, transparent);
+    --chip: color-mix(in oklab, var(--surface) 94%, transparent);
+    background: var(--chip); border-radius: 999px;
+    box-shadow: 0 0 0 0.25rem var(--chip), 0 0 0 calc(0.25rem + 1px) var(--line-soft);
+    -webkit-box-decoration-break: clone; box-decoration-break: clone;
   }
-  :global([data-mode='light']) .campaignpage.withbanner .eyebrow { display: inline-block; margin-bottom: 0.25rem; }
   :global([data-mode='light']) .campaignpage.withbanner .phonesub { border-radius: var(--r-sm); }
   h1 { margin: 0.125rem 0 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.015em; }
   .tools { display: flex; align-items: center; gap: 0.5rem; flex: none; }
@@ -1015,5 +1018,5 @@
     .phonesub { grid-column: 2; grid-row: 3; align-self: start; }
   }
   /* Under the name: who is here and the next session, each kept whole as a sheet's class line. */
-  .phonesub { margin: 0.3125rem 0 0; display: flex; flex-wrap: wrap; gap: 0.125rem 0.75rem; font-size: 0.8125rem; line-height: 1.4; color: var(--text); }
+  .phonesub { width: fit-content; margin: 0.3125rem 0 0; display: flex; flex-wrap: wrap; gap: 0.125rem 0.75rem; font-size: 0.8125rem; line-height: 1.4; color: var(--text); }
 </style>
