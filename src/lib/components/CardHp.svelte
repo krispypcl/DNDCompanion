@@ -15,10 +15,12 @@
 
   let { cur, max, temp, vital, label, sounds }: {
     cur: number; max: number; temp: number; vital: Vital; label: string;
-    /** A character's own sounds (definition.sounds): given, the card is heard; left out (a creature), it is silent. */
+    /** Its sounds (a character's definition.sounds; {} for the built-in ones): given, the card is heard; left out, it is silent. */
     sounds?: Partial<Record<SoundName, string>>;
   } = $props();
 
+  /** Heard only from a tab in view: the same change, made on the sheet in another tab, is heard there. */
+  const heard = () => Boolean(sounds) && document.visibilityState === 'visible';
   const total = $derived(max + temp);
   const pct = (n: number) => (total > 0 ? Math.max(0, Math.min(100, (n / total) * 100)) : 0);
   /** Short of full, the liquid's end waves: the temporary stretch's when there is one, else the fill's. */
@@ -62,7 +64,7 @@
       return;
     }
     if (nowTemp > previousTemp) {
-      if (sounds) playAs('shield', sounds);
+      if (heard()) playAs('shield', sounds);
       replay('temp', (on) => (shored = on), 1000);
       floatUp(`+${nowTemp - previousTemp} temp`, 'temp');
     } else if (nowTemp < previousTemp && now === previous) {
@@ -84,12 +86,12 @@
       floatUp(`−${lost}`, 'hurt');
       const sev = hitSeverity(lost, max);
       // A blow that kills rings the death bell instead (below).
-      if (sounds && vital !== 'dead') playAs('hit', sounds, sev);
+      if (heard() && vital !== 'dead') playAs('hit', sounds, sev);
       const ms = Math.round(380 + sev * 520);
       blow = `--amp:${(2 + sev * 7).toFixed(2)}px;--flash:${(0.2 + sev * 0.5).toFixed(2)};--dur:${ms}ms`;
       replay('struck', (on) => (struck = on), ms + 40);
     } else {
-      if (sounds) playAs('heal', sounds);
+      if (heard()) playAs('heal', sounds);
       replay('heal', (on) => (healed = on), 950);
       floatUp(`+${-lost}`, 'heal');
     }
@@ -102,7 +104,7 @@
   let wasVital: Vital | null = null;
   $effect(() => {
     const now = vital;
-    if (sounds && wasVital !== null && now === 'dead' && wasVital !== 'dead') playAs('deathBell', sounds);
+    if (heard() && wasVital !== null && now === 'dead' && wasVital !== 'dead') playAs('deathBell', sounds);
     wasVital = now;
   });
 </script>

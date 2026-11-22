@@ -10,6 +10,7 @@
   import { scale } from 'svelte/transition';
   import { cubicOut, quintOut } from 'svelte/easing';
   import { reorder } from '#lib/reorder.ts';
+  import { cue } from '#lib/sound.ts';
   import ConditionLookPicker from './ConditionLookPicker.svelte';
   import type { ConditionLook, State } from '#lib/types.ts';
 
@@ -51,6 +52,7 @@
     const next = addCondition(sheetState, draft);
     draft = '';
     if (next === sheetState) return;
+    cue('added');
     snapshot(sheetState, 'Condition');
     onchange(next);
     // One of their own, with no tint chosen yet: ask what it looks like.

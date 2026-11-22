@@ -23,6 +23,7 @@
   import { pull } from '#lib/stores/pull.svelte.ts';
   import { prefersReducedMotion } from '#lib/motion.ts';
   import { page } from '$app/state';
+  import { feel } from '#lib/haptics.ts';
 
   let { busy }: { /** Something still waits to be saved: the reload waits for it. */ busy: () => boolean } = $props();
 
@@ -46,18 +47,9 @@
     return false;
   }
 
-  /** A buzz of so many milliseconds, where the phone can (some browsers refuse, or ask for a tap first). */
-  function buzz(ms: number) {
-    try {
-      navigator.vibrate?.(ms);
-    } catch {
-      /* Not allowed here. */
-    }
-  }
-
   /** The dice spins a moment, the page fades out under the bar, then the page reloads (once saved). */
   function refresh() {
-    buzz(18);
+    feel('refresh');
     pull.refreshing = true;
     pull.offset = HOLD;
     const calm = prefersReducedMotion();
@@ -98,7 +90,7 @@
       // Half the finger's travel: the page resists, as a pull should.
       pull.offset = Math.min(MAX, Math.max(0, t.clientY - startY) * 0.5);
       const ready = pull.offset >= READY;
-      if (ready !== pull.ready) buzz(ready ? 10 : 5);
+      if (ready !== pull.ready) feel(ready ? 'tick' : 'untick');
       pull.ready = ready;
     };
     const end = () => {

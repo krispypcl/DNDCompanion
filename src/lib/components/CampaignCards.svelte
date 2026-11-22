@@ -28,6 +28,7 @@
   import { followHeight, glideTo, prefersReducedMotion } from '#lib/motion.ts';
   import CardHp from './CardHp.svelte';
   import { cue } from '#lib/sound.ts';
+  import { feel } from '#lib/haptics.ts';
   import ConditionRing from './ConditionRing.svelte';
   import Lightbox from './Lightbox.svelte';
   import type { ConditionLook, Sheet } from '#lib/types.ts';
@@ -111,6 +112,7 @@
     const n = Math.floor(Number(amounts[s.id]));
     if (!Number.isFinite(n) || n <= 0) return;
     amounts[s.id] = '';
+    feel(kind === 'damage' ? 'hit' : kind === 'temp' ? 'shield' : 'heal');
     onvitals?.(s.id, kind, n);
   }
   const unfold = () => ({ duration: prefersReducedMotion() ? 0 : 260, easing: cubicOut });
@@ -263,11 +265,12 @@
           </button>
           {#if quickOpen === s.id}
             <div class="quickhp" role="group" aria-label="Change {nameOf(s)}’s hit points" use:quickPane transition:fade={{ duration: 160 }}>
-              <button class="smallbtn hurt" onclick={() => quick(s, 'damage')}>Damage</button>
+              <!-- No click: the card's own sound follows as its hit points change. -->
+              <button class="smallbtn hurt" data-sound="none" onclick={() => quick(s, 'damage')}>Damage</button>
               <input class="numfield" type="number" inputmode="numeric" min="1" placeholder="0" aria-label="Amount for {nameOf(s)}"
                      bind:value={amounts[s.id]} onkeydown={(e) => { if (e.key === 'Enter') quick(s, 'damage'); }} />
-              <button class="smallbtn" onclick={() => quick(s, 'heal')}>Heal</button>
-              <button class="smallbtn" onclick={() => quick(s, 'temp')}>Temp</button>
+              <button class="smallbtn" data-sound="none" onclick={() => quick(s, 'heal')}>Heal</button>
+              <button class="smallbtn" data-sound="none" onclick={() => quick(s, 'temp')}>Temp</button>
               <button class="closex" aria-label="Close" onclick={() => (quickOpen = null)}>×</button>
             </div>
           {/if}

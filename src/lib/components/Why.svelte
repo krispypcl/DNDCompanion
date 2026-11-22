@@ -11,6 +11,7 @@
   import { portal } from '#lib/actions.ts';
   import { prefersReducedMotion } from '#lib/motion.ts';
   import type { Part } from '#lib/rules/equipment.ts';
+  import { feel } from '#lib/haptics.ts';
 
   let {
     title,
@@ -50,7 +51,7 @@
       clearTimeout(timer);
       place();
       open = true;
-      try { navigator.vibrate?.(8); } catch { /* not everywhere */ }
+      feel('tick');
     }, 420);
     hold = { id: e.pointerId, x: e.clientX, y: e.clientY, timer };
   }

@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { _resetSound, clatter, coins, cue, deathBell, deathSave, heartbeat, hovered, initiativeCall, inspiration, land, levelUp, nat1, nat20, newRound, nextTurn, setButtonSounds, soundOf, yourTurn } from '#lib/sound.ts';
+import { _resetSound, clatter, coins, cue, deathBell, deathSave, hearMoments, heartbeat, hit, hovered, initiativeCall, inspiration, land, levelUp, nat1, nat20, newRound, nextTurn, setButtonSounds, soundOf, yourTurn } from '#lib/sound.ts';
 import { musicOn, setMusicOn } from '#lib/music.ts';
 
 /** Enough of the Web Audio API to count what would be played. */
@@ -112,6 +112,32 @@ describe('sound', () => {
     expect(heard()).toBe(2);
     setButtonSounds(true);
     document.body.innerHTML = '';
+    vi.useRealTimers();
+  });
+
+  it('lets a game sound stand for the press that asked for it', () => {
+    vi.useFakeTimers();
+    const started = fakeAudio();
+    cue('press');
+    hit(0.5);
+    const blow = started.length;
+    vi.runAllTimers();
+    // The blow alone: the press's click never plays.
+    expect(started.length).toBe(blow);
+    vi.useRealTimers();
+  });
+
+  it('plays a change to the order once, though two tabs see it', () => {
+    vi.useFakeTimers();
+    const started = fakeAudio();
+    hearMoments(['newRound'], 'camp:3:pc:dave:false');
+    vi.runAllTimers();
+    const once = started.length;
+    expect(once).toBeGreaterThan(0);
+    hearMoments(['newRound'], 'camp:3:pc:dave:false');
+    vi.runAllTimers();
+    expect(started.length).toBe(once);
+    localStorage.removeItem('dndcompanion:heard');
     vi.useRealTimers();
   });
 

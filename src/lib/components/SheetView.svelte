@@ -115,6 +115,7 @@
   import ShortcutHelp from '#lib/components/ShortcutHelp.svelte';
   import SheetInitiative from '#lib/components/SheetInitiative.svelte';
   import { LiveInitiative } from '#lib/initiative.svelte.ts';
+  import { feel } from '#lib/haptics.ts';
   import { initiativeMoments } from '#lib/rules/initiative.ts';
   import Spotlight from '#lib/components/Spotlight.svelte';
   import { friendlyError } from '#lib/errors.ts';
@@ -202,6 +203,7 @@
     if (lastLevel && now > lastLevel) {
       levelUp += 1;
       levelUpSound();
+      feel('levelUp');
     }
     lastLevel = now;
   });
@@ -582,7 +584,7 @@
       heardInit = null;
       return;
     }
-    hearMoments(initiativeMoments(heardInit, s, new Set([`pc:${sheet.id}`]), false));
+    hearMoments(initiativeMoments(heardInit, s, new Set([`pc:${sheet.id}`]), false), `${liveInit.campaignId}:${s.round}:${s.turn}:${s.asking}`);
     heardInit = s;
   });
 

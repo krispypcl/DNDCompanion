@@ -456,7 +456,7 @@
       return;
     }
     const mine = new Set(untrack(() => sheets).filter((x) => x.owner_id === me).map((x) => `pc:${x.id}`));
-    hearMoments(initiativeMoments(heardInit, s, mine, isDm));
+    hearMoments(initiativeMoments(heardInit, s, mine, isDm), `${live.campaignId}:${s.round}:${s.turn}:${s.asking}`);
     heardInit = s;
   });
   const combatants = $derived<InitiativeRow[]>([

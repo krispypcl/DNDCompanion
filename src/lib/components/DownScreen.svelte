@@ -18,6 +18,7 @@
   import { prefersReducedMotion } from '#lib/motion.ts';
   import type { State } from '#lib/types.ts';
   import { deathBell, deathSave, heartbeat } from '#lib/sound.ts';
+  import { feel } from '#lib/haptics.ts';
 
   let { state: sheetState, hpMax }: { state: State; hpMax: number } = $props();
 
@@ -44,7 +45,9 @@
     if (!was || !(hpMax > 0)) return;
     if (was.hp > 0 && now.hp <= 0) {
       if (!still) beat += 1;
-      heartbeat(0.12, 1.3);
+      // After the blow that did it has landed (its sound runs about 0.4s), not over it.
+      heartbeat(0.45, 1.3);
+      feel('down');
       wentDown = performance.now();
     }
     // A third success brings them up to 1 at once, so it shows as a rise in hit
@@ -54,7 +57,10 @@
     if (saved || failed) {
       const level = failed ? Math.min(3, now.f) : now.hp > 0 ? 3 : Math.min(3, now.s);
       deathSave(failed ? 'fail' : 'save', level);
-      if (failed && now.f >= 3) deathBell();
+      if (failed && now.f >= 3) {
+        deathBell();
+        feel('death');
+      } else feel(failed ? 'fail' : 'save');
       if (still) return;
       impact = { kind: failed ? 'fail' : 'save', id: (impact?.id ?? 0) + 1, level };
       clearTimeout(clear);

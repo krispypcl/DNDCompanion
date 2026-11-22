@@ -10,6 +10,7 @@
   import { applyDamage, applyHealing, hitSeverity, isDead, setDeathSave, setTempHp, vitalStatus, withVitals } from '#lib/rules/hp.ts';
   import { snapshot } from '#lib/stores/undo.ts';
   import { heal, hit, shield } from '#lib/sound.ts';
+  import { feel } from '#lib/haptics.ts';
   import { statusPop, wavePhase } from '#lib/motion.ts';
   import type { Definition, State } from '#lib/types.ts';
 
@@ -280,9 +281,9 @@
   {#if editable}
     <div class="hprow">
       <input type="number" min="1" bind:value={amount} aria-label="Amount" />
-      <button onclick={() => { hit(hitSeverity(Math.max(0, amount - sheetState.hpTemp), hpMax)); act('Damage', applyDamage(sheetState, amount, hpMax)); }}>Damage</button>
-      <button onclick={() => { heal(); act('Healing', applyHealing(sheetState, amount, hpMax)); }}>Heal</button>
-      <button onclick={() => { shield(); act('Temp HP', setTempHp(sheetState, amount)); }}>Temp</button>
+      <button onclick={() => { const sev = hitSeverity(Math.max(0, amount - sheetState.hpTemp), hpMax); hit(sev); feel('hit', sev); act('Damage', applyDamage(sheetState, amount, hpMax)); }}>Damage</button>
+      <button onclick={() => { heal(); feel('heal'); act('Healing', applyHealing(sheetState, amount, hpMax)); }}>Heal</button>
+      <button onclick={() => { shield(); feel('shield'); act('Temp HP', setTempHp(sheetState, amount)); }}>Temp</button>
     </div>
   {/if}
   <!-- A visitor can neither rest nor spend: the row is only there for the

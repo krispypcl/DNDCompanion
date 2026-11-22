@@ -7,6 +7,7 @@
  * faintest tick as the mouse comes onto a control), and can be turned off
  * (account Preferences).
  */
+import { feel, type Feel } from './haptics.ts';
 import { loadYouTube, youtubeClip, type YTPlayer } from './music.ts';
 
 /**
@@ -64,8 +65,13 @@ export function audioUrl(raw: string | undefined | null): string | null {
     return null;
   }
 }
-/** Plays the sheet's own recording for an effect, if it has one (the built-in one if it can't play). */
+/**
+ * Plays the sheet's own recording for an effect, if it has one (the built-in one if it can't play).
+ * Every game sound starts here, so it is also where a game sound quiets the small button sounds of
+ * the same moment: the press of Damage is heard as the blow, not as a click and the blow.
+ */
 function own(name: SoundName): boolean {
+  quiet();
   const url = custom[name];
   if (!url) return false;
   if (typeof Audio === 'undefined') return true;
@@ -432,7 +438,7 @@ export function coins() {
 
 /** Inspiration gained: a sparkle running up; spent, two soft notes falling away. */
 export function inspiration(gained = true) {
-  if (gained && own('inspiration')) return;
+  if (gained ? own('inspiration') : (quiet(), false)) return;
   const ac = ready();
   if (!ac) return;
   const t = ac.currentTime;
@@ -611,15 +617,27 @@ type Cue = UiSound | keyof typeof MOMENTS;
 /** How much each says: in one moment, only the strongest plays. */
 const WEIGHT: Partial<Record<Cue, number>> = {
   hover: 0.5, press: 1, tumble: 1.5, landed: 2, fumbled: 2, back: 2, tab: 2, place: 2, switchOn: 2, switchOff: 2, added: 2, removed: 2, pageTurn: 2,
-  pickUp: 3, drop: 3, open: 3, close: 3, success: 4, error: 4, nextTurn: 5, newRound: 6, initiativeCall: 6, yourTurn: 6
+  pickUp: 3, drop: 3, close: 3, open: 3.5, success: 4, error: 4, nextTurn: 5, newRound: 6, initiativeCall: 6, yourTurn: 6
 };
+/** The cues a phone feels too (lib/haptics), whether or not button sounds are on. */
+const FELT: Partial<Record<Cue, Feel>> = { pickUp: 'pickUp', drop: 'drop', success: 'success', error: 'error', yourTurn: 'yourTurn', initiativeCall: 'call' };
 let pending: Cue | null = null;
+/** Until when small button sounds keep quiet: a game sound is playing for the same moment. */
+let quietUntil = -Infinity;
+function quiet() {
+  if (pending && (WEIGHT[pending] ?? 0) <= 2) pending = null;
+  quietUntil = performance.now() + 80;
+}
 /**
  * A sound for this moment; what else asks in the same moment (before the page has drawn it) may
- * outweigh it. Button sounds stay quiet when they are turned off; the table's moments never do.
+ * outweigh it, and a game sound quiets the small ones. Button sounds stay quiet when they are
+ * turned off; the table's moments never do.
  */
 export function cue(name: Cue) {
+  const felt = FELT[name];
+  if (felt) feel(felt);
   if (!(name in MOMENTS) && !buttonSounds) return;
+  if ((WEIGHT[name] ?? 0) <= 2 && performance.now() < quietUntil) return;
   if (pending && (WEIGHT[pending] ?? 0) >= (WEIGHT[name] ?? 0)) return;
   const first = pending === null;
   pending = name;
@@ -630,8 +648,12 @@ function flush() {
   pending = null;
   if (!name) return;
   if (name in MOMENTS) return void MOMENTS[name as keyof typeof MOMENTS]();
+  playUi(name as UiSound);
+}
+/** One button sound, now (the cue's choice; the sound preview page plays each). */
+export function playUi(name: UiSound) {
   const ac = ready();
-  if (ac) UI[name as UiSound](ac, ac.currentTime);
+  if (ac) UI[name](ac, ac.currentTime);
 }
 
 /** A window heard as it opens and as it goes: `$effect(windowSounds)` in a window that exists only while open. */
@@ -640,9 +662,32 @@ export function windowSounds(): () => void {
   return () => cue('close');
 }
 
-/** The order's moments (rules/initiative initiativeMoments), heard in turn: a new round, then your turn a beat later. */
-export function hearMoments(list: (keyof typeof MOMENTS)[]) {
-  list.forEach((name, i) => (i ? setTimeout(() => cue(name), i * 450) : cue(name)));
+/**
+ * The order's moments (rules/initiative initiativeMoments), heard in turn: a new round, then your
+ * turn a beat later. `key` names the change (the campaign, round, and turn): the sheet and the
+ * campaign page open in two tabs both see it, and only one plays it, the tab in view first.
+ */
+export function hearMoments(list: (keyof typeof MOMENTS)[], key: string) {
+  if (!list.length) return;
+  const play = () => {
+    if (claimed(key)) return;
+    list.forEach((name, i) => (i ? setTimeout(() => cue(name), i * 450) : cue(name)));
+  };
+  if (typeof document !== 'undefined' && document.visibilityState !== 'visible') setTimeout(play, 250);
+  else play();
+}
+/** Whether another tab already played this change (a note in shared storage, good for 3s). */
+function claimed(key: string): boolean {
+  const SLOT = 'dndcompanion:heard';
+  try {
+    const now = Date.now();
+    const last = JSON.parse(localStorage.getItem(SLOT) ?? 'null') as { key?: string; at?: number } | null;
+    if (last?.key === key && now - (last.at ?? 0) < 3000) return true;
+    localStorage.setItem(SLOT, JSON.stringify({ key, at: now }));
+  } catch {
+    // No storage: this tab plays it.
+  }
+  return false;
 }
 
 /** Which sound a pressed control makes: its own data-sound, else what it is and says. */
@@ -710,6 +755,8 @@ export function listenForAlerts(root: Node): () => void {
 
 /** For tests: forget the audio context. */
 export function _resetSound() {
+  pending = null;
+  quietUntil = -Infinity;
   hoverAt = null;
   hoverTime = -Infinity;
   ctx = null;

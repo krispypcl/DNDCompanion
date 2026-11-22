@@ -328,7 +328,7 @@
 
         <!-- Each part keeps its row, hit points or not, so the cards in a row line up. -->
         {#if c.hp_max !== null}
-          <CardHp cur={now} {max} temp={c.hp_temp} vital={v.vital} label={v.label} />
+          <CardHp cur={now} {max} temp={c.hp_temp} vital={v.vital} label={v.label} sounds={{}} />
         {:else}
           <span class="nohp" aria-hidden="true"></span>
         {/if}

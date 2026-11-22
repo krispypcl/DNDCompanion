@@ -13,6 +13,7 @@
   import { DIE_SIDES, addDie, diceCount, formula, hasD20, roll, type Mode, type Pool, type Roll, type Sides } from '#lib/rules/dice.ts';
   import { prefersReducedMotion } from '#lib/motion.ts';
   import { clatter, land, nat1, nat20 } from '#lib/sound.ts';
+  import { feel } from '#lib/haptics.ts';
   import { storedDice } from '#lib/prefs.ts';
   import { trayMemory } from '#lib/stores/tray.ts';
   import { get } from 'svelte/store';
@@ -78,9 +79,16 @@
     clatter(diceCount(result.pool), 420);
     const landed = () => {
       onrolled?.(result);
-      if (isCrit(result)) nat20();
-      else if (isFumble(result)) nat1();
-      else land();
+      if (isCrit(result)) {
+        nat20();
+        feel('crit');
+      } else if (isFumble(result)) {
+        nat1();
+        feel('fumble');
+      } else {
+        land();
+        feel('tick');
+      }
     };
     if (!prefersReducedMotion() && storedDice() === 'tumble') {
       tumbling = true;

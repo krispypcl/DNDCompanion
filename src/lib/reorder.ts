@@ -82,8 +82,7 @@ export function reorder(node: HTMLElement, options: ReorderOptions) {
     drag = { key, el, gx: px - box.left, gy: py - box.top, order: [...o.keys], id, x, y };
     node.classList.add('reordering');
     el.classList.add('held');
-    // Held long enough on a phone: a tick to say it is picked up; heard too.
-    if (navigator.vibrate) try { navigator.vibrate(8); } catch { /* not allowed here */ }
+    // Picked up: heard, and felt on a phone (a tick to say a long hold took).
     cue('pickUp');
     el.style.setProperty('transition', prefersReducedMotion() ? 'none' : 'transform 0.16s ease-out', 'important');
     place();
