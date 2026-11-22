@@ -401,8 +401,6 @@ function makeCampaignRepo(client: SupabaseClient) {
         .insert({ campaign_id: campaignId, created_by: userId, kind, data })
         .select('id, campaign_id, kind, data, created_by, updated_at').single();
       if (error && /board is full/i.test(error.message)) throw new CampaignError('The board is full! Clear a few things away first.');
-      // Until database/0027 has run, the board refuses a picture as an item.
-      if (error && /board_items_kind_check/i.test(error.message)) throw new CampaignError('The board can’t hold pictures just yet! It needs one more database update.');
       if (error) throw new Error(error.message);
       return row as BoardItem;
     },
