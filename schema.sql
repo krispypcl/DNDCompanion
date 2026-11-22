@@ -1204,14 +1204,75 @@ comment on column public.campaign_state.creatures_rev is 'Counts changes to the 
 comment on column public.campaign_state.campaign_rev is 'Counts changes to the campaign''s name, details and ended state, so pages know to read it again.';
 
 comment on table public.board_items is 'The campaign''s table board: pages, sticky notes, text and drawings.';
-comment on column public.board_items.kind is 'page, note, text or stroke.';
+comment on column public.board_items.kind is 'page, note, text, stroke, or image (a picture kept in the board bucket).';
 comment on column public.board_items.data is 'Where it is and what it holds (its page, position, text, color, points).';
 
-comment on table public.shared_rows is 'Rows players wrote on their sheets (attacks, spells, items, features, trackers), offered to others as they type.';
+comment on table public.shared_rows is
+  'Rows players wrote on their sheets (attacks, spells, items, features, trackers), offered to others as they type. No policies on purpose: nobody reads or writes it directly, only through sync_shared_rows(), search_shared_rows(), and forget_shared_rows().';
 comment on column public.shared_rows.name_key is 'The name lower-cased with single spaces, for searching.';
 comment on column public.shared_rows.fingerprint is 'Identifies identical rows, so the same row is kept once.';
 comment on column public.shared_rows.created_by is 'Who first wrote it; shown only to players in a campaign with them.';
-comment on table public.shared_row_uses is 'Which characters use which shared rows right now.';
+comment on table public.shared_row_uses is
+  'Which characters use which shared rows right now; a row no character uses goes (tidy_shared_rows). No policies on purpose: only the shared-row functions touch it.';
+
+comment on table public.campaign_creatures is
+  'Monsters and NPCs the DM keeps on a campaign page: hit points, AC, conditions, a stat block, and whether players can see them. The DM alone reads and writes them; players see what is revealed through revealed_creatures().';
+comment on table public.homebrew_creatures is
+  'A DM''s own monsters and NPCs (stat blocks they wrote), kept to add to any of their campaigns. Their owner''s alone.';
+
+-- The functions the app calls. Each has its logic in private.<name> (security
+-- definer: it checks who is calling itself) and a public face of the same name
+-- that runs as the caller, the only part the API serves.
+
+comment on function private.campaign_by_invite(text) is 'Which campaign an invite code is for, so the join page can name it before anyone joins.';
+comment on function private.campaign_invite(uuid) is 'The campaign''s invite code, for anyone in the campaign (the column itself is hidden by grants).';
+comment on function private.create_campaign(text, uuid) is 'Starts a campaign run by the caller, optionally with one of their own characters in it.';
+comment on function private.delete_own_account() is 'Deletes the caller''s account; their profile, characters, campaigns, and everything else of theirs in these tables go with it (cascades).';
+comment on function private.forget_shared_rows() is 'Stops sharing the caller''s rows: every one of their characters'' rows comes out, and rows they first wrote no longer carry their name.';
+comment on function private.join_campaign(text, uuid) is 'Puts one of the caller''s characters in the campaign an invite code is for.';
+comment on function private.remove_from_campaign(uuid) is 'The DM takes a character out of their campaign (its player can simply leave).';
+comment on function private.reset_campaign_invite(uuid) is 'The DM makes a fresh invite code; pages open on the campaign hear the counter tick and read it again.';
+comment on function private.revealed_creatures(uuid) is 'What the players may see of the campaign''s monsters and NPCs: the revealed ones, with a vital status in place of their hit points.';
+comment on function private.search_shared_rows(text, text, integer) is 'Shared rows of one kind whose names hold what is typed (two letters or more): the exact name first, then names starting with it, the most used first within each. The sheet''s suggestions.';
+comment on function private.set_character_condition_look(uuid, text, jsonb) is 'The DM chooses how a condition they give a character looks (its color and motion).';
+comment on function private.set_character_conditions(uuid, text[]) is 'The DM sets a character''s conditions: only that list, and only in their own campaign.';
+comment on function private.set_character_hp(uuid, integer, integer, text[], jsonb) is 'Hit points from the Owlbear Rodeo map, by the character''s player or their DM.';
+comment on function private.set_initiative_ties(uuid, jsonb) is 'Players settle a tie among characters in the initiative order: a score per "pc:<character id>" in initiative.ties, standing in for Dexterity.';
+comment on function private.set_my_initiative(uuid, integer) is 'A player puts in their own character''s initiative (or null to take it back).';
+comment on function private.sync_shared_rows(uuid, jsonb) is 'Shares a character''s rows: p_rows is everything it has now ([{ kind, name, data }]); returns how many shared rows it uses afterward.';
+
+comment on function public.campaign_by_invite(text) is 'The app''s way to private.campaign_by_invite, run as the caller.';
+comment on function public.campaign_invite(uuid) is 'The app''s way to private.campaign_invite, run as the caller.';
+comment on function public.create_campaign(text, uuid) is 'The app''s way to private.create_campaign, run as the caller.';
+comment on function public.delete_own_account() is 'The app''s way to private.delete_own_account, run as the caller.';
+comment on function public.forget_shared_rows() is 'The app''s way to private.forget_shared_rows, run as the caller.';
+comment on function public.join_campaign(text, uuid) is 'The app''s way to private.join_campaign, run as the caller.';
+comment on function public.remove_from_campaign(uuid) is 'The app''s way to private.remove_from_campaign, run as the caller.';
+comment on function public.reset_campaign_invite(uuid) is 'The app''s way to private.reset_campaign_invite, run as the caller.';
+comment on function public.revealed_creatures(uuid) is 'The app''s way to private.revealed_creatures, run as the caller.';
+comment on function public.search_shared_rows(text, text, integer) is 'The app''s way to private.search_shared_rows, run as the caller.';
+comment on function public.set_character_condition_look(uuid, text, jsonb) is 'The app''s way to private.set_character_condition_look, run as the caller.';
+comment on function public.set_character_conditions(uuid, text[]) is 'The app''s way to private.set_character_conditions, run as the caller.';
+comment on function public.set_character_hp(uuid, integer, integer, text[], jsonb) is 'The app''s way to private.set_character_hp, run as the caller.';
+comment on function public.set_initiative_ties(uuid, jsonb) is 'The app''s way to private.set_initiative_ties, run as the caller.';
+comment on function public.set_my_initiative(uuid, integer) is 'The app''s way to private.set_my_initiative, run as the caller.';
+comment on function public.sync_shared_rows(uuid, jsonb) is 'The app''s way to private.sync_shared_rows, run as the caller.';
+
+-- What runs on its own: triggers, and the checks policies call.
+
+comment on function private.create_profile() is 'Trigger (auth.users, after insert): a new player gets their profile row, with the name Google or Discord gave them, if any.';
+comment on function private.touch_updated_at() is 'Trigger: sets updated_at on every update (the app''s saves compare it, so two devices never overwrite each other unseen).';
+comment on function private.guard_character_campaign() is 'Trigger (characters): a character joins a campaign only through an invite (the campaign functions switch this off for their own update). Leaving is free.';
+comment on function private.create_campaign_state() is 'Trigger (campaigns, after insert): every campaign gets its live state row (music, invite counter, initiative).';
+comment on function private.cap_board_items() is 'Trigger (board_items): a board holds so many items at most; past that, an insert is refused with "The board is full".';
+comment on function private.cap_campaign_creatures() is 'Trigger (campaign_creatures): a campaign holds so many monsters and NPCs at most.';
+comment on function private.cap_homebrew_creatures() is 'Trigger (homebrew_creatures): a DM keeps so many of their own monsters and NPCs at most.';
+comment on function private.count_creature_change() is 'Trigger (campaign_creatures): counts each change players can see in campaign_state.creatures_rev, so their pages (which can''t read the creatures) know to look again.';
+comment on function private.count_campaign_change() is 'Trigger (campaigns): counts each change to a campaign in campaign_state.campaign_rev (campaigns stay out of Realtime, as their invite code is hidden).';
+comment on function private.tidy_shared_rows() is 'Trigger (shared_row_uses): a shared row no character uses any longer goes.';
+comment on function private.is_campaign_member(uuid) is 'Policy check: is the caller in this campaign, as its DM or with a character in it?';
+comment on function private.has_private_sheets(uuid) is 'Policy check: has this player made their sheets private (the account page)?';
+comment on function private.in_same_campaign(uuid, uuid) is 'Policy check: do two players share a campaign, as its DM or with a character in it?';
 
 -- ── The table board's pictures (database/0026, 0027) ──
 -- A public bucket: anyone who can see a board sees its pictures; only the campaign's members add or
