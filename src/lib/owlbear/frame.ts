@@ -3,13 +3,13 @@
  * pages ever do), wait for Owlbear, and follow its light or dark. The way
  * to stop following goes onto `stops`, for the page's cleanup.
  */
-import { applyMode } from '#lib/stores/mode.ts';
+import { showMode } from '#lib/stores/mode.ts';
 
 export type Obr = typeof import('./obr.ts');
 
 export async function joinRoom(stops: (() => void)[]): Promise<Obr> {
   const obr = await import('./obr.ts');
   await obr.ready();
-  stops.push(await obr.followTheme(applyMode));
+  stops.push(await obr.followTheme(showMode));
   return obr;
 }

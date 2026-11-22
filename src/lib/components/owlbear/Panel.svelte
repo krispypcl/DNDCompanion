@@ -24,7 +24,7 @@
   import { lookOf } from '#lib/rules/conditions.ts';
   import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
   import { faceFamily, fontFace } from '#lib/rules/fonts.ts';
-  import { applyMode } from '#lib/stores/mode.ts';
+  import { showMode } from '#lib/stores/mode.ts';
   import { themeStyle } from '#lib/theme.ts';
   import { session } from '#lib/stores/session.ts';
   import { profile } from '#lib/stores/profile.ts';
@@ -96,7 +96,7 @@
       // extension under an older, smaller manifest keeps that size otherwise.
       void m.OBR.action.setWidth(460).catch(() => {});
       void m.OBR.action.setHeight(760).catch(() => {});
-      stops.push(await m.followTheme(applyMode));
+      stops.push(await m.followTheme(showMode));
       role = await m.OBR.player.getRole();
       stops.push(m.OBR.player.onChange((p) => (role = p.role)));
       campaignId = await m.getCampaign();

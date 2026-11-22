@@ -97,6 +97,16 @@ export function applyMode(next: Mode) {
 }
 
 /**
+ * Shows a mode without keeping it on the device: the Owlbear extension follows Owlbear's own
+ * light or dark. Its pages share this site's storage, so keeping it there turned the app itself
+ * dark on its next load, whatever had been chosen in it.
+ */
+export function showMode(next: Mode) {
+  mark(next);
+  mode.set(next);
+}
+
+/**
  * Switching light and dark by hand: the new look fades in over the old as
  * one picture (a view transition), so it costs the same on any page. Easing
  * every element's colors instead made a full campaign page stutter. The
