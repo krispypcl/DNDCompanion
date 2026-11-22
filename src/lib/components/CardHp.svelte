@@ -9,7 +9,7 @@
    * points, and death (or the built-in ones); a creature's is silent.
    */
   import { hitSeverity, type Vital } from '#lib/rules/hp.ts';
-  import { statusPop } from '#lib/motion.ts';
+  import { statusPop, wavePhase } from '#lib/motion.ts';
   import { playAs, type SoundName } from '#lib/sound.ts';
   import CountUp from './CountUp.svelte';
 
@@ -25,9 +25,10 @@
   const short = $derived(cur < max);
   /** Temporary hit points beyond some of the character's own: their stretch runs under the fill's wave. */
   const under = $derived(temp > 0 && cur > 0);
+  const curWave = $derived(short || temp > 0);
   const hurt = $derived(vital === 'bloodied' || vital === 'critical' || vital === 'down' || vital === 'dead');
 
-  let ghost = $state<{ left: number; width: number; kind: 'damage' | 'heal' } | null>(null);
+  let ghost = $state<{ left: number; width: number; kind: 'damage' | 'heal'; wave: boolean } | null>(null);
   let pulse = $state(0);
   let healed = $state(false);
   let wounded = $state(false);
@@ -74,8 +75,8 @@
     const to = pct(now);
     const lost = previous - now;
     ghost = lost > 0
-      ? { left: to, width: Math.max(from - to, 0.8), kind: 'damage' }
-      : { left: from, width: Math.max(to - from, 0.8), kind: 'heal' };
+      ? { left: to, width: Math.max(from - to, 0.8), kind: 'damage', wave: from < 99.9 }
+      : { left: from, width: Math.max(to - from, 0.8), kind: 'heal', wave: to < 99.9 };
     previous = now;
     pulse += 1;
     if (lost > 0) {
@@ -122,12 +123,17 @@
   </div>
   <div class="gauge">
     <div class="bar" class:shielded={temp > 0} aria-hidden="true">
-      <i class="cur hpflow" class:hpwave={short || temp > 0} style:width="{pct(cur)}%"></i>
-      <i class="tmp" class:hpwave={short && temp > 0} class:under style:width={under ? `calc(${pct(temp)}% + 6px)` : `${pct(temp)}%`}></i>
+      <i class="cur hpflow" class:hpwave={curWave} style:width="{pct(cur)}%" style:--wave-at={curWave ? wavePhase() : undefined}></i>
+      <i class="tmp" class:hpwave={short && temp > 0} class:under style:width={under ? `calc(${pct(temp)}% + 6px)` : `${pct(temp)}%`}
+         style:--wave-at={temp > 0 ? wavePhase() : undefined}></i>
       {#if healed}<i class="sweep"></i>{/if}
       {#if wounded}<i class="sweep back"></i>{/if}
       {#if ghost}
-        {#key pulse}<i class="ghost {ghost.kind}" style:left="{ghost.left}%" style:width="{ghost.width}%"></i>{/key}
+        {#key pulse}
+          {@const tuck = ghost.kind === 'damage' && ghost.left > 0 ? 6 : 0}
+          <i class="ghost {ghost.kind}" class:hpwave={ghost.wave} style:left="calc({ghost.left}% - {tuck}px)"
+             style:width="calc({ghost.width}% + {tuck}px)" style:--wave-at={wavePhase()}></i>
+        {/key}
       {/if}
     </div>
   </div>
@@ -158,11 +164,14 @@
      so its color shows in the wave's troughs: the seam between the two is liquid as well. */
   .bar > .cur { position: relative; z-index: 1; }
   .tmp.under { margin-left: -6px; }
-  .ghost, .sweep { z-index: 2; }
+  /* A heal's ghost lights the stretch gained, over the fill; a hit's runs 6px under the fill's
+     wavy end, so what drains shows in its troughs. Either waves where it stops short of the wall. */
+  .ghost.heal, .sweep { z-index: 2; }
   .bar.shielded { box-shadow: 0 0 0 1px var(--shield), 0 0 8px -2px color-mix(in oklch, var(--shield) 70%, transparent); }
 
   /* The stretch that was lost or gained, fading. */
   .ghost { position: absolute; top: 0; bottom: 0; pointer-events: none; animation: ghostOut 0.7s ease-out forwards; }
+  .ghost.hpwave { animation: ghostOut 0.7s ease-out forwards, hpWave 1.2s linear var(--wave-at, 0s) infinite; }
   .ghost.damage { background: var(--hurt-red); }
   .ghost.heal { background: var(--heal-green); }
   @keyframes ghostOut { 0%, 35% { opacity: 0.95; } 100% { opacity: 0; } }
@@ -251,5 +260,6 @@
   @media (prefers-reduced-motion: reduce) {
     .sweep, .float { display: none; }
     .bar, .hpline, .hpline b { animation: none !important; }
+    .ghost.hpwave { animation: ghostOut 0.7s ease-out forwards; }
   }
 </style>

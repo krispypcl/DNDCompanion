@@ -10,7 +10,7 @@
   import { applyDamage, applyHealing, hitSeverity, isDead, setDeathSave, setTempHp, vitalStatus, withVitals } from '#lib/rules/hp.ts';
   import { snapshot } from '#lib/stores/undo.ts';
   import { heal, hit, shield } from '#lib/sound.ts';
-  import { statusPop } from '#lib/motion.ts';
+  import { statusPop, wavePhase } from '#lib/motion.ts';
   import type { Definition, State } from '#lib/types.ts';
 
   let {
@@ -41,7 +41,7 @@
    * gained, in the color of what happened, fading out. Without it the bar
    * just arrives at a new length and you cannot tell how far it moved.
    */
-  let ghost = $state<{ left: number; width: number; kind: 'damage' | 'heal' } | null>(null);
+  let ghost = $state<{ left: number; width: number; kind: 'damage' | 'heal'; wave: boolean } | null>(null);
   let pulse = $state(0);
   let struck = $state(false);
   /** A heal just landed: the gauge glows green and a light runs along it. */
@@ -127,8 +127,8 @@
     const to = pct(current);
     ghost =
       current < previous
-        ? { left: to, width: Math.max(from - to, 0.8), kind: 'damage' }
-        : { left: from, width: Math.max(to - from, 0.8), kind: 'heal' };
+        ? { left: to, width: Math.max(from - to, 0.8), kind: 'damage', wave: from < 99.9 }
+        : { left: from, width: Math.max(to - from, 0.8), kind: 'heal', wave: to < 99.9 };
     const damaged = current < previous;
     const lost = previous - current;
     previous = current;
@@ -177,6 +177,7 @@
   const short = $derived(sheetState.hpCurrent < hpMax);
   /** Temporary hit points beyond some of the character's own: their stretch runs under the fill's wave. */
   const under = $derived(sheetState.hpTemp > 0 && sheetState.hpCurrent > 0);
+  const curWave = $derived(short || sheetState.hpTemp > 0);
   const down = $derived(sheetState.hpCurrent === 0);
   const dead = $derived(isDead(sheetState));
   /** At 0 and still fighting for it: the gauge's red pulse. */
@@ -239,15 +240,19 @@
   {/key}
 {/if}
 <div class="bar" class:shielded={sheetState.hpTemp > 0} aria-hidden="true">
-  <i class="cur hpflow" class:hpwave={short || sheetState.hpTemp > 0} class:bloodied class:down style:width="{pct(sheetState.hpCurrent)}%"></i>
+  <i class="cur hpflow" class:hpwave={curWave} class:bloodied class:down style:width="{pct(sheetState.hpCurrent)}%"
+     style:--wave-at={curWave ? wavePhase() : undefined}></i>
   {#if healed}<i class="sweep"></i>{/if}
   {#if wounded}<i class="sweep hurt"></i>{/if}
   {#key sheetState.hpTemp}
-    <i class="tmp" class:hpwave={short && sheetState.hpTemp > 0} class:under style:width={under ? `calc(${pct(sheetState.hpTemp)}% + 6px)` : `${pct(sheetState.hpTemp)}%`}></i>
+    <i class="tmp" class:hpwave={short && sheetState.hpTemp > 0} class:under style:width={under ? `calc(${pct(sheetState.hpTemp)}% + 6px)` : `${pct(sheetState.hpTemp)}%`}
+       style:--wave-at={wavePhase()}></i>
   {/key}
   {#if ghost}
     {#key pulse}
-      <i class="ghost {ghost.kind}" style:left="{ghost.left}%" style:width="{ghost.width}%"></i>
+      {@const tuck = ghost.kind === 'damage' && ghost.left > 0 ? 6 : 0}
+      <i class="ghost {ghost.kind}" class:hpwave={ghost.wave} style:left="calc({ghost.left}% - {tuck}px)"
+         style:width="calc({ghost.width}% + {tuck}px)" style:--wave-at={wavePhase()}></i>
     {/key}
   {/if}
 </div>
@@ -405,12 +410,14 @@
      so its color shows in the wave's troughs: the seam between the two is liquid as well. */
   .bar > .cur { position: relative; z-index: 1; }
   .tmp.under { margin-left: -6px; }
-  .ghost, .sweep { z-index: 2; }
+  /* A heal's ghost lights the stretch gained, over the fill; a hit's runs 6px under the fill's
+     wavy end, so what drains shows in its troughs. Either waves where it stops short of the wall. */
+  .ghost.heal, .sweep { z-index: 2; }
   .tmp {
     background: color-mix(in oklch, var(--shield) 85%, transparent);
     animation: tempIn 0.4s ease-out;
   }
-  .tmp.hpwave { animation: tempIn 0.4s ease-out, hpWave 1.2s linear infinite; }
+  .tmp.hpwave { animation: tempIn 0.4s ease-out, hpWave 1.2s linear var(--wave-at, 0s) infinite; }
   @keyframes tempIn {
     from { filter: brightness(var(--temp-flash)); }
     to { filter: none; }
@@ -420,6 +427,7 @@
     animation: ghostOut 0.7s ease-out forwards;
     pointer-events: none;
   }
+  .ghost.hpwave { animation: ghostOut 0.7s ease-out forwards, hpWave 1.2s linear var(--wave-at, 0s) infinite; }
   .ghost.damage { background: var(--danger); }
   .ghost.heal { background: var(--heal-green); }
 
@@ -526,6 +534,7 @@
   @media (prefers-reduced-motion: reduce) {
     .sweep, .float { display: none; }
     .tmp.hpwave { animation: none; }
+    .ghost.hpwave { animation: ghostOut 0.7s ease-out forwards; }
   }
   @keyframes ghostOut {
     0% { opacity: 0.95; }

@@ -82,6 +82,14 @@ export function popIn(_node: Element, { y = 4, duration = 250 }: { y?: number; d
   };
 }
 
+/**
+ * Where a gauge's wave (app.css .hpwave) should start, as its --wave-at: so far into its 1.2s
+ * roll as the clock is, so every wave rolls in step whenever it appeared (a ghost's over the fill's).
+ */
+export function wavePhase(): string {
+  return typeof performance === 'undefined' ? '0s' : `-${Math.round(performance.now() % 1200)}ms`;
+}
+
 /** A hit point status taking the last one's place (Healthy, Bloodied, Down): it grows in quickly. */
 export function statusPop(_node: Element) {
   return {

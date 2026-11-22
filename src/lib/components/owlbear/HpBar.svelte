@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { wavePhase } from '#lib/motion.ts';
   /**
    * A character's hit points in the Owlbear panel and token menu: the bar
    * fills to their current hit points (in the character's color, red once
@@ -31,8 +32,8 @@
 
 <div class="hp {vital}" class:hit={flash === 'hit'} class:heal={flash === 'heal'}>
   <span class="bar" aria-hidden="true">
-    <span class="fill hpflow" class:hpwave={short || temp > 0} style:width="{(Math.min(cur, total) / total) * 100}%"></span>
-    {#if temp > 0}<span class="temp" class:hpwave={short} style:left="calc({(Math.min(cur, total) / total) * 100}% - {cur > 0 ? 6 : 0}px)" style:width="calc({(temp / total) * 100}% + {cur > 0 ? 6 : 0}px)"></span>{/if}
+    <span class="fill hpflow" class:hpwave={short || temp > 0} style:--wave-at={short || temp > 0 ? wavePhase() : undefined} style:width="{(Math.min(cur, total) / total) * 100}%"></span>
+    {#if temp > 0}<span class="temp" class:hpwave={short} style:--wave-at={wavePhase()} style:left="calc({(Math.min(cur, total) / total) * 100}% - {cur > 0 ? 6 : 0}px)" style:width="calc({(temp / total) * 100}% + {cur > 0 ? 6 : 0}px)"></span>{/if}
   </span>
   <span class="nums"><b>{cur}</b>/{max}</span>
   {#if temp > 0}<span class="tag" title="Temporary hit points">+{temp} temp</span>{/if}

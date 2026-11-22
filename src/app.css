@@ -315,14 +315,15 @@ html:has(main.campaignpage) { --btn-h: 2.125rem; }
   animation: hpFlow 5s linear infinite;
 }
 /* Where the liquid ends short of the gauge's wall (the fill, or the temporary stretch after it), a
-   wave (the second mask layer, 6px wide) keeps rolling down its edge; a full gauge has none. */
+   wave (the second mask layer, 6px wide) keeps rolling down its edge; a full gauge has none. Every
+   wave keeps one rhythm (--wave-at, motion.ts wavePhase), so two that meet line up. */
 .hpwave {
   --wave: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 12' preserveAspectRatio='none'%3E%3Cpath d='M0 0H3Q6 3 3 6Q0 9 3 12H0Z'/%3E%3C/svg%3E");
   -webkit-mask: linear-gradient(#000, #000) left top / calc(100% - 5px) 100% no-repeat, var(--wave) right top / 6px 12px repeat-y;
   mask: linear-gradient(#000, #000) left top / calc(100% - 5px) 100% no-repeat, var(--wave) right top / 6px 12px repeat-y;
-  animation: hpWave 1.2s linear infinite;
+  animation: hpWave 1.2s linear var(--wave-at, 0s) infinite;
 }
-.hpflow.hpwave { animation: hpFlow 5s linear infinite, hpWave 1.2s linear infinite; }
+.hpflow.hpwave { animation: hpFlow 5s linear infinite, hpWave 1.2s linear var(--wave-at, 0s) infinite; }
 @keyframes hpFlow { from { background-position: 200% 0; } to { background-position: 0 0; } }
 @keyframes hpWave {
   from { -webkit-mask-position: left top, right top; mask-position: left top, right top; }
