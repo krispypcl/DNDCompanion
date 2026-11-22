@@ -22,13 +22,10 @@
   let {
     title,
     name,
-    lede,
     fields,
     submitLabel,
     onsubmit,
     validate,
-    busyLabel = 'Working',
-    standalone = true,
     children,
     google = false,
     googleNext = '/'
@@ -38,16 +35,12 @@
     title?: string;
     /** What the form is, for assistive tech, when there is no visible title. */
     name: string;
-    lede?: string;
     fields: Field[];
     submitLabel: string;
     onsubmit: (values: Record<string, string>) => Promise<string | void>;
     /** A reason the form cannot be sent yet, or nothing. Checked before the
         network is touched, so a typo costs no round trip. */
     validate?: (values: Record<string, string>) => string | null | undefined;
-    busyLabel?: string;
-    /** A page of its own centers itself; embedded in the landing page it does not. */
-    standalone?: boolean;
     children?: import('svelte').Snippet;
     /** Offer "Continue with Google" under the form, returning to `googleNext`. */
     google?: boolean;
@@ -80,20 +73,17 @@
   }
 </script>
 
-<div class="wrap" class:standalone>
+<div class="wrap">
   <div class="stack">
-    {#if standalone}
-      <!-- The same mark the splash shows, so arriving and signing in are
-           plainly the same place. -->
-      <div class="brand">
-        <Logo size={60} />
-        <p>DND Companion</p>
-      </div>
-    {/if}
+    <!-- The same mark the splash shows, so arriving and signing in are
+         plainly the same place. -->
+    <div class="brand">
+      <Logo size={60} />
+      <p>DND Companion</p>
+    </div>
 
     <section class="card">
       {#if title}<h1>{title}</h1>{/if}
-      {#if lede}<p class="lede">{lede}</p>{/if}
 
       <form onsubmit={handle} aria-label={name} class:bare={!title}>
         {#each fields as field (field.id)}
@@ -124,7 +114,7 @@
         {#if error}<p class="error" role="alert">{error}</p>{/if}
         {#if notice}<p class="notice" role="status">{notice}</p>{/if}
 
-        <button type="submit" disabled={busy}>{busy ? busyLabel : submitLabel}</button>
+        <button type="submit" disabled={busy}>{busy ? 'Working' : submitLabel}</button>
       </form>
 
       {#if google}
@@ -140,10 +130,8 @@
 
       <nav>{@render children?.()}</nav>
     </section>
-    {#if standalone}
-      <!-- Quietly there for anyone who wants to know what is kept. -->
-      <p class="foot"><a class="smallbtn quiet" href="{base}/privacy">Privacy</a></p>
-    {/if}
+    <!-- Quietly there for anyone who wants to know what is kept. -->
+    <p class="foot"><a class="smallbtn quiet" href="{base}/privacy">Privacy</a></p>
   </div>
 </div>
 
@@ -170,7 +158,8 @@
   @keyframes fill { from { transform: scaleX(0.3); } }
   .meter p { margin: 0.3125rem 0 0; font-size: 0.78rem; color: var(--dim); line-height: 1.4; }
   .meter b { color: var(--text); font-weight: 600; }
-  .wrap { display: flex; justify-content: center; }
+  /* Centered in the viewport. */
+  .wrap { display: flex; justify-content: center; align-items: center; min-height: 100dvh; padding: 1.5rem; }
   .foot { margin: 1rem 0 0; text-align: center; animation: cardIn 0.32s cubic-bezier(0.2, 0.7, 0.3, 1) 0.08s backwards; }
   .stack { width: 100%; max-width: 23rem; }
   .brand {
@@ -183,8 +172,6 @@
     margin: 0; text-align: center; font-size: 2rem; line-height: 1.15;
     font-family: var(--font-brand); font-weight: 700; letter-spacing: 0.01em;
   }
-  /* Its own page centers in the viewport; embedded, it sits in the flow. */
-  .standalone { min-height: 100dvh; align-items: center; padding: 1.5rem; }
   @keyframes cardIn {
     from { opacity: 0; transform: translateY(8px) scale(0.995); }
     to { opacity: 1; transform: none; }
@@ -199,7 +186,6 @@
     padding: 1.75rem;
   }
   h1 { font-size: 1.25rem; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
-  .lede { margin: 0.5rem 0 0; color: var(--dim); font-size: 0.875rem; line-height: 1.5; }
   form { display: flex; flex-direction: column; gap: 0.875rem; margin-top: 1.5rem; }
   /* With no title above it, the form is the top of the card. */
   form.bare { margin-top: 0; }
