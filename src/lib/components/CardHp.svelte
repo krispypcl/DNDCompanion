@@ -130,8 +130,8 @@
       {#if wounded}<i class="sweep back"></i>{/if}
       {#if ghost}
         {#key pulse}
-          {@const tuck = ghost.kind === 'damage' && ghost.left > 0 ? 6 : 0}
-          <i class="ghost {ghost.kind}" class:hpwave={ghost.wave} style:left="calc({ghost.left}% - {tuck}px)"
+          {@const tuck = ghost.left > 0 ? 6 : 0}
+          <i class="ghost {ghost.kind}" class:hpwave={ghost.wave} class:hpwavein={ghost.kind === 'heal' && tuck > 0} style:left="calc({ghost.left}% - {tuck}px)"
              style:width="calc({ghost.width}% + {tuck}px)" style:--wave-at={wavePhase()}></i>
         {/key}
       {/if}
@@ -164,14 +164,17 @@
      so its color shows in the wave's troughs: the seam between the two is liquid as well. */
   .bar > .cur { position: relative; z-index: 1; }
   .tmp.under { margin-left: -6px; }
-  /* A heal's ghost lights the stretch gained, over the fill; a hit's runs 6px under the fill's
-     wavy end, so what drains shows in its troughs. Either waves where it stops short of the wall. */
+  /* A heal's ghost lights the stretch gained, over the fill, its left edge the wave the liquid had
+     there; a hit's runs 6px under the fill's wavy end, so what drains shows in its troughs. Either
+     waves at its end where it stops short of the wall. */
   .ghost.heal, .sweep { z-index: 2; }
   .bar.shielded { box-shadow: 0 0 0 1px var(--shield), 0 0 8px -2px color-mix(in oklch, var(--shield) 70%, transparent); }
 
   /* The stretch that was lost or gained, fading. */
   .ghost { position: absolute; top: 0; bottom: 0; pointer-events: none; animation: ghostOut 0.7s ease-out forwards; }
   .ghost.hpwave { animation: ghostOut 0.7s ease-out forwards, hpWave 1.2s linear var(--wave-at, 0s) infinite; }
+  .ghost.hpwavein { animation: ghostOut 0.7s ease-out forwards, hpWaveIn 1.2s linear var(--wave-at, 0s) infinite; }
+  .ghost.hpwavein.hpwave { animation: ghostOut 0.7s ease-out forwards, hpWaveBoth 1.2s linear var(--wave-at, 0s) infinite; }
   .ghost.damage { background: var(--hurt-red); }
   .ghost.heal { background: var(--heal-green); }
   @keyframes ghostOut { 0%, 35% { opacity: 0.95; } 100% { opacity: 0; } }
@@ -260,6 +263,6 @@
   @media (prefers-reduced-motion: reduce) {
     .sweep, .float { display: none; }
     .bar, .hpline, .hpline b { animation: none !important; }
-    .ghost.hpwave { animation: ghostOut 0.7s ease-out forwards; }
+    .ghost.hpwave, .ghost.hpwavein { animation: ghostOut 0.7s ease-out forwards; }
   }
 </style>

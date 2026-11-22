@@ -324,6 +324,25 @@ html:has(main.campaignpage) { --btn-h: 2.125rem; }
   animation: hpWave 1.2s linear var(--wave-at, 0s) infinite;
 }
 .hpflow.hpwave { animation: hpFlow 5s linear infinite, hpWave 1.2s linear var(--wave-at, 0s) infinite; }
+/* A stretch starting where the liquid ended (a heal's ghost): its left edge is that wave's other
+   side (the strip's mirror, 6px, from 6px before where it starts), with or without a wave at its end. */
+.hpwavein {
+  --wave-in: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 12' preserveAspectRatio='none'%3E%3Cpath d='M6 0H3Q6 3 3 6Q0 9 3 12H6Z'/%3E%3C/svg%3E");
+  -webkit-mask: linear-gradient(#000, #000) right top / calc(100% - 5px) 100% no-repeat, var(--wave-in) left top / 6px 12px repeat-y;
+  mask: linear-gradient(#000, #000) right top / calc(100% - 5px) 100% no-repeat, var(--wave-in) left top / 6px 12px repeat-y;
+}
+.hpwavein.hpwave {
+  -webkit-mask: linear-gradient(#000, #000) center top / calc(100% - 10px) 100% no-repeat, var(--wave) right top / 6px 12px repeat-y, var(--wave-in) left top / 6px 12px repeat-y;
+  mask: linear-gradient(#000, #000) center top / calc(100% - 10px) 100% no-repeat, var(--wave) right top / 6px 12px repeat-y, var(--wave-in) left top / 6px 12px repeat-y;
+}
+@keyframes hpWaveIn {
+  from { -webkit-mask-position: right top, left top; mask-position: right top, left top; }
+  to { -webkit-mask-position: right top, left 0 top 12px; mask-position: right top, left 0 top 12px; }
+}
+@keyframes hpWaveBoth {
+  from { -webkit-mask-position: center top, right top, left top; mask-position: center top, right top, left top; }
+  to { -webkit-mask-position: center top, right 0 top 12px, left 0 top 12px; mask-position: center top, right 0 top 12px, left 0 top 12px; }
+}
 @keyframes hpFlow { from { background-position: 200% 0; } to { background-position: 0 0; } }
 @keyframes hpWave {
   from { -webkit-mask-position: left top, right top; mask-position: left top, right top; }

@@ -250,8 +250,8 @@
   {/key}
   {#if ghost}
     {#key pulse}
-      {@const tuck = ghost.kind === 'damage' && ghost.left > 0 ? 6 : 0}
-      <i class="ghost {ghost.kind}" class:hpwave={ghost.wave} style:left="calc({ghost.left}% - {tuck}px)"
+      {@const tuck = ghost.left > 0 ? 6 : 0}
+      <i class="ghost {ghost.kind}" class:hpwave={ghost.wave} class:hpwavein={ghost.kind === 'heal' && tuck > 0} style:left="calc({ghost.left}% - {tuck}px)"
          style:width="calc({ghost.width}% + {tuck}px)" style:--wave-at={wavePhase()}></i>
     {/key}
   {/if}
@@ -410,8 +410,9 @@
      so its color shows in the wave's troughs: the seam between the two is liquid as well. */
   .bar > .cur { position: relative; z-index: 1; }
   .tmp.under { margin-left: -6px; }
-  /* A heal's ghost lights the stretch gained, over the fill; a hit's runs 6px under the fill's
-     wavy end, so what drains shows in its troughs. Either waves where it stops short of the wall. */
+  /* A heal's ghost lights the stretch gained, over the fill, its left edge the wave the liquid had
+     there; a hit's runs 6px under the fill's wavy end, so what drains shows in its troughs. Either
+     waves at its end where it stops short of the wall. */
   .ghost.heal, .sweep { z-index: 2; }
   .tmp {
     background: color-mix(in oklch, var(--shield) 85%, transparent);
@@ -428,6 +429,8 @@
     pointer-events: none;
   }
   .ghost.hpwave { animation: ghostOut 0.7s ease-out forwards, hpWave 1.2s linear var(--wave-at, 0s) infinite; }
+  .ghost.hpwavein { animation: ghostOut 0.7s ease-out forwards, hpWaveIn 1.2s linear var(--wave-at, 0s) infinite; }
+  .ghost.hpwavein.hpwave { animation: ghostOut 0.7s ease-out forwards, hpWaveBoth 1.2s linear var(--wave-at, 0s) infinite; }
   .ghost.damage { background: var(--danger); }
   .ghost.heal { background: var(--heal-green); }
 
@@ -534,7 +537,7 @@
   @media (prefers-reduced-motion: reduce) {
     .sweep, .float { display: none; }
     .tmp.hpwave { animation: none; }
-    .ghost.hpwave { animation: ghostOut 0.7s ease-out forwards; }
+    .ghost.hpwave, .ghost.hpwavein { animation: ghostOut 0.7s ease-out forwards; }
   }
   @keyframes ghostOut {
     0% { opacity: 0.95; }
