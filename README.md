@@ -41,7 +41,7 @@ away, and puts the whole party on one live page for the DM.
   <img src=".github/readme/desktop-sheet.png" alt="Dave's character sheet on a computer in dark mode: hit points, abilities, saving throws, skills, attacks, and trackers with pips and a gauge" width="100%">
 </p>
 <p align="center">
-  <img src=".github/readme/desktop-campaign.png" alt="The Vox Machina campaign page in light mode as the DM sees it: the party's cards with their portraits, and the initiative order mid-fight" width="100%">
+  <img src=".github/readme/desktop-campaign.png" alt="The Vox Machina campaign page in light mode as the DM sees it: the party's cards and the initiative order mid-fight" width="100%">
 </p>
 <p align="center">
   <img src=".github/readme/phone-sheet.png" alt="Dave's sheet on a phone in light mode, with its places on a bar at the bottom" width="49%">
