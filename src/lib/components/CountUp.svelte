@@ -1,15 +1,14 @@
 <script lang="ts">
-  import { tweened } from 'svelte/motion';
-  import { cubicOut } from 'svelte/easing';
-
-  let { value, duration = 320 }: { value: number; duration?: number } = $props();
-
+  /** A number that counts to each new value (never the first), so a change is seen happening. */
   import { untrack } from 'svelte';
+  import { Tween } from 'svelte/motion';
+  import { cubicOut } from 'svelte/easing';
   import { prefersReducedMotion } from '#lib/motion.ts';
 
-  // Starts at the first value with no tween; later values count up to.
-  const display = tweened(untrack(() => value), { easing: cubicOut });
-  $effect(() => void display.set(value, { duration: prefersReducedMotion() ? 0 : duration }));
+  let { value }: { value: number } = $props();
+
+  const display = new Tween(untrack(() => value), { easing: cubicOut });
+  $effect(() => void display.set(value, { duration: prefersReducedMotion() ? 0 : 320 }));
 </script>
 
-<span>{Math.round($display)}</span>
+<span>{Math.round(display.current)}</span>

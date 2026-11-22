@@ -3,7 +3,8 @@
   import { base } from '#lib/base.ts';
   import type { OAuthProvider } from '#lib/data/session.ts';
 
-  let { provider, size = 16 }: { provider: OAuthProvider; size?: number } = $props();
+  let { provider }: { provider: OAuthProvider } = $props();
+  const size = 16;
 </script>
 
 {#if provider === 'google'}
