@@ -55,8 +55,8 @@
     transition: border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
   }
   .sheetinit.calling, .sheetinit.myturn {
-    border-color: var(--a-edge); background: color-mix(in oklch, var(--a) 8%, var(--surface));
-    box-shadow: 0 0 0 3px color-mix(in oklch, var(--a) 14%, transparent);
+    border-color: var(--a-edge); background: color-mix(in oklab, var(--a) 8%, var(--surface));
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--a) 14%, transparent);
   }
   .sitext { font-size: 0.9375rem; }
   .myturn .sitext, .calling .sitext { color: var(--a); }
