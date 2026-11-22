@@ -9,7 +9,7 @@
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
   import { fade } from 'svelte/transition';
-  import { parsePlaylist, youtubeTitle } from '#lib/music.ts';
+  import { parsePlaylist, youtubeClip, youtubePlayable, youtubeTitle } from '#lib/music.ts';
   import InfoTip from './InfoTip.svelte';
   import { nameFont } from '#lib/rules/fonts.ts';
   import ThemePicker from './ThemePicker.svelte';
@@ -102,6 +102,15 @@
     else delete next[key];
     onchange({ ...definition, sounds: next });
   }
+  /** YouTube videos whose owner keeps them on YouTube: they can't play here, so the field says so. */
+  let stuck = $state<Record<string, boolean>>({});
+  const videoOf = (link: string | undefined) => youtubeClip(link)?.video;
+  $effect(() => {
+    for (const key of customSounds) {
+      const video = videoOf(sounds[key]);
+      if (video && !(video in stuck)) void youtubePlayable(video).then((ok) => (stuck[video] = ok === false));
+    }
+  });
 </script>
 
 <div class="links">
@@ -283,6 +292,9 @@
                 <span class="badlink" in:fade={{ duration: 150 }}>Not a link we can play</span>
               {/if}
             </div>
+            {#if stuck[videoOf(sounds[key]) ?? '']}
+              <p class="badlink stuck" in:fade={{ duration: 150 }}>This video won’t play outside YouTube! Its built-in sound plays instead, or try another upload.</p>
+            {/if}
           </div>
         {/each}
       </div>
@@ -436,6 +448,7 @@
   .add button:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
   .add button:disabled { opacity: 0.5; cursor: default; }
   .badlink { flex: none; font-size: 0.75rem; color: var(--bad); }
+  .badlink.stuck { margin: 0.25rem 0 0; line-height: 1.4; }
   .chips .chip { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.1875rem 0.25rem 0.1875rem 0.625rem; border: 1px solid var(--line); border-radius: 999px; background: var(--raised); font-size: 0.8125rem; }
   .sounds { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.75rem 1rem; }
   @media (max-width: 560px) {

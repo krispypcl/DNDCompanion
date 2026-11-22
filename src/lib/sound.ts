@@ -64,18 +64,19 @@ export function audioUrl(raw: string | undefined | null): string | null {
     return null;
   }
 }
-/** Plays the sheet's own recording for an effect, if it has one. */
+/** Plays the sheet's own recording for an effect, if it has one (the built-in one if it can't play). */
 function own(name: SoundName): boolean {
   const url = custom[name];
   if (!url) return false;
   if (typeof Audio === 'undefined') return true;
-  playClip(url);
+  playClip(url, () => builtIn(name));
   return true;
 }
-/** Plays a recording once (also the preview beside its link). */
-function playClip(url: string) {
+/** Plays a recording once (also the preview beside its link); `instead` plays when it can't (a
+    missing file, or a video its owner keeps on YouTube), never when the browser only waits for a tap. */
+function playClip(url: string, instead?: () => void) {
   const yt = youtubeClip(url);
-  if (yt) return void playYouTube(yt);
+  if (yt) return void playYouTube(yt, instead);
   let clip = clips.get(url);
   if (!clip) {
     clip = new Audio(url);
@@ -84,13 +85,17 @@ function playClip(url: string) {
   }
   clip.currentTime = 0;
   clip.volume = 0.8;
-  void clip.play().catch(() => {});
+  void clip.play().catch((e: unknown) => {
+    if ((e as Error)?.name !== 'NotAllowedError') instead?.();
+  });
 }
 
 // ── Sound effects from YouTube ──
 // One hidden player, kept for the next effect: the first one has to load
-// YouTube's player, every later one starts at once.
+// YouTube's player, every later one starts at once. A video that can't play
+// there (its owner allows it on YouTube only) plays the effect's built-in sound.
 let ytPlayer: YTPlayer | null = null;
+let ytInstead: (() => void) | null = null;
 let ytReady: Promise<YTPlayer> | null = null;
 function youtubePlayer(): Promise<YTPlayer> {
   ytReady ??= loadYouTube().then(
@@ -106,7 +111,14 @@ function youtubePlayer(): Promise<YTPlayer> {
           width: 200,
           height: 200,
           playerVars: { controls: 0, playsinline: 1, disablekb: 1 },
-          events: { onReady: () => resolve((ytPlayer = player)), onError: () => {} }
+          events: {
+            onReady: () => resolve((ytPlayer = player)),
+            onError: () => {
+              const run = ytInstead;
+              ytInstead = null;
+              run?.();
+            }
+          }
         }) as unknown as YTPlayer;
         setTimeout(() => reject(new Error('YouTube did not load')), 15000);
       })
@@ -116,14 +128,15 @@ function youtubePlayer(): Promise<YTPlayer> {
   });
   return ytReady;
 }
-async function playYouTube(clip: { video: string; start: number; end: number }) {
+async function playYouTube(clip: { video: string; start: number; end: number }, instead?: () => void) {
   try {
     const player = ytPlayer ?? (await youtubePlayer());
+    ytInstead = instead ?? null;
     player.setVolume(80);
     player.unMute();
     player.loadVideoById({ videoId: clip.video, startSeconds: clip.start, endSeconds: clip.end });
   } catch {
-    /* No YouTube: the effect is simply silent. */
+    instead?.();
   }
 }
 
@@ -406,14 +419,9 @@ export function shield() {
  */
 export function playAs(name: 'hit' | 'heal' | 'shield' | 'deathBell', sounds: Partial<Record<SoundName, string>> | undefined, severity = 0.3) {
   const url = audioUrl(sounds?.[name]);
-  if (url) {
-    if (typeof Audio !== 'undefined') playClip(url);
-    return;
-  }
-  if (name === 'hit') hit(severity);
-  else if (name === 'heal') heal();
-  else if (name === 'shield') shield();
-  else deathBell();
+  const play = () => builtIn(name, severity);
+  if (!url) return play();
+  if (typeof Audio !== 'undefined') playClip(url, play);
 }
 
 /** A short rest: two soft notes, settling. */
@@ -462,21 +470,26 @@ const BUILT_IN: Record<SoundName, () => void> = {
   deathBell
 };
 
-/**
- * Plays an effect to hear it (the speaker beside its name): the link in its
- * field if there is one, otherwise the built-in sound, even with the sheet's
- * own recordings set.
- */
-export function previewSound(name: SoundName, link?: string | null) {
-  const url = audioUrl(link);
-  if (url) return playClip(url);
+/** An effect's built-in sound, even with the sheet's own recordings set. */
+function builtIn(name: SoundName, severity?: number) {
   const kept = custom;
   custom = {};
   try {
-    BUILT_IN[name]();
+    if (name === 'hit' && severity !== undefined) hit(severity);
+    else BUILT_IN[name]();
   } finally {
     custom = kept;
   }
+}
+
+/**
+ * Plays an effect to hear it (the speaker beside its name): the link in its
+ * field if there is one, otherwise the built-in sound.
+ */
+export function previewSound(name: SoundName, link?: string | null) {
+  const url = audioUrl(link);
+  if (url) return playClip(url, () => builtIn(name));
+  builtIn(name);
 }
 
 /** For tests: forget the audio context. */

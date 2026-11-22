@@ -77,18 +77,43 @@ export async function youtubeTitle(link: Playlist, timeoutMs = 5000): Promise<st
       ? `https://www.youtube.com/watch?v=${link.video}`
       : null;
   if (!page) return null;
+  try {
+    const res = await oembed(page, timeoutMs);
+    if (!res?.ok) return null;
+    const title = ((await res.json()) as { title?: unknown }).title;
+    return typeof title === 'string' && title.trim() ? title.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+/** YouTube's oEmbed answer for a page, or null when it doesn't answer in time. */
+async function oembed(page: string, timeoutMs: number): Promise<Response | null> {
   const stop = new AbortController();
   const timer = setTimeout(() => stop.abort(), timeoutMs);
   try {
-    const res = await fetch(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(page)}`, { signal: stop.signal });
-    if (!res.ok) return null;
-    const title = ((await res.json()) as { title?: unknown }).title;
-    return typeof title === 'string' && title.trim() ? title.trim() : null;
+    return await fetch(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(page)}`, { signal: stop.signal });
   } catch {
     return null;
   } finally {
     clearTimeout(timer);
   }
+}
+
+const playable = new Map<string, Promise<boolean | null>>();
+/**
+ * Whether a video can play outside YouTube: false when its owner keeps it on YouTube (oEmbed
+ * says 401) or it is gone or private, null when YouTube doesn't say. Asked once per video.
+ */
+export function youtubePlayable(video: string): Promise<boolean | null> {
+  let found = playable.get(video);
+  if (!found) {
+    found = oembed(`https://www.youtube.com/watch?v=${video}`, 5000).then((res) =>
+      !res ? null : res.ok ? true : [401, 403, 404].includes(res.status) ? false : null
+    );
+    playable.set(video, found);
+  }
+  return found;
 }
 
 // ── Loading the players' scripts, once each ─────────────────────────────────
