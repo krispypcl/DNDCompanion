@@ -16,6 +16,7 @@
   import { prefersReducedMotion, windowMotion } from '#lib/motion.ts';
   import { guessEffects } from '#lib/rules/equipment.ts';
   import { ABILITIES, type Ability, type Item, type ItemEffect } from '#lib/types.ts';
+  import { windowSounds } from '#lib/sound.ts';
 
   let {
     item,
@@ -79,6 +80,9 @@
     { k: 'ability', label: 'Ability Score' }, { k: 'advantage', label: 'Advantage' }
   ];
   const unfold = () => ({ duration: prefersReducedMotion() ? 0 : 200, easing: cubicOut });
+
+  // Heard as it opens and as it goes.
+  $effect(windowSounds);
 </script>
 
 <svelte:window onkeydown={(e) => e.key === 'Escape' && onclose()} />

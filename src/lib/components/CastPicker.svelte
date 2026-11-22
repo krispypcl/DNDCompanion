@@ -14,6 +14,7 @@
   import { ordinal, spellLevel } from '#lib/rules/spells.ts';
   import { spellDamage } from '#lib/rules/spellroll.ts';
   import type { Spell } from '#lib/types.ts';
+  import { windowSounds } from '#lib/sound.ts';
 
   let {
     spell,
@@ -80,6 +81,9 @@
     document.addEventListener('keydown', key);
     return () => document.removeEventListener('keydown', key);
   });
+
+  // Heard as it opens and as it goes.
+  $effect(windowSounds);
 </script>
 
 <div class="scrim themed" style={themeCss} use:portal role="presentation" transition:fade={{ duration: still ? 0 : 140 }}

@@ -29,7 +29,8 @@ export const SOUND_NAMES = {
   deathBell: 'Death',
   levelUp: 'Level up',
   yourTurn: 'Your turn',
-  coins: 'Coins'
+  coins: 'Coins',
+  inspiration: 'Inspiration'
 } as const;
 export type SoundName = keyof typeof SOUND_NAMES;
 let custom: Partial<Record<SoundName, string>> = {};
@@ -429,6 +430,21 @@ export function coins() {
   });
 }
 
+/** Inspiration gained: a sparkle running up; spent, two soft notes falling away. */
+export function inspiration(gained = true) {
+  if (gained && own('inspiration')) return;
+  const ac = ready();
+  if (!ac) return;
+  const t = ac.currentTime;
+  if (gained) {
+    [1318.5, 1760, 2349.3, 2637].forEach((f, i) => tone(ac, t + i * 0.045, f, 0.55 - i * 0.07, 0.05, 'sine'));
+    tone(ac, t + 0.2, 3136, 0.4, 0.015, 'sine');
+  } else {
+    tone(ac, t, 1318.5, 0.25, 0.04, 'sine');
+    tone(ac, t + 0.09, 880, 0.35, 0.035, 'sine');
+  }
+}
+
 const BUILT_IN: Record<SoundName, () => void> = {
   dice: () => clatter(2),
   land,
@@ -444,7 +460,8 @@ const BUILT_IN: Record<SoundName, () => void> = {
   deathBell,
   levelUp,
   yourTurn,
-  coins
+  coins,
+  inspiration: () => inspiration(true)
 };
 
 /** An effect's built-in sound, even with the sheet's own recordings set. */
@@ -549,6 +566,21 @@ const UI = {
   pageTurn(ac: AudioContext, t: number) {
     sweep(ac, t, 0.13, 0.05, 3200, 1400, 1.4);
   },
+  /** The loading die starting to tumble: a few dice tapping, softly. */
+  tumble(ac: AudioContext, t: number) {
+    for (let i = 0; i < 5; i++) burst(ac, t + i * 0.07 + Math.random() * 0.02, 0.03, 0.045 * (1 - i / 7), 2000 + Math.random() * 2000, 2);
+  },
+  /** It lands on a 20 (loaded): a knock and a small bright ping. */
+  landed(ac: AudioContext, t: number) {
+    burst(ac, t, 0.04, 0.06, 1100, 1.5);
+    tone(ac, t, 1568, 0.18, 0.02, 'sine');
+    tone(ac, t + 0.06, 2093, 0.22, 0.018, 'sine');
+  },
+  /** It lands on a 1 (it couldn't load): a knock and a low note. */
+  fumbled(ac: AudioContext, t: number) {
+    burst(ac, t, 0.05, 0.06, 700, 1.2);
+    tone(ac, t, 220, 0.22, 0.035, 'triangle', 150);
+  },
   /** The pointer coming onto a control (a computer only): the faintest tick. */
   hover(ac: AudioContext, t: number) {
     tone(ac, t, 2100, 0.03, 0.009, 'sine');
@@ -578,7 +610,7 @@ const MOMENTS = { initiativeCall, nextTurn, newRound, yourTurn } as const;
 type Cue = UiSound | keyof typeof MOMENTS;
 /** How much each says: in one moment, only the strongest plays. */
 const WEIGHT: Partial<Record<Cue, number>> = {
-  hover: 0.5, press: 1, back: 2, tab: 2, place: 2, switchOn: 2, switchOff: 2, added: 2, removed: 2, pageTurn: 2,
+  hover: 0.5, press: 1, tumble: 1.5, landed: 2, fumbled: 2, back: 2, tab: 2, place: 2, switchOn: 2, switchOff: 2, added: 2, removed: 2, pageTurn: 2,
   pickUp: 3, drop: 3, open: 3, close: 3, success: 4, error: 4, nextTurn: 5, newRound: 6, initiativeCall: 6, yourTurn: 6
 };
 let pending: Cue | null = null;
@@ -600,6 +632,12 @@ function flush() {
   if (name in MOMENTS) return void MOMENTS[name as keyof typeof MOMENTS]();
   const ac = ready();
   if (ac) UI[name as UiSound](ac, ac.currentTime);
+}
+
+/** A window heard as it opens and as it goes: `$effect(windowSounds)` in a window that exists only while open. */
+export function windowSounds(): () => void {
+  cue('open');
+  return () => cue('close');
 }
 
 /** The order's moments (rules/initiative initiativeMoments), heard in turn: a new round, then your turn a beat later. */

@@ -14,6 +14,7 @@
   import { prefersReducedMotion, windowMotion } from '#lib/motion.ts';
   import { campaignMessage, campaignRepo, inviteCode, type Campaign } from '#lib/data/campaigns.ts';
   import Switch from './Switch.svelte';
+  import { windowSounds } from '#lib/sound.ts';
 
   let {
     sheetId,
@@ -120,6 +121,9 @@
     document.addEventListener('keydown', key);
     return () => document.removeEventListener('keydown', key);
   });
+
+  // Heard as it opens and as it goes.
+  $effect(windowSounds);
 </script>
 
 <div class="scrim themed" style={themeCss} use:portal role="presentation" transition:fade={{ duration: still ? 0 : 140 }}

@@ -10,6 +10,7 @@
   import { prefersReducedMotion } from '#lib/motion.ts';
   import { peek, type KeptPeek } from '#lib/stores/peek.svelte.ts';
   import PeekContent from './PeekContent.svelte';
+  import { windowSounds } from '#lib/sound.ts';
 
   let { kept }: { kept: KeptPeek } = $props();
   const MAX_HEIGHT = 560;
@@ -36,6 +37,9 @@
       duration: 340, easing: 'cubic-bezier(0.33, 1, 0.68, 1)'
     });
   });
+
+  // Heard as it opens and as it goes.
+  $effect(windowSounds);
 </script>
 
 <div

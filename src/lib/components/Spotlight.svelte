@@ -15,6 +15,7 @@
   import { peek, themeAt } from '#lib/stores/peek.svelte.ts';
   import { matchRank, search, type Hit, type IndexRow } from '#lib/rules/spotlight.ts';
   import { debounce } from '#lib/debounce.ts';
+  import { windowSounds } from '#lib/sound.ts';
 
   type Homebrew = { id: string; name: string; kind: string };
   let {
@@ -119,6 +120,10 @@
   }
 
   /** / opens it, wherever nothing is being typed. */
+  // Heard as it opens and as it goes.
+  $effect(() => {
+    if (open) return windowSounds();
+  });
   function global(e: KeyboardEvent) {
     const t = e.target as HTMLElement | null;
     const typing = Boolean(t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)));

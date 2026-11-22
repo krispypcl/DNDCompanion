@@ -7,6 +7,7 @@
    */
   import { onMount } from 'svelte';
   import { prefersReducedMotion } from '#lib/motion.ts';
+  import { cue } from '#lib/sound.ts';
 
   let {
     result = null,
@@ -30,6 +31,8 @@
   const still = prefersReducedMotion();
 
   onMount(() => {
+    // Heard as it starts to tumble, softly (a button sound: off with the rest).
+    if (result === null) cue('tumble');
     if (!still) {
       spinner = setInterval(() => {
         // Any face but the one showing, and never the landing ones early.
@@ -48,6 +51,7 @@
     if (result === null) return;
     clearInterval(spinner);
     face = result;
+    cue(result === 20 ? 'landed' : 'fumbled');
     clearTimeout(landedTimer);
     landedTimer = setTimeout(() => onlanded?.(), still ? 0 : 650);
   });

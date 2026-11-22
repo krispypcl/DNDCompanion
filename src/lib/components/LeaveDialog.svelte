@@ -4,6 +4,7 @@
   import { onMount } from 'svelte';
   import { fade } from 'svelte/transition';
   import { prefersReducedMotion, windowMotion } from '#lib/motion.ts';
+  import { windowSounds } from '#lib/sound.ts';
 
   let { onstay, onleave }: { onstay: () => void; onleave: () => void } = $props();
   const still = prefersReducedMotion();
@@ -15,6 +16,9 @@
     document.addEventListener('keydown', key);
     return () => document.removeEventListener('keydown', key);
   });
+
+  // Heard as it opens and as it goes.
+  $effect(windowSounds);
 </script>
 
 <div class="scrim" transition:fade={{ duration: still ? 0 : 160 }}

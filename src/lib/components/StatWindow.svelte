@@ -10,6 +10,7 @@
   import { movable, portal } from '#lib/actions.ts';
   import { prefersReducedMotion } from '#lib/motion.ts';
   import { isEmpty, kindLine, statBlockHtml, type StatBlock } from '#lib/rules/statblock.ts';
+  import { windowSounds } from '#lib/sound.ts';
 
   let {
     name,
@@ -28,6 +29,9 @@
     onclose: () => void; onfront: () => void;
   } = $props();
   const onFive = $derived(Boolean(link && /^https:\/\/5e\.tools\//.test(link)));
+
+  // Heard as it opens and as it goes.
+  $effect(windowSounds);
 </script>
 
 <div class="statwindow" role="dialog" tabindex="-1" aria-label="{name}’s stat block" use:portal use:movable={{ handle: 'header' }}

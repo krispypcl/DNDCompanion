@@ -13,7 +13,7 @@
   import { cubicOut } from 'svelte/easing';
   import { base } from '#lib/base.ts';
   import { copyText } from '#lib/clipboard.ts';
-  import { hearMoments } from '#lib/sound.ts';
+  import { cue, hearMoments } from '#lib/sound.ts';
   import { goto } from '$app/navigation';
   import { campaignMessage, campaignRepo, NO_INITIATIVE, type Campaign, type CampaignDetails, type Initiative } from '#lib/data/campaigns.ts';
   import { TableMusic } from '#lib/tableMusic.svelte.ts';
@@ -233,8 +233,11 @@
       e.preventDefault();
       showKeys = true;
     } else if (e.key.toLowerCase() === 'm' && hasMusic) {
+      // Heard as the speaker's own press is.
       e.preventDefault();
-      setMusicOn(!get(musicOn));
+      const on = !get(musicOn);
+      cue(on ? 'switchOn' : 'switchOff');
+      setMusicOn(on);
     }
   }
   const active = $derived(sheets.filter((s) => !s.retired));

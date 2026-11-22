@@ -11,7 +11,7 @@
   import ModeToggle from '#lib/components/ModeToggle.svelte';
   import CogIcon from '#lib/components/CogIcon.svelte';
   import DimModal from '#lib/components/DimModal.svelte';
-  import { cue, hearMoments, levelUp as levelUpSound, setCustomSounds } from '#lib/sound.ts';
+  import { cue, hearMoments, inspiration as inspirationSound, levelUp as levelUpSound, setCustomSounds } from '#lib/sound.ts';
   import { musicOn, setMusicOn } from '#lib/music.ts';
   import { get } from 'svelte/store';
   import MusicPlayer from '#lib/components/MusicPlayer.svelte';
@@ -651,14 +651,20 @@
       e.preventDefault();
       showKeys = true;
     } else if (e.key.toLowerCase() === 'e' && isOwner) {
+      // Heard as its button is (a key does what a press does).
       e.preventDefault();
+      cue(editing ? 'switchOff' : 'switchOn');
       void glide(() => (editing = !editing));
     } else if (e.key.toLowerCase() === 'm') {
       // The music's speaker, on or off.
       e.preventDefault();
-      setMusicOn(!get(musicOn));
+      const on = !get(musicOn);
+      cue(on ? 'switchOn' : 'switchOff');
+      setMusicOn(on);
     } else if (/^[1-8]$/.test(e.key)) {
-      activeTab = TABS[Number(e.key) - 1];
+      const tab = TABS[Number(e.key) - 1];
+      if (tab !== activeTab) cue('tab');
+      activeTab = tab;
     }
   }
 
@@ -1374,7 +1380,12 @@
             <b use:sparkle={sheetState.inspiration ?? 0}>
               <EditableField value={sheetState.inspiration ?? 0} {editable} type="number"
                              label="Inspiration"
-                             onchange={(v) => setState({ ...sheetState, inspiration: Number(v) })} />
+                             onchange={(v) => {
+                               // Heard as it is gained or spent (the sheet's own sound for gaining it, if set).
+                               const now = Number(v), was = sheetState.inspiration ?? 0;
+                               if (now !== was) inspirationSound(now > was);
+                               setState({ ...sheetState, inspiration: now });
+                             }} />
             </b>
             <span class="cap">Inspiration</span>
           </div>

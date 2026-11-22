@@ -11,6 +11,7 @@
   import { fade, scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import { prefersReducedMotion } from '#lib/motion.ts';
+  import { windowSounds } from '#lib/sound.ts';
 
   let {
     src,
@@ -80,6 +81,9 @@
       before?.focus?.();
     };
   });
+
+  // Heard as it opens and as it goes.
+  $effect(windowSounds);
 </script>
 
 <div

@@ -15,7 +15,7 @@
   import { backdrop, focusFirst, movable, portal } from '#lib/actions.ts';
   import { prefersReducedMotion } from '#lib/motion.ts';
   import { phone } from '#lib/stores/phone.svelte.ts';
-  import { cue } from '#lib/sound.ts';
+  import { windowSounds } from '#lib/sound.ts';
 
   let {
     id, title, wide = false, broad = false, closer = false, fixed = false, onclose, children
@@ -34,10 +34,7 @@
   const asSheet = phone.current;
 
   // Heard as it opens and as it goes (in place of the press that did either).
-  $effect(() => {
-    cue('open');
-    return () => cue('close');
-  });
+  $effect(windowSounds);
 
   /** In: grows from just under its size and rises into place. Out: a quick fade, shrinking a touch. */
   function rise(_node: Element, { out = false } = {}) {

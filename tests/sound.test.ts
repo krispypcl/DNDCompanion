@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { _resetSound, clatter, coins, cue, deathBell, deathSave, heartbeat, hovered, initiativeCall, land, levelUp, nat1, nat20, newRound, nextTurn, setButtonSounds, soundOf, yourTurn } from '#lib/sound.ts';
+import { _resetSound, clatter, coins, cue, deathBell, deathSave, heartbeat, hovered, initiativeCall, inspiration, land, levelUp, nat1, nat20, newRound, nextTurn, setButtonSounds, soundOf, yourTurn } from '#lib/sound.ts';
 import { musicOn, setMusicOn } from '#lib/music.ts';
 
 /** Enough of the Web Audio API to count what would be played. */
@@ -53,8 +53,8 @@ describe('sound', () => {
 
   it('plays the moments new to the table, each made on the spot', () => {
     const started = fakeAudio();
-    levelUp(); yourTurn(); initiativeCall(); nextTurn(); newRound(); coins();
-    expect(started.length).toBeGreaterThan(30);
+    levelUp(); yourTurn(); initiativeCall(); nextTurn(); newRound(); coins(); inspiration(true); inspiration(false);
+    expect(started.length).toBeGreaterThan(36);
   });
 
   it('plays only the strongest sound of one moment: a press that opens something is heard as that', () => {
@@ -66,6 +66,11 @@ describe('sound', () => {
     vi.runAllTimers();
     // The success's three notes, and nothing of the press.
     expect(started.length).toBe(3);
+    // The loading die: its landing outweighs the tumble asked for in the same moment.
+    cue('tumble');
+    cue('landed');
+    vi.runAllTimers();
+    expect(started.length).toBe(6);
     vi.useRealTimers();
   });
 
