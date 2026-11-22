@@ -104,7 +104,7 @@
 
 {#if !bare}
 <div class="tabwrap">
-<div class="tablist" class:pairs={tabs.length === 4} role="tablist" bind:this={list}>
+<div class="tablist" class:pairs={tabs.length === 4} class:eights={tabs.length === 8} role="tablist" bind:this={list}>
   {#each tabs as tab, i (tab)}
     <button
       bind:this={buttons[i]}
@@ -187,6 +187,11 @@
   :global([data-mode='light']) button:not(.active) { color: color-mix(in oklch, var(--text) 82%, transparent); }
   :global([data-mode='light']) button:not(.active):hover { color: var(--text); }
   .indicator { display: none; }
+  /* Eight tabs on one row while they fit; once they would not, two rows of four, never seven and
+     one (or two rows of two where even four would not fit). Measured on the module, not the screen. */
+  .tabwrap { container-type: inline-size; }
+  @container (max-width: 48.625rem) { .tablist.eights { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  @container (max-width: 24.25rem) { .tablist.eights { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   /* A phone: four tabs sit in two rows of two, never three and one left alone. */
   @media (max-width: 700px) {
     .tablist.pairs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
