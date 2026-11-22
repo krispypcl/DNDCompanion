@@ -172,13 +172,17 @@
     if (prefersReducedMotion()) return;
     if (navigation.from?.url.pathname === navigation.to?.url.pathname) return;
     move.crossfading = true;
+    // The top bar's dice draws plainly meanwhile (TopBar, html.vt-page), set before the old page is pictured.
+    const root = document.documentElement;
+    root.classList.add('vt-page');
     return new Promise<void>((resolve) => {
-      (document as Document & { startViewTransition: (cb: () => Promise<void>) => unknown }).startViewTransition(
+      const vt = (document as Document & { startViewTransition: (cb: () => Promise<void>) => { finished: Promise<void> } }).startViewTransition(
         async () => {
           resolve();
           await navigation.complete;
         }
       );
+      vt.finished.catch(() => {}).finally(() => root.classList.remove('vt-page'));
     });
   });
 
@@ -227,9 +231,9 @@
   :global(::view-transition-old(root)) { animation: none; }
   :global(::view-transition-new(root)) { animation: arrive-page 0.26s cubic-bezier(0.33, 1, 0.68, 1) 30ms both; }
   /* A phone's top and bottom bars swap in place: the new one shows at once, the old one not at all. */
-  :global(::view-transition-group(phonetop)), :global(::view-transition-group(phonebar)),
-  :global(::view-transition-new(phonetop)), :global(::view-transition-new(phonebar)) { animation: none; }
-  :global(::view-transition-old(phonetop)), :global(::view-transition-old(phonebar)) { animation: none; opacity: 0; }
+  :global(::view-transition-group(phonetop)), :global(::view-transition-group(phonebar)), :global(::view-transition-group(phonemark)),
+  :global(::view-transition-new(phonetop)), :global(::view-transition-new(phonebar)), :global(::view-transition-new(phonemark)) { animation: none; }
+  :global(::view-transition-old(phonetop)), :global(::view-transition-old(phonebar)), :global(::view-transition-old(phonemark)) { animation: none; opacity: 0; }
   @keyframes -global-arrive-page {
     from { opacity: 0; transform: translateY(10px); }
   }

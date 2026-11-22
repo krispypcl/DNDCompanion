@@ -148,6 +148,13 @@
   .lit { display: grid; color: var(--a); opacity: 0; transition: opacity 0.2s ease; }
   .mark.ready .lit, .mark.going .lit { opacity: 1; }
   .mark.ready .ink, .mark.going .ink { opacity: 0; }
+  /* Moving between pages (html.vt-page, set by the layout around a view transition): the dice is
+     drawn plainly in the text color and is a layer of its own that holds still, so it neither
+     doubles as the new page rises in nor goes blank (a backdrop filter sees nothing in a snapshot).
+     Only then: a name kept on all the time would cut the filter off from the page. */
+  :global(html.vt-page) .markbar { view-transition-name: phonemark; }
+  :global(html.vt-page) .ink { opacity: 0; transition: none; }
+  :global(html.vt-page) .lit { opacity: 1; color: var(--text); transition: none; }
   /* A browser without backdrop filters: the dice drawn plainly in the text color. */
   @supports not ((backdrop-filter: invert(1)) or (-webkit-backdrop-filter: invert(1))) {
     .ink { display: none; }
