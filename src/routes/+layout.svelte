@@ -11,7 +11,7 @@
   import { profile } from '#lib/stores/profile.ts';
   import { adoptAccountPrefs } from '#lib/prefs.ts';
   import { installSettle } from '#lib/settle.ts';
-  import { listenForAlerts, pressed } from '#lib/sound.ts';
+  import { hovered, listenForAlerts, pressed } from '#lib/sound.ts';
   import PullRefresh from '#lib/components/PullRefresh.svelte';
   import { pull } from '#lib/stores/pull.svelte.ts';
   import { phone } from '#lib/stores/phone.svelte.ts';
@@ -69,12 +69,16 @@
   // Nothing that moves makes a scrollbar flash (lib/settle.ts).
   $effect(() => installSettle());
 
-  // Button sounds (lib/sound.ts): every press on any page, and a light-hearted error as it shows.
+  // Button sounds (lib/sound.ts): every press on any page, a light-hearted error as it shows, and
+  // on a computer (a mouse that hovers) a faint tick as the pointer comes onto a control.
   $effect(() => {
+    const mouse = matchMedia('(hover: hover) and (pointer: fine)').matches;
     document.addEventListener('click', pressed, true);
+    if (mouse) document.addEventListener('pointerover', hovered, true);
     const stop = listenForAlerts(document.body);
     return () => {
       document.removeEventListener('click', pressed, true);
+      document.removeEventListener('pointerover', hovered, true);
       stop();
     };
   });

@@ -404,7 +404,7 @@
                 title="Fewer and shorter animations, whatever your device is set to" />
         <span class="pref-name">Sound
           <InfoTip label="About button sounds">Soft clicks and notes as you press buttons, switch tabs, and open
-            windows. The game's own sounds (dice, hit points, rests, and the fight) play either way.</InfoTip>
+            windows, and on a computer a faint tick as you point at one. The game's own sounds (dice, hit points, rests, and the fight) play either way.</InfoTip>
         </span>
         <Switch checked={clicks} label="Button sounds" onchange={setClicks} title="Soft sounds as you press buttons" />
       </div>

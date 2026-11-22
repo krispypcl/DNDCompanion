@@ -3,8 +3,9 @@
  * nothing to license. The game's sounds always play (the music players have
  * their own mute), quiet, and only ever for a moment, except the heartbeat,
  * which beats with the screen for as long as a character is dying. Button
- * sounds are quieter still, one family of soft clicks and notes, and can be
- * turned off (account Preferences).
+ * sounds are quieter still, one family of soft clicks and notes (and the
+ * faintest tick as the mouse comes onto a control), and can be turned off
+ * (account Preferences).
  */
 import { loadYouTube, youtubeClip, type YTPlayer } from './music.ts';
 
@@ -547,6 +548,10 @@ const UI = {
   },
   pageTurn(ac: AudioContext, t: number) {
     sweep(ac, t, 0.13, 0.05, 3200, 1400, 1.4);
+  },
+  /** The pointer coming onto a control (a computer only): the faintest tick. */
+  hover(ac: AudioContext, t: number) {
+    tone(ac, t, 2100, 0.03, 0.009, 'sine');
   }
 } as const;
 export type UiSound = keyof typeof UI;
@@ -573,7 +578,7 @@ const MOMENTS = { initiativeCall, nextTurn, newRound, yourTurn } as const;
 type Cue = UiSound | keyof typeof MOMENTS;
 /** How much each says: in one moment, only the strongest plays. */
 const WEIGHT: Partial<Record<Cue, number>> = {
-  press: 1, back: 2, tab: 2, place: 2, switchOn: 2, switchOff: 2, added: 2, removed: 2, pageTurn: 2,
+  hover: 0.5, press: 1, back: 2, tab: 2, place: 2, switchOn: 2, switchOff: 2, added: 2, removed: 2, pageTurn: 2,
   pickUp: 3, drop: 3, open: 3, close: 3, success: 4, error: 4, nextTurn: 5, newRound: 6, initiativeCall: 6, yourTurn: 6
 };
 let pending: Cue | null = null;
@@ -621,12 +626,31 @@ export function soundOf(el: Element): UiSound | null {
   if (/^(add|give|new|invite)\b/.test(words)) return 'added';
   return 'press';
 }
+const CONTROL = 'button, a[href], [role="button"], [role="tab"], [role="switch"], summary';
 /** Every press on the page (the layout listens): its sound, if it is a control. */
 export function pressed(event: Event) {
-  const at = (event.target as Element | null)?.closest?.('button, a[href], [role="button"], [role="tab"], [role="switch"], summary');
+  const at = (event.target as Element | null)?.closest?.(CONTROL);
   if (!at) return;
   const name = soundOf(at);
   if (name) cue(name);
+}
+let hoverAt: Element | null = null;
+let hoverTime = -Infinity;
+/**
+ * The mouse coming onto a control (the layout listens on a computer): once per control entered,
+ * none while a button is held (a drag), and never more than one in 70ms, so sweeping across a row
+ * of buttons is not a rattle. Not for a disabled or quiet control (soundOf).
+ */
+export function hovered(event: PointerEvent) {
+  if (event.pointerType !== 'mouse' || event.buttons) return;
+  const at = (event.target as Element | null)?.closest?.(CONTROL) ?? null;
+  if (at === hoverAt) return;
+  hoverAt = at;
+  if (!at || soundOf(at) === null) return;
+  const now = performance.now();
+  if (now - hoverTime < 70) return;
+  hoverTime = now;
+  cue('hover');
 }
 /** Something gone wrong, shown (an element with role="alert" arriving): its sound. Returns how to stop. */
 export function listenForAlerts(root: Node): () => void {
@@ -648,6 +672,8 @@ export function listenForAlerts(root: Node): () => void {
 
 /** For tests: forget the audio context. */
 export function _resetSound() {
+  hoverAt = null;
+  hoverTime = -Infinity;
   ctx = null;
   master = null;
   noiseBuf = null;

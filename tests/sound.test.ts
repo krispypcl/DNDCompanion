@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { _resetSound, clatter, coins, cue, deathBell, deathSave, heartbeat, initiativeCall, land, levelUp, nat1, nat20, newRound, nextTurn, setButtonSounds, soundOf, yourTurn } from '#lib/sound.ts';
+import { _resetSound, clatter, coins, cue, deathBell, deathSave, heartbeat, hovered, initiativeCall, land, levelUp, nat1, nat20, newRound, nextTurn, setButtonSounds, soundOf, yourTurn } from '#lib/sound.ts';
 import { musicOn, setMusicOn } from '#lib/music.ts';
 
 /** Enough of the Web Audio API to count what would be played. */
@@ -80,6 +80,33 @@ describe('sound', () => {
     vi.runAllTimers();
     expect(started.length).toBeGreaterThan(0);
     setButtonSounds(true);
+    vi.useRealTimers();
+  });
+
+  it('ticks as the mouse comes onto a control: once each, never a rattle, never for touch', () => {
+    vi.useFakeTimers();
+    const started = fakeAudio();
+    document.body.innerHTML = '<button id="a"><span id="in">One</span></button><button id="b">Two</button><button id="c" disabled>Three</button><p id="p">Words</p>';
+    const over = (id: string, pointerType = 'mouse', buttons = 0) =>
+      hovered({ target: document.getElementById(id), pointerType, buttons } as unknown as PointerEvent);
+    const heard = () => { vi.runAllTimers(); return started.length; };
+    over('a');
+    expect(heard()).toBe(1);
+    over('in'); // Inside the same button: nothing more.
+    expect(heard()).toBe(1);
+    over('b'); // Straight onto the next one: too soon after the last.
+    expect(heard()).toBe(1);
+    vi.advanceTimersByTime(100);
+    over('p'); over('b', 'touch'); over('b', 'mouse', 1); over('c');
+    expect(heard()).toBe(1);
+    over('b');
+    expect(heard()).toBe(2);
+    setButtonSounds(false);
+    vi.advanceTimersByTime(100);
+    over('a');
+    expect(heard()).toBe(2);
+    setButtonSounds(true);
+    document.body.innerHTML = '';
     vi.useRealTimers();
   });
 
