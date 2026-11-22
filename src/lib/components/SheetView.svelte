@@ -11,7 +11,7 @@
   import ModeToggle from '#lib/components/ModeToggle.svelte';
   import CogIcon from '#lib/components/CogIcon.svelte';
   import DimModal from '#lib/components/DimModal.svelte';
-  import { setCustomSounds, warmSounds } from '#lib/sound.ts';
+  import { setCustomSounds } from '#lib/sound.ts';
   import { musicOn, setMusicOn } from '#lib/music.ts';
   import { get } from 'svelte/store';
   import MusicPlayer from '#lib/components/MusicPlayer.svelte';
@@ -356,8 +356,7 @@
       .finally(() => (loading = false));
   });
 
-  // The sheet's own sound effects, while it is on screen; the sound bank, loaded once.
-  $effect(() => void warmSounds());
+  // The sheet's own sound effects, while it is on screen.
   $effect(() => {
     setCustomSounds(definition?.sounds);
     return () => setCustomSounds(undefined);

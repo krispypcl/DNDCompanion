@@ -7,12 +7,12 @@
    *
    * Folded away like General actions, and always starts folded.
    */
-  import { onMount, tick } from 'svelte';
+  import { tick } from 'svelte';
   import InfoTip from './InfoTip.svelte';
   import { diceRequest, takeRoll } from '#lib/stores/dice.ts';
   import { DIE_SIDES, addDie, diceCount, formula, hasD20, roll, type Mode, type Pool, type Roll, type Sides } from '#lib/rules/dice.ts';
   import { prefersReducedMotion } from '#lib/motion.ts';
-  import { clatter, land, nat1, nat20, warmSounds } from '#lib/sound.ts';
+  import { clatter, land, nat1, nat20 } from '#lib/sound.ts';
   import { storedDice } from '#lib/prefs.ts';
   import { trayMemory } from '#lib/stores/tray.ts';
   import { get } from 'svelte/store';
@@ -20,9 +20,6 @@
 
   /** Told of each roll once it lands (the sheet passes it on to Owlbear rooms). */
   let { onrolled }: { onrolled?: (roll: Roll) => void } = $props();
-
-  // The dice's sounds, ready before the first roll.
-  onMount(() => void warmSounds());
 
   // Picks up where it was before the tab was switched away.
   const kept = get(trayMemory);

@@ -23,12 +23,12 @@ const scoped = (path: string) => new URL(path, sw.registration.scope).pathname;
 const BUILT = new Set([...immutable, ...assets].map(({ path }) => scoped(path)));
 /**
  * What is fetched at install: the entry, the pages' own code, styles and
- * icons. Not the PDF's fonts, the Owlbear tokens, the email picture, the link
- * preview, or the sounds, which wait until they are used.
+ * icons. Not the PDF's fonts, the Owlbear tokens, the email picture, or the
+ * link preview, which wait until they are used.
  */
 const UP_FRONT = [
   ...[...immutable].map(({ path }) => path).filter((p) => /(^|\/)(entry|nodes)\//.test(p) || /\.css$/.test(p)),
-  ...[...assets].map(({ path }) => path).filter((p) => !/^(pdf|owlbear|email|sounds)\/|^og\.png$/.test(p))
+  ...[...assets].map(({ path }) => path).filter((p) => !/^(pdf|owlbear|email)\/|^og\.png$/.test(p))
 ].map(scoped);
 const SHELL_PAGE = scoped('404.html');
 

@@ -91,9 +91,8 @@ away, and puts the whole party on one live page for the DM.
 - The [Owlbear Rodeo SDK](https://docs.owlbear.rodeo/) for the extension
 - [5e.tools](https://5e.tools/) data, read in the browser, for the rules pop-ups,
   and a search index of it built by `npm run search-index`
-- Sound effects from CC0 packs by [Kenney](https://kenney.nl/) and
-  artisticdude, through [OpenGameArt](https://opengameart.org/) (credits in
-  `static/sounds/LICENSE.txt`)
+- The [Web Audio API](https://developer.mozilla.org/docs/Web/API/Web_Audio_API)
+  for every sound effect and button sound, made on the spot (no sound files)
 - [Vitest](https://vitest.dev/) and Testing Library for the tests
 
 ## Local Development

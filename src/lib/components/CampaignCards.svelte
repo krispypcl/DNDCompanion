@@ -27,7 +27,6 @@
   import { themeStyle } from '#lib/theme.ts';
   import { followHeight, glideTo, prefersReducedMotion } from '#lib/motion.ts';
   import CardHp from './CardHp.svelte';
-  import { warmSounds } from '#lib/sound.ts';
   import ConditionRing from './ConditionRing.svelte';
   import Lightbox from './Lightbox.svelte';
   import type { ConditionLook, Sheet } from '#lib/types.ts';
@@ -62,8 +61,6 @@
     onlook?: (id: string, key: string, look: ConditionLook | null) => void;
   } = $props();
 
-  // The bank of sounds, so a change on any card is heard at once (each character's own, or the built-in).
-  $effect(() => void warmSounds());
 
   const nameOf = (s: Sheet) => s.definition?.identity?.name || s.name || '';
   /** The conditions' colors round the portrait, a band each; none for conditions without a color. */

@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { _resetSound, clatter, deathBell, deathSave, heartbeat, hit, land, nat1, nat20, warmSounds } from '#lib/sound.ts';
+import { _resetSound, clatter, deathBell, deathSave, heartbeat, land, nat1, nat20 } from '#lib/sound.ts';
 import { musicOn, setMusicOn } from '#lib/music.ts';
 
 /** Enough of the Web Audio API to count what would be played. */
@@ -49,36 +49,6 @@ describe('sound', () => {
     const before = started.length;
     clatter(3); land(); nat20(); nat1(); heartbeat(0.15); deathSave('save', 1); deathSave('fail', 3); deathBell();
     expect(started.length).toBeGreaterThan(before + 10);
-  });
-
-  it('plays the sound bank once it has loaded, and makes its own until then', async () => {
-    const started = fakeAudio();
-    const asked: string[] = [];
-    vi.stubGlobal('fetch', async (url: string) => {
-      asked.push(url);
-      return { ok: true, arrayBuffer: async () => new ArrayBuffer(8) };
-    });
-    vi.stubGlobal('OfflineAudioContext', class { decodeAudioData = async () => ({ duration: 1 }); });
-    nat20();
-    const made = started.length;
-    expect(made).toBeGreaterThan(2);
-    await warmSounds();
-    expect(asked.some((u) => u.endsWith('/sounds/nat20.ogg'))).toBe(true);
-    const before = started.length;
-    nat20();
-    // The jingle and the dice landing: two recordings, not a chord made on the spot.
-    expect(started.length - before).toBe(2);
-    hit(0.9);
-    expect(started.length - before).toBe(4);
-  });
-
-  it('makes every sound itself where the bank cannot load', async () => {
-    const started = fakeAudio();
-    vi.stubGlobal('fetch', async () => ({ ok: false }));
-    vi.stubGlobal('OfflineAudioContext', class { decodeAudioData = async () => ({ duration: 1 }); });
-    await warmSounds();
-    nat20();
-    expect(started.length).toBeGreaterThan(2);
   });
 
   it('beats twice per heartbeat, 0.3s apart', () => {
