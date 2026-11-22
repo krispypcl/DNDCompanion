@@ -127,6 +127,7 @@
   onMount(() => {
     void load();
     if (!isConfigured) return;
+    let joined = false;
     const channel = supabase
       .channel(`board-${campaignId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'board_items', filter: `campaign_id=eq.${campaignId}` },
@@ -139,11 +140,17 @@
           const gone = (p.old as { id?: string }).id;
           if (gone) items = items.filter((x) => x.id !== gone);
         })
-      .subscribe();
-    // In case an announcement was missed.
-    const timer = setInterval(() => document.visibilityState === 'visible' && load(), 20000);
+      // Back after a dropped connection: anything missed meanwhile (the first join only follows the load above).
+      .subscribe((status) => {
+        if (status !== 'SUBSCRIBED') return;
+        if (joined) void load();
+        joined = true;
+      });
+    // A sleeping tablet loses the live connection without saying so: a look whenever the page is shown again.
+    const look = () => document.visibilityState === 'visible' && void load();
+    document.addEventListener('visibilitychange', look);
     return () => {
-      clearInterval(timer);
+      document.removeEventListener('visibilitychange', look);
       void supabase.removeChannel(channel);
     };
   });
