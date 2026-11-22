@@ -5,8 +5,9 @@
    * Insight, and conditions, each tinted as it tints the player's own
    * screen. The DM can also put the cards in an order of their own by
    * dragging (everyone sees it), give or take away conditions, and, while
-   * editing, take a character out of the campaign. A player's own character
-   * has Damage, Heal, and Temp under its hit points, for a quick change.
+   * editing, take a character out of the campaign. One's own character (a
+   * player's, or the DM's) has a heart beside its name: Damage, Heal, and Temp
+   * for a quick change, over the card's head so the card keeps its size.
    */
   import { fade, scale, slide } from 'svelte/transition';
   import { cubicOut, quintOut } from 'svelte/easing';
@@ -44,7 +45,7 @@
     onvitals,
     here = new Set<string>()
   }: {
-    /** Who is looking (an account id): a player's own characters' cards carry the quick hit point buttons (never the DM's). */
+    /** Who is looking (an account id): their own characters' cards carry the quick hit point buttons. */
     me?: string | null;
     /** A quick change to one's own character's hit points. */
     onvitals?: (id: string, kind: HpChange, amount: number) => void;
@@ -93,8 +94,21 @@
     const cur = Number(s.state?.hpCurrent) || 0;
     return { max, cur, temp: Number(s.state?.hpTemp) || 0 };
   };
-  /** The amount typed on each own card, spent by its buttons. */
+  /** The amount typed on each own card, spent by its buttons; the card whose buttons are open. */
   let amounts = $state<Record<string, number | string>>({});
+  let quickOpen = $state<string | null>(null);
+  /** Open, the amount is ready to type; Esc or a press anywhere else closes it (its heart toggles it itself). */
+  function quickPane(node: HTMLElement) {
+    queueMicrotask(() => node.querySelector('input')?.focus());
+    const away = (e: PointerEvent) => {
+      const at = e.target as Element | null;
+      if (at && !node.contains(at) && !at.closest('.hpkey')) quickOpen = null;
+    };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') quickOpen = null; };
+    document.addEventListener('pointerdown', away, true);
+    node.addEventListener('keydown', esc);
+    return { destroy: () => document.removeEventListener('pointerdown', away, true) };
+  }
   function quick(s: Sheet, kind: HpChange) {
     const n = Math.floor(Number(amounts[s.id]));
     if (!Number.isFinite(n) || n <= 0) return;
@@ -208,10 +222,11 @@
     {@const portrait = resolveImageUrl(def?.identity?.portraitUrl).url}
     {@const conds = previews[s.id] ?? s.state?.conditions ?? []}
     {@const ring = ringOf(conds, def?.conditionLooks ?? {})}
-    <li class="card hurtcard themed {v.vital}" class:lifted={drag?.id === s.id} class:present={here.has(s.owner_id)} class:sortable={isDm && cards.length > 1} bind:this={els[s.id]}
+    {@const mine = Boolean(onvitals && me && s.owner_id === me && !ended && hp.max > 0)}
+    <li class="card hurtcard themed {v.vital}" class:managed={isDm && !ended} class:lifted={drag?.id === s.id} class:present={here.has(s.owner_id)} class:sortable={isDm && cards.length > 1} bind:this={els[s.id]}
         style={themeStyle(def?.identity?.theme)} style:transform={shift(s.id)}
         animate:glideTo>
-      <div class="cardhead">
+      <div class="cardhead" class:mine>
         <!-- Conditions ring the portrait in their colors (the card's own edge
              is kept for being hurt), a band for each, all the way round. A
              picture opens full screen; the name opens the sheet. -->
@@ -239,18 +254,26 @@
             <span class="sub">{classLine(def) || 'No class yet'}</span>
           </span>
         </a>
+        {#if mine}
+          <!-- Their own character: a quick change, as the sheet's own buttons make it (Enter is damage). -->
+          <button class="hpkey" class:on={quickOpen === s.id} aria-expanded={quickOpen === s.id}
+                  aria-label="Change {nameOf(s)}’s hit points" title="Damage, Heal, or Temp"
+                  onclick={() => (quickOpen = quickOpen === s.id ? null : s.id)}>
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 20s-7.5-4.4-7.5-10.2A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 7.5 2.5C19.5 15.6 12 20 12 20Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>
+          </button>
+          {#if quickOpen === s.id}
+            <div class="quickhp" role="group" aria-label="Change {nameOf(s)}’s hit points" use:quickPane transition:fade={{ duration: 160 }}>
+              <button class="smallbtn hurt" onclick={() => quick(s, 'damage')}>Damage</button>
+              <input class="numfield" type="number" inputmode="numeric" min="1" placeholder="0" aria-label="Amount for {nameOf(s)}"
+                     bind:value={amounts[s.id]} onkeydown={(e) => { if (e.key === 'Enter') quick(s, 'damage'); }} />
+              <button class="smallbtn" onclick={() => quick(s, 'heal')}>Heal</button>
+              <button class="smallbtn" onclick={() => quick(s, 'temp')}>Temp</button>
+              <button class="closex" aria-label="Close" onclick={() => (quickOpen = null)}>×</button>
+            </div>
+          {/if}
+        {/if}
       </div>
       <CardHp cur={hp.cur} max={hp.max} temp={hp.temp} vital={v.vital} label={v.label} sounds={def?.sounds ?? {}} />
-      {#if onvitals && me && !isDm && s.owner_id === me && !ended && hp.max > 0}
-        <!-- Their own character: a quick change, as the sheet's own buttons make it (Enter is damage). -->
-        <div class="quickhp" role="group" aria-label="Change {nameOf(s)}’s hit points">
-          <button class="smallbtn hurt" onclick={() => quick(s, 'damage')}>Damage</button>
-          <input class="numfield" type="number" inputmode="numeric" min="1" placeholder="0" aria-label="Amount for {nameOf(s)}"
-                 bind:value={amounts[s.id]} onkeydown={(e) => { if (e.key === 'Enter') quick(s, 'damage'); }} />
-          <button class="smallbtn" onclick={() => quick(s, 'heal')}>Heal</button>
-          <button class="smallbtn" onclick={() => quick(s, 'temp')}>Temp</button>
-        </div>
-      {/if}
       <dl class="stats">
         <div><dt>AC</dt><dd>{def ? armorClass(def).total : '—'}</dd></div>
         <!-- In full where the box has room, shortened where it does not. -->
@@ -428,8 +451,25 @@
   .who strong { font-size: 1.0625rem; overflow-wrap: anywhere; }
   .sub { font-size: 0.8125rem; color: var(--dim); overflow-wrap: anywhere; }
   .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.375rem; margin: 0; }
-  /* One's own character's quick hit point change: the amount between Damage and Heal, as on a monster's card. */
-  .quickhp { display: grid; grid-template-columns: 1fr 4.5rem 1fr 1fr; gap: 0.375rem; align-items: stretch; }
+  /* One's own character: a heart at the head's right (left of the DM's × and grip), and the quick
+     change it opens over the head itself, the amount between Damage and Heal as on a monster's card,
+     so the card keeps its size and its gauge stays in sight. */
+  .cardhead { position: relative; }
+  .cardhead.mine { padding-right: 0; }
+  .card.managed .cardhead.mine { padding-right: 4rem; }
+  .hpkey {
+    flex: none; width: 2rem; height: 2rem; display: grid; place-items: center; padding: 0; cursor: pointer;
+    border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--raised); color: var(--dim);
+    transition: border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+  }
+  .hpkey:hover, .hpkey.on { border-color: var(--a-edge); color: var(--a); }
+  .hpkey:active { transform: translateY(1px); }
+  .hpkey:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
+  .quickhp {
+    /* Down past the portrait's level badge, which hangs below it; the buttons stay on the head's line. */
+    position: absolute; inset: 0 0 -0.625rem; padding-bottom: 0.625rem; z-index: 2; background: var(--surface);
+    display: grid; grid-template-columns: 1fr 4rem 1fr 1fr auto; gap: 0.375rem; align-items: center;
+  }
   .quickhp input {
     min-width: 0; font: inherit; font-size: 0.875rem; padding: 0.3125rem 0.5rem; color: var(--text);
     border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg);
