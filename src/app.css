@@ -291,11 +291,6 @@ html:has(main.campaignpage) { --btn-h: 2.125rem; }
 .smallbtn.quiet { color: var(--dim); background: none; border-color: var(--line-soft); font-size: 0.75rem; padding: 0.25rem 0.5rem; }
 .smallbtn.accent { color: var(--a); border-color: var(--a-edge); }
 
-/* A small square × that closes what it sits in (a stat block window). */
-/*
- * An alert in the page's flow (a failed load, a notice): a soft box spaced
- * like a section, the same on every page. `.bad` for something gone wrong.
- */
 /*
  * Skeletons: the shape of what is coming, shimmering in place while it
  * loads, the same size as the real thing so nothing moves when it arrives.
@@ -385,6 +380,10 @@ html:has(main.campaignpage) { --btn-h: 2.125rem; }
 /* Held still while something animates, so it shows no passing scrollbar (lib/settle.ts). */
 [data-settling] { overflow: hidden !important; }
 
+/*
+ * An alert in the page's flow (a failed load, a notice): a soft box spaced
+ * like a section, the same on every page. `.bad` for something gone wrong.
+ */
 .app-alert {
   margin: 1.5rem 0 0; padding: 0.75rem 1rem; border: 1px solid var(--line-soft); border-radius: var(--r);
   background: var(--surface); color: var(--dim); font-size: 0.875rem; line-height: 1.45;
@@ -395,6 +394,7 @@ html:has(main.campaignpage) { --btn-h: 2.125rem; }
   background: color-mix(in oklch, var(--bad) 7%, var(--surface));
 }
 
+/* A small square × that closes what it sits in (a window, a stat block). */
 .closex {
   flex: none; width: var(--x-size, 2rem); height: var(--x-size, 2rem); display: grid; place-items: center; padding: 0;
   font: inherit; font-size: 1.125rem; line-height: 1; color: var(--dim); cursor: pointer;
