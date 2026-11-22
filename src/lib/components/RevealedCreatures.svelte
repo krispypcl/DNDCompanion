@@ -43,7 +43,7 @@
             {#if pic}
               <button class="foepic" class:ringed={ring.length > 0} class:npc={c.kind === 'npc'} aria-label="See {c.name}’s portrait" title="See it full screen"
                       onclick={(e) => (viewing = { src: pic, alt: `Portrait of ${c.name}`, from: e.currentTarget })}>
-                <img src={pic} alt="" loading="lazy" /><ConditionRing bands={ring} round />
+                <img src={pic} alt="" /><ConditionRing bands={ring} round />
               </button>
             {:else}
               <span class="foepic" class:ringed={ring.length > 0} class:npc={c.kind === 'npc'}><CreatureMark kind={c.kind} /><ConditionRing bands={ring} round /></span>

@@ -5,23 +5,36 @@
  * longer than `limit`: a slow or broken picture doesn't hold the page.
  *
  * The pictures are fetched through the browser's own cache, so the page's
- * <img> finds them there and draws them at once.
+ * <img> finds them there and draws them at once. Each one fetched is also
+ * kept (`kept`): a picture held by the page stays decoded in the
+ * browser's memory, so one in a tab or a place not open yet draws at once
+ * when it opens, instead of being read from the disk again.
  */
 
 /** A Google Fonts stylesheet and the family it brings (rules/fonts nameFont). */
 export type FontWant = { family: string; href: string };
 
+/** The pictures fetched ahead, held for the visit: each address once, with when it was ready. */
+const kept = new Map<string, { img: HTMLImageElement; ready: Promise<void> }>();
+
 function picture(src: string): Promise<void> {
-  return new Promise((done) => {
-    const img = new Image();
-    img.decoding = 'async';
+  const had = kept.get(src);
+  if (had) return had.ready;
+  const img = new Image();
+  img.decoding = 'async';
+  const ready = new Promise<void>((done) => {
     img.onload = () => {
       const decoded = typeof img.decode === 'function' ? img.decode() : Promise.resolve();
       decoded.then(() => done(), () => done());
     };
-    img.onerror = () => done();
-    img.src = src;
+    img.onerror = () => {
+      kept.delete(src); // A broken one is asked for again next time.
+      done();
+    };
   });
+  kept.set(src, { img, ready });
+  img.src = src;
+  return ready;
 }
 
 /** The stylesheet in the page's head (added by the page itself), loaded, then its font. */

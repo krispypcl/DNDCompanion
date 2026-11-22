@@ -660,7 +660,7 @@
     <span class="face campface">
       <!-- No crest: the d20 a character with no portrait shows (the banner stays behind the card). -->
       <ClassIcon />
-      {#if crest}<img src={crest} alt="" loading="lazy" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />{/if}
+      {#if crest}<img src={crest} alt="" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />{/if}
     </span>
     <span class="cardtext">
       <span class="lines">
@@ -671,7 +671,7 @@
             <span class="partyfaces" aria-hidden="true">
               {#each members.slice(0, 5) as m (m.id)}
                 {@const pic = resolveImageUrl(m.identity?.portraitUrl).url}
-                <span class="pface" title={m.identity?.name || m.name}>{#if pic}<img src={pic} alt="" loading="lazy" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />{/if}<b>{(m.identity?.name || m.name || '?').trim().charAt(0).toUpperCase()}</b></span>
+                <span class="pface" title={m.identity?.name || m.name}>{#if pic}<img src={pic} alt="" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />{/if}<b>{(m.identity?.name || m.name || '?').trim().charAt(0).toUpperCase()}</b></span>
               {/each}
             </span>
             <span>{members.length === 1 ? '1 character' : `${members.length} characters`}{#if members.length > 5}{' '}(+{members.length - 5}){/if}</span>
@@ -725,7 +725,7 @@
   {@const src = resolveImageUrl(sheet.definition?.identity?.portraitUrl).url}
   <span class="face">
     <ClassIcon cls={sheet.definition ? mainClass(sheet.definition) : undefined} />
-    {#if src}<img {src} alt="" loading="lazy" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />{/if}
+    {#if src}<img {src} alt="" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />{/if}
   </span>
 {/snippet}
 

@@ -385,14 +385,18 @@
   /** Who is here, in one line with one light, as in the main menu ("DM and 3 players here"). */
   const hereLine = $derived(music.presenceKnown ? hereText(isDm || music.dmHere, players) : '');
   const crestLink = $derived(resolveImageUrl(campaign?.details.crestUrl));
-  /** Its pictures (banner, crest, the characters' portraits) and name font are here (lib/assets): until then the die keeps rolling. */
+  /** Its pictures (banner, crest, the characters' portraits, and every creature's, on either side of the
+      DM's switch or in sight) and name font are here (lib/assets): until then the die keeps rolling. */
   let assetsDone = $state(false);
   /** The page itself, drawn but hidden under its outline until its pictures have settled. */
   let holdEl = $state<HTMLElement>();
   $effect(() => {
-    if (loading || !campaign || assetsDone || !holdEl) return;
+    if (loading || !campaign || assetsDone || !holdEl || table?.loading) return;
     const el = holdEl;
-    const pics = [bannerLink.url, crestLink.url, ...sheets.map((s) => resolveImageUrl(s.definition?.identity?.portraitUrl).url)];
+    const pics = [
+      bannerLink.url, crestLink.url, ...sheets.map((s) => resolveImageUrl(s.definition?.identity?.portraitUrl).url),
+      ...(table?.list ?? []).map((c) => resolveImageUrl(c.portrait).url), ...revealed.map((c) => resolveImageUrl(c.portrait ?? '').url)
+    ];
     let live = true;
     void Promise.all([assetsReady(pics, [face]), imagesSettled(el)]).then(() => { if (live) assetsDone = true; });
     return () => (live = false);

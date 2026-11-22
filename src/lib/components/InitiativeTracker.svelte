@@ -190,7 +190,7 @@
         <!-- Characters' portraits are rounded squares, monsters' and NPCs' round, as on their cards. -->
         <span class="initpic" class:round={c.side === 'creature'} class:npc={c.kind === 'npc'} aria-hidden="true">
           {#if c.side === 'pc'}<ClassIcon cls={c.cls} />{:else if !c.pic}<CreatureMark kind={c.kind ?? 'monster'} size="1.25rem" />{/if}
-          {#if c.pic}<img src={c.pic} alt="" loading="lazy" draggable="false" />{/if}
+          {#if c.pic}<img src={c.pic} alt="" draggable="false" />{/if}
         </span>
         <span class="initwho">
           <span class="initname">{c.name}</span>

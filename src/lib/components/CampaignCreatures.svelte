@@ -273,7 +273,7 @@
           animate:flip={{ duration: still ? 0 : 240, easing: cubicOut }} transition:fade={{ duration: still ? 0 : 180 }}>
         <div class="creaturehead">
           {#snippet likeness()}
-            {#if pic}<img src={pic} alt="" draggable="false" loading="lazy" />{:else}
+            {#if pic}<img src={pic} alt="" draggable="false" />{:else}
               <CreatureMark kind={c.kind} />
             {/if}
             <ConditionRing bands={ring} round />
