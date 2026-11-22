@@ -1724,8 +1724,24 @@
   /* Wide screens: the middle module is exactly as tall as the taller column
      beside it, whatever tab is open; what is longer scrolls inside it, and a
      wheel that has nothing left to scroll there moves the page. */
-  @media (min-width: 861px) {
+  @media (min-width: 1280px) {
     .center { height: 0; min-height: 100%; }
+  }
+  /* Between a phone's one column and the three of a wide screen (a tablet, a narrow window): two.
+     The tabs and the right rail side by side, the skills under the tabs, and the hit points above
+     the abilities until both fit in one row; three columns squeezed the middle until its table
+     and the hit point buttons ran out of room. */
+  @media (min-width: 861px) and (max-width: 1279px) {
+    .main {
+      grid-template-columns: minmax(0, 1fr) 18.75rem; grid-template-areas: 'center right' 'skills right';
+      align-items: start;
+    }
+    .center { grid-area: center; }
+    .rail-skills { grid-area: skills; }
+    .rail-right { grid-area: right; }
+  }
+  @media (min-width: 861px) and (max-width: 1179px) {
+    .band { grid-template-columns: 1fr; }
   }
 
   .defense { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin: 0.625rem 0 0; }
