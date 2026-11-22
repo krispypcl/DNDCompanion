@@ -50,16 +50,35 @@
 {/if}
 
 <style>
-  /* Above the banner and the hurt edges, as the sheet's modules are, so it
-     reads as solid as they do. */
+  /* Above the banner and the hurt edges, as the sheet's modules are, and made the way they are:
+     solid on a plain sheet, frosted over a banner (SheetView's .panel), its ground tinted with
+     the accent while it calls or it is your turn. */
   .sheetinit {
+    --si-ground: var(--surface);
     position: relative; z-index: 1;
     display: flex; align-items: center; gap: 0.875rem; margin: 0 0 1rem; padding: 0.625rem 0.875rem;
-    border-radius: var(--r); border: 1px solid var(--line-soft); background: var(--surface);
+    border-radius: var(--r); border: 1px solid var(--line-soft); background: var(--si-ground);
     transition: border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
   }
+  :global(.bannered) .sheetinit { background: transparent; border-color: color-mix(in oklch, var(--line) 70%, transparent); }
+  :global(.bannered) .sheetinit::before {
+    content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+    background: color-mix(in oklch, var(--si-ground) 76%, transparent);
+    backdrop-filter: blur(16px) saturate(1.1); -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  }
+  @media (max-width: 720px), (pointer: coarse) {
+    :global(.bannered) .sheetinit::before {
+      backdrop-filter: none; -webkit-backdrop-filter: none;
+      background: color-mix(in oklch, var(--si-ground) 93%, transparent);
+    }
+  }
+  :global([data-mode='light'] .bannered) .sheetinit::before { background: color-mix(in oklab, var(--si-ground) 90%, transparent); }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    :global(.bannered) .sheetinit::before { background: var(--si-ground); }
+  }
   .sheetinit.calling, .sheetinit.myturn {
-    border-color: var(--a-edge); background: color-mix(in oklab, var(--a) 8%, var(--surface));
+    --si-ground: color-mix(in oklab, var(--a) 8%, var(--surface));
+    border-color: var(--a-edge);
     box-shadow: 0 0 0 3px color-mix(in oklab, var(--a) 14%, transparent);
   }
   .siwords { flex: 1; min-width: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.125rem 0.875rem; }
