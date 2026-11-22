@@ -629,7 +629,9 @@
     if (!definition || showKeys || leaving) return;
     const t = e.target as HTMLElement | null;
     if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
-    if (document.querySelector('.lightbox, [role="dialog"]:not([data-keys]), [role="alertdialog"]')) return;
+    // Only a window over the dimmed page holds the keys; the 5e.tools windows, stat blocks, and other
+    // pop-ups beside the sheet leave them working.
+    if (document.querySelector('.lightbox, [role="dialog"][aria-modal="true"]:not([data-keys]), [role="alertdialog"]')) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.key === '?') {
       e.preventDefault();
