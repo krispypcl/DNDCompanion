@@ -178,6 +178,7 @@
     {#each shown as c (c.key)}
       <li class="initrow" class:initcr={c.side === 'creature'} class:now={c.key === turn} class:acted={acted(c.key)} class:waiting={c.value === null}
           class:hiddenone={c.hidden} class:mine={c.mine} class:tied={settleable(c.key)} data-key={c.key}
+          class:themed={Boolean(c.themeCss)} style={c.themeCss}
           title={settleable(c.key) ? 'Tied: drag to settle who goes first' : undefined}
           animate:flip={{ duration: still ? 0 : 260, easing: cubicOut }} in:fade={{ duration: still ? 0 : 160 }}>
         <!-- The number first, big, so the order reads down the left. -->

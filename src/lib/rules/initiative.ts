@@ -26,7 +26,8 @@ export type Combatant = {
 export type Turn = { turn: string | null; round: number };
 /** A line in the tracker: hidden from the players (the DM's view), or the viewer's own character. */
 /** A row as the order shows it: whether the players can see it, whether it is this viewer's, and its likeness. */
-export type InitiativeRow = Combatant & { hidden?: boolean; mine?: boolean; pic?: string; kind?: 'monster' | 'npc'; cls?: string };
+/** themeCss: a character's own colors (theme.ts themeStyle), so its tile wears them. */
+export type InitiativeRow = Combatant & { hidden?: boolean; mine?: boolean; pic?: string; kind?: 'monster' | 'npc'; cls?: string; themeCss?: string };
 
 export function ordered<T extends Combatant>(list: T[]): T[] {
   return [...list].sort((a, b) => {

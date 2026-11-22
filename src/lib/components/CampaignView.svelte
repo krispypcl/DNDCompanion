@@ -445,7 +445,8 @@
     ...active.map((s) => ({
       key: `pc:${s.id}`, name: s.definition?.identity?.name || s.name, value: init.pcs[s.id] ?? null, tie: init.ties[`pc:${s.id}`],
       dex: s.definition ? initiativeParts(s.definition).total : 0, side: 'pc' as const, mine: Boolean(me && s.owner_id === me),
-      pic: resolveImageUrl(s.definition?.identity?.portraitUrl).url ?? undefined, cls: s.definition ? mainClass(s.definition) : undefined
+      pic: resolveImageUrl(s.definition?.identity?.portraitUrl).url ?? undefined, cls: s.definition ? mainClass(s.definition) : undefined,
+      themeCss: themeStyle(s.definition?.identity?.theme)
     })),
     ...(table
       ? table.list.map((c) => ({
