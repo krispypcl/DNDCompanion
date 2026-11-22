@@ -38,13 +38,13 @@ away, and puts the whole party on one live page for the DM.
 ## Showcase
 
 <p align="center">
-  <img src=".github/readme/desktop-sheet.png" alt="Character Sheet, Desktop, Dark Mode: Dave's sheet with hit points and temporary ones, abilities, saving throws, skills, attacks, and trackers" width="100%">
+  <img src=".github/readme/showcase-sheet.png" alt="Character Sheet, Desktop, Dark Mode: Dave's sheet with hit points and temporary ones, abilities, saving throws, skills, attacks, and trackers" width="100%">
 </p>
 <p align="center">
-  <img src=".github/readme/desktop-campaign.png" alt="Campaign Page (Player POV), Desktop, Light Mode: the Vox Machina party's cards, Damage, Heal, and Temp open on Dave's own card, and the initiative order mid-fight" width="100%">
+  <img src=".github/readme/showcase-campaign.png" alt="Campaign Page (Player POV), Desktop, Light Mode: the Vox Machina party's cards, Damage, Heal, and Temp open on Dave's own card, and the initiative order mid-fight" width="100%">
 </p>
 <p align="center">
-  <img src=".github/readme/mobile.png" alt="Character Sheet, Mobile, Light Mode, beside Initiative (DM POV), Mobile, Dark Mode: Dave's sheet with its places on a bar at the bottom, and the DM's initiative order with Back and Next Turn under the thumb" width="82%">
+  <img src=".github/readme/showcase-mobile.png" alt="Character Sheet, Mobile, Light Mode, beside Initiative (DM POV), Mobile, Dark Mode: Dave's sheet with its places on a bar at the bottom, and the DM's initiative order with Back and Next Turn under the thumb" width="82%">
 </p>
 
 ## Usage
