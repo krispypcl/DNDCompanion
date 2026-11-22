@@ -5,7 +5,7 @@
    * Owlbear Rodeo room, the name's font, the theme, and ending or deleting
    * it. The DM changes them, each saved as it is made; a player in the
    * campaign reads the name, the next session, the invite, and the room.
-   * Done closes.
+   * Its × closes it.
    */
   import { sessionWhen } from '#lib/rules/dates.ts';
   import { setNextSession, type Campaign, type CampaignDetails } from '#lib/data/campaigns.ts';
@@ -15,6 +15,7 @@
   import DimModal from './DimModal.svelte';
   import InfoTip from './InfoTip.svelte';
   import ThemePicker from './ThemePicker.svelte';
+  import Lightbox from './Lightbox.svelte';
 
   let {
     campaign,
@@ -46,6 +47,10 @@
   const next = $derived(sessionWhen(campaign.details.nextSession));
   const bannerLink = $derived(resolveImageUrl(campaign.details.bannerUrl));
   const crestLink = $derived(resolveImageUrl(campaign.details.crestUrl));
+  /** A picture opened full screen (Lightbox), growing out of what was pressed. */
+  let viewing = $state<{ src: string; alt: string; from?: Element | null } | null>(null);
+  /** Whether each link turned into a picture, for the DM's thumbnails (as the sheet's Appearance). */
+  let loads = $state<Record<string, 'ok' | 'failed'>>({});
   const owlbearBad = $derived(Boolean(campaign.details.owlbearUrl?.trim()) && !webLink(campaign.details.owlbearUrl));
   const font = $derived(nameFont(campaign.details.nameFont));
   const face = $derived(font && font !== 'bad' ? font : null);
@@ -78,12 +83,48 @@
   }
 </script>
 
-<!-- The crest and the banner as they look, for everyone. -->
+<!-- A player sees the crest and the banner as they look; pressed, each opens full screen. -->
 {#snippet crestPic()}
-  {#if crestLink.url}<img class="crestpic" src={crestLink.url} alt="The campaign's crest" />{/if}
+  {#if crestLink.url}
+    <button type="button" class="bigpic crestpic" aria-label="View the crest full screen" title="View full screen"
+            onclick={(e) => (viewing = { src: crestLink.url, alt: 'The campaign’s crest', from: e.currentTarget })}>
+      <img src={crestLink.url} alt="The campaign's crest" />
+    </button>
+  {/if}
 {/snippet}
 {#snippet bannerPic()}
-  {#if bannerLink.url}<img class="bannerpic" src={bannerLink.url} alt="The campaign's banner" />{/if}
+  {#if bannerLink.url}
+    <button type="button" class="bigpic bannerpic" aria-label="View the banner full screen" title="View full screen"
+            onclick={(e) => (viewing = { src: bannerLink.url, alt: 'The campaign’s banner', from: e.currentTarget })}>
+      <img src={bannerLink.url} alt="The campaign's banner" />
+    </button>
+  {/if}
+{/snippet}
+<!-- The DM's: a link's field with a small picture of it beside, as a sheet's portrait and banner in
+     Appearance: faint while it loads, pressed to open it full screen, red when it isn't a picture. -->
+{#snippet linkField(role: 'crest' | 'banner', link: { url: string; source: string; note: string | null }, value: string, save: (v: string) => void, placeholder: string)}
+  {@const status = link.url ? loads[link.url] : undefined}
+  <div class="urlrow">
+    <input id="campaign-{role}" {value} {placeholder} aria-label="{role === 'crest' ? 'Crest' : 'Banner'} link"
+           onchange={(e) => save(e.currentTarget.value.trim())} />
+    {#if link.url}
+      <button type="button" class="thumb {role}" class:failed={status === 'failed'} class:ready={status === 'ok'}
+              disabled={status !== 'ok'} aria-label="View the {role} full screen"
+              title={status === 'failed' ? 'This link didn’t turn into a picture!' : 'View full screen'}
+              onclick={(e) => (viewing = { src: link.url, alt: role === 'crest' ? 'The campaign’s crest' : 'The campaign’s banner', from: e.currentTarget })}>
+        {#key link.url}
+          <img src={link.url} alt="" onload={() => (loads[link.url] = 'ok')} onerror={() => (loads[link.url] = 'failed')} />
+        {/key}
+      </button>
+    {/if}
+  </div>
+  {#if status === 'failed'}
+    <p class="hint bad" role="status">That link didn’t turn into a picture! {link.source === 'drive' || link.source === 'onedrive'
+      ? 'Check it is shared with anyone who has the link.'
+      : 'Open the picture itself, copy its image address, and paste that instead.'}</p>
+  {:else if link.note}
+    <p class="hint" class:bad={link.source === 'invalid'}>{link.note}</p>
+  {/if}
 {/snippet}
 
 <DimModal id="campaign-settings" title="Campaign Settings" wide closer onclose={close}>
@@ -160,18 +201,12 @@
       <span class="label">Crest link
         <InfoTip label="About the crest">The campaign's own picture, in place of the die at the top of its page and on its card in everyone's menu. A square picture suits it best.</InfoTip>
       </span>
-      <input value={campaign.details.crestUrl ?? ''} placeholder="Optional: a picture link" aria-label="Crest link"
-             onchange={(e) => onsave({ crestUrl: e.currentTarget.value.trim() })} />
-      {#if crestLink.note}<p class="hint" class:bad={crestLink.source === 'invalid'}>{crestLink.note}</p>{/if}
-      {@render crestPic()}
+      {@render linkField('crest', crestLink, campaign.details.crestUrl ?? '', (v) => onsave({ crestUrl: v }), 'Optional: a picture link')}
     </div>
 
     <div class="row">
       <label class="label" for="campaign-banner">Banner link</label>
-      <input id="campaign-banner" value={campaign.details.bannerUrl ?? ''} placeholder="Optional: a wide picture link"
-             onchange={(e) => onsave({ bannerUrl: e.currentTarget.value.trim() })} />
-      {#if bannerLink.note}<p class="hint" class:bad={bannerLink.source === 'invalid'}>{bannerLink.note}</p>{/if}
-      {@render bannerPic()}
+      {@render linkField('banner', bannerLink, campaign.details.bannerUrl ?? '', (v) => onsave({ bannerUrl: v }), 'Optional: a wide picture link')}
     </div>
 
     <div class="row">
@@ -232,6 +267,10 @@
   </div>
 </DimModal>
 
+{#if viewing}
+  <Lightbox src={viewing.src} alt={viewing.alt} from={viewing.from} onclose={() => (viewing = null)} />
+{/if}
+
 <style>
   .settings { display: grid; gap: 1.125rem; }
   .row { display: grid; gap: 0.375rem; min-width: 0; }
@@ -249,9 +288,35 @@
   input:focus { outline: none; border-color: var(--a-edge); }
   .hint { margin: 0; font-size: 0.8125rem; color: var(--dim); line-height: 1.45; }
   .value { margin: 0; font-size: 0.9375rem; color: var(--text); overflow-wrap: anywhere; }
-  /* The crest as on the page, a rounded square; the banner a wide strip, cut to fit. */
-  .crestpic { width: 4.5rem; height: 4.5rem; object-fit: cover; border-radius: var(--r); border: 1px solid var(--a-edge); justify-self: start; }
-  .bannerpic { width: 100%; height: 6rem; object-fit: cover; border-radius: var(--r); border: 1px solid var(--line-soft); }
+  /* A player's: the crest as on the page, a rounded square; the banner a wide strip, cut to fit. */
+  .bigpic {
+    display: block; padding: 0; overflow: hidden; cursor: zoom-in; border-radius: var(--r); background: var(--raised);
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  .bigpic img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .bigpic:hover { border-color: var(--a-edge); transform: scale(1.02); }
+  .bigpic:active { transform: translateY(1px); }
+  .bigpic:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
+  .crestpic { width: 4.5rem; height: 4.5rem; border: 1px solid var(--a-edge); justify-self: start; }
+  .bannerpic { width: 100%; height: 6rem; border: 1px solid var(--line-soft); }
+  /* The DM's: the field and its small picture on one line (as the sheet's Appearance). */
+  .urlrow { display: flex; align-items: center; gap: 0.625rem; }
+  .urlrow input { flex: 1 1 auto; min-width: 0; }
+  .thumb {
+    padding: 0; cursor: zoom-in; flex: none; height: 2.125rem; border-radius: var(--r-sm); overflow: hidden;
+    border: 1px solid var(--line); background: var(--raised); position: relative;
+    opacity: 0.4; transition: opacity 0.25s ease, border-color 0.25s ease, transform 0.15s ease;
+  }
+  .thumb.crest { width: 2.125rem; }
+  .thumb.banner { width: 4.5rem; }
+  .thumb.ready { opacity: 1; }
+  .thumb.ready:hover { border-color: var(--a-edge); transform: scale(1.04); }
+  .thumb.ready:active { transform: translateY(1px); }
+  .thumb:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
+  .thumb:disabled { cursor: default; }
+  .thumb.failed { opacity: 1; border-color: var(--danger); background: var(--danger-wash); }
+  .thumb.failed img { visibility: hidden; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .hint.bad { color: var(--bad); }
   .foot {
     display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;
