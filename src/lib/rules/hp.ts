@@ -126,6 +126,13 @@ export function withVitals(before: State, after: State, hpMax: number): State {
   return next;
 }
 
+/** A quick change to hit points (the campaign page's own-card buttons): the change, then what follows from it. */
+export type HpChange = 'damage' | 'heal' | 'temp';
+export function changeHp(state: State, kind: HpChange, amount: number, hpMax: number): State {
+  const next = kind === 'damage' ? applyDamage(state, amount, hpMax) : kind === 'heal' ? applyHealing(state, amount, hpMax) : setTempHp(state, amount);
+  return withVitals(state, next, hpMax);
+}
+
 /** Dead by the saves or by the condition, whichever was written. */
 export function isDead(state: State): boolean {
   return (state.deathSaves?.failures ?? 0) >= 3 || hasCondition(state, DEAD);

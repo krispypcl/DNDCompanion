@@ -16,7 +16,8 @@
   import { goto } from '$app/navigation';
   import { campaignMessage, campaignRepo, NO_INITIATIVE, type Campaign, type CampaignDetails } from '#lib/data/campaigns.ts';
   import { TableMusic } from '#lib/tableMusic.svelte.ts';
-  import { sheetRepo } from '#lib/data/sheets.ts';
+  import { sheetRepo, StaleWriteError } from '#lib/data/sheets.ts';
+  import { changeHp, type HpChange } from '#lib/rules/hp.ts';
   import { isConfigured, supabase } from '#lib/supabase.ts';
   import { session } from '#lib/stores/session.ts';
   import { classLine, initiativeParts, mainClass } from '#lib/rules/derived.ts';
@@ -544,6 +545,33 @@
     }, 350));
   }
 
+  /**
+   * A player's quick change to their own character's hit points (its card's buttons). Saved as the
+   * sheet saves, one at a time per character: each starts from what was last saved, and if the sheet
+   * changed meanwhile (open on another device), the same change is made again on what is there now.
+   */
+  const hpQueue = new Map<string, Promise<void>>();
+  function changeVitals(sheetId: string, kind: HpChange, amount: number) {
+    const run = async () => {
+      for (let tries = 0; tries < 2; tries += 1) {
+        const row = tries ? await sheetRepo.loadPlain(sheetId) : sheets.find((s) => s.id === sheetId);
+        if (!row) return;
+        const state = changeHp(row.state, kind, amount, Number(row.definition?.combat?.hpMax) || 0);
+        try {
+          const at = await sheetRepo.saveState(sheetId, state, row.updated_at);
+          sheets = sheets.map((s) => (s.id === sheetId ? { ...s, state, updated_at: at } : s));
+          return;
+        } catch (e) {
+          if (!(e instanceof StaleWriteError) || tries) throw e;
+        }
+      }
+    };
+    error = null;
+    hpQueue.set(sheetId, (hpQueue.get(sheetId) ?? Promise.resolve()).then(run).catch((e) => {
+      error = campaignMessage(e, 'Those hit points slipped away! Try again.');
+    }));
+  }
+
   /** The DM gives or takes away a player's conditions: shown at once, undone if refused. */
   async function giveConditions(sheetId: string, conditions: string[]) {
     const before = sheets;
@@ -744,7 +772,8 @@
             <p class="empty">No characters yet.{#if isDm}{' '}Send your players the invite link.{/if}</p>
           {:else}
             <CampaignCards here={music.present} sheets={active} order={campaign.details.order ?? []} {isDm} {ended}
-                           onorder={(order) => saveDetails({ order })} onremove={remove} onconditions={giveConditions} onlook={giveLook} />
+                           onorder={(order) => saveDetails({ order })} onremove={remove} onconditions={giveConditions} onlook={giveLook}
+                           {me} onvitals={changeVitals} />
           {/if}
         </section>
       </div>

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { applyDamage, applyHealing, setTempHp } from '#lib/rules/hp.ts';
+import { applyDamage, applyHealing, changeHp, setTempHp } from '#lib/rules/hp.ts';
 import { emptyState, type State } from '#lib/types.ts';
 
 const at = (hpCurrent: number, hpTemp = 0): State => ({ ...emptyState(), hpCurrent, hpTemp });
@@ -71,5 +71,22 @@ describe('setTempHp', () => {
 
   test('negative temp HP is treated as none', () => {
     expect(setTempHp(at(40, 0), -3).hpTemp).toBe(0);
+  });
+});
+
+describe('changeHp (the campaign card quick buttons)', () => {
+  test('damage takes temp first, heal tops up, temp keeps the larger pool', () => {
+    expect(changeHp(at(30, 5), 'damage', 8, MAX)).toMatchObject({ hpCurrent: 27, hpTemp: 0 });
+    expect(changeHp(at(30), 'heal', 20, MAX).hpCurrent).toBe(MAX);
+    expect(changeHp(at(30, 6), 'temp', 4, MAX).hpTemp).toBe(6);
+  });
+
+  test('what follows from it, as on the sheet: down at 0, up again on healing', () => {
+    const down = changeHp(at(5), 'damage', 9, MAX);
+    expect(down.hpCurrent).toBe(0);
+    expect(down.conditions.map((c) => c.toLowerCase())).toContain('incapacitated');
+    const up = changeHp(down, 'heal', 3, MAX);
+    expect(up.hpCurrent).toBe(3);
+    expect(up.conditions.map((c) => c.toLowerCase())).not.toContain('incapacitated');
   });
 });

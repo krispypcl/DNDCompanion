@@ -5,7 +5,8 @@
    * Insight, and conditions, each tinted as it tints the player's own
    * screen. The DM can also put the cards in an order of their own by
    * dragging (everyone sees it), give or take away conditions, and, while
-   * editing, take a character out of the campaign.
+   * editing, take a character out of the campaign. A player's own character
+   * has Damage, Heal, and Temp under its hit points, for a quick change.
    */
   import { fade, scale, slide } from 'svelte/transition';
   import { cubicOut, quintOut } from 'svelte/easing';
@@ -14,7 +15,7 @@
   import { base } from '#lib/base.ts';
   import { armorClass, characterLevel, classLine, mainClass, passiveScore } from '#lib/rules/derived.ts';
   import ClassIcon from './ClassIcon.svelte';
-  import { vitalStatus } from '#lib/rules/hp.ts';
+  import { vitalStatus, type HpChange } from '#lib/rules/hp.ts';
   import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
   import { cleanName, defaultLook, isStandard, lookKey, lookOf } from '#lib/rules/conditions.ts';
   import ConditionLookPicker from './ConditionLookPicker.svelte';
@@ -39,8 +40,14 @@
     onremove,
     onconditions,
     onlook,
+    me = null,
+    onvitals,
     here = new Set<string>()
   }: {
+    /** Who is looking (an account id): a player's own characters' cards carry the quick hit point buttons (never the DM's). */
+    me?: string | null;
+    /** A quick change to one's own character's hit points. */
+    onvitals?: (id: string, kind: HpChange, amount: number) => void;
     /** Who has the campaign's page open (account ids): their cards say so. */
     here?: Set<string>;
     sheets: Sheet[];
@@ -86,6 +93,14 @@
     const cur = Number(s.state?.hpCurrent) || 0;
     return { max, cur, temp: Number(s.state?.hpTemp) || 0 };
   };
+  /** The amount typed on each own card, spent by its buttons. */
+  let amounts = $state<Record<string, number | string>>({});
+  function quick(s: Sheet, kind: HpChange) {
+    const n = Math.floor(Number(amounts[s.id]));
+    if (!Number.isFinite(n) || n <= 0) return;
+    amounts[s.id] = '';
+    onvitals?.(s.id, kind, n);
+  }
   const unfold = () => ({ duration: prefersReducedMotion() ? 0 : 260, easing: cubicOut });
 
   // ── Reordering, by the grip: the card follows the pointer and the others
@@ -226,6 +241,16 @@
         </a>
       </div>
       <CardHp cur={hp.cur} max={hp.max} temp={hp.temp} vital={v.vital} label={v.label} sounds={def?.sounds ?? {}} />
+      {#if onvitals && me && !isDm && s.owner_id === me && !ended && hp.max > 0}
+        <!-- Their own character: a quick change, as the sheet's own buttons make it (Enter is damage). -->
+        <div class="quickhp" role="group" aria-label="Change {nameOf(s)}’s hit points">
+          <button class="smallbtn hurt" onclick={() => quick(s, 'damage')}>Damage</button>
+          <input class="numfield" type="number" inputmode="numeric" min="1" placeholder="0" aria-label="Amount for {nameOf(s)}"
+                 bind:value={amounts[s.id]} onkeydown={(e) => { if (e.key === 'Enter') quick(s, 'damage'); }} />
+          <button class="smallbtn" onclick={() => quick(s, 'heal')}>Heal</button>
+          <button class="smallbtn" onclick={() => quick(s, 'temp')}>Temp</button>
+        </div>
+      {/if}
       <dl class="stats">
         <div><dt>AC</dt><dd>{def ? armorClass(def).total : '—'}</dd></div>
         <!-- In full where the box has room, shortened where it does not. -->
@@ -403,6 +428,14 @@
   .who strong { font-size: 1.0625rem; overflow-wrap: anywhere; }
   .sub { font-size: 0.8125rem; color: var(--dim); overflow-wrap: anywhere; }
   .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.375rem; margin: 0; }
+  /* One's own character's quick hit point change: the amount between Damage and Heal, as on a monster's card. */
+  .quickhp { display: grid; grid-template-columns: 1fr 4.5rem 1fr 1fr; gap: 0.375rem; align-items: stretch; }
+  .quickhp input {
+    min-width: 0; font: inherit; font-size: 0.875rem; padding: 0.3125rem 0.5rem; color: var(--text);
+    border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg);
+  }
+  .quickhp input:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; border-color: var(--a-edge); }
+  .quickhp .hurt:hover { border-color: color-mix(in oklch, var(--bad) 55%, transparent); color: var(--bad); }
   .stats div { background: var(--raised); border: 1px solid var(--line-soft); border-radius: var(--r-sm); padding: 0.375rem 0.25rem; text-align: center; container-type: inline-size; }
   .stats dt { font-size: 0.5625rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--label); white-space: nowrap; }
   .stats dd { margin: 0.125rem 0 0; font-size: 1.0625rem; font-weight: 600; font-variant-numeric: tabular-nums; }
