@@ -144,7 +144,8 @@ export async function placeCreatureToken(c: Creature): Promise<string> {
   // Its portrait when the map can draw it (5e.tools' token art can), else the site's mark.
   const pic = resolveImageUrl(c.portrait ?? '').url;
   const info = pic ? await imageInfo(pic).catch(() => null) : null;
-  const img = info && pic ? { url: pic, ...info } : { url: `${siteRoot(location.origin, base)}/owlbear/${c.kind === 'npc' ? 'npc' : 'monster'}.png`, width: 512, height: 512, mime: 'image/png' };
+  // (The .png beside each mark stays for the tokens rooms placed before.)
+  const img = info && pic ? { url: pic, ...info } : { url: `${siteRoot(location.origin, base)}/owlbear/${c.kind === 'npc' ? 'npc' : 'monster'}.webp`, width: 512, height: 512, mime: 'image/webp' };
   return dropToken(img, c.name, { [CREATURE_KEY]: { id: c.id, campaign: c.campaign_id } satisfies CreatureLink });
 }
 
