@@ -12,6 +12,9 @@
   import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
   import { faceFamily, nameFont } from '#lib/rules/fonts.ts';
   import { webLink } from '#lib/rules/presence.ts';
+  import { siteRoot } from '#lib/rules/share.ts';
+  import { copyText } from '#lib/clipboard.ts';
+  import { base } from '#lib/base.ts';
   import DimModal from './DimModal.svelte';
   import InfoTip from './InfoTip.svelte';
   import ThemePicker from './ThemePicker.svelte';
@@ -76,6 +79,18 @@
     } catch {
       copyFailed = true;
     }
+  }
+  /** The extension's manifest and this campaign's page, for the DM's how-to (each with its Copy). */
+  const root = $derived(typeof location !== 'undefined' ? siteRoot(location.origin, base) : '');
+  const manifestLink = $derived(`${root}/owlbear/manifest.json`);
+  const campaignLink = $derived(`${root}/c/${campaign.id}`);
+  let copiedStep = $state<'manifest' | 'campaign' | null>(null);
+  let stepFailed = $state<'manifest' | 'campaign' | null>(null);
+  async function copyStep(which: 'manifest' | 'campaign') {
+    const ok = await copyText(which === 'manifest' ? manifestLink : campaignLink);
+    stepFailed = ok ? null : which;
+    copiedStep = ok ? which : null;
+    if (ok) setTimeout(() => { if (copiedStep === which) copiedStep = null; }, 1600);
   }
   function close() {
     onpreview(null);
@@ -216,6 +231,15 @@
       <input value={campaign.details.owlbearUrl ?? ''} placeholder="Optional: your room's link" aria-label="Owlbear Rodeo room link"
              onchange={(e) => onsave({ owlbearUrl: e.currentTarget.value.trim() })} />
       {#if owlbearBad}<p class="hint bad" role="status">That doesn't look like a link! Copy your room's address from Owlbear Rodeo.</p>{/if}
+      <!-- How to bring the extension into the room, once: three steps, the links to paste ready to copy. -->
+      <ol class="obrsteps" aria-label="Add DND Companion to Owlbear Rodeo">
+        <li><b>1</b><span>In your room on Owlbear Rodeo, open <em>Extensions</em> and choose <em>Add Custom Extension</em>.</span></li>
+        <li><b>2</b><span>Paste the extension's link there.</span>
+          <button class="smallbtn" onclick={() => copyStep('manifest')}>{copiedStep === 'manifest' ? 'Copied!' : 'Copy Extension Link'}</button></li>
+        <li><b>3</b><span>Open DND Companion from the room's toolbar and paste this campaign's link.</span>
+          <button class="smallbtn" onclick={() => copyStep('campaign')}>{copiedStep === 'campaign' ? 'Copied!' : 'Copy Campaign Link'}</button></li>
+      </ol>
+      {#if stepFailed}<p class="hint bad" role="status">The clipboard said no! Here it is to copy yourself: {stepFailed === 'manifest' ? manifestLink : campaignLink}</p>{/if}
     </div>
 
     <div class="row">
@@ -318,6 +342,18 @@
   .thumb.failed img { visibility: hidden; }
   .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .hint.bad { color: var(--bad); }
+  /* The Owlbear Rodeo how-to: numbered steps, each with its link to copy at the end of its line. */
+  .obrsteps { list-style: none; margin: 0.25rem 0 0; padding: 0; display: grid; gap: 0.5rem; }
+  .obrsteps li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0.625rem; font-size: 0.8125rem; line-height: 1.45; }
+  .obrsteps b {
+    display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; font-size: 0.75rem;
+    border: 1px solid var(--a-edge); background: var(--a-wash); color: var(--a);
+  }
+  .obrsteps em { font-style: normal; font-weight: 600; color: var(--text); }
+  @media (max-width: 700px) {
+    .obrsteps li { grid-template-columns: auto minmax(0, 1fr); }
+    .obrsteps li > button { grid-column: 2; justify-self: start; }
+  }
   .foot {
     display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;
     margin-top: 0.375rem; padding-top: 1rem; border-top: 1px solid var(--line-soft);
