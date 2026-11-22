@@ -101,12 +101,13 @@ export type CampaignLive = { playback: Playback | null; invite_rev: number; upda
 /**
  * Something on the shared board. Positions are in board units, on an endless
  * page (units are pixels at 100% zoom). A 'page' is a page of the board
- * itself (database/0009): its name and paper.
+ * itself (database/0009): its name and paper. An 'image' is a picture (a
+ * photo, a map, a GIF) whose file is in the `board` bucket (database/0026).
  */
 export type BoardItem = {
   id: string;
   campaign_id: string;
-  kind: 'note' | 'text' | 'stroke' | 'page';
+  kind: 'note' | 'text' | 'stroke' | 'page' | 'image';
   data: BoardData;
   created_by: string | null;
   updated_at: string;
@@ -130,7 +131,15 @@ export type BoardData = {
   paper?: 'plain' | 'dots' | 'grid' | 'lines';
   order?: number;
   main?: boolean;
+  /** A picture's: its file's address, and where it is kept in the bucket (to take it away with it). */
+  src?: string;
+  path?: string;
 };
+
+/** The pictures the board takes (the bucket's own list, database/0026), and the largest. */
+const PICTURE_TYPES: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp' };
+export const PICTURE_ACCEPT = Object.keys(PICTURE_TYPES).join(',');
+const PICTURE_MOST = 5 * 1024 * 1024;
 
 export type Campaign = {
   id: string;
@@ -392,8 +401,28 @@ function makeCampaignRepo(client: SupabaseClient) {
         .insert({ campaign_id: campaignId, created_by: userId, kind, data })
         .select('id, campaign_id, kind, data, created_by, updated_at').single();
       if (error && /board is full/i.test(error.message)) throw new CampaignError('The board is full! Clear a few things away first.');
+      // Until database/0027 has run, the board refuses a picture as an item.
+      if (error && /board_items_kind_check/i.test(error.message)) throw new CampaignError('The board can’t hold pictures just yet! It needs one more database update.');
       if (error) throw new Error(error.message);
       return row as BoardItem;
+    },
+
+    /** A picture's file, kept for the board (database/0026): where to show it from, and where it is kept. */
+    async addPicture(campaignId: string, file: File): Promise<{ src: string; path: string }> {
+      const ext = PICTURE_TYPES[file.type];
+      if (!ext) throw new CampaignError('That isn’t a picture the board can pin up! Try a PNG, JPEG, GIF, or WebP.');
+      if (file.size > PICTURE_MOST) throw new CampaignError('That picture is too big for the board! Keep it under 5 MB.');
+      const path = `${campaignId}/${crypto.randomUUID()}.${ext}`;
+      const bucket = client.storage.from('board');
+      const { error } = await bucket.upload(path, file, { contentType: file.type, cacheControl: '31536000', upsert: false });
+      if (error) throw new Error(error.message);
+      return { src: bucket.getPublicUrl(path).data.publicUrl, path };
+    },
+
+    /** Pictures' files, taken away with them (a miss leaves a file behind, nothing worse). */
+    async removePictures(paths: string[]): Promise<void> {
+      if (!paths.length) return;
+      await client.storage.from('board').remove(paths).catch(() => undefined);
     },
 
     async updateBoard(id: string, data: BoardData): Promise<void> {

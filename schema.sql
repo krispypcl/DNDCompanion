@@ -88,7 +88,7 @@ create table if not exists public.campaign_state (
 create table if not exists public.board_items (
   id           uuid primary key default gen_random_uuid(),
   campaign_id  uuid not null references public.campaigns(id) on delete cascade,
-  kind         text not null constraint board_items_kind_check check (kind in ('note', 'text', 'stroke', 'page')),
+  kind         text not null constraint board_items_kind_check check (kind in ('note', 'text', 'stroke', 'page', 'image')),
   data         jsonb not null default '{}'::jsonb
                constraint board_items_data_size check (jsonb_typeof(data) = 'object' and octet_length(data::text) <= 24000),
   created_by   uuid references auth.users(id) on delete set null,
@@ -1212,3 +1212,28 @@ comment on column public.shared_rows.name_key is 'The name lower-cased with sing
 comment on column public.shared_rows.fingerprint is 'Identifies identical rows, so the same row is kept once.';
 comment on column public.shared_rows.created_by is 'Who first wrote it; shown only to players in a campaign with them.';
 comment on table public.shared_row_uses is 'Which characters use which shared rows right now.';
+
+-- ── The table board's pictures (database/0026, 0027) ──
+-- A public bucket: anyone who can see a board sees its pictures; only the campaign's members add or
+-- remove them. Each file is kept under its campaign's id (board/<campaign id>/<file>).
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('board', 'board', true, 5242880, array['image/png', 'image/jpeg', 'image/gif', 'image/webp'])
+on conflict (id) do update
+  set public = excluded.public,
+      file_size_limit = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
+
+create policy "Board pictures: members add" on storage.objects for insert to authenticated
+  with check (
+    bucket_id = 'board'
+    and case when (storage.foldername(name))[1] ~ '^[0-9a-fA-F-]{36}$'
+             then private.is_campaign_member(((storage.foldername(name))[1])::uuid)
+             else false end
+  );
+create policy "Board pictures: members remove" on storage.objects for delete to authenticated
+  using (
+    bucket_id = 'board'
+    and case when (storage.foldername(name))[1] ~ '^[0-9a-fA-F-]{36}$'
+             then private.is_campaign_member(((storage.foldername(name))[1])::uuid)
+             else false end
+  );

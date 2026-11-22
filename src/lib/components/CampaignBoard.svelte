@@ -13,7 +13,7 @@
   import { onMount, untrack } from 'svelte';
   import { fade, scale, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { campaignMessage, campaignRepo, type BoardData, type BoardItem } from '#lib/data/campaigns.ts';
+  import { PICTURE_ACCEPT, campaignMessage, campaignRepo, type BoardData, type BoardItem } from '#lib/data/campaigns.ts';
   import { isConfigured, supabase } from '#lib/supabase.ts';
   import { prefersReducedMotion, settleIn } from '#lib/motion.ts';
   import { INKS, PAPERS } from '#lib/palette.ts';
@@ -98,7 +98,7 @@
   });
   const onPage = (i: BoardItem) => i.kind !== 'page' && (i.data.page ?? MAIN) === page.id;
   const strokes = $derived(items.filter((i) => i.kind === 'stroke' && onPage(i)));
-  const cards = $derived(items.filter((i) => (i.kind === 'note' || i.kind === 'text') && onPage(i)).sort((a, b) => (a.data.z ?? 0) - (b.data.z ?? 0)));
+  const cards = $derived(items.filter((i) => (i.kind === 'note' || i.kind === 'text' || i.kind === 'image') && onPage(i)).sort((a, b) => (a.data.z ?? 0) - (b.data.z ?? 0)));
   const here = $derived(items.filter(onPage));
 
   async function load() {
@@ -222,18 +222,110 @@
   async function remove(ids: string[]) {
     if (!ids.length) return;
     const before = items;
+    // A picture's file goes with it.
+    const files = before.filter((x) => ids.includes(x.id) && x.kind === 'image' && x.data.path).map((x) => x.data.path!);
     items = items.filter((x) => !ids.includes(x.id));
     // Stand-ins were never saved: nothing to remove from the database.
     const saved = ids.filter((id) => !id.startsWith('tmp-'));
     if (!saved.length) return;
     try {
       await campaignRepo.removeFromBoard(saved);
+      void campaignRepo.removePictures(files);
     } catch (e) {
       items = before;
       error = campaignMessage(e, 'That one is stuck to the board! Try again.');
     }
   }
   const topZ = () => Math.max(0, ...here.map((i) => i.data.z ?? 0)) + 1;
+
+  // ── Pictures: chosen, dropped on the board, or pasted; kept in the bucket, shown as an item ──
+  let picker = $state<HTMLInputElement>();
+  let pinning = $state(0);
+  /** A picture's own width and height, read before it is sent, so it lands in its own shape. */
+  function sizeOf(file: File): Promise<[number, number]> {
+    return new Promise((done) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      const end = (size: [number, number]) => {
+        URL.revokeObjectURL(url);
+        done(size);
+      };
+      img.onload = () => end([img.naturalWidth || 320, img.naturalHeight || 240]);
+      img.onerror = () => end([320, 240]);
+      img.src = url;
+    });
+  }
+  /** Each one at most 360 units wide, in the middle of the view (or where it was dropped), a little apart. */
+  async function addPictures(files: File[], where?: [number, number]) {
+    if (!canEdit || !files.length) return;
+    error = null;
+    const [cx, cy] = where ?? [view.x + vw / (2 * view.z), view.y + vh / (2 * view.z)];
+    pinning += files.length;
+    await Promise.all(files.map(async (file, n) => {
+      try {
+        const [nw, nh] = await sizeOf(file);
+        const w = Math.min(360, nw);
+        const h = Math.round((w * nh) / nw);
+        const { src, path } = await campaignRepo.addPicture(campaignId, file);
+        const made = await add('image', stamp({ x: cx - w / 2 + n * 24, y: cy - h / 2 + n * 24, w, h, src, path, z: topZ() }));
+        if (!made) void campaignRepo.removePictures([path]);
+      } catch (e) {
+        error = campaignMessage(e, 'That picture wouldn’t stick to the board! Try again.');
+      } finally {
+        pinning -= 1;
+      }
+    }));
+  }
+  const picturesIn = (list: FileList | null | undefined) => [...(list ?? [])].filter((f) => f.type.startsWith('image/'));
+  function dropped(e: DragEvent) {
+    if (!canEdit) return;
+    const files = picturesIn(e.dataTransfer?.files);
+    if (!files.length) return;
+    e.preventDefault();
+    void addPictures(files, at(e));
+  }
+  /** A picture pasted while the board is the thing in use (not while writing on a note). */
+  function pasted(e: ClipboardEvent) {
+    if (!canEdit || !active || editingId) return;
+    const t = e.target as HTMLElement | null;
+    if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    const files = picturesIn(e.clipboardData?.files);
+    if (!files.length) return;
+    e.preventDefault();
+    void addPictures(files);
+  }
+
+  /** A picture's corner, dragged: it grows or shrinks in its own shape. */
+  let resizing: { id: string; ratio: number; pointer: number; last: number } | null = null;
+  function startResize(e: PointerEvent, item: BoardItem) {
+    if (!canEdit || e.button > 0) return;
+    e.stopPropagation();
+    e.preventDefault();
+    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+    patch(item.id, { ...item.data, z: topZ() });
+    resizing = { id: item.id, ratio: (item.data.h ?? 1) / (item.data.w ?? 1), pointer: e.pointerId, last: 0 };
+  }
+  function resizeTo(e: PointerEvent) {
+    if (!resizing || e.pointerId !== resizing.pointer) return;
+    e.stopPropagation();
+    const item = items.find((x) => x.id === resizing!.id);
+    if (!item) return;
+    const [x] = at(e);
+    const w = Math.max(48, Math.round(x - (item.data.x ?? 0)));
+    patch(item.id, { ...item.data, w, h: Math.round(w * resizing.ratio) });
+    const now = performance.now();
+    if (now - resizing.last > 220) {
+      resizing.last = now;
+      void save(item.id);
+    }
+  }
+  function endResize(e: PointerEvent) {
+    if (!resizing || e.pointerId !== resizing.pointer) return;
+    e.stopPropagation();
+    const id = resizing.id;
+    resizing = null;
+    void save(id);
+  }
   const stamp = (data: BoardData): BoardData => (page.id === MAIN ? data : { ...data, page: page.id });
 
   /** A page's name or paper: the first page gets a row of its own the first time. */
@@ -618,6 +710,8 @@
   const PAPER_NAMES: Record<Paper, string> = { plain: 'Plain', dots: 'Dots', grid: 'Grid', lines: 'Lines' };
 </script>
 
+<svelte:window onpaste={pasted} />
+
 <section class="boardwrap" aria-label="Table board">
   <SectionHead title="Table Board" infoLabel="How the board works" folded={foldable ? folded : undefined}
                ontoggle={foldable ? toggleFold : undefined} controls="board-fold-{campaignId}">
@@ -665,6 +759,14 @@
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d={b.d} fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
         </button>
       {/each}
+      <!-- A picture or a GIF, from this device (or dropped on the board, or pasted). -->
+      <button class="tool" class:busy={pinning > 0} aria-label="Add a picture" title={pinning ? 'Adding the picture' : 'Add a picture or a GIF (or drop one on the board, or paste it)'}
+              onclick={() => picker?.click()} disabled={pinning > 0}>
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="m4 17 5-5 4 4 2.5-2.5L20 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /><circle cx="15.5" cy="9.5" r="1.5" fill="currentColor" /></svg>
+      </button>
+      <!-- Visually hidden, not display: none: some phones will not open the picker for an input that isn't drawn. -->
+      <input bind:this={picker} class="boardpicker" type="file" accept={PICTURE_ACCEPT} multiple tabindex="-1" aria-hidden="true"
+             onchange={(e) => { const files = picturesIn(e.currentTarget.files); e.currentTarget.value = ''; void addPictures(files); }} />
       {#if tool === 'pen' || tool === 'text'}
         <span class="sep" aria-hidden="true"></span>
         <div class="swatches" transition:fade={{ duration: 140 }}>
@@ -724,7 +826,8 @@
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div class="board tool-{tool} paper-{page.paper}" class:live={canEdit} class:panning={Boolean(panning)} class:active
          bind:this={vp} use:wheel use:keepStylus style={paperStyle}
-         onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={cancel}>
+         onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={cancel}
+         ondragover={(e) => { if (canEdit && e.dataTransfer?.types.includes('Files')) e.preventDefault(); }} ondrop={dropped}>
       <div class="world" style:transform="scale({view.z}) translate({-view.x}px, {-view.y}px)">
         <svg class="ink" width="1" height="1" aria-hidden="true">
           {#each strokes.filter((x) => !sweptIds.has(x.id)) as s (keyOf(s))}
@@ -738,15 +841,22 @@
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div class="item {item.kind}" class:lifted={dragging?.id === item.id}
                style:left="{item.data.x ?? 0}px" style:top="{item.data.y ?? 0}px"
-               style:width="{item.data.w ?? 200}px" style:min-height="{item.data.h ?? 100}px"
+               style:width="{item.data.w ?? 200}px" style:min-height="{item.data.h ?? 100}px" style:height={item.kind === 'image' ? `${item.data.h ?? 200}px` : undefined}
                style:--ic={item.data.color} style:font-size="{item.data.size ?? 22}px" style:z-index={item.data.z ?? 0}
                onpointerdown={(e) => {
                  if (tool === 'erase' && canEdit) { e.stopPropagation(); void remove([item.id]); }
                  else startDrag(e, item);
                }}
-               ondblclick={() => canEdit && tool === 'move' && (editingId = item.id)}
+               ondblclick={() => canEdit && tool === 'move' && item.kind !== 'image' && (editingId = item.id)}
                in:popIn={{ id: item.id }} out:scale={pop()}>
-            {#if editingId === item.id}
+            {#if item.kind === 'image'}
+              <img class="boardpic" src={item.data.src} alt="" draggable="false" />
+              {#if canEdit && tool === 'move'}
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <span class="grip" title="Drag to resize" onpointerdown={(e) => startResize(e, item)} onpointermove={resizeTo}
+                      onpointerup={endResize} onpointercancel={endResize}></span>
+              {/if}
+            {:else if editingId === item.id}
               <textarea value={item.data.text ?? ''} aria-label={item.kind === 'note' ? 'Sticky note' : 'Writing'}
                         use:focusOnMount oninput={(e) => write(item, e.currentTarget.value)}
                         onblur={() => stopWriting(item)}
@@ -755,7 +865,7 @@
             {:else}
               <p>{item.data.text || ' '}</p>
             {/if}
-            {#if canEdit && tool === 'move' && editingId !== item.id}
+            {#if canEdit && tool === 'move' && editingId !== item.id && item.kind !== 'image'}
               <button class="pen" aria-label="Write on it" title="Write on it (or double-click)"
                       onpointerdown={(e) => e.stopPropagation()} onclick={() => (editingId = item.id)}>
                 <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>
@@ -886,6 +996,17 @@
     color: oklch(22% 0.02 286); box-shadow: 0 8px 20px -10px rgb(0 0 0 / 0.5);
   }
   .text { color: var(--ic, var(--text)); padding: 5px 6px; }
+  /* A picture: as it is, its corners a little rounded, and a grip at its corner to resize it. */
+  .item.image { border-radius: 6px; box-shadow: 0 8px 20px -12px rgb(0 0 0 / 0.55); }
+  .boardpic { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: inherit; pointer-events: none; -webkit-user-drag: none; }
+  .grip {
+    position: absolute; right: -6px; bottom: -6px; width: 14px; height: 14px; border-radius: 4px; cursor: nwse-resize;
+    background: var(--surface); border: 1px solid var(--a-edge); opacity: 0; transition: opacity 0.15s ease; touch-action: none;
+  }
+  .item.image:hover .grip, .grip:active { opacity: 1; }
+  @media (hover: none) { .grip { opacity: 0.85; } }
+  .boardpicker { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); }
+  .tool.busy { cursor: progress; }
   .item p, .item textarea {
     margin: 0; font: inherit; line-height: 1.3; white-space: pre-wrap; overflow-wrap: anywhere;
   }
