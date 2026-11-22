@@ -673,7 +673,8 @@
     <table class:editing={editable} class:headed={showHeadings} class:dragging={drag !== null} class:landing>
       <colgroup>
         {#if editable}<col style:width="1.75rem" />{/if}
-        {#if tickColumn}<col style:width="2.25rem" />{/if}
+        <!-- Room for its short heading (Prep) and the gap every heading keeps; first, it also holds the row's left edge. -->
+        {#if tickColumn}<col style:width={editable ? "2.5rem" : "3rem"} />{/if}
         {#each shownColumns as col (col.key)}<col style:width={widthOf(col)} />{/each}
         {#if editable}<col style:width="2rem" />{/if}
       </colgroup>
@@ -1058,7 +1059,7 @@
   /* The tick column is the width of the mark and nothing more. */
   /* At the top of the row with the first line of its name, however tall the row. */
   .tick { text-align: left; vertical-align: top; }
-  th.tick { color: var(--label); letter-spacing: 0.02em; padding-right: 0; overflow: hidden; }
+  th.tick { color: var(--label); letter-spacing: 0.02em; overflow: hidden; vertical-align: middle; }
   .tick span.yes { color: var(--a); font-weight: 600; }
   .tick input {
     width: 1rem; height: 1rem; accent-color: var(--a); cursor: pointer;
