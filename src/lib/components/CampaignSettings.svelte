@@ -71,14 +71,10 @@
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
   async function copyInvite() {
-    try {
-      await navigator.clipboard.writeText(inviteLink);
-      copied = true;
-      copyFailed = false;
-      setTimeout(() => (copied = false), 1600);
-    } catch {
-      copyFailed = true;
-    }
+    copyFailed = !(await copyText(inviteLink));
+    if (copyFailed) return;
+    copied = true;
+    setTimeout(() => (copied = false), 1600);
   }
   /** The extension's manifest and this campaign's page, for the DM's how-to (each with its Copy). */
   const root = $derived(typeof location !== 'undefined' ? siteRoot(location.origin, base) : '');

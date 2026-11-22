@@ -12,6 +12,7 @@
   import { fade, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import { base } from '#lib/base.ts';
+  import { copyText } from '#lib/clipboard.ts';
   import { goto } from '$app/navigation';
   import { campaignMessage, campaignRepo, NO_INITIATIVE, type Campaign, type CampaignDetails } from '#lib/data/campaigns.ts';
   import { TableMusic } from '#lib/tableMusic.svelte.ts';
@@ -341,13 +342,12 @@
   });
 
   async function copy(text: string, which: 'invite' | 'page') {
-    try {
-      await navigator.clipboard.writeText(text);
-      copied = which;
-      setTimeout(() => (copied = null), 1600);
-    } catch {
+    if (!(await copyText(text))) {
       error = 'The clipboard said no! Select the link and copy it yourself.';
+      return;
     }
+    copied = which;
+    setTimeout(() => (copied = null), 1600);
   }
 
   async function act(task: () => Promise<void>, fallback: string) {

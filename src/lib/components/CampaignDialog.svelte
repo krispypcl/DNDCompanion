@@ -9,6 +9,7 @@
   import { onMount, untrack } from 'svelte';
   import { fade } from 'svelte/transition';
   import { base } from '#lib/base.ts';
+  import { copyText } from '#lib/clipboard.ts';
   import { backdrop, movable, portal } from '#lib/actions.ts';
   import { prefersReducedMotion, windowMotion } from '#lib/motion.ts';
   import { campaignMessage, campaignRepo, inviteCode, type Campaign } from '#lib/data/campaigns.ts';
@@ -104,13 +105,12 @@
   });
 
   async function copy() {
-    try {
-      await navigator.clipboard.writeText(inviteLink);
-      copied = true;
-      setTimeout(() => (copied = false), 1600);
-    } catch {
+    if (!(await copyText(inviteLink))) {
       error = 'The clipboard said no! Select the link and copy it yourself.';
+      return;
     }
+    copied = true;
+    setTimeout(() => (copied = false), 1600);
   }
 
   let box = $state<HTMLElement>();
