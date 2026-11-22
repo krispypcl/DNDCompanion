@@ -10,8 +10,7 @@
   import { applyDamage, applyHealing, hitSeverity, isDead, setDeathSave, setTempHp, vitalStatus, withVitals } from '#lib/rules/hp.ts';
   import { snapshot } from '#lib/stores/undo.ts';
   import { heal, hit, shield } from '#lib/sound.ts';
-  import { prefersReducedMotion } from '#lib/motion.ts';
-  import { cubicOut } from 'svelte/easing';
+  import { statusPop } from '#lib/motion.ts';
   import type { Definition, State } from '#lib/types.ts';
 
   let {
@@ -184,14 +183,6 @@
   const status = $derived(vitalStatus(sheetState.hpCurrent, hpMax, sheetState.deathSaves));
   const percent = $derived(hpMax > 0 ? Math.round(ratio * 100) : null);
 
-  function pop(_node: Element) {
-    return {
-      duration: prefersReducedMotion() ? 0 : 320,
-      easing: cubicOut,
-      css: (t: number) => `opacity: ${Math.min(1, t * 1.6)}; transform: scale(${0.85 + 0.15 * t});`
-    };
-  }
-
   function act(label: string, next: State) {
     snapshot(sheetState, label);
     const settled = withVitals(sheetState, next, hpMax);
@@ -267,7 +258,7 @@
          character is doing instead. -->
     <div class="statusrow">
       {#key status.vital}
-        <span class="status {status.vital}" role="status" in:pop>
+        <span class="status {status.vital}" role="status" in:statusPop>
           <i class="dot" aria-hidden="true"></i>{status.label}
         </span>
       {/key}

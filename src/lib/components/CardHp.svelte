@@ -8,9 +8,8 @@
    * by everyone at the table: its own sounds for a hit, healing, temporary hit
    * points, and death (or the built-in ones); a creature's is silent.
    */
-  import { cubicOut } from 'svelte/easing';
   import { hitSeverity, type Vital } from '#lib/rules/hp.ts';
-  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { statusPop } from '#lib/motion.ts';
   import { playAs, type SoundName } from '#lib/sound.ts';
   import CountUp from './CountUp.svelte';
 
@@ -103,14 +102,6 @@
     if (sounds && wasVital !== null && now === 'dead' && wasVital !== 'dead') playAs('deathBell', sounds);
     wasVital = now;
   });
-
-  function pop(_node: Element) {
-    return {
-      duration: prefersReducedMotion() ? 0 : 320,
-      easing: cubicOut,
-      css: (t: number) => `opacity: ${Math.min(1, t * 1.6)}; transform: scale(${0.85 + 0.15 * t});`
-    };
-  }
 </script>
 
 <div class="hp" class:healed class:wounded class:shored class:struck class:hurt class:dying={vital === 'down'}
@@ -125,7 +116,7 @@
     {#if float}
       {#key float.id}<span class="float {float.kind}" aria-hidden="true">{float.text}</span>{/key}
     {/if}
-    {#key vital}<span class="vital" in:pop>{label}</span>{/key}
+    {#key vital}<span class="vital" in:statusPop>{label}</span>{/key}
   </div>
   <div class="gauge">
     <div class="bar" class:shielded={temp > 0} aria-hidden="true">

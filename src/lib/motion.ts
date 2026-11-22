@@ -82,6 +82,15 @@ export function popIn(_node: Element, { y = 4, duration = 250 }: { y?: number; d
   };
 }
 
+/** A hit point status taking the last one's place (Healthy, Bloodied, Down): it grows in quickly. */
+export function statusPop(_node: Element) {
+  return {
+    duration: prefersReducedMotion() ? 0 : 320,
+    easing: cubicOut,
+    css: (t: number) => `opacity: ${Math.min(1, t * 1.6)}; transform: scale(${0.85 + 0.15 * t});`
+  };
+}
+
 /**
  * A number that changed gives a small pop, so the eye catches it: an ability
  * modifier after a score changes, a skill after proficiency is toggled, AC.
