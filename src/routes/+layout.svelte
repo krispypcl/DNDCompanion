@@ -221,16 +221,16 @@
   .route { padding-top: var(--topbar, 0px); padding-bottom: var(--foot, 0px); }
   .route.pulling { transition: none; }
   @media (prefers-reduced-motion: reduce) { .route { transition: none; } }
-  /* The old page leaves; the new one brings its own arrival (the rise above). */
-  :global(::view-transition-old(root)) {
-    animation: leave-page 0.2s cubic-bezier(0.33, 1, 0.68, 1) both;
-  }
-  :global(::view-transition-new(root)) { animation: none; }
+  /* Moving between pages in a view transition: the new page rises and fades in over the old,
+     which stays as it was underneath until covered, so the screen never dips between the two
+     (the route's own arrival above is skipped meanwhile, or it would fade in twice). */
+  :global(::view-transition-old(root)) { animation: none; }
+  :global(::view-transition-new(root)) { animation: arrive-page 0.26s cubic-bezier(0.33, 1, 0.68, 1) 30ms both; }
   /* A phone's top and bottom bars swap in place: the new one shows at once, the old one not at all. */
   :global(::view-transition-group(phonetop)), :global(::view-transition-group(phonebar)),
   :global(::view-transition-new(phonetop)), :global(::view-transition-new(phonebar)) { animation: none; }
   :global(::view-transition-old(phonetop)), :global(::view-transition-old(phonebar)) { animation: none; opacity: 0; }
-  @keyframes -global-leave-page {
-    to { opacity: 0; transform: translateY(-8px) scale(0.99); }
+  @keyframes -global-arrive-page {
+    from { opacity: 0; transform: translateY(10px); }
   }
 </style>
