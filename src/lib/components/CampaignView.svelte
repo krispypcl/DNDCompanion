@@ -862,6 +862,13 @@
   /* The eyebrow's parts, a dot between each two. */
   .seg + .seg::before { content: '·'; margin: 0 0.375rem; }
   .eyebrow { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--a); }
+  /* A light page over a banner: the lines beside the name sit on a solid chip, so they read on any picture. */
+  :global([data-mode='light']) .campaignpage.withbanner :is(.eyebrow, .phonesub) {
+    width: fit-content; padding: 0.1875rem 0.625rem; border-radius: 999px;
+    border: 1px solid var(--line-soft); background: color-mix(in oklab, var(--surface) 94%, transparent);
+  }
+  :global([data-mode='light']) .campaignpage.withbanner .eyebrow { display: inline-block; margin-bottom: 0.25rem; }
+  :global([data-mode='light']) .campaignpage.withbanner .phonesub { border-radius: var(--r-sm); }
   h1 { margin: 0.125rem 0 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.015em; }
   .tools { display: flex; align-items: center; gap: 0.5rem; flex: none; }
   /* Shortcuts are for a keyboard: the button only shows where there is a mouse. */

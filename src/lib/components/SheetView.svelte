@@ -1653,6 +1653,9 @@
     transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
   }
   .campaign a:hover { background: color-mix(in oklab, var(--a) 17%, transparent); border-color: var(--a); }
+  /* A light page over a banner: the pill is solid, so its name reads on any picture. */
+  :global([data-mode='light']) .bannered .campaign :is(a, .retired) { background: color-mix(in oklab, var(--a) 8%, var(--surface)); }
+  :global([data-mode='light']) .bannered .campaign a:hover { background: color-mix(in oklab, var(--a) 16%, var(--surface)); }
   .campaign a:active { transform: translateY(1px); }
   .campaign a:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
   .campaign .retired {
