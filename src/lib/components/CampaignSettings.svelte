@@ -342,18 +342,19 @@
   .thumb.failed img { visibility: hidden; }
   .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .hint.bad { color: var(--bad); }
-  /* The Owlbear Rodeo how-to: numbered steps, each with its link to copy at the end of its line. */
-  .obrsteps { list-style: none; margin: 0.25rem 0 0; padding: 0; display: grid; gap: 0.5rem; }
-  .obrsteps li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0.625rem; font-size: 0.8125rem; line-height: 1.45; }
+  /* The Owlbear Rodeo how-to: numbered steps the same space apart, each step's words beside its
+     number (on the number's line) and its link to copy under them. */
+  .obrsteps { list-style: none; margin: 0.25rem 0 0; padding: 0; display: grid; gap: 0.625rem; }
+  .obrsteps li {
+    display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); align-items: start; gap: 0.375rem 0.625rem;
+    font-size: 0.8125rem; line-height: 1.5rem;
+  }
   .obrsteps b {
-    display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; font-size: 0.75rem;
-    border: 1px solid var(--a-edge); background: var(--a-wash); color: var(--a);
+    display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; font-size: 0.75rem; line-height: 1;
+    box-sizing: border-box; border: 1px solid var(--a-edge); background: var(--a-wash); color: var(--a);
   }
   .obrsteps em { font-style: normal; font-weight: 600; color: var(--text); }
-  @media (max-width: 700px) {
-    .obrsteps li { grid-template-columns: auto minmax(0, 1fr); }
-    .obrsteps li > button { grid-column: 2; justify-self: start; }
-  }
+  .obrsteps li > button { grid-column: 2; justify-self: start; }
   .foot {
     display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;
     margin-top: 0.375rem; padding-top: 1rem; border-top: 1px solid var(--line-soft);
