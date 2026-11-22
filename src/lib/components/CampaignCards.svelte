@@ -25,6 +25,7 @@
   import { themeStyle } from '#lib/theme.ts';
   import { followHeight, glideTo, prefersReducedMotion } from '#lib/motion.ts';
   import CardHp from './CardHp.svelte';
+  import { warmSounds } from '#lib/sound.ts';
   import ConditionRing from './ConditionRing.svelte';
   import Lightbox from './Lightbox.svelte';
   import type { ConditionLook, Sheet } from '#lib/types.ts';
@@ -52,6 +53,9 @@
     /** The DM sets how a condition of the player's own looks (null clears it). */
     onlook?: (id: string, key: string, look: ConditionLook | null) => void;
   } = $props();
+
+  // The bank of sounds, so a change on any card is heard at once (each character's own, or the built-in).
+  $effect(() => void warmSounds());
 
   const nameOf = (s: Sheet) => s.definition?.identity?.name || s.name || '';
   /** The conditions' colors round the portrait, a band each; none for conditions without a color. */
@@ -221,7 +225,7 @@
           </span>
         </a>
       </div>
-      <CardHp cur={hp.cur} max={hp.max} temp={hp.temp} vital={v.vital} label={v.label} />
+      <CardHp cur={hp.cur} max={hp.max} temp={hp.temp} vital={v.vital} label={v.label} sounds={def?.sounds ?? {}} />
       <dl class="stats">
         <div><dt>AC</dt><dd>{def ? armorClass(def).total : '—'}</dd></div>
         <!-- In full where the box has room, shortened where it does not. -->

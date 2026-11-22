@@ -4,14 +4,21 @@
    * they change, the card shows it the way the sheet does: the number counts
    * to its new value with a beat, the bar eases there leaving a ghost of the
    * stretch lost or gained, a light runs along it, the amount floats up, and
-   * a hit jolts the bar as hard as it was.
+   * a hit jolts the bar as hard as it was. A character's card is heard too,
+   * by everyone at the table: its own sounds for a hit, healing, temporary hit
+   * points, and death (or the built-in ones); a creature's is silent.
    */
   import { cubicOut } from 'svelte/easing';
   import { hitSeverity, type Vital } from '#lib/rules/hp.ts';
   import { prefersReducedMotion } from '#lib/motion.ts';
+  import { playAs, type SoundName } from '#lib/sound.ts';
   import CountUp from './CountUp.svelte';
 
-  let { cur, max, temp, vital, label }: { cur: number; max: number; temp: number; vital: Vital; label: string } = $props();
+  let { cur, max, temp, vital, label, sounds }: {
+    cur: number; max: number; temp: number; vital: Vital; label: string;
+    /** A character's own sounds (definition.sounds): given, the card is heard; left out (a creature), it is silent. */
+    sounds?: Partial<Record<SoundName, string>>;
+  } = $props();
 
   const total = $derived(max + temp);
   const pct = (n: number) => (total > 0 ? Math.max(0, Math.min(100, (n / total) * 100)) : 0);
@@ -51,6 +58,7 @@
       return;
     }
     if (nowTemp > previousTemp) {
+      if (sounds) playAs('shield', sounds);
       replay('temp', (on) => (shored = on), 1000);
       floatUp(`+${nowTemp - previousTemp} temp`, 'temp');
     } else if (nowTemp < previousTemp && now === previous) {
@@ -71,10 +79,13 @@
       replay('hurt', (on) => (wounded = on), 950);
       floatUp(`−${lost}`, 'hurt');
       const sev = hitSeverity(lost, max);
+      // A blow that kills rings the death bell instead (below).
+      if (sounds && vital !== 'dead') playAs('hit', sounds, sev);
       const ms = Math.round(380 + sev * 520);
       blow = `--amp:${(2 + sev * 7).toFixed(2)}px;--flash:${(0.2 + sev * 0.5).toFixed(2)};--dur:${ms}ms`;
       replay('struck', (on) => (struck = on), ms + 40);
     } else {
+      if (sounds) playAs('heal', sounds);
       replay('heal', (on) => (healed = on), 950);
       floatUp(`+${-lost}`, 'heal');
     }
@@ -82,6 +93,14 @@
     timers.ghost = setTimeout(() => (ghost = null), 760);
   });
   $effect(() => () => Object.values(timers).forEach(clearTimeout));
+
+  /* Dead, from alive (not on the first look): the character's death bell, for the whole table. */
+  let wasVital: Vital | null = null;
+  $effect(() => {
+    const now = vital;
+    if (sounds && wasVital !== null && now === 'dead' && wasVital !== 'dead') playAs('deathBell', sounds);
+    wasVital = now;
+  });
 
   function pop(_node: Element) {
     return {

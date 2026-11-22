@@ -399,6 +399,23 @@ export function shield() {
   burst(ac, t, 0.05, 0.12, 4200, 3);
 }
 
+/**
+ * One character's effect heard by the whole table (the campaign page's cards): its own recording
+ * for that effect when it has one, otherwise the built-in sound. Its sounds come with the card, as
+ * the page plays no single sheet's sounds of its own.
+ */
+export function playAs(name: 'hit' | 'heal' | 'shield' | 'deathBell', sounds: Partial<Record<SoundName, string>> | undefined, severity = 0.3) {
+  const url = audioUrl(sounds?.[name]);
+  if (url) {
+    if (typeof Audio !== 'undefined') playClip(url);
+    return;
+  }
+  if (name === 'hit') hit(severity);
+  else if (name === 'heal') heal();
+  else if (name === 'shield') shield();
+  else deathBell();
+}
+
 /** A short rest: two soft notes, settling. */
 export function shortRest() {
   if (own('shortRest') || recording('shortRest', { gain: 0.7 })) return;
