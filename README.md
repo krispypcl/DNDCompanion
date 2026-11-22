@@ -38,17 +38,13 @@ away, and puts the whole party on one live page for the DM.
 ## Showcase
 
 <p align="center">
-  <img src=".github/readme/desktop-sheet.png" alt="Dave's character sheet on a desktop in dark mode: hit points with temporary ones, abilities, saving throws, skills, attacks, and trackers" width="100%">
-  <br>
-  <sub><b>Character sheet</b> · Desktop, dark mode</sub>
+  <img src=".github/readme/desktop-sheet.png" alt="Character Sheet, Desktop, Dark Mode: Dave's sheet with hit points and temporary ones, abilities, saving throws, skills, attacks, and trackers" width="100%">
 </p>
 <p align="center">
-  <img src=".github/readme/desktop-campaign.png" alt="The Vox Machina campaign page in light mode as Dave's player sees it: the party's cards, Damage, Heal, and Temp on Dave's own card, and the initiative order mid-fight" width="100%">
-  <br>
-  <sub><b>Campaign page, as a player sees it</b> · Desktop, light mode</sub>
+  <img src=".github/readme/desktop-campaign.png" alt="Campaign Page (Player POV), Desktop, Light Mode: the Vox Machina party's cards, Damage, Heal, and Temp open on Dave's own card, and the initiative order mid-fight" width="100%">
 </p>
 <p align="center">
-  <img src=".github/readme/mobile.png" alt="Two mobile screens side by side: Dave's character sheet in light mode, its places on a bar at the bottom; and the DM's initiative order mid-fight in dark mode, with Back and Next Turn under the thumb" width="82%">
+  <img src=".github/readme/mobile.png" alt="Character Sheet, Mobile, Light Mode, beside Initiative (DM POV), Mobile, Dark Mode: Dave's sheet with its places on a bar at the bottom, and the DM's initiative order with Back and Next Turn under the thumb" width="82%">
 </p>
 
 ## Usage
