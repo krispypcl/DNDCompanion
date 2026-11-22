@@ -124,6 +124,12 @@
     .sbe.spread > .sbesections { grid-column: 1 / -1; display: block; columns: 3 18rem; column-gap: 1.5rem; }
     .sbe.spread .sbesection { break-inside: avoid; margin-bottom: 1rem; }
   }
+  /* Wide enough: each half in two rows of four, so the senses and languages never start a third
+     (the longer lines get the wider half). */
+  @media (min-width: 1280px) {
+    .sbe.spread { grid-template-columns: minmax(0, 3fr) minmax(0, 4fr); }
+    .sbe.spread > .sbegrid:first-child, .sbe.spread > .sbegrid.two { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
   .sbegrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(12rem, 100%), 1fr)); gap: 0.625rem; }
   .sbegrid.two { grid-template-columns: repeat(auto-fill, minmax(min(16rem, 100%), 1fr)); }
   label { display: grid; gap: 0.25rem; font-size: 0.75rem; color: var(--label); min-width: 0; }
