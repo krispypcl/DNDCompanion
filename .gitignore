@@ -3,5 +3,6 @@ node_modules
 build
 .env
 
-# Claude Code notes kept on your own computer
+# Kept on your own computer: notes, migrations, the Worker, the harness
 CLAUDE.local.md
+private/
