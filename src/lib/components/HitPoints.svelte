@@ -174,6 +174,8 @@
      temporary part is the gray tail on the right. */
   const barTotal = $derived(hpMax + sheetState.hpTemp);
   const pct = (n: number) => (barTotal > 0 ? (n / barTotal) * 100 : 0);
+  /** Short of full, the liquid's end waves: the temporary stretch's when there is one, else the fill's. */
+  const short = $derived(sheetState.hpCurrent < hpMax);
   const down = $derived(sheetState.hpCurrent === 0);
   const dead = $derived(isDead(sheetState));
   /** At 0 and still fighting for it: the gauge's red pulse. */
@@ -244,11 +246,11 @@
   {/key}
 {/if}
 <div class="bar" class:shielded={sheetState.hpTemp > 0} aria-hidden="true">
-  <i class="cur hpflow" class:bloodied class:down style:width="{pct(sheetState.hpCurrent)}%"></i>
+  <i class="cur hpflow" class:hpwave={short && !sheetState.hpTemp} class:bloodied class:down style:width="{pct(sheetState.hpCurrent)}%"></i>
   {#if healed}<i class="sweep"></i>{/if}
   {#if wounded}<i class="sweep hurt"></i>{/if}
   {#key sheetState.hpTemp}
-    <i class="tmp" style:width="{pct(sheetState.hpTemp)}%"></i>
+    <i class="tmp" class:hpwave={short} style:width="{pct(sheetState.hpTemp)}%"></i>
   {/key}
   {#if ghost}
     {#key pulse}
@@ -410,6 +412,7 @@
     background: color-mix(in oklch, var(--shield) 85%, transparent);
     animation: tempIn 0.4s ease-out;
   }
+  .tmp.hpwave { animation: tempIn 0.4s ease-out, hpWave 1.2s linear infinite; }
   @keyframes tempIn {
     from { filter: brightness(var(--temp-flash)); }
     to { filter: none; }
@@ -524,6 +527,7 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .sweep, .float { display: none; }
+    .tmp.hpwave { animation: none; }
   }
   @keyframes ghostOut {
     0% { opacity: 0.95; }

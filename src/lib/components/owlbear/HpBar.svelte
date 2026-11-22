@@ -9,6 +9,8 @@
    */
   let { cur, max, temp = 0, vital = 'healthy' }: { cur: number; max: number; temp?: number; vital?: string } = $props();
   const total = $derived(Math.max(max, cur + temp, 1));
+  /** Short of full, the liquid's end waves: the temporary stretch's when there is one, else the fill's. */
+  const short = $derived(cur + temp < total);
 
   let flash = $state<'' | 'hit' | 'heal'>('');
   let last: number | null = null;
@@ -29,8 +31,8 @@
 
 <div class="hp {vital}" class:hit={flash === 'hit'} class:heal={flash === 'heal'}>
   <span class="bar" aria-hidden="true">
-    <span class="fill hpflow" style:width="{(Math.min(cur, total) / total) * 100}%"></span>
-    {#if temp > 0}<span class="temp" style:left="{(Math.min(cur, total) / total) * 100}%" style:width="{(temp / total) * 100}%"></span>{/if}
+    <span class="fill hpflow" class:hpwave={short && !temp} style:width="{(Math.min(cur, total) / total) * 100}%"></span>
+    {#if temp > 0}<span class="temp" class:hpwave={short} style:left="{(Math.min(cur, total) / total) * 100}%" style:width="{(temp / total) * 100}%"></span>{/if}
   </span>
   <span class="nums"><b>{cur}</b>/{max}</span>
   {#if temp > 0}<span class="tag" title="Temporary hit points">+{temp} temp</span>{/if}

@@ -22,6 +22,8 @@
 
   const total = $derived(max + temp);
   const pct = (n: number) => (total > 0 ? Math.max(0, Math.min(100, (n / total) * 100)) : 0);
+  /** Short of full, the liquid's end waves: the temporary stretch's when there is one, else the fill's. */
+  const short = $derived(cur < max);
   const hurt = $derived(vital === 'bloodied' || vital === 'critical' || vital === 'down' || vital === 'dead');
 
   let ghost = $state<{ left: number; width: number; kind: 'damage' | 'heal' } | null>(null);
@@ -127,8 +129,8 @@
   </div>
   <div class="gauge">
     <div class="bar" class:shielded={temp > 0} aria-hidden="true">
-      <i class="cur hpflow" style:width="{pct(cur)}%"></i>
-      <i class="tmp" style:width="{pct(temp)}%"></i>
+      <i class="cur hpflow" class:hpwave={short && !temp} style:width="{pct(cur)}%"></i>
+      <i class="tmp" class:hpwave={short && temp > 0} style:width="{pct(temp)}%"></i>
       {#if healed}<i class="sweep"></i>{/if}
       {#if wounded}<i class="sweep back"></i>{/if}
       {#if ghost}
