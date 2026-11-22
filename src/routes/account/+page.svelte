@@ -264,7 +264,7 @@
   <!-- Signed out: the same page as a link that leads nowhere, with the way in. -->
   <NotFound tab="Sign in needed" title="Who goes there?"
             message="This door only opens for its owner. Sign in to see your account, your connections, and your privacy settings."
-            action={{ href: `${base}/login?next=${encodeURIComponent('/account')}`, label: 'Sign in' }} home={false} />
+            action={{ href: `${base}/login?next=${encodeURIComponent('/account')}`, label: 'Sign In' }} home={false} />
 {:else}
 <main>
   {#if phone.current}

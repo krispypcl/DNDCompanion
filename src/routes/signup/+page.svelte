@@ -14,7 +14,7 @@
   google
   title="Create an account"
   name="Create an account"
-  submitLabel="Sign up"
+  submitLabel="Sign Up"
   fields={[
     { id: 'email', label: 'Email', type: 'email', autocomplete: 'email' },
     { id: 'password', label: 'Password', type: 'password', autocomplete: 'new-password', minlength: MIN_PASSWORD, strength: true },

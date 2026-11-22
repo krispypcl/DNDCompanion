@@ -22,7 +22,7 @@
 <AuthForm
   google googleNext={nextPath()}
   name="Sign in"
-  submitLabel="Sign in"
+  submitLabel="Sign In"
   fields={[
     { id: 'email', label: 'Email', type: 'email', autocomplete: 'email' },
     { id: 'password', label: 'Password', type: 'password', autocomplete: 'current-password' }
