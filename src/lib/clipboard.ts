@@ -1,3 +1,5 @@
+import { cue } from './sound.ts';
+
 /**
  * Copy text to the clipboard and say whether it worked.
  *
@@ -7,6 +9,12 @@
  * so it is the fallback rather than a failure.
  */
 export async function copyText(text: string): Promise<boolean> {
+  const ok = await copied(text);
+  // Heard as done (a button sound); a refusal shows its own message, and that is heard instead.
+  if (ok) cue('success');
+  return ok;
+}
+async function copied(text: string): Promise<boolean> {
   try {
     if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(text);

@@ -33,7 +33,7 @@
   import Choice from '#lib/components/Choice.svelte';
   import { settleIn } from '#lib/motion.ts';
   import { chooseMode, modeChoice, type ModeChoice } from '#lib/stores/mode.ts';
-  import { savePrefs, setDiceStyle, setReduceMotion, storedDice, storedReduceMotion, type DiceStyle, type Prefs } from '#lib/prefs.ts';
+  import { savePrefs, setButtonSounds, setDiceStyle, setReduceMotion, storedButtonSounds, storedDice, storedReduceMotion, type DiceStyle, type Prefs } from '#lib/prefs.ts';
   import { sheetRepo } from '#lib/data/sheets.ts';
   import { campaignRepo } from '#lib/data/campaigns.ts';
   import { characterLevel, mainClass } from '#lib/rules/derived.ts';
@@ -159,13 +159,14 @@
   }
 
   /*
-   * Preferences: the look, dice, and motion apply to this device at once and
-   * are kept on the account.
+   * Preferences: the look, dice, motion, and button sounds apply to this device
+   * at once and are kept on the account.
    */
   /** Follows the header's own switch too. */
   const look = $derived($modeChoice);
   let dice = $state<DiceStyle>(storedDice());
   let calm = $state(storedReduceMotion());
+  let clicks = $state(storedButtonSounds());
   let prefMsg = $state<{ ok: boolean; text: string } | null>(null);
   async function keep(patch: Prefs) {
     prefMsg = null;
@@ -188,6 +189,11 @@
     calm = on;
     setReduceMotion(on);
     void keep({ reduceMotion: on });
+  }
+  function setClicks(on: boolean) {
+    clicks = on;
+    setButtonSounds(on);
+    void keep({ buttonSounds: on });
   }
 
   /** Statistics: counted from the account's sheets and campaigns. */
@@ -380,7 +386,7 @@
 
     <section class="card" aria-labelledby="pref-h">
       <h2 id="pref-h">Preferences
-        <InfoTip label="About preferences">The look, motion, and dice apply to this device straight away and are
+        <InfoTip label="About preferences">The look, motion, dice, and sounds apply to this device straight away and are
           saved to your account, so a device you sign in on for the first time starts the same way.</InfoTip>
       </h2>
       <div class="prefs">
@@ -396,6 +402,11 @@
         <span class="pref-name">Motion</span>
         <Switch checked={calm} label="Reduce motion" onchange={setCalm}
                 title="Fewer and shorter animations, whatever your device is set to" />
+        <span class="pref-name">Sound
+          <InfoTip label="About button sounds">Soft clicks and notes as you press buttons, switch tabs, and open
+            windows. The game's own sounds (dice, hit points, rests, and the fight) play either way.</InfoTip>
+        </span>
+        <Switch checked={clicks} label="Button sounds" onchange={setClicks} title="Soft sounds as you press buttons" />
       </div>
       {#if prefMsg}<p class="msg" class:bad={!prefMsg.ok} role="status">{prefMsg.text}</p>{/if}
 

@@ -13,8 +13,9 @@
   import { cubicOut } from 'svelte/easing';
   import { base } from '#lib/base.ts';
   import { copyText } from '#lib/clipboard.ts';
+  import { hearMoments } from '#lib/sound.ts';
   import { goto } from '$app/navigation';
-  import { campaignMessage, campaignRepo, NO_INITIATIVE, type Campaign, type CampaignDetails } from '#lib/data/campaigns.ts';
+  import { campaignMessage, campaignRepo, NO_INITIATIVE, type Campaign, type CampaignDetails, type Initiative } from '#lib/data/campaigns.ts';
   import { TableMusic } from '#lib/tableMusic.svelte.ts';
   import { sheetRepo, StaleWriteError } from '#lib/data/sheets.ts';
   import { changeHp, type HpChange } from '#lib/rules/hp.ts';
@@ -24,7 +25,7 @@
   import { advantageFrom } from '#lib/rules/equipment.ts';
   import { asRevealed, followRevealed, type Revealed } from '#lib/data/creatures.ts';
   import { CreatureTable } from '#lib/creatureTable.svelte.ts';
-  import { next as nextTurn, previous as previousTurn, rollInitiative, settleAll, start as startTurns, unsettled, type InitiativeRow } from '#lib/rules/initiative.ts';
+  import { initiativeMoments, next as nextTurn, previous as previousTurn, rollInitiative, settleAll, start as startTurns, unsettled, type InitiativeRow } from '#lib/rules/initiative.ts';
   import { LiveInitiative } from '#lib/initiative.svelte.ts';
   import { initiativeBonus } from '#lib/rules/statblock.ts';
   import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
@@ -442,6 +443,19 @@
   $effect(() => live?.start());
   const init = $derived(live?.state ?? NO_INITIATIVE);
   const me = $derived($session.user?.id ?? null);
+  // The call, each new round, one's own characters' turns, and (for the DM) the turn moving on,
+  // heard as they come (not on the first look).
+  let heardInit: Initiative | null = null;
+  $effect(() => {
+    const s = live?.state;
+    if (!s || !live?.ready) {
+      heardInit = null;
+      return;
+    }
+    const mine = new Set(untrack(() => sheets).filter((x) => x.owner_id === me).map((x) => `pc:${x.id}`));
+    hearMoments(initiativeMoments(heardInit, s, mine, isDm));
+    heardInit = s;
+  });
   const combatants = $derived<InitiativeRow[]>([
     ...active.map((s) => ({
       key: `pc:${s.id}`, name: s.definition?.identity?.name || s.name, value: init.pcs[s.id] ?? null, tie: init.ties[`pc:${s.id}`],

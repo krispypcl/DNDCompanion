@@ -1,6 +1,7 @@
 <script lang="ts">
   /** Coins. Lives in the rail rather than the Equipment tab, which is then
       only the things you carry. */
+  import { coins } from '#lib/sound.ts';
   import type { Definition } from '#lib/types.ts';
 
   let {
@@ -13,7 +14,9 @@
       does not use it. A sheet that has some keeps it in its data. */
   const COINS = ['cp', 'sp', 'gp', 'pp'] as const;
 
-  function setCoin(coin: string, value: string) {
+  /** A purse that changes clinks (the sheet's own coins sound, or the built-in one). */
+  function setCoin(coin: (typeof COINS)[number], value: string) {
+    if (Number(value) !== Number(definition.currency?.[coin] ?? 0)) coins();
     onchange({ ...definition, currency: { ...definition.currency, [coin]: Number(value) } });
   }
 </script>

@@ -1,8 +1,10 @@
 /**
  * Sound effects, made on the spot with the Web Audio API: no files to load,
- * nothing to license. Always on (the music players have their own mute),
- * quiet, and only ever for a moment, except the heartbeat, which beats with
- * the screen for as long as a character is dying.
+ * nothing to license. The game's sounds always play (the music players have
+ * their own mute), quiet, and only ever for a moment, except the heartbeat,
+ * which beats with the screen for as long as a character is dying. Button
+ * sounds are quieter still, one family of soft clicks and notes, and can be
+ * turned off (account Preferences).
  */
 import { loadYouTube, youtubeClip, type YTPlayer } from './music.ts';
 
@@ -23,7 +25,10 @@ export const SOUND_NAMES = {
   longRest: 'Long rest',
   dawn: 'Dawn',
   deathSave: 'Death save',
-  deathBell: 'Death'
+  deathBell: 'Death',
+  levelUp: 'Level up',
+  yourTurn: 'Your turn',
+  coins: 'Coins'
 } as const;
 export type SoundName = keyof typeof SOUND_NAMES;
 let custom: Partial<Record<SoundName, string>> = {};
@@ -354,6 +359,75 @@ export function dawn() {
   });
 }
 
+// ── Moments new to the table ──
+
+/** Leveling up: a fanfare climbing a chord, sparkling at its top. */
+export function levelUp() {
+  if (own('levelUp')) return;
+  const ac = ready();
+  if (!ac) return;
+  const t = ac.currentTime;
+  [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+    tone(ac, t + i * 0.085, f, 0.9 - i * 0.1, 0.11, 'triangle');
+    tone(ac, t + i * 0.085, f * 2, 0.35, 0.025, 'sine');
+  });
+  [2093, 2637, 3136].forEach((f, i) => tone(ac, t + 0.36 + i * 0.05, f, 0.5, 0.03, 'sine'));
+}
+
+/** Your turn in the fight: two bright notes, a call to look up. */
+export function yourTurn() {
+  if (own('yourTurn')) return;
+  const ac = ready();
+  if (!ac) return;
+  const t = ac.currentTime;
+  tone(ac, t, 880, 0.35, 0.1, 'sine');
+  tone(ac, t + 0.12, 1174.66, 0.55, 0.11, 'sine');
+  tone(ac, t + 0.12, 1760, 0.3, 0.025, 'sine');
+}
+
+/** The DM calls for initiative: three war drum beats, the last the heaviest. */
+export function initiativeCall() {
+  const ac = ready();
+  if (!ac) return;
+  const t = ac.currentTime;
+  [[0, 0.6], [0.17, 0.7], [0.36, 1]].forEach(([at, g]) => {
+    tone(ac, t + at, 105, 0.32, 0.4 * g, 'sine', 52);
+    burst(ac, t + at, 0.09, 0.16 * g, 240, 0.8);
+  });
+}
+
+/** The DM moves the turn on: a quiet wooden tick. */
+export function nextTurn() {
+  const ac = ready();
+  if (!ac) return;
+  const t = ac.currentTime;
+  burst(ac, t, 0.03, 0.09, 2200, 4);
+  tone(ac, t, 1400, 0.06, 0.025, 'sine');
+}
+
+/** A new round: a small gong, its partials out of tune with each other. */
+export function newRound() {
+  const ac = ready();
+  if (!ac) return;
+  const t = ac.currentTime;
+  [[196, 0.09, 1.6], [196 * 2.76, 0.04, 1.1], [196 * 5.4, 0.02, 0.7], [196 * 1.5, 0.03, 1.3]].forEach(([f, g, d]) => tone(ac, t, f, d, g, 'sine'));
+  burst(ac, t, 0.05, 0.05, 900, 1);
+}
+
+/** Money changing hands: a few coins clinking. */
+export function coins() {
+  if (own('coins')) return;
+  const ac = ready();
+  if (!ac) return;
+  const t = ac.currentTime;
+  [0, 0.055, 0.1, 0.17].forEach((at, i) => {
+    const f = 2600 + ((i * 937) % 1500);
+    tone(ac, t + at, f, 0.16, 0.035, 'sine');
+    tone(ac, t + at, f * 1.47, 0.1, 0.015, 'sine');
+    burst(ac, t + at, 0.02, 0.05, 6500, 3);
+  });
+}
+
 const BUILT_IN: Record<SoundName, () => void> = {
   dice: () => clatter(2),
   land,
@@ -366,7 +440,10 @@ const BUILT_IN: Record<SoundName, () => void> = {
   longRest,
   dawn,
   deathSave: () => deathSave('save', 2),
-  deathBell
+  deathBell,
+  levelUp,
+  yourTurn,
+  coins
 };
 
 /** An effect's built-in sound, even with the sheet's own recordings set. */
@@ -389,6 +466,184 @@ export function previewSound(name: SoundName, link?: string | null) {
   const url = audioUrl(link);
   if (url) return playClip(url, () => builtIn(name));
   builtIn(name);
+}
+
+// ── Button sounds ──
+// One family, made like the rest and quieter than any of them: a press is a
+// soft click, and moments with their own meaning (a switch, a tab, a window,
+// a place, a drag, something added, removed, done, or gone wrong) have a note
+// of their own. A press and what it opens come together: only the stronger
+// of the sounds in one moment plays (`cue`), so opening a window is heard as
+// the window, not as the press and the window at once.
+
+/** Where the choice is kept on this device (prefs.ts writes it; account Preferences). */
+export const BUTTON_SOUNDS_KEY = 'dndcompanion:buttonSounds';
+let buttonSounds = (() => {
+  try {
+    return typeof localStorage === 'undefined' || localStorage.getItem(BUTTON_SOUNDS_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+})();
+export function setButtonSounds(on: boolean) {
+  buttonSounds = on;
+}
+
+const UI = {
+  press(ac: AudioContext, t: number) {
+    burst(ac, t, 0.022, 0.045, 2600, 3);
+    tone(ac, t, 1250, 0.045, 0.02, 'sine');
+  },
+  back(ac: AudioContext, t: number) {
+    tone(ac, t, 880, 0.08, 0.03, 'sine', 600);
+    burst(ac, t, 0.02, 0.03, 1800, 3);
+  },
+  switchOn(ac: AudioContext, t: number) {
+    tone(ac, t, 660, 0.06, 0.03, 'sine');
+    tone(ac, t + 0.045, 990, 0.08, 0.03, 'sine');
+  },
+  switchOff(ac: AudioContext, t: number) {
+    tone(ac, t, 990, 0.06, 0.025, 'sine');
+    tone(ac, t + 0.045, 660, 0.08, 0.025, 'sine');
+  },
+  tab(ac: AudioContext, t: number) {
+    burst(ac, t, 0.018, 0.04, 3400, 4);
+    tone(ac, t, 1520, 0.05, 0.018, 'sine');
+  },
+  open(ac: AudioContext, t: number) {
+    sweep(ac, t, 0.16, 0.05, 700, 2400);
+    tone(ac, t, 520, 0.14, 0.02, 'sine', 780);
+  },
+  close(ac: AudioContext, t: number) {
+    sweep(ac, t, 0.14, 0.045, 2400, 700);
+    tone(ac, t, 700, 0.12, 0.018, 'sine', 470);
+  },
+  place(ac: AudioContext, t: number) {
+    tone(ac, t, 740, 0.07, 0.025, 'sine');
+    tone(ac, t + 0.03, 1110, 0.08, 0.02, 'sine');
+  },
+  pickUp(ac: AudioContext, t: number) {
+    tone(ac, t, 420, 0.09, 0.035, 'sine', 640);
+    burst(ac, t, 0.03, 0.03, 1900, 2);
+  },
+  drop(ac: AudioContext, t: number) {
+    tone(ac, t, 520, 0.1, 0.035, 'sine', 330);
+    burst(ac, t + 0.02, 0.04, 0.05, 900, 1.5);
+  },
+  added(ac: AudioContext, t: number) {
+    tone(ac, t, 880, 0.08, 0.03, 'sine');
+    tone(ac, t + 0.05, 1318.5, 0.12, 0.03, 'sine');
+  },
+  removed(ac: AudioContext, t: number) {
+    tone(ac, t, 300, 0.11, 0.045, 'sine', 150);
+    burst(ac, t, 0.04, 0.035, 600, 1.2);
+  },
+  success(ac: AudioContext, t: number) {
+    [783.99, 987.77, 1318.5].forEach((f, i) => tone(ac, t + i * 0.05, f, 0.14, 0.028, 'sine'));
+  },
+  error(ac: AudioContext, t: number) {
+    tone(ac, t, 330, 0.12, 0.04, 'triangle');
+    tone(ac, t + 0.1, 262, 0.16, 0.04, 'triangle');
+  },
+  pageTurn(ac: AudioContext, t: number) {
+    sweep(ac, t, 0.13, 0.05, 3200, 1400, 1.4);
+  }
+} as const;
+export type UiSound = keyof typeof UI;
+
+/** Noise swept from one pitch to another: air, paper. */
+function sweep(ac: AudioContext, at: number, dur: number, gain: number, from: number, to: number, q = 0.9) {
+  const src = ac.createBufferSource();
+  src.buffer = noise(ac);
+  const f = ac.createBiquadFilter();
+  f.type = 'bandpass';
+  f.Q.value = q;
+  f.frequency.setValueAtTime(from, at);
+  f.frequency.exponentialRampToValueAtTime(to, at + dur);
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.0001, at);
+  g.gain.exponentialRampToValueAtTime(gain, at + dur * 0.35);
+  g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+  src.connect(f).connect(g).connect(master!);
+  src.start(at, Math.random() * 0.3, dur + 0.05);
+}
+
+/** The table's moments that can stand in for the press that made them (the DM's Start, Next, Call). */
+const MOMENTS = { initiativeCall, nextTurn, newRound, yourTurn } as const;
+type Cue = UiSound | keyof typeof MOMENTS;
+/** How much each says: in one moment, only the strongest plays. */
+const WEIGHT: Partial<Record<Cue, number>> = {
+  press: 1, back: 2, tab: 2, place: 2, switchOn: 2, switchOff: 2, added: 2, removed: 2, pageTurn: 2,
+  pickUp: 3, drop: 3, open: 3, close: 3, success: 4, error: 4, nextTurn: 5, newRound: 6, initiativeCall: 6, yourTurn: 6
+};
+let pending: Cue | null = null;
+/**
+ * A sound for this moment; what else asks in the same moment (before the page has drawn it) may
+ * outweigh it. Button sounds stay quiet when they are turned off; the table's moments never do.
+ */
+export function cue(name: Cue) {
+  if (!(name in MOMENTS) && !buttonSounds) return;
+  if (pending && (WEIGHT[pending] ?? 0) >= (WEIGHT[name] ?? 0)) return;
+  const first = pending === null;
+  pending = name;
+  if (first) setTimeout(flush, 0);
+}
+function flush() {
+  const name = pending;
+  pending = null;
+  if (!name) return;
+  if (name in MOMENTS) return void MOMENTS[name as keyof typeof MOMENTS]();
+  const ac = ready();
+  if (ac) UI[name as UiSound](ac, ac.currentTime);
+}
+
+/** The order's moments (rules/initiative initiativeMoments), heard in turn: a new round, then your turn a beat later. */
+export function hearMoments(list: (keyof typeof MOMENTS)[]) {
+  list.forEach((name, i) => (i ? setTimeout(() => cue(name), i * 450) : cue(name)));
+}
+
+/** Which sound a pressed control makes: its own data-sound, else what it is and says. */
+export function soundOf(el: Element): UiSound | null {
+  const own = el.closest<HTMLElement>('[data-sound]')?.dataset.sound;
+  if (own) return own === 'none' ? null : own in UI ? (own as UiSound) : 'press';
+  if ((el as HTMLButtonElement).disabled || el.getAttribute('aria-disabled') === 'true') return null;
+  const role = el.getAttribute('role');
+  if (role === 'switch' || el.hasAttribute('aria-pressed')) {
+    const on = el.getAttribute(role === 'switch' ? 'aria-checked' : 'aria-pressed') === 'true';
+    return on ? 'switchOff' : 'switchOn';
+  }
+  if (role === 'tab') return 'tab';
+  if (el.closest('.phonebar, .bottombar')) return 'place';
+  if (el.matches('.closex, .backlink')) return 'back';
+  const words = (el.getAttribute('aria-label') ?? el.textContent ?? '').trim().toLowerCase();
+  if (/^(cancel|keep|back|close|not now|never mind)\b/.test(words)) return 'back';
+  if (/^(remove|delete|forget|take .* (away|out)|clear)\b/.test(words)) return 'removed';
+  if (/^(add|give|new|invite)\b/.test(words)) return 'added';
+  return 'press';
+}
+/** Every press on the page (the layout listens): its sound, if it is a control. */
+export function pressed(event: Event) {
+  const at = (event.target as Element | null)?.closest?.('button, a[href], [role="button"], [role="tab"], [role="switch"], summary');
+  if (!at) return;
+  const name = soundOf(at);
+  if (name) cue(name);
+}
+/** Something gone wrong, shown (an element with role="alert" arriving): its sound. Returns how to stop. */
+export function listenForAlerts(root: Node): () => void {
+  if (typeof MutationObserver === 'undefined') return () => {};
+  const seen = new WeakSet<Element>();
+  const look = (n: Node) => {
+    if (!(n instanceof Element)) return false;
+    const found = n.matches('[role="alert"]') ? n : n.querySelector('[role="alert"]');
+    if (!found || seen.has(found) || !found.textContent?.trim()) return false;
+    seen.add(found);
+    return true;
+  };
+  const watcher = new MutationObserver((records) => {
+    if (records.some((r) => [...r.addedNodes].some(look))) cue('error');
+  });
+  watcher.observe(root, { childList: true, subtree: true });
+  return () => watcher.disconnect();
 }
 
 /** For tests: forget the audio context. */

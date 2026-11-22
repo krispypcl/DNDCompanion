@@ -11,7 +11,7 @@
   import ModeToggle from '#lib/components/ModeToggle.svelte';
   import CogIcon from '#lib/components/CogIcon.svelte';
   import DimModal from '#lib/components/DimModal.svelte';
-  import { setCustomSounds } from '#lib/sound.ts';
+  import { cue, hearMoments, levelUp as levelUpSound, setCustomSounds } from '#lib/sound.ts';
   import { musicOn, setMusicOn } from '#lib/music.ts';
   import { get } from 'svelte/store';
   import MusicPlayer from '#lib/components/MusicPlayer.svelte';
@@ -103,7 +103,7 @@
   import { spellDamage } from '#lib/rules/spellroll.ts';
   import CastPicker from '#lib/components/CastPicker.svelte';
   import CampaignDialog from '#lib/components/CampaignDialog.svelte';
-  import { campaignRepo, type Campaign } from '#lib/data/campaigns.ts';
+  import { campaignRepo, type Campaign, type Initiative } from '#lib/data/campaigns.ts';
   import { slotLevel } from '#lib/rules/print.ts';
   import { themeStyle } from '#lib/theme.ts';
   import { rememberedTheme, rememberThemes } from '#lib/themeMemory.ts';
@@ -115,6 +115,7 @@
   import ShortcutHelp from '#lib/components/ShortcutHelp.svelte';
   import SheetInitiative from '#lib/components/SheetInitiative.svelte';
   import { LiveInitiative } from '#lib/initiative.svelte.ts';
+  import { initiativeMoments } from '#lib/rules/initiative.ts';
   import Spotlight from '#lib/components/Spotlight.svelte';
   import { friendlyError } from '#lib/errors.ts';
   import { session } from '#lib/stores/session.ts';
@@ -198,7 +199,10 @@
   $effect(() => {
     const now = totalLevel;
     if (!definition) return;
-    if (lastLevel && now > lastLevel) levelUp += 1;
+    if (lastLevel && now > lastLevel) {
+      levelUp += 1;
+      levelUpSound();
+    }
     lastLevel = now;
   });
   /** The sheet's panels arrive one after another when it first appears. */
@@ -570,6 +574,17 @@
   const initFor = $derived(isOwner && campaignId && !sheet?.retired ? campaignId : null);
   const liveInit = $derived(initFor ? new LiveInitiative(initFor) : null);
   $effect(() => liveInit?.start());
+  // Its call, a new round, and the character's own turn, heard as they come (not on the first look).
+  let heardInit: Initiative | null = null;
+  $effect(() => {
+    const s = liveInit?.state;
+    if (!s || !liveInit?.ready || !sheet) {
+      heardInit = null;
+      return;
+    }
+    hearMoments(initiativeMoments(heardInit, s, new Set([`pc:${sheet.id}`]), false));
+    heardInit = s;
+  });
 
   /** Keeps the public note of which writings are private in step. */
   function markPrivate(key: TextKey, on: boolean) {
@@ -697,6 +712,7 @@
       downloadBlob(`${name}.pdf`, new Blob([bytes as BlobPart], { type: 'application/pdf' }));
       say('PDF saved');
       pdfSaved = true;
+      cue('success');
       clearTimeout(pdfTimer);
       pdfTimer = setTimeout(() => (pdfSaved = false), 1600);
     } catch {

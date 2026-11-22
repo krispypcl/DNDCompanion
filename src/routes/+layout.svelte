@@ -11,6 +11,7 @@
   import { profile } from '#lib/stores/profile.ts';
   import { adoptAccountPrefs } from '#lib/prefs.ts';
   import { installSettle } from '#lib/settle.ts';
+  import { listenForAlerts, pressed } from '#lib/sound.ts';
   import PullRefresh from '#lib/components/PullRefresh.svelte';
   import { pull } from '#lib/stores/pull.svelte.ts';
   import { phone } from '#lib/stores/phone.svelte.ts';
@@ -67,6 +68,16 @@
 
   // Nothing that moves makes a scrollbar flash (lib/settle.ts).
   $effect(() => installSettle());
+
+  // Button sounds (lib/sound.ts): every press on any page, and a light-hearted error as it shows.
+  $effect(() => {
+    document.addEventListener('click', pressed, true);
+    const stop = listenForAlerts(document.body);
+    return () => {
+      document.removeEventListener('click', pressed, true);
+      stop();
+    };
+  });
 
   /*
    * Looking for a new version: SvelteKit asks every minute, but a phone

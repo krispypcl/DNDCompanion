@@ -737,7 +737,7 @@
                  onkeydown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') renaming = null; }}
                  onblur={(e) => { const v = e.currentTarget.value.trim(); renaming = null; if (v && v !== p.name) void setPage(p.id, { name: v }); }} />
         {:else}
-          <button class="pagetab" class:on={p.id === page.id} role="tab" aria-selected={p.id === page.id}
+          <button class="pagetab" class:on={p.id === page.id} role="tab" aria-selected={p.id === page.id} data-sound="pageTurn"
                   title={canEdit ? 'Double-click to rename' : p.name}
                   onclick={() => (pageId = p.id)} ondblclick={() => canEdit && (renaming = p.id)}
                   in:scale={pop()}>{p.name}</button>

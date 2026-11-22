@@ -17,6 +17,7 @@
  */
 import { tick } from 'svelte';
 import { prefersReducedMotion } from './motion.ts';
+import { cue } from './sound.ts';
 
 export type ReorderOptions = {
   enabled: boolean;
@@ -81,8 +82,9 @@ export function reorder(node: HTMLElement, options: ReorderOptions) {
     drag = { key, el, gx: px - box.left, gy: py - box.top, order: [...o.keys], id, x, y };
     node.classList.add('reordering');
     el.classList.add('held');
-    // Held long enough on a phone: a tick to say it is picked up.
+    // Held long enough on a phone: a tick to say it is picked up; heard too.
     if (navigator.vibrate) try { navigator.vibrate(8); } catch { /* not allowed here */ }
+    cue('pickUp');
     el.style.setProperty('transition', prefersReducedMotion() ? 'none' : 'transform 0.16s ease-out', 'important');
     place();
     setTimeout(() => drag?.el === el && el.style.setProperty('transition', 'none', 'important'), 170);
@@ -179,6 +181,7 @@ export function reorder(node: HTMLElement, options: ReorderOptions) {
     setTimeout(() => window.removeEventListener('click', swallow, { capture: true }), 0);
     if (order.join('\u0000') !== o.keys.join('\u0000')) o.oncommit(order);
     o.onpreview(null);
+    cue('drop');
     settle(el);
   }
 
@@ -230,6 +233,7 @@ export function reorder(node: HTMLElement, options: ReorderOptions) {
     const shaped = o.shape ? o.shape(el.dataset.key!, order) : order;
     if (!shaped) return;
     o.oncommit(shaped);
+    cue('drop');
     await tick();
     node.querySelector<HTMLElement>(`[data-key="${CSS.escape(el.dataset.key!)}"] ${o.handle}`)?.focus();
   };

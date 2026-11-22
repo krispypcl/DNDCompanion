@@ -159,3 +159,29 @@ export function previous(list: Combatant[], at: Turn): Turn {
 /** A d20 plus what it adds to initiative; with advantage (an item or feature), the higher of two d20s. */
 export const rollInitiative = (bonus: number, die: Rng = fairRng, advantage = false) =>
   (advantage ? Math.max(die(20), die(20)) : die(20)) + bonus;
+
+/** What a change to the order sounds like (lib/sound.ts): a call, a new round, your turn, or the turn moving on. */
+export type InitiativeMoment = 'initiativeCall' | 'newRound' | 'yourTurn' | 'nextTurn';
+/**
+ * The moments one change to the order holds, for someone who plays `mine` (turn keys, "pc:<id>")
+ * and is or is not the DM. Nothing on the first look (`before` null). A new round and that same
+ * turn being yours are both heard; the DM's tick for the turn moving on is only for a turn that
+ * isn't theirs and didn't start a round.
+ */
+export function initiativeMoments(
+  before: { turn: string | null; round: number; asking: boolean } | null,
+  after: { turn: string | null; round: number; asking: boolean },
+  mine: Set<string>,
+  isDm: boolean
+): InitiativeMoment[] {
+  if (!before) return [];
+  const out: InitiativeMoment[] = [];
+  if (after.asking && !before.asking) out.push('initiativeCall');
+  const roundUp = after.round > before.round && after.round > 0;
+  if (roundUp) out.push('newRound');
+  if (after.turn && after.turn !== before.turn) {
+    if (mine.has(after.turn)) out.push('yourTurn');
+    else if (isDm && !roundUp) out.push('nextTurn');
+  }
+  return out;
+}

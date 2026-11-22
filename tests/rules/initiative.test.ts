@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  canSettle, next, ordered, previous, rollInitiative, settleAll, settleOrder, settleScores, start, unsettled, type Combatant, type InitiativeRow
+  canSettle, initiativeMoments, next, ordered, previous, rollInitiative, settleAll, settleOrder, settleScores, start, unsettled, type Combatant, type InitiativeRow
 } from '#lib/rules/initiative.ts';
 
 const c = (key: string, value: number | null, dex = 0): Combatant => ({ key, name: key, value, dex, side: key.startsWith('pc') ? 'pc' : 'creature' });
@@ -97,5 +97,23 @@ describe('rollInitiative with advantage', () => {
     let n = 0;
     expect(rollInitiative(1, () => (n++, 8))).toBe(9);
     expect(n).toBe(1);
+  });
+});
+
+describe('initiativeMoments (what a change to the order sounds like)', () => {
+  const at = (turn: string | null, round: number, asking = false) => ({ turn, round, asking });
+  const mine = new Set(['pc:dave']);
+  it('says nothing on the first look', () => {
+    expect(initiativeMoments(null, at('pc:dave', 2), mine, false)).toEqual([]);
+  });
+  it('hears the call, a new round, and your own turn', () => {
+    expect(initiativeMoments(at(null, 0), at(null, 0, true), mine, false)).toEqual(['initiativeCall']);
+    expect(initiativeMoments(at('k:wolf', 1), at('pc:dave', 2), mine, false)).toEqual(['newRound', 'yourTurn']);
+    expect(initiativeMoments(at('k:wolf', 2), at('pc:dave', 2), mine, false)).toEqual(['yourTurn']);
+  });
+  it('gives the DM a tick as the turn moves on, a player nothing', () => {
+    expect(initiativeMoments(at('pc:dave', 2), at('k:wolf', 2), new Set(), true)).toEqual(['nextTurn']);
+    expect(initiativeMoments(at('pc:dave', 2), at('k:wolf', 2), mine, false)).toEqual([]);
+    expect(initiativeMoments(at('k:wolf', 2), at('pc:mira', 3), new Set(), true)).toEqual(['newRound']);
   });
 });

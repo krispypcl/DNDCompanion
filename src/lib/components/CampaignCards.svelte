@@ -27,6 +27,7 @@
   import { themeStyle } from '#lib/theme.ts';
   import { followHeight, glideTo, prefersReducedMotion } from '#lib/motion.ts';
   import CardHp from './CardHp.svelte';
+  import { cue } from '#lib/sound.ts';
   import ConditionRing from './ConditionRing.svelte';
   import Lightbox from './Lightbox.svelte';
   import type { ConditionLook, Sheet } from '#lib/types.ts';
@@ -125,6 +126,7 @@
     if (cards.length < 2) return;
     event.preventDefault();
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    cue('pickUp');
     const ids = cards.map((c) => c.id);
     const slots = ids.map((i) => {
       const r = els[i].getBoundingClientRect();
@@ -155,6 +157,7 @@
     if (!drag || event.pointerId !== drag.pointer) return;
     const { from, to, ids } = drag;
     drag = null;
+    cue('drop');
     if (from === to) return;
     const next = [...ids];
     const [moved] = next.splice(from, 1);
