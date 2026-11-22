@@ -197,8 +197,8 @@
    * light ground) and open elsewhere, with the picture's own color brought
    * back up.
    */
-  /* White mixed into a picture milks it: on a light page the veil is the least the words need (they
-     carry a soft halo of their own, set by the page), and the picture keeps its own color and depth. */
+  /* White mixed into a picture milks it: on a light page the veil is the least the words need, and
+     the picture keeps its own color and depth. */
   :global(:root[data-mode='light']) img { filter: saturate(1.15) contrast(1.06) brightness(0.97); }
   :global(:root[data-mode='light']) .tint {
     --tint-top: color-mix(in oklch, var(--bg) 10%, transparent);

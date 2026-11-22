@@ -1519,11 +1519,6 @@
    * Measured over a deliberately bright test image rather than guessed.
    */
   .bannered .sub { color: var(--text); }
-  /* A light page holds back the white over a banner (Banner); the header's words carry a soft
-     halo of the page instead, so they read on the picture without milking it. */
-  :global([data-mode='light']) .bannered .identity :is(h1, .sub, .campaign) {
-    text-shadow: 0 0 10px color-mix(in oklab, var(--bg) 85%, transparent), 0 0 3px color-mix(in oklab, var(--bg) 70%, transparent);
-  }
   .bannered .sub :global(.field.readout.empty) { color: var(--label); }
   /* On a phone the frost is dropped for a nearly solid module: blurring the
      banner behind every module again on each animated frame (a gauge, a pip,

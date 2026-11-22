@@ -850,9 +850,6 @@
   .title { flex: 1; min-width: 0; }
   /* The eyebrow's parts, a dot between each two. */
   .seg + .seg::before { content: '·'; margin: 0 0.375rem; }
-  /* A light page holds back the white over a banner (Banner); the header's words carry a soft halo
-     of the page instead. */
-  :global([data-mode='light']) .campaignpage.withbanner header { text-shadow: 0 0 10px color-mix(in oklab, var(--bg) 85%, transparent), 0 0 3px color-mix(in oklab, var(--bg) 70%, transparent); }
   .eyebrow { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--a); }
   h1 { margin: 0.125rem 0 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.015em; }
   .tools { display: flex; align-items: center; gap: 0.5rem; flex: none; }
