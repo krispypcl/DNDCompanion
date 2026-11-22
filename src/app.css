@@ -308,6 +308,19 @@ html:has(main.campaignpage) { --btn-h: 2.125rem; }
 @keyframes skeleton-shimmer { from { background-position: 100% 0; } to { background-position: -50% 0; } }
 @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
 
+/* A hit point gauge's fill (the sheet, the campaign's cards, Owlbear): its own color (--hp-base,
+   the character's theme, or red once hurt) with a lighter and a darker band flowing slowly through
+   it, left to right. The picture is twice the fill's width and moves one picture's width a loop. */
+.hpflow {
+  background-color: var(--hp-base);
+  background-image: linear-gradient(90deg, var(--hp-base) 0%, color-mix(in oklab, var(--hp-base) 60%, white) 25%,
+    var(--hp-base) 50%, color-mix(in oklab, var(--hp-base) 70%, black) 75%, var(--hp-base) 100%);
+  background-size: 200% 100%;
+  animation: hpFlow 5s linear infinite;
+}
+@keyframes hpFlow { from { background-position: 200% 0; } to { background-position: 0 0; } }
+@media (prefers-reduced-motion: reduce) { .hpflow { animation: none; } }
+
 /* Someone is here: a small green light with a slow pulse (the menu's cards
    and switch, the campaign page's cards and its header). */
 .here-dot {

@@ -244,7 +244,7 @@
   {/key}
 {/if}
 <div class="bar" class:shielded={sheetState.hpTemp > 0} aria-hidden="true">
-  <i class="cur" class:bloodied class:down style:width="{pct(sheetState.hpCurrent)}%"></i>
+  <i class="cur hpflow" class:bloodied class:down style:width="{pct(sheetState.hpCurrent)}%"></i>
   {#if healed}<i class="sweep"></i>{/if}
   {#if wounded}<i class="sweep hurt"></i>{/if}
   {#key sheetState.hpTemp}
@@ -404,8 +404,8 @@
   /* Eases into place rather than snapping, so the bar is seen to catch up
      with the ghost the hit left behind. */
   .bar i { display: block; height: 100%; transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
-  .cur { background: var(--a-mid); }
-  .cur.bloodied, .cur.down { background: var(--danger); }
+  .cur { --hp-base: var(--a-mid); }
+  .cur.bloodied, .cur.down { --hp-base: var(--danger); }
   .tmp {
     background: color-mix(in oklch, var(--shield) 85%, transparent);
     animation: tempIn 0.4s ease-out;

@@ -108,7 +108,7 @@
   </div>
   <div class="gauge">
     <div class="bar" class:shielded={temp > 0} aria-hidden="true">
-      <i class="cur" style:width="{pct(cur)}%"></i>
+      <i class="cur hpflow" style:width="{pct(cur)}%"></i>
       <i class="tmp" style:width="{pct(temp)}%"></i>
       {#if healed}<i class="sweep"></i>{/if}
       {#if wounded}<i class="sweep back"></i>{/if}
@@ -137,8 +137,8 @@
     overflow: hidden; margin-top: 0.3125rem; transition: box-shadow 0.45s ease;
   }
   .bar i { display: block; height: 100%; transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
-  .cur { background: var(--accent, var(--a)); }
-  .hurt .cur { background: var(--hurt-red); }
+  .cur { --hp-base: var(--accent, var(--a)); }
+  .hurt .cur { --hp-base: var(--hurt-red); }
   .tmp { background: color-mix(in oklch, var(--shield) 85%, transparent); }
   .bar.shielded { box-shadow: 0 0 0 1px var(--shield), 0 0 8px -2px color-mix(in oklch, var(--shield) 70%, transparent); }
 
