@@ -309,16 +309,25 @@ html:has(main.campaignpage) { --btn-h: 2.125rem; }
 @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
 
 /* A hit point gauge's fill (the sheet, the campaign's cards, Owlbear): its own color (--hp-base,
-   the character's theme, or red once hurt) with a lighter and a darker band flowing slowly through
-   it, left to right. The picture is twice the fill's width and moves one picture's width a loop. */
+   the character's theme, or red once hurt) with a softly lighter and a darker band flowing slowly
+   through it, left to right (the picture is twice the fill's width and moves one picture's width a
+   loop). Its end is a liquid's edge: a wave (the second mask layer, 6px wide) that keeps rolling
+   down it, as liquid moving in a container. */
 .hpflow {
+  --wave: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 12' preserveAspectRatio='none'%3E%3Cpath d='M0 0H3Q6 3 3 6Q0 9 3 12H0Z'/%3E%3C/svg%3E");
   background-color: var(--hp-base);
-  background-image: linear-gradient(90deg, var(--hp-base) 0%, color-mix(in oklab, var(--hp-base) 60%, white) 25%,
-    var(--hp-base) 50%, color-mix(in oklab, var(--hp-base) 70%, black) 75%, var(--hp-base) 100%);
+  background-image: linear-gradient(90deg, var(--hp-base) 0%, color-mix(in oklab, var(--hp-base) 80%, white) 25%,
+    var(--hp-base) 50%, color-mix(in oklab, var(--hp-base) 78%, black) 75%, var(--hp-base) 100%);
   background-size: 200% 100%;
-  animation: hpFlow 5s linear infinite;
+  -webkit-mask: linear-gradient(#000, #000) left top / calc(100% - 5px) 100% no-repeat, var(--wave) right top / 6px 12px repeat-y;
+  mask: linear-gradient(#000, #000) left top / calc(100% - 5px) 100% no-repeat, var(--wave) right top / 6px 12px repeat-y;
+  animation: hpFlow 5s linear infinite, hpWave 1.2s linear infinite;
 }
 @keyframes hpFlow { from { background-position: 200% 0; } to { background-position: 0 0; } }
+@keyframes hpWave {
+  from { -webkit-mask-position: left top, right top; mask-position: left top, right top; }
+  to { -webkit-mask-position: left top, right 0 top 12px; mask-position: left top, right 0 top 12px; }
+}
 @media (prefers-reduced-motion: reduce) { .hpflow { animation: none; } }
 
 /* Someone is here: a small green light with a slow pulse (the menu's cards
