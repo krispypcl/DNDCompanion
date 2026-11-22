@@ -8,11 +8,17 @@
   import type { Snippet } from 'svelte';
   import { chrome } from '#lib/stores/chrome.svelte.ts';
 
-  let { left, right, themeCss }: { left?: Snippet; right?: Snippet; /** The page's own colors (theme.ts themeStyle). */ themeCss?: string } = $props();
+  let { left, right, themeCss, page }: {
+    left?: Snippet; right?: Snippet;
+    /** The page's own colors (theme.ts themeStyle). */
+    themeCss?: string;
+    /** Which page these are for ("sheet:<id>"): its loading screen hands over the same, so the bar comes in once. */
+    page?: string;
+  } = $props();
 
   const owner = Symbol('top');
   $effect(() => {
-    chrome.top = { left, right, themeCss, owner };
+    chrome.top = { left, right, themeCss, page, owner };
   });
   // Only this page's own buttons are taken back: the next page may already have put its own in.
   $effect(() => () => {

@@ -40,6 +40,7 @@
   import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
   import { assetsReady, imagesSettled } from '#lib/assets.ts';
   import { themeStyle } from '#lib/theme.ts';
+  import { rememberThemes } from '#lib/themeMemory.ts';
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
   import { arrive, fadeOver, prefersReducedMotion, rise } from '#lib/motion.ts';
@@ -496,6 +497,8 @@
         joined = theirs.filter((c) => c.created_by !== id);
         // The cards' pictures and name fonts first (lib/assets): until then the die keeps rolling.
         const camps = [...mine, ...joined];
+        // Each card's colors, kept so its page loads in them (lib/themeMemory).
+        rememberThemes([...rows.map((s) => [s.id, s.definition?.identity?.theme] as [string, unknown]), ...camps.map((c) => [c.id, c.details?.theme] as [string, unknown])]);
         const pics = [
           ...rows.flatMap((s) => [s.definition?.identity?.portraitUrl, s.definition?.identity?.bannerUrl]),
           ...camps.flatMap((c) => [c.details?.crestUrl, c.details?.bannerUrl]),

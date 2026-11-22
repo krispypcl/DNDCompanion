@@ -65,9 +65,11 @@
   }
   /** After the first page's buttons, each next page's buttons come in one after another. */
   let swapped = $state(false);
-  let firstOwner: symbol | null = null;
+  /** One page's buttons, from its loading screen on (the same page key), or else one hand-over. */
+  const pageKey = $derived(spec.page ?? spec.owner);
+  let firstOwner: string | symbol | null = null;
   $effect(() => {
-    const owner = spec.owner;
+    const owner = pageKey;
     untrack(() => {
       if (firstOwner === null) firstOwner = owner;
       else if (owner !== firstOwner) swapped = true;
@@ -76,12 +78,12 @@
 </script>
 
 <div class="topbar themed" style={spec.themeCss} class:stuck bind:clientHeight={height} in:slide={{ duration: 320 }} out:slide={{ duration: 240 }}>
-  {#key spec.owner}
+  {#key pageKey}
     <div class="side" class:swapped out:leave>{@render spec.left?.()}</div>
   {/key}
   <!-- The dice's place: it is drawn by the layer below, over the bar. -->
   <span class="markgap" aria-hidden="true"></span>
-  {#key spec.owner}
+  {#key pageKey}
     <div class="side end" class:swapped out:leave>{@render spec.right?.()}</div>
   {/key}
 </div>

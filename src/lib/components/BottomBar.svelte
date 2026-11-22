@@ -42,9 +42,11 @@
   const dockMotion = () => ({ duration: prefersReducedMotion() ? 0 : 220, easing: cubicOut });
   /** After the first page's places, each next page's places come in one after another. */
   let swapped = $state(false);
-  let firstOwner: symbol | null = null;
+  /** One page's buttons, from its loading screen on (the same page key), or else one hand-over. */
+  const pageKey = $derived(spec.page ?? spec.owner);
+  let firstOwner: string | symbol | null = null;
   $effect(() => {
-    const owner = spec.owner;
+    const owner = pageKey;
     untrack(() => {
       if (firstOwner === null) firstOwner = owner;
       else if (owner !== firstOwner) swapped = true;
@@ -118,7 +120,7 @@
 <div class="phonefoot themed" style={spec.themeCss} bind:clientHeight={height} in:rise={{ duration: 320 }} out:rise={{ duration: 240 }}>
   {#if spec.dock}<div class="dock" transition:fold={dockMotion()}>{@render spec.dock()}</div>{/if}
   <div class="navcell">
-  {#key spec.owner}
+  {#key pageKey}
     <nav class="phonebar" class:swapped aria-label="Places" out:leave>
       {#each spec.places as p (p.key)}
         <button class="place" class:on={p.key === spec.active} aria-current={p.key === spec.active ? 'page' : undefined} onclick={() => spec.onchoose(p.key)}>

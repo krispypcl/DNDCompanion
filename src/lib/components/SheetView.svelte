@@ -106,6 +106,7 @@
   import { campaignRepo, type Campaign } from '#lib/data/campaigns.ts';
   import { slotLevel } from '#lib/rules/print.ts';
   import { themeStyle } from '#lib/theme.ts';
+  import { rememberedTheme, rememberThemes } from '#lib/themeMemory.ts';
   import { bump, fadeOver, glow, parallax, popIn, sparkle } from '#lib/motion.ts';
   import { glide } from '#lib/flip.ts';
   import { isDead } from '#lib/rules/hp.ts';
@@ -238,6 +239,12 @@
   const nameFace = $derived.by(() => {
     const f = nameFont(definition?.identity?.nameFont);
     return f && f !== 'bad' ? f : null;
+  });
+  /** The colors it was last seen in (lib/themeMemory), worn while it loads: its bars and outline come in once, in its own colors. */
+  const loadingTheme = $derived(themeStyle(rememberedTheme(id)));
+  $effect(() => {
+    const theme = definition?.identity?.theme;
+    if (theme) rememberThemes([[id, theme]]);
   });
   /** Its pictures and name fonts are here (lib/assets): until then the die keeps rolling over the outline. */
   let assetsDone = $state(false);
@@ -797,13 +804,13 @@
   <!-- The sheet's outline, dimmed, with the die rolling over it. On a phone its two bars are
        already there, so moving here from another page they hold still instead of blinking out. -->
   {#if phoneOn}
-    <PhoneTop>
+    <PhoneTop page="sheet:{id}" themeCss={loadingTheme}>
         {#snippet left()}<ModeToggle />{/snippet}
         {#snippet right()}<BackLink href={cameFrom ? `${base}/c/${cameFrom}` : `${base}/`} title={cameFrom ? 'Back to the campaign' : 'Back to your characters'} />{/snippet}
     </PhoneTop>
-    <PhoneBar places={phonePlaces} active={place} onchoose={goPlace} />
+    <PhoneBar page="sheet:{id}" places={phonePlaces} active={place} onchoose={goPlace} themeCss={loadingTheme} />
   {/if}
-  <div class="loading" out:fadeOver>
+  <div class="loading themed" style={loadingTheme} out:fadeOver>
     <SheetSkeleton />
     <div class="screen-center">
       <D20Loader result={loading || (!loadError && !assetsDone) ? null : loadError ? 1 : 20} label="Loading the sheet"
@@ -828,7 +835,7 @@
     {#if phoneOn}
       <!-- The top bar, held at the top of the screen: Edit, the cog, and the mode at the left, the
            app's mark in the middle, and the link, the PDF, and Back at the right. -->
-      <PhoneTop themeCss={themeStyle(themePreview ?? definition.identity.theme)}>
+      <PhoneTop page="sheet:{id}" themeCss={themeStyle(themePreview ?? definition.identity.theme)}>
         {#snippet left()}{#if isOwner}{@render editButton()}{/if}{@render appearanceButton()}<ModeToggle />{/snippet}
         {#snippet right()}
           <ShareButton id={sheet.id} oncopied={(ok) => say(ok ? 'Link copied' : 'Couldn’t copy the link!')} />
@@ -1462,7 +1469,7 @@
     <SaveAlert />
     <!-- Floating, so saying a word costs the header nothing. -->
     <SaveIndicator />
-    {#if phoneOn}<PhoneBar places={phonePlaces} active={place} onchoose={goPlace} themeCss={themeStyle(themePreview ?? definition.identity.theme)} />{/if}
+    {#if phoneOn}<PhoneBar page="sheet:{id}" places={phonePlaces} active={place} onchoose={goPlace} themeCss={themeStyle(themePreview ?? definition.identity.theme)} />{/if}
   </div>
   </div>
   <!-- Only the printer shows this. Private writing a visitor cannot read is

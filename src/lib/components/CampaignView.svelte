@@ -28,6 +28,7 @@
   import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
   import { faceFamily, nameFont } from '#lib/rules/fonts.ts';
   import { themeStyle } from '#lib/theme.ts';
+  import { rememberedTheme, rememberThemes } from '#lib/themeMemory.ts';
   import { friendlyError } from '#lib/errors.ts';
   import { fadeOver, prefersReducedMotion } from '#lib/motion.ts';
   import { smoothHeight } from '#lib/smoothHeight.ts';
@@ -209,6 +210,12 @@
   /** The campaign's color, as a sheet's: picked while editing, previewed while picking. */
   let themePreview = $state<string | null>(null);
   const themeCss = $derived(themeStyle(themePreview ?? campaign?.details.theme));
+  /** The colors it was last seen in (lib/themeMemory), worn while it loads: its bars and outline come in once, in its own colors. */
+  const loadingTheme = $derived(themeStyle(rememberedTheme(id)));
+  $effect(() => {
+    const theme = campaign?.details.theme;
+    if (theme) rememberThemes([[id, theme]]);
+  });
   const pageLink = $derived(typeof location !== 'undefined' ? `${siteRoot(location.origin, base)}/c?id=${encodeURIComponent(id)}` : '');
 
   /** The keys, as on a sheet: E edits, M plays or pauses the music, ? lists them. */
@@ -606,13 +613,13 @@
   <!-- The page's outline, dimmed, with the die rolling over it (as a sheet). On a phone its two
        bars are already there, so moving here from another page they hold still instead of blinking out. -->
   {#if phoneOn}
-    <PhoneTop>
+    <PhoneTop page="campaign:{id}" themeCss={loadingTheme}>
         {#snippet left()}<ModeToggle />{/snippet}
         {#snippet right()}<BackLink href="{base}/" title="Back to your characters and campaigns" />{/snippet}
     </PhoneTop>
-    <PhoneBar places={phonePlaces} active={place} onchoose={goPlace} />
+    <PhoneBar page="campaign:{id}" places={phonePlaces} active={place} onchoose={goPlace} themeCss={loadingTheme} />
   {/if}
-  <div class="loading" out:fadeOver>
+  <div class="loading themed" style={loadingTheme} out:fadeOver>
     <CampaignSkeleton />
     <div class="screen-center">
       <D20Loader size={56} label="Loading the campaign" result={loading || (campaign && !assetsDone) ? null : missing || (error && !campaign) ? 1 : 20}
@@ -635,7 +642,7 @@
     {#if phoneOn}
       <!-- A phone's top bar, as every page's: Owlbear, the cog, and the mode at the left, and the
            link, the invite, and Back at the right. -->
-      <PhoneTop {themeCss}>
+      <PhoneTop page="campaign:{id}" {themeCss}>
         {#snippet left()}{@render owl()}{#if isMember}{@render cog()}{/if}<ModeToggle />{/snippet}
         {#snippet right()}{@render share()}{#if isMember && !ended}{@render inviteButton(true)}{/if}<BackLink href="{base}/" title="Back to your characters and campaigns" />{/snippet}
       </PhoneTop>
@@ -794,7 +801,7 @@
       <p class="phoneempty" in:fade={{ duration: 200 }}>{isDm ? 'Nothing in sight yet. Reveal a monster or NPC with its eye and the table sees it here.' : 'Nothing in sight yet. Monsters and NPCs your DM reveals show up here.'}</p>
     {/if}
     {#if phoneOn}
-      <PhoneBar places={phonePlaces} active={place} onchoose={goPlace} {themeCss}>
+      <PhoneBar page="campaign:{id}" places={phonePlaces} active={place} onchoose={goPlace} {themeCss}>
         {#snippet dock()}
           {#if place === 'initiative' && !ended}
             {#if isDm && fighting}

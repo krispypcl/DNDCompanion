@@ -18,7 +18,8 @@
     active,
     onchoose,
     dock,
-    themeCss
+    themeCss,
+    page
   }: {
     places: PhonePlace[];
     active: string;
@@ -27,11 +28,13 @@
     dock?: Snippet;
     /** The page's own colors (theme.ts themeStyle), for the bar's accent. */
     themeCss?: string;
+    /** Which page these are for ("sheet:<id>"): its loading screen hands over the same, so the bar comes in once. */
+    page?: string;
   } = $props();
 
   const owner = Symbol('bar');
   $effect(() => {
-    chrome.bar = { places, active, onchoose, dock, themeCss, owner };
+    chrome.bar = { places, active, onchoose, dock, themeCss, page, owner };
   });
   // Only this page's own places are taken back: the next page may already have put its own in.
   $effect(() => () => {
