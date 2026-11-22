@@ -76,6 +76,7 @@
   }
   .share:hover { border-color: var(--a-edge); color: var(--a); }
   .share:active { transform: translateY(1px); }
+  .share:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
   .share.done { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
   .share svg { display: block; }
   /* The links of the chain rock against each other once. */
