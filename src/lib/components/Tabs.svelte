@@ -123,7 +123,7 @@
 </div>
 {/if}
 
-<div class="panels" bind:this={panels} data-scrollbox>
+<div class="panels" class:tabbed={!bare} bind:this={panels} data-scrollbox>
   {#key active}
     <section role="tabpanel" in:slide>
       {@render children(active)}
@@ -208,6 +208,11 @@
       margin-left: -0.5rem; padding-left: 0.5rem;
       scrollbar-width: thin; scrollbar-color: color-mix(in oklch, var(--text) 22%, transparent) transparent;
     }
+    /* Scrolled, the words go out of sight a little below the tabs rather than against them: the
+       gap above the scrolling part, the panel keeping only a sliver of its own (the same 1rem as
+       before at the top). */
+    .panels.tabbed { margin-top: 0.75rem; }
+    .tabbed section { padding-top: 0.25rem; }
     .panels:hover { scrollbar-color: color-mix(in oklch, var(--a) 55%, transparent) transparent; }
     .panels::-webkit-scrollbar { width: 6px; }
     .panels::-webkit-scrollbar-track { background: transparent; }
