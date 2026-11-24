@@ -21,7 +21,7 @@
    * string, which stays equal however often it is handed in again.
    */
   import { onDestroy, untrack } from 'svelte';
-  import { fade } from '#lib/motion.ts';
+  import { fade, popIn } from '#lib/motion.ts';
   import { get } from 'svelte/store';
   import {
     clock, loadYouTube, musicOn, parsePlaylist, setMusicOn, storeLoop, storeShuffle, storedLoop, storeVolume, storedShuffle, storedVolume,
@@ -668,9 +668,15 @@
      last one ended. -->
 {#snippet scroller(text: string)}
   <span class="capbox" class:rolling={capOver > 2} bind:clientWidth={capBox} title={text}>
-    <span class="track" style:--shift="-{capText}px" style:--dur="{Math.max(6, capText / 34)}s">
-      <span class="captext" class:bad={failed} bind:clientWidth={capText}>{text}</span>{#if capOver > 2}<span class="captext copy" class:bad={failed} aria-hidden="true">{text}</span>{/if}
-    </span>
+    <!-- A new song's name rises into place rather than replacing the last one at once. -->
+    <!-- The rise is on its own wrapper: the scroll moves the track by transform too. -->
+    {#key text}
+      <span class="titlein" in:popIn>
+        <span class="track" style:--shift="-{capText}px" style:--dur="{Math.max(6, capText / 34)}s">
+          <span class="captext" class:bad={failed} bind:clientWidth={capText}>{text}</span>{#if capOver > 2}<span class="captext copy" class:bad={failed} aria-hidden="true">{text}</span>{/if}
+        </span>
+      </span>
+    {/key}
   </span>
 {/snippet}
 
@@ -874,6 +880,7 @@
   .capsule.playing { color: var(--text); }
   .capbox { flex: 1 1 auto; min-width: 3rem; overflow: clip; white-space: nowrap; }
   .capbox.rolling { mask-image: linear-gradient(to right, transparent 0, #000 0.625rem, #000 calc(100% - 0.625rem), transparent 100%); }
+  .titlein { display: inline-block; }
   .track { display: inline-block; white-space: nowrap; }
   .captext { display: inline-block; padding: 0 0.625rem 0 0; }
   /* Running: the gap after each name is the same, so the loop never shows its seam. */
@@ -888,6 +895,7 @@
   @media (prefers-reduced-motion: reduce) {
     .capsule { height: auto; min-height: 2.25rem; padding-block: 0.25rem; border-radius: 1.125rem; }
     .capbox, .track { white-space: normal; overflow-wrap: anywhere; mask-image: none; }
+    .titlein { display: inline; }
     .capbox.rolling .track { animation: none; padding-left: 0; }
     .capbox.rolling .captext { padding: 0; }
     .captext.copy { display: none; }
