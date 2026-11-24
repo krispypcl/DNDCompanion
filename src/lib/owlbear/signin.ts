@@ -83,6 +83,9 @@ export async function signInFromOwlbear(provider: OAuthProvider): Promise<void> 
       void supabase.removeChannel(channel);
     };
   });
+  // If asking the provider fails below, nothing awaits `code`: its later
+  // rejection (the window closed, the wait ran out) would go unhandled.
+  code.catch(() => {});
 
   try {
     const { data, error } = await pkceClient().auth.signInWithOAuth({ provider, options: { redirectTo: back, skipBrowserRedirect: true } });
