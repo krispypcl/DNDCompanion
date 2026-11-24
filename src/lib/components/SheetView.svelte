@@ -797,6 +797,15 @@
   </button>
 {/snippet}
 
+<!-- A titled box of free text that grows to its rows: Senses, Proficiencies, and Languages. -->
+{#snippet freeText(title: string, value: string | undefined, rows: number, hint: string, save: (v: string) => void, places?: string, kind = '')}
+  <div class="profs {kind}" style:--rows={rows} data-places={places}>
+    <h2 class="cap">{title}</h2>
+    <EditableField value={value ?? ''} {editable} type="textarea" {rows} label={title} placeholder="—" {hint}
+                   onchange={(v) => save(String(v))} />
+  </div>
+{/snippet}
+
 {#snippet writing(key: TextKey, label: string)}
   {#if definition}
     <TextPanel
@@ -1060,19 +1069,8 @@
           </div>
         </div>
         <!-- Senses under the passives: what the character notices, together. -->
-        <div class="profs senses" style:--rows={3}>
-          <h2 class="cap">Senses</h2>
-          <EditableField
-            value={definition.senses ?? ''}
-            {editable}
-            type="textarea"
-            rows={3}
-            label="Senses"
-            placeholder="—"
-            hint="Special senses and their range, such as darkvision."
-            onchange={(v) => setDefinition({ ...definition, senses: String(v) })}
-          />
-        </div>
+        {@render freeText('Senses', definition.senses, 3, 'Special senses and their range, such as darkvision.',
+          (senses) => setDefinition({ ...definition!, senses }), undefined, 'senses')}
       </section>
 
       <section class="panel center" style:--i=3 data-places="play spells gear features more">
@@ -1404,41 +1402,10 @@
           </div>
         </div>
 
-        <div class="profs" style:--rows={4} data-places="play">
-          <h2 class="cap">Proficiencies</h2>
-          <EditableField
-            value={definition.traits?.proficiencies ?? ''}
-            {editable}
-            type="textarea"
-            rows={4}
-            label="Proficiencies"
-            placeholder="—"
-            hint="The armor, weapons, tools, and saves you are trained in."
-            onchange={(v) =>
-              setDefinition({
-                ...definition,
-                traits: { ...(definition.traits ?? {}), proficiencies: String(v) }
-              })}
-          />
-        </div>
-
-        <div class="profs" style:--rows={2} data-places="play">
-          <h2 class="cap">Languages</h2>
-          <EditableField
-            value={definition.traits?.languages ?? ''}
-            {editable}
-            type="textarea"
-            rows={2}
-            label="Languages"
-            placeholder="—"
-            hint="Every language you speak, read, or sign."
-            onchange={(v) =>
-              setDefinition({
-                ...definition,
-                traits: { ...(definition.traits ?? {}), languages: String(v) }
-              })}
-          />
-        </div>
+        {@render freeText('Proficiencies', definition.traits?.proficiencies, 4, 'The armor, weapons, tools, and saves you are trained in.',
+          (proficiencies) => setDefinition({ ...definition!, traits: { ...(definition!.traits ?? {}), proficiencies } }), 'play')}
+        {@render freeText('Languages', definition.traits?.languages, 2, 'Every language you speak, read, or sign.',
+          (languages) => setDefinition({ ...definition!, traits: { ...(definition!.traits ?? {}), languages } }), 'play')}
 
       </section>
     </div>
