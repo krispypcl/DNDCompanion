@@ -15,7 +15,7 @@
   import InfoTip from '#lib/components/InfoTip.svelte';
   import Logo from '#lib/components/Logo.svelte';
   import { friendlyError } from '#lib/errors.ts';
-  import { countdown, friendlyDate, numericDate, sessionWhen } from '#lib/rules/dates.ts';
+  import { countdown, friendlyDate, sessionWhen } from '#lib/rules/dates.ts';
   import { pageTitle } from '#lib/title.ts';
   import { profile } from '#lib/stores/profile.ts';
   import { watchTable, type Here } from '#lib/presence.ts';
@@ -689,7 +689,7 @@
       <span class="meta dates"><span class="datesrow">
         {#if upcoming}<span class="nextshort" class:soon={upcoming.until === 'today' || upcoming.until === 'now'}>{upcoming.until === 'now' ? 'Session on now' : `Next session ${upcoming.until}`}</span>{/if}
         {#if last}<span class="nowide" class:made={Boolean(upcoming)}>Last session {friendlyDate(last)}</span>{/if}
-        <span class:made={Boolean(upcoming || last)} class:nowide={!last}>Started {numericDate(c.created_at)}{#if c.archived}{' '}· ended{/if}</span>
+        <span class:made={Boolean(upcoming || last)} class:nowide={!last}>Started {friendlyDate(c.created_at)}{#if c.archived}{' '}· ended{/if}</span>
       </span></span>
     </span>
     <span class="cardfacts campfacts">
@@ -751,7 +751,7 @@
            first in the markup and is the one that stays. -->
       <span class="meta dates"><span class="datesrow">
         <span>Updated {friendlyDate(sheet.updated_at)}</span>
-        {#if numericDate(sheet.created_at)}<span class="made">Created {numericDate(sheet.created_at)}</span>{/if}
+        {#if friendlyDate(sheet.created_at)}<span class="made">Created {friendlyDate(sheet.created_at)}</span>{/if}
       </span></span>
     </span>
     {@render facts(sheet)}
