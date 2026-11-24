@@ -17,7 +17,7 @@
    */
   import { onMount, untrack } from 'svelte';
   import { flip } from 'svelte/animate';
-  import { slide } from 'svelte/transition';
+  import { scale, slide } from 'svelte/transition';
   import { fade, prefersReducedMotion } from '#lib/motion.ts';
   import { cubicOut } from 'svelte/easing';
   import { armorClass, classLine, initiativeParts, mainClass } from '#lib/rules/derived.ts';
@@ -378,7 +378,9 @@
     <ul class="conds" aria-label="Conditions">
       {#each conds as c (c)}
         {@const look = lookOf(c, looks)}
-        <li style:--cc={look?.color} class:plain={!look} transition:fade={appear()}><span class="dot"></span>{c}</li>
+        <li style:--cc={look?.color} class:plain={!look}
+            animate:flip={{ duration: still ? 0 : 300, easing: cubicOut }}
+            transition:scale={{ start: 0.8, duration: still ? 0 : 220, easing: cubicOut }}><span class="dot"></span>{c}</li>
       {/each}
     </ul>
   {/if}

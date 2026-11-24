@@ -9,6 +9,7 @@
 -->
 <script lang="ts">
   import { flip } from 'svelte/animate';
+  import { scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import { fade, prefersReducedMotion } from '#lib/motion.ts';
   import type { Revealed } from '#lib/data/creatures.ts';
@@ -56,7 +57,9 @@
           <!-- Always drawn, even empty, so the cards in a row keep their rows level. -->
           <ul class="foeconds">
             {#each c.conditions as name (name)}
-              <li style:--cc={lookOf(name, c.condition_looks ?? {})?.color ?? 'var(--dim)'}><span aria-hidden="true"></span>{name}</li>
+              <li style:--cc={lookOf(name, c.condition_looks ?? {})?.color ?? 'var(--dim)'}
+                  animate:flip={{ duration: still ? 0 : 300, easing: cubicOut }}
+                  transition:scale={{ start: 0.8, duration: still ? 0 : 220, easing: cubicOut }}><span aria-hidden="true"></span>{name}</li>
             {/each}
           </ul>
         </li>

@@ -12,6 +12,7 @@
 -->
 <script lang="ts">
   import { flip } from 'svelte/animate';
+  import { scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import { fade, prefersReducedMotion } from '#lib/motion.ts';
   import type { Creature } from '#lib/data/creatures.ts';
@@ -349,7 +350,10 @@
         <ul class="cconds">
           {#each c.conditions as name (name)}
             {@const color = colorOf(c, name)}
-            <li style:--cc={color ?? 'var(--dim)'} class:plain={!color} transition:fade={{ duration: still ? 0 : 150 }}>
+            <!-- A condition grows in and shrinks away, the others gliding aside, as on the characters' cards. -->
+            <li style:--cc={color ?? 'var(--dim)'} class:plain={!color}
+                animate:flip={{ duration: still ? 0 : 300, easing: cubicOut }}
+                transition:scale={{ start: 0.8, duration: still ? 0 : 220, easing: cubicOut }}>
               {#if !ended && !isStandard(name)}
                 <!-- One of the DM's own: its dot opens its color. -->
                 <button class="cdot tint" aria-label="Choose {name}’s color" title="Color" onclick={() => (tinting = { id: c.id, name })}></button>
