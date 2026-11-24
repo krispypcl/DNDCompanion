@@ -1,6 +1,6 @@
 <script lang="ts">
   import InkLayer from './InkLayer.svelte';
-  import { fade } from 'svelte/transition';
+  import { fade, prefersReducedMotion } from '#lib/motion.ts';
   import { INKS } from '#lib/palette.ts';
   import { blankInk, joinInk, splitInk, type Ink, type Paper, type Stroke } from '#lib/rules/ink.ts';
   /**
@@ -15,7 +15,6 @@
   import Switch from './Switch.svelte';
   import PageTurn from './PageTurn.svelte';
   import { cubicOut } from 'svelte/easing';
-  import { prefersReducedMotion } from '#lib/motion.ts';
   import { addPage, isBlank, joinPages, removePage, setPage, splitPages } from '#lib/rules/pages.ts';
 
   let {

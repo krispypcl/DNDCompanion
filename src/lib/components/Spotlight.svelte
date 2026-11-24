@@ -8,10 +8,9 @@
   monster, or one of their own homebrew creatures, on the table.
 -->
 <script lang="ts">
-  import { fade } from 'svelte/transition';
+  import { fade, prefersReducedMotion } from '#lib/motion.ts';
   import { cubicOut } from 'svelte/easing';
   import { backdrop, portal } from '#lib/actions.ts';
-  import { prefersReducedMotion } from '#lib/motion.ts';
   import { peek, themeAt } from '#lib/stores/peek.svelte.ts';
   import { matchRank, search, type Hit, type IndexRow } from '#lib/rules/spotlight.ts';
   import { debounce } from '#lib/debounce.ts';

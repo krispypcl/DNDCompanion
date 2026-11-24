@@ -10,8 +10,7 @@
   import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
   import { followSheets } from '#lib/owlbear/live.ts';
   import type { Sheet } from '#lib/types.ts';
-  import { fade } from 'svelte/transition';
-  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { fade, prefersReducedMotion } from '#lib/motion.ts';
 
   let obr = $state.raw<Obr | null>(null);
   let itemId = $state<string | null>(null);

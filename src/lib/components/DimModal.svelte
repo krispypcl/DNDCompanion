@@ -10,10 +10,9 @@
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import { fade } from 'svelte/transition';
+  import { fade, prefersReducedMotion } from '#lib/motion.ts';
   import { cubicOut } from 'svelte/easing';
   import { backdrop, focusFirst, movable, portal } from '#lib/actions.ts';
-  import { prefersReducedMotion } from '#lib/motion.ts';
   import { phone } from '#lib/stores/phone.svelte.ts';
   import { windowSounds } from '#lib/sound.ts';
 

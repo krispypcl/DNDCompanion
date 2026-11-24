@@ -17,10 +17,10 @@
    * never stops for the switch.
    */
   import { onDestroy } from 'svelte';
-  import { fade, slide } from 'svelte/transition';
+  import { slide } from 'svelte/transition';
+  import { fade, foldRow, prefersReducedMotion } from '#lib/motion.ts';
   import { cubicOut } from 'svelte/easing';
   import { clock, inBatches, parsePlaylist, playlistSongs, setMusicOn, songLengths, youtubeTitle } from '#lib/music.ts';
-  import { foldRow, prefersReducedMotion } from '#lib/motion.ts';
   import type { Playback, Song } from '#lib/data/campaigns.ts';
   import MusicPlayer from './MusicPlayer.svelte';
   import SectionHead from './SectionHead.svelte';

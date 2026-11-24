@@ -10,14 +10,13 @@
 <script lang="ts">
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
-  import { fade } from 'svelte/transition';
+  import { fade, prefersReducedMotion } from '#lib/motion.ts';
   import type { Revealed } from '#lib/data/creatures.ts';
   import { lookOf } from '#lib/rules/conditions.ts';
   import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
   import ConditionRing from './ConditionRing.svelte';
   import CreatureMark from './CreatureMark.svelte';
   import Lightbox from './Lightbox.svelte';
-  import { prefersReducedMotion } from '#lib/motion.ts';
   import SectionHead from './SectionHead.svelte';
 
   let { list, dm = false }: { list: Revealed[]; dm?: boolean } = $props();

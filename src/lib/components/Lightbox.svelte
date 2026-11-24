@@ -8,9 +8,9 @@
    */
   import { backdrop, portal } from '#lib/actions.ts';
   import { onMount, tick, untrack } from 'svelte';
-  import { fade, scale } from 'svelte/transition';
+  import { scale } from 'svelte/transition';
+  import { fade, prefersReducedMotion } from '#lib/motion.ts';
   import { cubicOut } from 'svelte/easing';
-  import { prefersReducedMotion } from '#lib/motion.ts';
   import { windowSounds } from '#lib/sound.ts';
 
   let {

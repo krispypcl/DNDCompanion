@@ -3,8 +3,7 @@
   import InfoTip from './InfoTip.svelte';
   /** The keyboard shortcuts, opened with ? or the keyboard button on a sheet or a campaign. */
   import { onMount } from 'svelte';
-  import { fade } from 'svelte/transition';
-  import { prefersReducedMotion, windowMotion } from '#lib/motion.ts';
+  import { fade, prefersReducedMotion, windowMotion } from '#lib/motion.ts';
   import { windowSounds } from '#lib/sound.ts';
 
   let {

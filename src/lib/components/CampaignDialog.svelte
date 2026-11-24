@@ -7,11 +7,10 @@
    * also gets the campaign's invite link here to pass round the table.
    */
   import { onMount, untrack } from 'svelte';
-  import { fade } from 'svelte/transition';
+  import { fade, prefersReducedMotion, windowMotion } from '#lib/motion.ts';
   import { base } from '#lib/base.ts';
   import { copyText } from '#lib/clipboard.ts';
   import { backdrop, movable, portal } from '#lib/actions.ts';
-  import { prefersReducedMotion, windowMotion } from '#lib/motion.ts';
   import { campaignMessage, campaignRepo, inviteCode, type Campaign } from '#lib/data/campaigns.ts';
   import Switch from './Switch.svelte';
   import { windowSounds } from '#lib/sound.ts';

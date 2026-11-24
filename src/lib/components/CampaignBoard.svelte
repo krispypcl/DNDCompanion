@@ -11,11 +11,11 @@
    * pixels at 100%.
    */
   import { onMount, untrack } from 'svelte';
-  import { fade, scale, slide } from 'svelte/transition';
+  import { scale, slide } from 'svelte/transition';
+  import { fade, prefersReducedMotion, settleIn } from '#lib/motion.ts';
   import { cubicOut } from 'svelte/easing';
   import { PICTURE_ACCEPT, campaignMessage, campaignRepo, type BoardData, type BoardItem } from '#lib/data/campaigns.ts';
   import { isConfigured, supabase } from '#lib/supabase.ts';
-  import { prefersReducedMotion, settleIn } from '#lib/motion.ts';
   import { INKS, PAPERS } from '#lib/palette.ts';
   import SectionHead from './SectionHead.svelte';
   import { get } from 'svelte/store';

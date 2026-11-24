@@ -10,10 +10,10 @@
    * no equipping. Either can also give advantage on initiative or on saves.
    */
   import { untrack } from 'svelte';
-  import { fade, slide } from 'svelte/transition';
+  import { slide } from 'svelte/transition';
+  import { fade, prefersReducedMotion, windowMotion } from '#lib/motion.ts';
   import { cubicOut } from 'svelte/easing';
   import { focusFirst, movable, portal } from '#lib/actions.ts';
-  import { prefersReducedMotion, windowMotion } from '#lib/motion.ts';
   import { guessEffects } from '#lib/rules/equipment.ts';
   import { ABILITIES, type Ability, type Item, type ItemEffect } from '#lib/types.ts';
   import { windowSounds } from '#lib/sound.ts';

@@ -7,7 +7,8 @@
   import type { FormulaContext } from '#lib/rules/formula.ts';
   import type { Tracker } from '#lib/types.ts';
   import { parseRoll } from '#lib/rules/dice.ts';
-  import { fade, slide } from 'svelte/transition';
+  import { slide } from 'svelte/transition';
+  import { fade } from '#lib/motion.ts';
 
   let {
     tracker,

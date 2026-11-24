@@ -17,7 +17,8 @@
    */
   import { onMount, untrack } from 'svelte';
   import { flip } from 'svelte/animate';
-  import { fade, slide } from 'svelte/transition';
+  import { slide } from 'svelte/transition';
+  import { fade, prefersReducedMotion } from '#lib/motion.ts';
   import { cubicOut } from 'svelte/easing';
   import { armorClass, classLine, initiativeParts, mainClass } from '#lib/rules/derived.ts';
   import { vitalStatus } from '#lib/rules/hp.ts';
@@ -38,7 +39,6 @@
   import { initiativeBonus, kindLine } from '#lib/rules/statblock.ts';
   import { next as nextTurn, previous as previousTurn, rollInitiative, settleAll, start as startTurns, unsettled, type InitiativeRow } from '#lib/rules/initiative.ts';
   import { campaignRepo, inviteCode, NO_INITIATIVE, type Campaign } from '#lib/data/campaigns.ts';
-  import { prefersReducedMotion } from '#lib/motion.ts';
   import { orderSheets, parseLink } from '#lib/owlbear/links.ts';
   import { reorder } from '#lib/reorder.ts';
   import { smoothHeight } from '#lib/smoothHeight.ts';

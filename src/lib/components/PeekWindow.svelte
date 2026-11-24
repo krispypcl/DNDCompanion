@@ -5,9 +5,8 @@
   again, it glides from where it is to where it was asked to open.
 -->
 <script lang="ts">
-  import { fade } from 'svelte/transition';
+  import { fade, prefersReducedMotion } from '#lib/motion.ts';
   import { movable } from '#lib/actions.ts';
-  import { prefersReducedMotion } from '#lib/motion.ts';
   import { peek, type KeptPeek } from '#lib/stores/peek.svelte.ts';
   import PeekContent from './PeekContent.svelte';
   import { windowSounds } from '#lib/sound.ts';

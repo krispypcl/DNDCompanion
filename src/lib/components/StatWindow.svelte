@@ -6,9 +6,8 @@
   pictures the stat block leaves out.
 -->
 <script lang="ts">
-  import { fade } from 'svelte/transition';
+  import { fade, prefersReducedMotion } from '#lib/motion.ts';
   import { movable, portal } from '#lib/actions.ts';
-  import { prefersReducedMotion } from '#lib/motion.ts';
   import { isEmpty, kindLine, statBlockHtml, type StatBlock } from '#lib/rules/statblock.ts';
   import { windowSounds } from '#lib/sound.ts';
 

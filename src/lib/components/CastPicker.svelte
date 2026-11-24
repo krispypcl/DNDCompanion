@@ -8,8 +8,7 @@
    */
   import { backdrop, movable, portal } from '#lib/actions.ts';
   import { onMount } from 'svelte';
-  import { fade } from 'svelte/transition';
-  import { prefersReducedMotion, windowMotion } from '#lib/motion.ts';
+  import { fade, prefersReducedMotion, windowMotion } from '#lib/motion.ts';
   import { formula } from '#lib/rules/dice.ts';
   import { ordinal, spellLevel } from '#lib/rules/spells.ts';
   import { spellDamage } from '#lib/rules/spellroll.ts';

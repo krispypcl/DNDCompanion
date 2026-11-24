@@ -8,6 +8,17 @@
  * here instead.
  */
 import { cubicOut } from 'svelte/easing';
+import { fade as linearFade, type FadeParams } from 'svelte/transition';
+
+/**
+ * Svelte's own `fade` is linear; every motion here eases out. Import `fade`
+ * from this file, never from svelte/transition (`fly`, `slide`, and `scale`
+ * already ease out there). A fade isn't movement, so it plays under reduced
+ * motion too.
+ */
+export function fade(node: Element, params: FadeParams = {}) {
+  return linearFade(node, { easing: cubicOut, ...params });
+}
 
 export function prefersReducedMotion(): boolean {
   // Chosen on the account page (html[data-motion]), or asked for by the device.

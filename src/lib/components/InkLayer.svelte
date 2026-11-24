@@ -6,7 +6,7 @@
    * and the writing underneath waits. Points are in page-width units, so the
    * drawing grows and shrinks with the page.
    */
-  import { fade } from 'svelte/transition';
+  import { fade } from '#lib/motion.ts';
   import { get } from 'svelte/store';
   import { swept, type Ink, type Stroke } from '#lib/rules/ink.ts';
   import { isPalm, keepStylus, penOnly, sawPen } from '#lib/pen.ts';

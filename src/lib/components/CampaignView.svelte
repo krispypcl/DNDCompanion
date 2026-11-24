@@ -9,7 +9,8 @@
    * deleting it, a banner like a sheet's, and a jukebox of their own music.
    */
   import { onMount, tick, untrack } from 'svelte';
-  import { fade, slide } from 'svelte/transition';
+  import { slide } from 'svelte/transition';
+  import { fade, fadeOver, prefersReducedMotion } from '#lib/motion.ts';
   import { cubicOut } from 'svelte/easing';
   import { base } from '#lib/base.ts';
   import { copyText } from '#lib/clipboard.ts';
@@ -33,7 +34,6 @@
   import { themeStyle } from '#lib/theme.ts';
   import { rememberedTheme, rememberThemes } from '#lib/themeMemory.ts';
   import { friendlyError } from '#lib/errors.ts';
-  import { fadeOver, prefersReducedMotion } from '#lib/motion.ts';
   import { smoothHeight } from '#lib/smoothHeight.ts';
   import Banner from './Banner.svelte';
   import CampaignMusic from './CampaignMusic.svelte';

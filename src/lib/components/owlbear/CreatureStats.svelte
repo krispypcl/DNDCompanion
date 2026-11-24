@@ -5,11 +5,10 @@
    * live as the DM changes it anywhere. Only the DM can read it.
    */
   import { onMount } from 'svelte';
-  import { fade } from 'svelte/transition';
+  import { fade, prefersReducedMotion } from '#lib/motion.ts';
   import { joinRoom, type Obr } from '#lib/owlbear/frame.ts';
   import { followCreatures, type Creature } from '#lib/data/creatures.ts';
   import { isEmpty, kindLine, statBlockHtml } from '#lib/rules/statblock.ts';
-  import { prefersReducedMotion } from '#lib/motion.ts';
 
   let obr = $state.raw<Obr | null>(null);
   let creature = $state.raw<Creature | null>(null);

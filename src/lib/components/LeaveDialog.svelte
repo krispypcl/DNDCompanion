@@ -2,8 +2,7 @@
   import { backdrop } from '#lib/actions.ts';
   /** Asked only when leaving would lose something: a change that could not be saved. */
   import { onMount } from 'svelte';
-  import { fade } from 'svelte/transition';
-  import { prefersReducedMotion, windowMotion } from '#lib/motion.ts';
+  import { fade, prefersReducedMotion, windowMotion } from '#lib/motion.ts';
   import { windowSounds } from '#lib/sound.ts';
 
   let { onstay, onleave }: { onstay: () => void; onleave: () => void } = $props();

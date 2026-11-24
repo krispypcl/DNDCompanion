@@ -9,8 +9,7 @@
 <script lang="ts">
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
-  import { fade } from 'svelte/transition';
-  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { fade, prefersReducedMotion } from '#lib/motion.ts';
   import { reorder } from '#lib/reorder.ts';
   import { canSettle, next as nextTurn, ordered, settleOrder, settleScores, type InitiativeRow } from '#lib/rules/initiative.ts';
   import ClassIcon from './ClassIcon.svelte';

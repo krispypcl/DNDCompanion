@@ -8,9 +8,8 @@
    * phone column or a scrolling table cannot cut it off.
    */
   import { portal } from '#lib/actions.ts';
-  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { prefersReducedMotion, fade } from '#lib/motion.ts';
   import { onMount, tick } from 'svelte';
-  import { fade } from 'svelte/transition';
 
   let { label = 'More information', children }: { label?: string; children: import('svelte').Snippet } = $props();
 

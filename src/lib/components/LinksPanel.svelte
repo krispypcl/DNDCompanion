@@ -8,7 +8,7 @@
    */
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
-  import { fade } from 'svelte/transition';
+  import { fade, foldRow } from '#lib/motion.ts';
   import { parsePlaylist, youtubeClip, youtubePlayable, youtubeTitle } from '#lib/music.ts';
   import InfoTip from './InfoTip.svelte';
   import { nameFont } from '#lib/rules/fonts.ts';
@@ -16,7 +16,6 @@
   import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
   import { SOUND_NAMES, audioUrl, previewSound, type SoundName } from '#lib/sound.ts';
   import SpeakerButton from './SpeakerButton.svelte';
-  import { foldRow } from '#lib/motion.ts';
   import EditableField from './EditableField.svelte';
   import Lightbox from './Lightbox.svelte';
   import type { Definition } from '#lib/types.ts';

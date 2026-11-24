@@ -17,8 +17,7 @@
   import { creatureRepo, followCreatures, type Creature } from '#lib/data/creatures.ts';
   import { damage, heal, hpNow } from '#lib/rules/creatures.ts';
   import HpBar from './HpBar.svelte';
-  import { fade } from 'svelte/transition';
-  import { prefersReducedMotion } from '#lib/motion.ts';
+  import { fade, prefersReducedMotion } from '#lib/motion.ts';
 
   let sheet = $state.raw<Sheet | null>(null);
   let gone = $state(false);

@@ -13,7 +13,7 @@
 <script lang="ts">
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
-  import { fade } from 'svelte/transition';
+  import { fade, prefersReducedMotion } from '#lib/motion.ts';
   import type { Creature } from '#lib/data/creatures.ts';
   import type { CreatureTable } from '#lib/creatureTable.svelte.ts';
   import { creatureUrl, damage, heal, hpNow, type CreatureKind } from '#lib/rules/creatures.ts';
@@ -25,7 +25,6 @@
   import { cleanStatBlock, kindLine, leadingNumber, type StatBlock } from '#lib/rules/statblock.ts';
   import { search, type IndexRow } from '#lib/rules/spotlight.ts';
   import { peek, themeAt } from '#lib/stores/peek.svelte.ts';
-  import { prefersReducedMotion } from '#lib/motion.ts';
   import { reorder } from '#lib/reorder.ts';
   import CardHp from './CardHp.svelte';
   import CreatureMark from './CreatureMark.svelte';

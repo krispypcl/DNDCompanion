@@ -8,7 +8,8 @@
   import { campaignMessage, campaignRepo, lastSessionOf, type Campaign } from '#lib/data/campaigns.ts';
   import { MAX_BYTES, MAX_PDF_BYTES, importSheet } from '#lib/exchange.ts';
   import { pinnedCampaignsOf, pinnedJoinedOf, pinnedOf, profileOf, savePinned, savePinnedCampaigns, savePinnedJoined, signIn, updateProfile } from '#lib/data/session.ts';
-  import { fade, slide } from 'svelte/transition';
+  import { slide } from 'svelte/transition';
+  import { fade, arrive, fadeOver, prefersReducedMotion, rise } from '#lib/motion.ts';
   import { tick } from 'svelte';
   import Avatar from '#lib/components/Avatar.svelte';
   import InfoTip from '#lib/components/InfoTip.svelte';
@@ -43,7 +44,6 @@
   import { rememberThemes } from '#lib/themeMemory.ts';
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
-  import { arrive, fadeOver, prefersReducedMotion, rise } from '#lib/motion.ts';
   import { blankDefinition, blankState } from '#lib/sample.ts';
   import { session } from '#lib/stores/session.ts';
   import { isConfigured } from '#lib/supabase.ts';

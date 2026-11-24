@@ -9,7 +9,8 @@
    * player's, or the DM's) has a heart beside its name: Damage, Heal, and Temp
    * for a quick change, over the card's head so the card keeps its size.
    */
-  import { fade, scale, slide } from 'svelte/transition';
+  import { scale, slide } from 'svelte/transition';
+  import { fade, followHeight, glideTo, prefersReducedMotion } from '#lib/motion.ts';
   import { cubicOut, quintOut } from 'svelte/easing';
   import { flip } from 'svelte/animate';
   import { reorder } from '#lib/reorder.ts';
@@ -25,7 +26,6 @@
   import { phone } from '#lib/stores/phone.svelte.ts';
   import ConditionGiver from './ConditionGiver.svelte';
   import { themeStyle } from '#lib/theme.ts';
-  import { followHeight, glideTo, prefersReducedMotion } from '#lib/motion.ts';
   import CardHp from './CardHp.svelte';
   import { cue } from '#lib/sound.ts';
   import { feel } from '#lib/haptics.ts';

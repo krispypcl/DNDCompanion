@@ -7,7 +7,7 @@
   import { goto } from '$app/navigation';
   import { base } from '#lib/base.ts';
   import { page } from '$app/state';
-  import { fade } from 'svelte/transition';
+  import { fade } from '#lib/motion.ts';
   import { campaignMessage, campaignRepo, inviteCode } from '#lib/data/campaigns.ts';
   import { sheetRepo } from '#lib/data/sheets.ts';
   import { session } from '#lib/stores/session.ts';

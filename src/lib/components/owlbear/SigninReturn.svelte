@@ -5,7 +5,7 @@
    * asked for it, then closes itself.
    */
   import { onMount } from 'svelte';
-  import { fade } from 'svelte/transition';
+  import { fade } from '#lib/motion.ts';
   import { supabase } from '#lib/supabase.ts';
   import { SIGNIN_EVENT, signinChannel } from '#lib/owlbear/signin.ts';
   import Logo from '../Logo.svelte';
