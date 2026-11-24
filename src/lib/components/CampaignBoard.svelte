@@ -21,6 +21,7 @@
   import { get } from 'svelte/store';
   import { isPalm, keepStylus, penOnly, sawPen } from '#lib/pen.ts';
   import { swept } from '#lib/rules/ink.ts';
+  import { debounce } from '#lib/debounce.ts';
 
   let {
     campaignId,
@@ -684,14 +685,23 @@
 
   // ── Writing on a note ──
   let editingId = $state<string | null>(null);
-  let typing: ReturnType<typeof setTimeout> | undefined;
+  // A note saves once typing pauses. Leaving the note saves it at once, and so
+  // does leaving the page or closing the board, so the last words are kept.
+  const saveSoon = debounce((id: string) => void save(id), 450);
+  $effect(() => {
+    const now = () => saveSoon.flush();
+    addEventListener('pagehide', now);
+    return () => {
+      removeEventListener('pagehide', now);
+      now();
+    };
+  });
   function write(item: BoardItem, text: string) {
     patch(item.id, { ...item.data, text: text.slice(0, 2000) });
-    clearTimeout(typing);
-    typing = setTimeout(() => void save(item.id), 450);
+    saveSoon(item.id);
   }
   function stopWriting(item: BoardItem) {
-    clearTimeout(typing);
+    saveSoon.cancel();
     editingId = null;
     const now = items.find((x) => x.id === item.id);
     if (now && !now.data.text?.trim()) void remove([item.id]);
