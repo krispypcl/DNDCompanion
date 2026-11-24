@@ -1491,10 +1491,14 @@
                    onclose={() => (equipping = null)}
                    onsave={(effects, equipped) => { setItem(equipping!, { effects, equipped }); equipping = null; }} />
     {/if}
-    <ConditionOverlay conditions={sheetState.conditions ?? []} looks={definition.conditionLooks}
-                      current={sheetState.hpCurrent} max={definition.combat?.hpMax ?? 0} />
+    <!-- Mounted at the reveal, not while the sheet is held hidden, so the
+         tint and the red edges ease in where they can be seen. -->
+    {#if revealed}
+      <ConditionOverlay conditions={sheetState.conditions ?? []} looks={definition.conditionLooks}
+                        current={sheetState.hpCurrent} max={definition.combat?.hpMax ?? 0} />
+    {/if}
     <DownScreen state={sheetState} hpMax={definition.combat?.hpMax ?? 0} />
-    <HurtEdges current={sheetState.hpCurrent} max={definition.combat?.hpMax ?? 0} />
+    {#if revealed}<HurtEdges current={sheetState.hpCurrent} max={definition.combat?.hpMax ?? 0} />{/if}
     <UndoToast label={toast} onundo={doUndo} onexpire={() => (toast = null)} />
     <SaveAlert />
     <!-- Floating, so saying a word costs the header nothing. -->

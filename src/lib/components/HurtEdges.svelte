@@ -9,11 +9,19 @@
    * starts faint and grayish-red and ends deep, saturated, and nearly opaque,
    * and every step between is a transition rather than a jump.
    */
+  import { onMount } from 'svelte';
   import { hurtLevel } from '#lib/rules/hp.ts';
 
   let { current, max }: { current: number; max: number } = $props();
 
-  const hurt = $derived(hurtLevel(current, max));
+  // Arriving on a hurt character, the edges ease in from nothing over the
+  // same transition as any later change, instead of being there at once.
+  let arrived = $state(false);
+  onMount(() => {
+    const frame = requestAnimationFrame(() => (arrived = true));
+    return () => cancelAnimationFrame(frame);
+  });
+  const hurt = $derived(arrived ? hurtLevel(current, max) : 0);
   /** Past three quarters of the way to zero, it breathes. */
   const critical = $derived(hurt >= 0.5);
 </script>

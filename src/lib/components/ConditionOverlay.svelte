@@ -10,7 +10,7 @@
    * fade away to leave those to the red. With more than one condition, the
    * colors take turns.
    */
-  import { onDestroy } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import { prefersReducedMotion } from '#lib/motion.ts';
   import { hurtLevel } from '#lib/rules/hp.ts';
   import { lookKey, lookOf } from '#lib/rules/conditions.ts';
@@ -48,6 +48,14 @@
   onDestroy(() => clearInterval(timer));
   const on = $derived(shown.length ? turn % shown.length : 0);
 
+  // Arriving on a sheet that already has conditions, the tint fades up with
+  // its rise instead of being there at once: lit only from the next frame.
+  let arrived = $state(false);
+  onMount(() => {
+    const frame = requestAnimationFrame(() => (arrived = true));
+    return () => cancelAnimationFrame(frame);
+  });
+
   /** A condition removed: its tint sinks back down and fades, the way it
       rose, rather than vanishing. */
   function sink(node: Element) {
@@ -64,7 +72,7 @@
 
 <div class="overlay" style:--hurt={hurt} aria-hidden="true">
   {#each shown as look, i (look.key)}
-    <div class="tint {look.motion}" class:on={i === on} data-condition={look.key} style:--tint={look.color} out:sink>
+    <div class="tint {look.motion}" class:on={arrived && i === on} data-condition={look.key} style:--tint={look.color} out:sink>
       <i></i>
     </div>
   {/each}

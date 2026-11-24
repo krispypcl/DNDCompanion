@@ -1,12 +1,16 @@
 import { render } from '@testing-library/svelte';
+import { tick } from 'svelte';
 import { describe, expect, it } from 'vitest';
 import ConditionOverlay from '#lib/components/ConditionOverlay.svelte';
 
 describe('ConditionOverlay', () => {
-  it('tints for the standard conditions only, once each', () => {
+  it('tints for the standard conditions only, once each, lit a frame after it arrives', async () => {
     const { container } = render(ConditionOverlay, { props: { conditions: ['Charmed', 'Bless', 'Exhaustion 2', 'charmed'] } });
     const tints = [...container.querySelectorAll('[data-condition]')].map((el) => el.getAttribute('data-condition'));
     expect(tints).toEqual(['charmed', 'exhaustion']);
+    expect(container.querySelectorAll('.tint.on')).toHaveLength(0);
+    await new Promise((done) => requestAnimationFrame(done));
+    await tick();
     expect(container.querySelectorAll('.tint.on')).toHaveLength(1);
   });
 
