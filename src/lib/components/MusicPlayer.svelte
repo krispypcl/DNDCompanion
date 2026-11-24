@@ -900,6 +900,14 @@
     .capbox.rolling .captext { padding: 0; }
     .captext.copy { display: none; }
   }
+  /* The same when reduced motion was chosen on the account page: the global
+     rule there stops the scroll, which would otherwise leave the name cut short. */
+  :global(html[data-motion='reduce']) .capsule { height: auto; min-height: 2.25rem; padding-block: 0.25rem; border-radius: 1.125rem; }
+  :global(html[data-motion='reduce']) :is(.capbox, .track) { white-space: normal; overflow-wrap: anywhere; mask-image: none; }
+  :global(html[data-motion='reduce']) .titlein { display: inline; }
+  :global(html[data-motion='reduce']) .capbox.rolling .track { animation: none; padding-left: 0; }
+  :global(html[data-motion='reduce']) .capbox.rolling .captext { padding: 0; }
+  :global(html[data-motion='reduce']) .captext.copy { display: none; }
   .capbtn {
     flex: none; width: 1.75rem; height: 1.75rem; border-radius: 50%; display: grid; place-items: center; padding: 0;
     border: 0; background: none; color: var(--dim); cursor: pointer; transition: color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
