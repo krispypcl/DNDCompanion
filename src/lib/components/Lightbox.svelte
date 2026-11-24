@@ -53,7 +53,7 @@
     closing = true;
     const end = zooms && !still ? fromThumb() : null;
     if (!end || !img) return onclose();
-    const run = img.animate([{ transform: 'none', opacity: 1 }, end], { duration: 260, easing: 'cubic-bezier(0.4, 0, 0.6, 1)', fill: 'forwards' });
+    const run = img.animate([{ transform: 'none', opacity: 1 }, end], { duration: 260, easing: 'cubic-bezier(0.33, 1, 0.68, 1)', fill: 'forwards' });
     run.onfinish = () => onclose();
   }
 

@@ -332,7 +332,7 @@
       copy.setAttribute('aria-hidden', 'true');
       scrollBox.appendChild(copy);
       const fade = copy.animate([{ opacity: 1 }, { opacity: 0, transform: 'scale(0.985)' }], {
-        duration: 200, easing: 'cubic-bezier(0.4, 0, 0.7, 0.2)', fill: 'forwards'
+        duration: 200, easing: 'cubic-bezier(0.33, 1, 0.68, 1)', fill: 'forwards'
       });
       fade.onfinish = () => copy.remove();
     }

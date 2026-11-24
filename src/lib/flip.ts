@@ -206,9 +206,9 @@ export async function glide(change: () => void): Promise<void> {
     holder.appendChild(copy);
     document.body.appendChild(holder);
     const out = holder.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `scale(${scale})` }], {
-      // Gone while the rest is still gliding: an ease-in held the copies
-      // opaque over the new layout long after the words around them moved.
-      duration: quick ? 170 : 220, easing: 'cubic-bezier(0.3, 0, 0.5, 1)', fill: 'forwards'
+      // Gone while the rest is still gliding: easing out fades them fastest
+      // at the start (an ease-in held them opaque over the new layout).
+      duration: quick ? 170 : 220, easing: 'cubic-bezier(0.33, 1, 0.68, 1)', fill: 'forwards'
     });
     out.onfinish = () => holder.remove();
   }

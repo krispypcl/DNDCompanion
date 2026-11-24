@@ -85,7 +85,7 @@
   .edges { fill: none; stroke: currentColor; stroke-width: 0.9; stroke-linejoin: round; opacity: 0.55; }
   text { fill: var(--text); font-size: 9px; font-weight: 750; font-variant-numeric: tabular-nums; }
   /* Landing: the spin settles upright, then the face lights up. */
-  .landed .die { animation: land 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.3); }
+  .landed .die { animation: land 0.5s var(--ease-out); }
   @keyframes land {
     from { transform: rotate(-120deg) scale(0.85); }
     to { transform: rotate(0deg) scale(1); }
