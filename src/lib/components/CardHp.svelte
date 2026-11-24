@@ -128,8 +128,8 @@
       <i class="cur hpflow" class:hpwave={curWave} style:width="{pct(cur)}%" style:--wave-at={curWave ? wavePhase() : undefined}></i>
       <i class="tmp" class:hpwave={short && temp > 0} class:under style:width={under ? `calc(${pct(temp)}% + 6px)` : `${pct(temp)}%`}
          style:--wave-at={temp > 0 ? wavePhase() : undefined}></i>
-      {#if healed}<i class="sweep"></i>{/if}
-      {#if wounded}<i class="sweep back"></i>{/if}
+      {#if healed}<i class="hpsweep"></i>{/if}
+      {#if wounded}<i class="hpsweep back"></i>{/if}
       {#if ghost}
         {#key pulse}
           {@const tuck = ghost.left > 0 ? 6 : 0}
@@ -169,7 +169,7 @@
   /* A heal's ghost lights the stretch gained, over the fill, its left edge the wave the liquid had
      there; a hit's runs 6px under the fill's wavy end, so what drains shows in its troughs. Either
      waves at its end where it stops short of the wall. */
-  .ghost.heal, .sweep { z-index: 2; }
+  .ghost.heal, .hpsweep { z-index: 2; }
   .bar.shielded { box-shadow: 0 0 0 1px var(--shield), 0 0 8px -2px color-mix(in oklch, var(--shield) 70%, transparent); }
 
   /* The stretch that was lost or gained, fading. */
@@ -181,18 +181,7 @@
   .ghost.heal { background: var(--heal-green); }
   @keyframes ghostOut { 0%, 35% { opacity: 0.95; } 100% { opacity: 0; } }
 
-  /* A light along the bar: rightwards for a heal, back for a hit. */
-  .sweep {
-    position: absolute; inset: 0; pointer-events: none; width: 40% !important; opacity: 0.85; mix-blend-mode: screen;
-    background: linear-gradient(90deg, transparent 0%, color-mix(in oklch, var(--heal-green) 80%, white) 50%, transparent 100%);
-    animation: sweep 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  }
-  .sweep.back {
-    background: linear-gradient(90deg, transparent 0%, color-mix(in oklch, var(--hurt-red) 80%, white) 50%, transparent 100%);
-    animation-name: sweepBack;
-  }
-  @keyframes sweep { from { transform: translateX(-110%); } to { transform: translateX(260%); opacity: 0; } }
-  @keyframes sweepBack { from { transform: translateX(260%); } to { transform: translateX(-110%); opacity: 0; } }
+  /* The light along the bar is app.css's `.hpsweep`, shared with the sheet. */
 
   .healed .bar { animation: healGlow 0.95s ease-out; }
   .wounded .bar { animation: hurtGlow 0.95s ease-out; }
@@ -228,9 +217,8 @@
   }
   .struck .bar::after {
     content: ''; position: absolute; inset: 0; border-radius: inherit; background: var(--hurt-red);
-    opacity: 0; pointer-events: none; animation: flash var(--dur, 420ms) ease-out;
+    opacity: 0; pointer-events: none; animation: hpFlash var(--dur, 420ms) var(--ease-out);
   }
-  @keyframes flash { 0% { opacity: var(--flash, 0.22); } 100% { opacity: 0; } }
   .struck .hpline { animation: kick var(--dur, 420ms) cubic-bezier(0.36, 0.07, 0.19, 0.97); }
   @keyframes kick {
     14% { transform: translateX(calc(var(--amp, 4px) * 0.45)); }
@@ -263,7 +251,7 @@
     100% { opacity: 0; transform: translateY(-9px); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .sweep, .float { display: none; }
+    .float { display: none; }
     .bar, .hpline, .hpline b { animation: none !important; }
     .ghost.hpwave, .ghost.hpwavein { animation: ghostOut 0.7s ease-out forwards; }
   }

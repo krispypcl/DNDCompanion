@@ -243,8 +243,8 @@
 <div class="bar" class:shielded={sheetState.hpTemp > 0} aria-hidden="true">
   <i class="cur hpflow" class:hpwave={curWave} class:bloodied class:down style:width="{pct(sheetState.hpCurrent)}%"
      style:--wave-at={curWave ? wavePhase() : undefined}></i>
-  {#if healed}<i class="sweep"></i>{/if}
-  {#if wounded}<i class="sweep hurt"></i>{/if}
+  {#if healed}<i class="hpsweep"></i>{/if}
+  {#if wounded}<i class="hpsweep back"></i>{/if}
   {#key sheetState.hpTemp}
     <i class="tmp" class:hpwave={short && sheetState.hpTemp > 0} class:under style:width={under ? `calc(${pct(sheetState.hpTemp)}% + 6px)` : `${pct(sheetState.hpTemp)}%`}
        style:--wave-at={wavePhase()}></i>
@@ -347,11 +347,7 @@
     background: var(--danger);
     opacity: 0;
     pointer-events: none;
-    animation: flash var(--dur, 420ms) ease-out;
-  }
-  @keyframes flash {
-    0% { opacity: var(--flash, 0.22); }
-    100% { opacity: 0; }
+    animation: hpFlash var(--dur, 420ms) var(--ease-out);
   }
   /* A heavy blow also kicks the number, which the gauge alone undersold. */
   /* On the line, not the number: the number already has its own animation. */
@@ -414,7 +410,7 @@
   /* A heal's ghost lights the stretch gained, over the fill, its left edge the wave the liquid had
      there; a hit's runs 6px under the fill's wavy end, so what drains shows in its troughs. Either
      waves at its end where it stops short of the wall. */
-  .ghost.heal, .sweep { z-index: 2; }
+  .ghost.heal, .hpsweep { z-index: 2; }
   .tmp {
     background: color-mix(in oklch, var(--shield) 85%, transparent);
     animation: tempIn 0.4s ease-out;
@@ -447,30 +443,13 @@
     30% { box-shadow: 0 0 0 1px var(--heal-green), 0 0 18px 2px color-mix(in oklch, var(--heal-green) 55%, transparent); }
     100% { box-shadow: 0 0 0 0 transparent; }
   }
-  .sweep {
-    position: absolute; inset: 0; pointer-events: none;
-    background: linear-gradient(90deg, transparent 0%, color-mix(in oklch, var(--heal-green) 80%, white) 50%, transparent 100%);
-    width: 40% !important; opacity: 0.85; mix-blend-mode: screen;
-    animation: sweep 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  }
-  @keyframes sweep {
-    from { transform: translateX(-110%); }
-    to { transform: translateX(260%); opacity: 0; }
-  }
-  /* Damage: the same glow, light and number, in red, running the other way. */
+  /* The light along the bar is app.css's `.hpsweep`.
+     Damage: the same glow, light and number, in red, running the other way. */
   .wounded .bar { animation: hurtGlow 0.95s ease-out; }
   @keyframes hurtGlow {
     0% { box-shadow: 0 0 0 0 transparent; }
     30% { box-shadow: 0 0 0 1px var(--hurt-red), 0 0 18px 2px color-mix(in oklch, var(--hurt-red) 55%, transparent); }
     100% { box-shadow: 0 0 0 0 transparent; }
-  }
-  .sweep.hurt {
-    background: linear-gradient(90deg, transparent 0%, color-mix(in oklch, var(--hurt-red) 80%, white) 50%, transparent 100%);
-    animation-name: sweepBack;
-  }
-  @keyframes sweepBack {
-    from { transform: translateX(260%); }
-    to { transform: translateX(-110%); opacity: 0; }
   }
   .wounded .hp-readout strong { animation: hurtNum 0.8s ease-out; }
   @keyframes hurtNum {
@@ -536,7 +515,7 @@
     100% { opacity: 0; transform: translateY(-10px); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .sweep, .float { display: none; }
+    .float { display: none; }
     .tmp.hpwave { animation: none; }
     .ghost.hpwave, .ghost.hpwavein { animation: ghostOut 0.7s ease-out forwards; }
   }

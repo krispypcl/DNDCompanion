@@ -353,6 +353,22 @@ html:has(main.campaignpage) { --btn-h: 2.125rem; }
   to { -webkit-mask-position: left top, right 0 top 12px; mask-position: left top, right 0 top 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .hpflow, .hpwave { animation: none; } }
+/* A light run along an HP gauge as it changes: rightwards for a heal, back
+   for a hit (`.back`). The sheet's gauge and every campaign card share it. */
+.hpsweep {
+  position: absolute; inset: 0; pointer-events: none; width: 40% !important; opacity: 0.85; mix-blend-mode: screen;
+  background: linear-gradient(90deg, transparent 0%, color-mix(in oklch, var(--heal-green) 80%, white) 50%, transparent 100%);
+  animation: hpSweep 0.8s var(--ease-out) forwards;
+}
+.hpsweep.back {
+  background: linear-gradient(90deg, transparent 0%, color-mix(in oklch, var(--hurt-red) 80%, white) 50%, transparent 100%);
+  animation-name: hpSweepBack;
+}
+@keyframes hpSweep { from { transform: translateX(-110%); } to { transform: translateX(260%); opacity: 0; } }
+@keyframes hpSweepBack { from { transform: translateX(260%); } to { transform: translateX(-110%); opacity: 0; } }
+/* A hit's red flash over a gauge; `--flash` is how hard. */
+@keyframes hpFlash { 0% { opacity: var(--flash, 0.22); } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .hpsweep { display: none; } }
 
 /* Someone is here: a small green light with a slow pulse (the menu's cards
    and switch, the campaign page's cards and its header). */
