@@ -24,7 +24,7 @@
   import DiceRoller from '#lib/components/DiceRoller.svelte';
   import EditableField from '#lib/components/EditableField.svelte';
   import EntryLink from '#lib/components/EntryLink.svelte';
-  import ClassIcon from '#lib/components/ClassIcon.svelte';
+  import SheetPortrait from '#lib/components/SheetPortrait.svelte';
   import HitPoints from '#lib/components/HitPoints.svelte';
   import HurtEdges from '#lib/components/HurtEdges.svelte';
   import RestButtons from '#lib/components/RestButtons.svelte';
@@ -107,7 +107,7 @@
   import { slotLevel } from '#lib/rules/print.ts';
   import { themeStyle } from '#lib/theme.ts';
   import { rememberedTheme, rememberThemes } from '#lib/themeMemory.ts';
-  import { bump, fadeOver, glow, parallax, popIn, sparkle } from '#lib/motion.ts';
+  import { bump, fadeOver, popIn, sparkle } from '#lib/motion.ts';
   import { glide } from '#lib/flip.ts';
   import { isDead } from '#lib/rules/hp.ts';
   import ConditionOverlay from '#lib/components/ConditionOverlay.svelte';
@@ -883,39 +883,7 @@
     <header class="identity" class:offstage={phoneOn && place !== 'play'}>
       <!-- The portrait and the words beside it: one side of the header, so the music sits in its very middle. -->
       <div class="idleft">
-      <div class="portrait" class:has={Boolean(portraitSrc)} class:fallen={dead} use:parallax>
-        <!-- The picture turns toward the pointer, inside its still frame. -->
-        <span class="frame">
-          <!-- No portrait yet: the main class, drawn (a bow for a ranger…); a
-               picture covers it, and a picture that fails to load shows it again. -->
-          <ClassIcon cls={mainClass(definition)} />
-          {#if portraitSrc}
-            <!-- A link that stops working (a Drive file that was unshared) leaves
-                 the frame as it is for a sheet with no art, not a broken-image icon. -->
-            <img src={portraitSrc} alt="" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />
-          {/if}
-        </span>
-        <span class="lvl" use:glow={totalLevel}>LV {totalLevel}</span>
-        {#key levelUp}
-          {#if levelUp > 0}
-            <!-- Leveled up: rays burst from the portrait and the news floats up. -->
-            <span class="burst" aria-hidden="true">{#each Array(12) as _, i (i)}<i style:--r="{i * 30}deg"></i>{/each}</span>
-            <span class="levelup" role="status">Level up!</span>
-          {/if}
-        {/key}
-        {#if dead}
-          <!-- Three failed death saves, or Dead written in: a skull on the portrait. -->
-          <span class="skull" title="Dead" role="img" aria-label="Dead">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 2.5c-4.7 0-8 3.2-8 7.6 0 2.6 1.2 4.4 3 5.5v2.6c0 .9.7 1.6 1.6 1.6h.9v-2h1.6v2h1.8v-2h1.6v2h.9c.9 0 1.6-.7 1.6-1.6v-2.6c1.8-1.1 3-2.9 3-5.5 0-4.4-3.3-7.6-8-7.6Z"
-                    fill="currentColor" />
-              <circle cx="8.8" cy="10.6" r="2" fill="#140d0d" />
-              <circle cx="15.2" cy="10.6" r="2" fill="#140d0d" />
-              <path d="M12 13.2l-1.1 2h2.2Z" fill="#140d0d" />
-            </svg>
-          </span>
-        {/if}
-      </div>
+      <SheetPortrait src={portraitSrc} cls={mainClass(definition)} level={totalLevel} {levelUp} {dead} />
 
       <div class="who">
         <!-- The campaign, small above the name, as a book's series sits above
@@ -1549,69 +1517,6 @@
   }
 
   .identity { display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
-  .portrait {
-    width: 6rem; aspect-ratio: 1; border-radius: var(--r);
-    flex: none; display: flex; align-items: flex-end; justify-content: center;
-    position: relative; overflow: visible;
-  }
-  .portrait img {
-    position: absolute; inset: 0; width: 100%; height: 100%;
-    object-fit: cover;
-  }
-  /*
-   * The frame and its wash stay still; the picture inside (or the class
-   * drawn) turns toward the pointer like a coin (motion.ts parallax sets
-   * --px/--py from -1 to 1 and --pz while pointed at), a little larger so no
-   * edge shows, with a soft shine where the light catches it, and eases flat
-   * again on leaving. The level badge stays put below it.
-   */
-  .frame {
-    position: absolute; inset: 0; overflow: hidden; border-radius: inherit;
-    border: 1px solid var(--a-edge);
-    background: linear-gradient(150deg, var(--portrait-from), var(--portrait-to));
-    perspective: 420px;
-  }
-  .frame > :global(img), .frame > :global(.class-icon) {
-    transform:
-      rotateY(calc(var(--px, 0) * 14deg))
-      rotateX(calc(var(--py, 0) * -14deg))
-      scale(calc(1 + var(--pz, 0) * 0.12));
-    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), filter 0.8s var(--ease-out);
-  }
-  .frame::after {
-    content: ''; position: absolute; inset: 0; pointer-events: none;
-    background: radial-gradient(
-      circle at calc(50% + var(--px, 0) * 45%) calc(50% + var(--py, 0) * 45%),
-      rgb(255 255 255 / 0.28), transparent 60%
-    );
-    opacity: var(--pz, 0);
-    transition: opacity 0.45s var(--ease-out);
-    mix-blend-mode: soft-light;
-  }
-  /* Quick to follow the pointer; slow to settle back once it leaves. */
-  .portrait:hover .frame > :global(img), .portrait:hover .frame > :global(.class-icon) { transition-duration: 0.18s, 0.8s; }
-  /* Sits on the bottom edge, half in and half out. */
-  .lvl {
-    position: absolute; left: 50%; bottom: 0; transform: translate(-50%, 50%); z-index: 2;
-    background: var(--surface); border: 1px solid var(--a-edge);
-    color: var(--a); border-radius: var(--r-sm); font-size: 0.6875rem; font-weight: 650;
-    padding: 0.0625rem 0.5rem; letter-spacing: 0.02em; white-space: nowrap;
-  }
-  /* Dead: the portrait drains of color. */
-  .portrait.fallen img { filter: grayscale(1) brightness(0.65); }
-  /* Dead: a big skull in front of the grayed portrait, not a badge. */
-  .skull {
-    position: absolute; inset: 0; z-index: 1; border-radius: var(--r);
-    display: grid; place-items: center; pointer-events: none;
-    background: radial-gradient(circle, oklch(10% 0.01 25 / 0.55) 0%, oklch(10% 0.01 25 / 0.15) 70%);
-    color: oklch(94% 0.01 286);
-    animation: skullIn 0.7s cubic-bezier(0.33, 1, 0.68, 1);
-  }
-  .skull svg {
-    width: 62%; height: 62%;
-    filter: drop-shadow(0 0 10px oklch(60% 0.22 25 / 0.85)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.6));
-  }
-  @keyframes skullIn { from { transform: scale(1.6); opacity: 0; } }
   .idleft { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 1rem; }
   .who { flex: 1 1 auto; min-width: 0; }
   .controls { display: flex; align-items: center; gap: 0.75rem; flex: none; }
@@ -1889,34 +1794,8 @@
     opacity: 0; animation: inspired 2.6s ease-in-out infinite; will-change: opacity;
   }
   @keyframes inspired { 50% { opacity: 1; } }
-  /* Level up: twelve rays from the portrait, and the words rising off it. */
-  .burst { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
-  .burst i {
-    position: absolute; left: 50%; top: 50%; width: 3px; height: 34%; margin-left: -1.5px;
-    border-radius: 2px; transform-origin: 50% 0;
-    background: linear-gradient(to bottom, var(--a-hi), transparent);
-    transform: rotate(var(--r)) translateY(30%) scaleY(0.2); opacity: 0;
-    animation: ray 0.9s cubic-bezier(0.2, 0.8, 0.3, 1);
-  }
-  @keyframes ray {
-    15% { opacity: 1; }
-    to { transform: rotate(var(--r)) translateY(120%) scaleY(1); opacity: 0; }
-  }
-  .levelup {
-    position: absolute; left: 50%; top: -0.5rem; z-index: 3; white-space: nowrap; pointer-events: none;
-    transform: translateX(-50%); font-size: 0.75rem; font-weight: 750; letter-spacing: 0.06em; text-transform: uppercase;
-    color: var(--a-hi); text-shadow: 0 1px 6px rgb(0 0 0 / 0.6);
-    animation: levelRise 1.6s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
-  }
-  @keyframes levelRise {
-    0% { opacity: 0; transform: translate(-50%, 6px) scale(0.8); }
-    20% { opacity: 1; transform: translate(-50%, -6px) scale(1.08); }
-    70% { opacity: 1; transform: translate(-50%, -12px) scale(1); }
-    100% { opacity: 0; transform: translate(-50%, -20px); }
-  }
   @media (prefers-reduced-motion: reduce) {
-    .entering .panel, .entering .identity, .defbox.inspired::after, .burst, .levelup { animation: none; }
-    .burst { display: none; }
+    .entering .panel, .entering .identity, .defbox.inspired::after { animation: none; }
   }
   /* The search is for everyone: its button shows on every screen. */
   .keys.searchbtn { display: inline-grid; }
@@ -1948,7 +1827,7 @@
   @media (max-width: 700px) {
     /* The header ran to a third of the screen before a single hit point was
        visible. The portrait gives most of that back. */
-    .portrait { width: 4rem; }
+    .identity :global(.portrait) { width: 4rem; }
     .sheet { padding: 0.75rem; }
     .band, .main { gap: 0.75rem; }
     .panel { padding: 0.875rem; }
@@ -1967,7 +1846,7 @@
     /* The portrait at the left edge and the words at the right, with room between; the campaign
        and the music span both columns and the room between them, edge to edge. */
     .identity { display: grid; grid-template-columns: 5.5rem minmax(0, max-content); justify-content: space-between; column-gap: 1.25rem; row-gap: 0.25rem; align-items: center; }
-    .identity .portrait { width: 5.5rem; grid-column: 1; grid-row: 2 / 4; align-self: center; }
+    .identity :global(.portrait) { width: 5.5rem; grid-column: 1; grid-row: 2 / 4; align-self: center; }
     .identity .idleft, .identity .who { display: contents; }
     .identity .who > h1 { grid-column: 2; grid-row: 2; align-self: end; min-width: 0; }
     .identity .who > .sub { grid-column: 2; grid-row: 3; align-self: start; margin-top: 0.125rem; }
