@@ -82,6 +82,39 @@
   const mineToRoll = $derived(list.filter((c) => c.mine && c.value === null));
   const still = prefersReducedMotion();
   const quick = { duration: still ? 0 : 200, easing: cubicOut };
+  /**
+   * The lamp: the lit frame and left bar of whose turn it is, drawn once
+   * behind the tiles and moved from one to the next, so a turn passing reads
+   * as the light travelling down the order rather than one tile going out and
+   * another coming on. It wears the current character's own color.
+   */
+  let listEl = $state<HTMLOListElement>();
+  let lamp = $state<{ x: number; y: number; w: number; h: number } | null>(null);
+  /** The lamp's first place: set without gliding there from nowhere. */
+  let lampSettling = $state(true);
+  const lampTheme = $derived(list.find((c) => c.key === turn)?.themeCss);
+  function placeLamp() {
+    const tiles = running && listEl ? [...listEl.querySelectorAll<HTMLElement>('.initrow')] : [];
+    const el = tiles.find((t) => (unseenTurn ? t.classList.contains('unseen') : t.dataset.key === turn));
+    if (!el) {
+      lamp = null;
+      lampSettling = true;
+      return;
+    }
+    lamp = { x: el.offsetLeft, y: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight };
+    if (lampSettling) requestAnimationFrame(() => (lampSettling = false));
+  }
+  $effect(() => {
+    // Placed again whenever whose turn it is, the order, or the fold changes.
+    void [turn, shown, unseenTurn, folded];
+    queueMicrotask(placeLamp);
+  });
+  $effect(() => {
+    if (!listEl || typeof ResizeObserver === 'undefined') return;
+    const watch = new ResizeObserver(() => placeLamp());
+    watch.observe(listEl);
+    return () => watch.disconnect();
+  });
   const canWrite = (c: InitiativeRow) => isDm || Boolean(c.mine);
   function write(key: string, v: string) {
     const n = Number(v);
@@ -161,7 +194,7 @@
   <div class="initfold" id="init-fold" class:folded inert={folded}
        style:height={isDm && (folded || foldInner) ? `${folded ? 0 : foldInner}px` : undefined}>
   <div bind:clientHeight={foldInner}>
-  <ol class="initlist" use:reorder={{
+  <ol class="initlist" bind:this={listEl} use:reorder={{
     enabled: Boolean(onsettle), keys: list.map((c) => c.key),
     canLift: (k) => {
       dragging = k;
@@ -210,6 +243,12 @@
         <span class="initnow">Now</span>
       </li>
     {/if}
+    {#if lamp}
+      <!-- Out of the grid (absolute), so it takes no cell; no data-key, so dragging ignores it. -->
+      <li class="initlamp" class:settling={lampSettling || still} class:themed={Boolean(lampTheme)} style={lampTheme}
+          style:transform="translate({lamp.x}px, {lamp.y}px)" style:width="{lamp.w}px" style:height="{lamp.h}px"
+          aria-hidden="true" in:fade={quick} out:fade={quick}></li>
+    {/if}
   </ol>
   </div>
   </div>
@@ -251,14 +290,20 @@
   .initrow.mine { border-color: var(--a-edge); }
   .initrow.hiddenone .initname { color: var(--dim); }
   .initrow.unseen { font-style: italic; }
-  /* Whose turn it is: lit, with a bar down its left edge. */
-  .initrow.now {
-    border-color: var(--a-edge); background: color-mix(in oklab, var(--a) 12%, var(--surface));
+  /* Whose turn it is: the tile is tinted here, and the lamp below draws its
+     ring, glow, and the bar down its left edge. */
+  .initrow.now { border-color: var(--a-edge); background: color-mix(in oklab, var(--a) 12%, var(--surface)); }
+  .initlamp {
+    position: absolute; left: 0; top: 0; pointer-events: none; border-radius: var(--r);
     box-shadow: 0 0 0 1px var(--a-edge), 0 6px 18px -8px color-mix(in oklab, var(--a) 55%, transparent);
+    transition: transform 0.38s var(--ease-out), width 0.38s var(--ease-out), height 0.38s var(--ease-out), box-shadow 0.38s var(--ease-out);
   }
-  .initrow.now::before {
-    content: ''; position: absolute; left: -1px; top: 0.5rem; bottom: 0.5rem; width: 3px; border-radius: 0 3px 3px 0; background: var(--a);
+  .initlamp::before {
+    content: ''; position: absolute; left: -1px; top: 0.5rem; bottom: 0.5rem; width: 3px; border-radius: 0 3px 3px 0;
+    background: var(--a); transition: background-color 0.38s var(--ease-out);
   }
+  /* Its first place, and under reduced motion every place: no glide. */
+  .initlamp.settling { transition: none; }
   .initscore {
     flex: none; box-sizing: border-box; width: 2.625rem; height: 2.375rem; display: grid; place-items: center;
     font: inherit; font-size: 1.0625rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text);
