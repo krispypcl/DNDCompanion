@@ -21,7 +21,7 @@
    * string, which stays equal however often it is handed in again.
    */
   import { onDestroy, untrack } from 'svelte';
-  import { fade } from 'svelte/transition';
+  import { fade } from '#lib/motion.ts';
   import { get } from 'svelte/store';
   import {
     clock, loadYouTube, musicOn, parsePlaylist, setMusicOn, storeLoop, storeShuffle, storedLoop, storeVolume, storedShuffle, storedVolume,
@@ -589,6 +589,8 @@
     clearInterval(fader);
     clearInterval(ticker);
     clearTimeout(volTimer);
+    // A shuffle still waiting for the player would keep asking a gone one.
+    stopWatch();
     disarm?.();
   });
 
