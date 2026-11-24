@@ -163,10 +163,8 @@
   }
   .mark.going { animation: markspin 0.9s linear infinite; }
   @keyframes markspin { from { transform: rotate(var(--turn)); } to { transform: rotate(calc(var(--turn) + 360deg)); } }
-  @media (prefers-reduced-motion: reduce) {
-    .mark, .topbar::before { transition: none; }
-    .mark.going, .side.swapped > :global(*) { animation: none; }
-  }
+  :global(html[data-motion='reduce']) .mark, :global(html[data-motion='reduce']) .topbar::before { transition: none; }
+  :global(html[data-motion='reduce']) .mark.going, :global(html[data-motion='reduce']) .side.swapped > :global(*) { animation: none; }
   /* Every button in it one square, a little bigger than a computer's, for a
      thumb. (The class in :is outweighs a component's own size.) */
   .side > :global(:is(button, a, .phonetop-btn)) { box-sizing: border-box; width: 2.25rem; height: 2.25rem; min-height: 0; padding: 0; }

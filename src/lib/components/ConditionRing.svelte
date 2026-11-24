@@ -82,5 +82,6 @@
   }
   /* On a light page a pale band (Invisible, White) needs an edge to be seen. */
   :global([data-mode='light']) .ring { filter: drop-shadow(0 0 0.6px rgb(0 0 0 / 0.55)); }
-  @media (prefers-reduced-motion: reduce) { path { transition: none; } .ring { animation: none; } }
+  :global(html[data-motion='reduce']) path { transition: none; }
+  :global(html[data-motion='reduce']) .ring { animation: none; }
 </style>

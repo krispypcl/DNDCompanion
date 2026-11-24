@@ -34,5 +34,5 @@
   .backlink svg { display: block; transition: transform 0.3s cubic-bezier(0.33, 1, 0.68, 1); }
   /* The arrow leans the way it points. */
   .backlink:hover svg { transform: translateX(-2px); }
-  @media (prefers-reduced-motion: reduce) { .backlink svg { transition: none; } }
+  :global(html[data-motion='reduce']) .backlink svg { transition: none; }
 </style>

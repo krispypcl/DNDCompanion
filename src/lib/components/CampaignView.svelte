@@ -896,7 +896,7 @@
   /* Shown: it fades in where it stands, as the outline goes. */
   .holder:not(.holding) > main { animation: campIn 0.2s cubic-bezier(0.33, 1, 0.68, 1) backwards; }
   @keyframes campIn { from { opacity: 0; } }
-  @media (prefers-reduced-motion: reduce) { .holder:not(.holding) > main { animation: none; } }
+  :global(html[data-motion='reduce']) .holder:not(.holding) > main { animation: none; }
   .loading > :global(.cskel) { opacity: 0.45; }
   header { display: flex; align-items: center; gap: 0.875rem; }
   .gear :global(svg), .owlbtn svg { transition: transform 0.45s cubic-bezier(0.33, 1, 0.68, 1); }
@@ -904,7 +904,7 @@
   .gear.open :global(svg) { transform: rotate(90deg); }
   .owlbtn { text-decoration: none; }
   .owlbtn:hover svg { transform: translateY(-1px) rotate(-6deg); }
-  @media (prefers-reduced-motion: reduce) { .gear :global(svg), .owlbtn svg { transition: none; } }
+  :global(html[data-motion='reduce']) .gear :global(svg), :global(html[data-motion='reduce']) .owlbtn svg { transition: none; }
   .title { flex: 1; min-width: 0; }
   /* The eyebrow's parts, a dot between each two. */
   .seg + .seg::before { content: '·'; margin: 0 0.375rem; }
@@ -933,7 +933,7 @@
   .searchbtn svg, .kbd svg { transition: transform 0.4s cubic-bezier(0.33, 1, 0.68, 1); }
   .searchbtn:hover svg { transform: rotate(-14deg) scale(1.1); }
   .kbd:hover svg { transform: translateY(-1.5px) scale(1.06); }
-  @media (prefers-reduced-motion: reduce) { .searchbtn svg, .kbd svg { transition: none; } }
+  :global(html[data-motion='reduce']) .searchbtn svg, :global(html[data-motion='reduce']) .kbd svg { transition: none; }
   @media (hover: hover) and (pointer: fine) { .keys { display: inline-grid; } }
   .keys.searchbtn, .keys.gear, .keys.owlbtn { display: inline-grid; }
 
@@ -972,7 +972,7 @@
   /* The monsters' side slides in from the right, as the players' does from the left. */
   .creaturespane:not([hidden]) { animation: creaturesIn 0.26s cubic-bezier(0.33, 1, 0.68, 1); }
   @keyframes creaturesIn { from { opacity: 0; transform: translate3d(14px, 0, 0); } }
-  @media (prefers-reduced-motion: reduce) { .creaturespane:not([hidden]) { animation: none; } }
+  :global(html[data-motion='reduce']) .creaturespane:not([hidden]) { animation: none; }
   /* How far off it is, quieter, unless it is today. */
   .nextuntil { color: var(--dim); white-space: nowrap; }
   .nextuntil.soon { color: inherit; }
@@ -982,7 +982,7 @@
   .invitebtn:hover:not(:disabled) .plus { animation: welcome 0.5s cubic-bezier(0.33, 1, 0.68, 1); }
   .invitebtn.done { color: var(--a); border-color: var(--a-edge); background: var(--a-wash); }
   @keyframes welcome { from { transform: rotate(-90deg) scale(0.6); } }
-  @media (prefers-reduced-motion: reduce) { .invitebtn .plus { animation: none !important; } }
+  :global(html[data-motion='reduce']) .invitebtn .plus { animation: none !important; }
   .ended {
     margin: 1.5rem 0 0; padding: 0.75rem 1rem; border: 1px solid var(--line-soft); border-radius: var(--r);
     background: var(--surface); color: var(--dim); font-size: 0.875rem; line-height: 1.45;

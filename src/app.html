@@ -131,10 +131,14 @@
           document.documentElement.setAttribute('data-mode', 'light');
           document.querySelector('meta[name="theme-color"]').setAttribute('content', '#efeff2');
         }
-        /* Reduced motion chosen on the account page (Preferences). */
-        if (localStorage.getItem('dndcompanion:motion') === 'reduce') {
-          document.documentElement.setAttribute('data-motion', 'reduce');
-        }
+      } catch (e) {}
+      /* Reduced motion, before the first paint (lib/prefs.ts): the account
+         page's choice if one was made here, else the device's own setting. */
+      try {
+        var calm = null;
+        try { calm = localStorage.getItem('dndcompanion:motion'); } catch (e) {}
+        var reduce = calm === 'reduce' || (calm !== 'full' && matchMedia('(prefers-reduced-motion: reduce)').matches);
+        document.documentElement.setAttribute('data-motion', reduce ? 'reduce' : 'full');
       } catch (e) {}
     </script>
     %sveltekit.head%

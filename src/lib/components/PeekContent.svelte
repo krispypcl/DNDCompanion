@@ -200,7 +200,5 @@
     from { opacity: 0.55; }
     to { opacity: 1; }
   }
-  @media (prefers-reduced-motion: reduce) {
-    .peek-wait.breathe, .peek-entry { animation: none; }
-  }
+  :global(html[data-motion='reduce']) .peek-wait.breathe, :global(html[data-motion='reduce']) .peek-entry { animation: none; }
 </style>

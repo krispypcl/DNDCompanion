@@ -236,7 +236,5 @@
     }
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    img { transform: none; }
-  }
+  :global(html[data-motion='reduce']) img { transform: none; }
 </style>

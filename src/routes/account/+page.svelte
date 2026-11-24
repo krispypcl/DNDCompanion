@@ -33,7 +33,7 @@
   import Choice from '#lib/components/Choice.svelte';
   import { settleIn } from '#lib/motion.ts';
   import { chooseMode, modeChoice, type ModeChoice } from '#lib/stores/mode.ts';
-  import { savePrefs, setButtonSounds, setDiceStyle, setReduceMotion, storedButtonSounds, storedDice, storedReduceMotion, type DiceStyle, type Prefs } from '#lib/prefs.ts';
+  import { savePrefs, setButtonSounds, setDiceStyle, setReduceMotion, storedButtonSounds, storedDice, reduceMotionNow, type DiceStyle, type Prefs } from '#lib/prefs.ts';
   import { sheetRepo } from '#lib/data/sheets.ts';
   import { campaignRepo } from '#lib/data/campaigns.ts';
   import { characterLevel, mainClass } from '#lib/rules/derived.ts';
@@ -165,7 +165,8 @@
   /** Follows the header's own switch too. */
   const look = $derived($modeChoice);
   let dice = $state<DiceStyle>(storedDice());
-  let calm = $state(storedReduceMotion());
+  // As it stands: the device's own setting until the player chooses here.
+  let calm = $state(reduceMotionNow());
   let clicks = $state(storedButtonSounds());
   let prefMsg = $state<{ ok: boolean; text: string } | null>(null);
   async function keep(patch: Prefs) {
@@ -187,8 +188,7 @@
   }
   function setCalm(on: boolean) {
     calm = on;
-    setReduceMotion(on);
-    void keep({ reduceMotion: on });
+    void keep({ reduceMotion: setReduceMotion(on) });
   }
   function setClicks(on: boolean) {
     clicks = on;
@@ -399,9 +399,10 @@
         </span>
         <Choice label="How the dice roller shows a roll" value={dice} onchange={setDice}
                 options={[{ value: 'tumble', label: 'Tumble' }, { value: 'quick', label: 'Quick' }]} />
-        <span class="pref-name">Motion</span>
-        <Switch checked={calm} label="Reduce motion" onchange={setCalm}
-                title="Fewer and shorter animations, whatever your device is set to" />
+        <span class="pref-name">Motion
+          <InfoTip label="About reduced motion">It matches your device’s own setting until you change it here.</InfoTip>
+        </span>
+        <Switch checked={calm} label="Reduce motion" onchange={setCalm} title="Fewer and shorter animations" />
         <span class="pref-name">Sound
           <InfoTip label="About button sounds">Soft clicks and notes as you press buttons, switch tabs, and open
             windows, and on a computer a faint tick as you point at one. The game's own sounds (dice, hit points, rests, and the fight) play either way.</InfoTip>
@@ -513,7 +514,7 @@
   .policylink { flex: none; }
   .policylink svg { flex: none; transition: transform 0.35s cubic-bezier(0.33, 1, 0.68, 1); }
   .policylink:hover svg { transform: translateY(-1px) scale(1.08); }
-  @media (prefers-reduced-motion: reduce) { .policylink svg { transition: none; } }
+  :global(html[data-motion='reduce']) .policylink svg { transition: none; }
   /* Preferences: a name at the left, its control beside it. */
   .prefs { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 0.625rem 1rem; margin-top: 0.25rem; }
   .pref-name { font-size: 0.8125rem; color: var(--dim); display: inline-flex; align-items: center; gap: 0.125rem; }

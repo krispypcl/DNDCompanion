@@ -77,5 +77,5 @@
     background: radial-gradient(circle at calc(50% + var(--px, 0) * 45%) calc(50% + var(--py, 0) * 45%), rgb(255 255 255 / 0.28), transparent 60%);
     opacity: var(--pz, 0); transition: opacity 0.45s var(--ease-out); mix-blend-mode: soft-light;
   }
-  @media (prefers-reduced-motion: reduce) { .crestframe > img, .crestframe > :global(.class-icon) { transition: none; } }
+  :global(html[data-motion='reduce']) .crestframe > img, :global(html[data-motion='reduce']) .crestframe > :global(.class-icon) { transition: none; }
 </style>

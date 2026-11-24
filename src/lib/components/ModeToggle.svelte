@@ -58,5 +58,5 @@
   /* The sun turns a little; the moon tips, as if setting. */
   .mode:hover svg.sun { transform: rotate(45deg); }
   .mode:hover svg.moon { transform: rotate(-18deg); }
-  @media (prefers-reduced-motion: reduce) { .mode svg { transition: none; } }
+  :global(html[data-motion='reduce']) .mode svg { transition: none; }
 </style>

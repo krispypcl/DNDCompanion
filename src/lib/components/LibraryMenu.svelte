@@ -269,7 +269,5 @@
     border-radius: 999px;
     padding: 0 0.375rem;
   }
-  @media (prefers-reduced-motion: reduce) {
-    .library-menu { animation: none; }
-  }
+  :global(html[data-motion='reduce']) .library-menu { animation: none; }
 </style>

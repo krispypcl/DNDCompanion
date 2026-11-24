@@ -892,18 +892,8 @@
   .capbox:not(.rolling) .captext { padding: 0 0.3125rem; }
   @keyframes capscroll { to { transform: translateX(var(--shift)); } }
   /* Without motion the title wraps instead: it is never cut short. */
-  @media (prefers-reduced-motion: reduce) {
-    .capsule { height: auto; min-height: 2.25rem; padding-block: 0.25rem; border-radius: 1.125rem; }
-    .capbox, .track { white-space: normal; overflow-wrap: anywhere; mask-image: none; }
-    .titlein { display: inline; }
-    .capbox.rolling .track { animation: none; padding-left: 0; }
-    .capbox.rolling .captext { padding: 0; }
-    .captext.copy { display: none; }
-  }
-  /* The same when reduced motion was chosen on the account page: the global
-     rule there stops the scroll, which would otherwise leave the name cut short. */
   :global(html[data-motion='reduce']) .capsule { height: auto; min-height: 2.25rem; padding-block: 0.25rem; border-radius: 1.125rem; }
-  :global(html[data-motion='reduce']) :is(.capbox, .track) { white-space: normal; overflow-wrap: anywhere; mask-image: none; }
+  :global(html[data-motion='reduce']) .capbox, :global(html[data-motion='reduce']) .track { white-space: normal; overflow-wrap: anywhere; mask-image: none; }
   :global(html[data-motion='reduce']) .titlein { display: inline; }
   :global(html[data-motion='reduce']) .capbox.rolling .track { animation: none; padding-left: 0; }
   :global(html[data-motion='reduce']) .capbox.rolling .captext { padding: 0; }
@@ -981,5 +971,5 @@
   .ctl:disabled { opacity: 0.4; cursor: default; }
   .ctl.play { width: 2.125rem; height: 2.125rem; background: var(--a-wash); color: var(--a); border-color: var(--a-edge); }
   .by { font-size: 0.75rem; color: var(--dim); text-align: center; }
-  @media (prefers-reduced-motion: reduce) { .playing .eq i { animation: none; } }
+  :global(html[data-motion='reduce']) .playing .eq i { animation: none; }
 </style>

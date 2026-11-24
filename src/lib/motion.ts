@@ -3,9 +3,10 @@
  * rise. Keeping it in a single place is what makes the app feel like one
  * thing rather than a collection of animated parts.
  *
- * CSS animations are flattened by the `prefers-reduced-motion` block in
- * app.css, but Svelte transitions run in JavaScript and are not, so they ask
- * here instead.
+ * Reduced motion is one marker, html[data-motion='reduce'] (lib/prefs.ts:
+ * the device's setting until the player chooses). CSS animations are
+ * flattened by app.css's rule for it, but Svelte transitions run in
+ * JavaScript and are not, so they ask here instead.
  */
 import { cubicOut } from 'svelte/easing';
 import { fade as linearFade, type FadeParams } from 'svelte/transition';
@@ -21,8 +22,10 @@ export function fade(node: Element, params: FadeParams = {}) {
 }
 
 export function prefersReducedMotion(): boolean {
-  // Chosen on the account page (html[data-motion]), or asked for by the device.
-  if (typeof document !== 'undefined' && document.documentElement.dataset.motion === 'reduce') return true;
+  // The marker decides (lib/prefs.ts); only where it isn't set yet (a test,
+  // or before the app has started) does the device's own setting answer.
+  const marked = typeof document !== 'undefined' ? document.documentElement.dataset.motion : undefined;
+  if (marked) return marked === 'reduce';
   return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 

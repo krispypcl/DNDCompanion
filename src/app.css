@@ -173,7 +173,7 @@
 [data-place][data-moved] [data-places] { animation: place-in 0.24s cubic-bezier(0.33, 1, 0.68, 1); }
 [data-place] [data-places] [data-places] { animation: none; }
 @keyframes place-in { from { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { [data-place][data-moved] [data-places] { animation: none; } }
+html[data-motion='reduce'] [data-place][data-moved] [data-places] { animation: none; }
 /* Out of sight but still there (and still playing, for the music): a part
    that has to keep running while its place is elsewhere. */
 .offstage {
@@ -305,7 +305,7 @@ html:has(main.campaignpage) { --btn-h: 2.125rem; }
   background-size: 300% 100%; animation: skeleton-shimmer 1.4s ease-in-out infinite;
 }
 @keyframes skeleton-shimmer { from { background-position: 100% 0; } to { background-position: -50% 0; } }
-@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+html[data-motion='reduce'] .skeleton { animation: none; }
 
 /* A hit point gauge's fill (the sheet, the campaign's cards, Owlbear): its own color (--hp-base,
    the character's theme, or red once hurt) with a softly lighter and a darker band flowing slowly
@@ -352,7 +352,7 @@ html:has(main.campaignpage) { --btn-h: 2.125rem; }
   from { -webkit-mask-position: left top, right top; mask-position: left top, right top; }
   to { -webkit-mask-position: left top, right 0 top 12px; mask-position: left top, right 0 top 12px; }
 }
-@media (prefers-reduced-motion: reduce) { .hpflow, .hpwave { animation: none; } }
+html[data-motion='reduce'] .hpflow, html[data-motion='reduce'] .hpwave { animation: none; }
 /* A light run along an HP gauge as it changes: rightwards for a heal, back
    for a hit (`.back`). The sheet's gauge and every campaign card share it. */
 .hpsweep {
@@ -368,7 +368,7 @@ html:has(main.campaignpage) { --btn-h: 2.125rem; }
 @keyframes hpSweepBack { from { transform: translateX(260%); } to { transform: translateX(-110%); opacity: 0; } }
 /* A hit's red flash over a gauge; `--flash` is how hard. */
 @keyframes hpFlash { 0% { opacity: var(--flash, 0.22); } 100% { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .hpsweep { display: none; } }
+html[data-motion='reduce'] .hpsweep { display: none; }
 
 /* Someone is here: a small green light with a slow pulse (the menu's cards
    and switch, the campaign page's cards and its header). */
@@ -377,7 +377,7 @@ html:has(main.campaignpage) { --btn-h: 2.125rem; }
   background: oklch(74% 0.17 150); animation: here-glow 2.4s ease-out infinite;
 }
 @keyframes here-glow { 0% { box-shadow: 0 0 0 0 oklch(74% 0.17 150 / 0.5); } 70%, 100% { box-shadow: 0 0 0 6px oklch(74% 0.17 150 / 0); } }
-@media (prefers-reduced-motion: reduce) { .here-dot { animation: none; } }
+html[data-motion='reduce'] .here-dot { animation: none; }
 
 /* A pop-up's scrolling area: a slim scrollbar in the character's color
    (the 5e.tools peeks, the sheet's dialogs). */
@@ -477,14 +477,8 @@ p[role='alert'], p[role='status'] { animation: message-in 0.28s cubic-bezier(0.3
   from { opacity: 0; transform: translateY(8px); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-/* The same, when it was chosen on the account page rather than the device. */
+/* Reduced motion (lib/prefs.ts: the device's setting, or the player's choice
+   on the account page): every animation and transition all but stops. */
 html[data-motion='reduce'] *, html[data-motion='reduce'] *::before, html[data-motion='reduce'] *::after {
   animation-duration: 0.01ms !important;
   animation-iteration-count: 1 !important;
@@ -556,7 +550,7 @@ html[data-motion='reduce'] *, html[data-motion='reduce'] *::before, html[data-mo
       0 0 18px -4px color-mix(in oklch, var(--hurt-red) 45%, transparent);
   }
 }
-@media (prefers-reduced-motion: reduce) { :root .hurtcard:is(.bloodied, .critical, .down) { animation: none; } }
+html[data-motion='reduce'] .hurtcard:is(.bloodied, .critical, .down) { animation: none; }
 
 /* The d20 beside anything that rolls (DieMark.svelte): dim until what it
    marks is hovered or focused, then in the accent, with a turn. */
@@ -566,7 +560,7 @@ html[data-motion='reduce'] *, html[data-motion='reduce'] *::before, html[data-mo
   transition: color 0.2s var(--ease-out), transform 0.35s cubic-bezier(0.33, 1, 0.68, 1);
 }
 .rolls-hover:hover .diemark, .rolls-hover:focus-within .diemark { color: var(--a); transform: rotate(72deg) scale(1.15); }
-@media (prefers-reduced-motion: reduce) { .diemark { transition: none; } }
+html[data-motion='reduce'] .diemark { transition: none; }
 
 /* "DND Companion" as the site's name. Cinzel Decorative sets its lower case
    as small capitals, so the words keep their case and size a touch larger. */

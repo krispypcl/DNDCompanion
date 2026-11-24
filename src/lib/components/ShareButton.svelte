@@ -73,5 +73,5 @@
     35% { transform: rotate(-14deg); }
     70% { transform: rotate(6deg); }
   }
-  @media (prefers-reduced-motion: reduce) { .share:hover svg { animation: none; } }
+  :global(html[data-motion='reduce']) .share:hover svg { animation: none; }
 </style>

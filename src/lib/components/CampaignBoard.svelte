@@ -917,7 +917,7 @@
   .boardwrap { margin-top: 2rem; }
   .boardfold { overflow: clip; overflow-clip-margin: 6px; transition: height 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.26s var(--ease-out); }
   .boardfold.folded { opacity: 0; }
-  @media (prefers-reduced-motion: reduce) { .boardfold { transition: none; } }
+  :global(html[data-motion='reduce']) .boardfold { transition: none; }
   .pages { display: flex; flex-wrap: wrap; gap: 0.25rem; align-items: center; min-width: 0; }
   .pagetab, .pagename {
     font: inherit; font-size: 0.8125rem; border-radius: 999px; padding: 0.25rem 0.75rem;

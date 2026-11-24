@@ -57,7 +57,7 @@ describe('Banner', () => {
 
   it('holds still for anyone who asked for less movement', () => {
     expect(source).toMatch(/prefersReducedMotion\(\)/);
-    expect(source).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*transform: none/);
+    expect(source).toMatch(/:global\(html\[data-motion='reduce'\]\)[^{]*\{[^}]*transform: none/);
   });
 
   it('tints the band in the page color, so it follows light and dark', () => {

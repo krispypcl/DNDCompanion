@@ -514,11 +514,9 @@
     70% { opacity: 1; }
     100% { opacity: 0; transform: translateY(-10px); }
   }
-  @media (prefers-reduced-motion: reduce) {
-    .float { display: none; }
-    .tmp.hpwave { animation: none; }
-    .ghost.hpwave, .ghost.hpwavein { animation: ghostOut 0.7s ease-out forwards; }
-  }
+  :global(html[data-motion='reduce']) .float { display: none; }
+  :global(html[data-motion='reduce']) .tmp.hpwave { animation: none; }
+  :global(html[data-motion='reduce']) .ghost.hpwave, :global(html[data-motion='reduce']) .ghost.hpwavein { animation: ghostOut 0.7s ease-out forwards; }
   @keyframes ghostOut {
     0% { opacity: 0.95; }
     35% { opacity: 0.95; }

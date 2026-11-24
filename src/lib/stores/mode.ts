@@ -9,6 +9,7 @@
  */
 import { tick } from 'svelte';
 import { writable } from 'svelte/store';
+import { prefersReducedMotion } from '#lib/motion.ts';
 
 export type Mode = 'dark' | 'light';
 /** What was chosen: a mode, or whatever the device's own setting is. */
@@ -119,7 +120,7 @@ export function crossfade(apply: () => void) {
   if (typeof document === 'undefined') return apply();
   const doc = document as Transitioning;
   const root = document.documentElement;
-  const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduced = prefersReducedMotion();
   root.classList.add('mode-snap');
   const done = () => requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('mode-snap', 'mode-fade')));
   if (reduced || !doc.startViewTransition) {

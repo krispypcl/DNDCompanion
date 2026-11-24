@@ -142,5 +142,5 @@
     50% { box-shadow: 0 0 0 4px oklch(60% 0.2 25 / 0.25), 0 0 18px 2px oklch(60% 0.2 25 / 0.35); }
   }
   :global([data-mode='light']) .urgent::before { color: oklch(45% 0.18 25); background: oklch(95% 0.03 25); }
-  @media (prefers-reduced-motion: reduce) { .urgent::before { animation: none; } }
+  :global(html[data-motion='reduce']) .urgent::before { animation: none; }
 </style>

@@ -42,5 +42,5 @@
   .tick { stroke-dasharray: 22; animation: tick 0.35s cubic-bezier(0.33, 1, 0.68, 1); }
   @keyframes drop { 0% { transform: translateY(-5px); opacity: 0; } 100% { transform: none; opacity: 1; } }
   @keyframes tick { from { stroke-dashoffset: 22; } }
-  @media (prefers-reduced-motion: reduce) { .savepdf .arrow, .tick { animation: none !important; } }
+  :global(html[data-motion='reduce']) .savepdf .arrow, :global(html[data-motion='reduce']) .tick { animation: none !important; }
 </style>

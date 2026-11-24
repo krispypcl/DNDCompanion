@@ -89,5 +89,5 @@
   /* The list replacing the skeleton fades up, a row at a time. */
   .rise { animation: tie-rise 0.24s cubic-bezier(0.33, 1, 0.68, 1) both; animation-delay: calc(var(--i, 0) * 30ms); }
   @keyframes tie-rise { from { opacity: 0; translate: 0 4px; } }
-  @media (prefers-reduced-motion: reduce) { .rise { animation: none; } }
+  :global(html[data-motion='reduce']) .rise { animation: none; }
 </style>

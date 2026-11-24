@@ -431,7 +431,7 @@
     transition: background-position 0.5s cubic-bezier(0.33, 1, 0.68, 1);
   }
   .open:hover strong, .open:focus-visible strong { background-position: 0 0; }
-  @media (prefers-reduced-motion: reduce) { .who strong { transition: none; } }
+  :global(html[data-motion='reduce']) .who strong { transition: none; }
   .open:focus-visible { outline: 2px solid var(--a); outline-offset: 3px; }
   button.portrait { padding: 0; font: inherit; color: inherit; cursor: zoom-in; transition: border-color 0.35s var(--ease-out), transform 0.15s var(--ease-out); }
   button.portrait:hover { transform: scale(1.04); }
@@ -492,7 +492,7 @@
   .stats div:hover { border-color: var(--a-edge); background: color-mix(in oklab, var(--a) 7%, var(--raised)); }
   .stats div:hover dt { color: var(--a); }
   .stats div:hover dd { color: var(--a-hi, var(--a)); transform: scale(1.08); }
-  @media (prefers-reduced-motion: reduce) { .stats div:hover dd { transform: none; } }
+  :global(html[data-motion='reduce']) .stats div:hover dd { transform: none; }
   .stats .long { display: none; }
   /* Each in full once its box (less its padding) holds the whole label. */
   @container (min-width: 5.5rem) {

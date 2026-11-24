@@ -100,7 +100,5 @@
   @media (max-width: 700px) {
     :global(:root[data-mode='light']) .edge { opacity: calc(min(var(--hurt) * 40, 1) * (0.26 + var(--hurt) * 0.36)); }
   }
-  @media (prefers-reduced-motion: reduce) {
-    .edge i, .edge i.critical { animation: none; }
-  }
+  :global(html[data-motion='reduce']) .edge i, :global(html[data-motion='reduce']) .edge i.critical { animation: none; }
 </style>

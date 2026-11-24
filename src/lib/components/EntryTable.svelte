@@ -945,7 +945,7 @@
       background-color: var(--hover-bg); transition-duration: 0.12s;
     }
   }
-  @media (prefers-reduced-motion: reduce) { tr.spotted > td, tr.spotted, tr.fading > td, tr.fading, tbody tr:not(.group) > td { transition-duration: 0.01s; } }
+  :global(html[data-motion='reduce']) tr.spotted > td, :global(html[data-motion='reduce']) tr.spotted, :global(html[data-motion='reduce']) tr.fading > td, :global(html[data-motion='reduce']) tr.fading, :global(html[data-motion='reduce']) tbody tr:not(.group) > td { transition-duration: 0.01s; }
   @keyframes castFlare {
     0% { color: var(--label); text-shadow: none; }
     18% { color: var(--a-hi); text-shadow: 0 0 12px color-mix(in oklch, var(--a) 70%, transparent); }

@@ -250,9 +250,7 @@
     70% { opacity: 1; }
     100% { opacity: 0; transform: translateY(-9px); }
   }
-  @media (prefers-reduced-motion: reduce) {
-    .float { display: none; }
-    .bar, .hpline, .hpline b { animation: none !important; }
-    .ghost.hpwave, .ghost.hpwavein { animation: ghostOut 0.7s ease-out forwards; }
-  }
+  :global(html[data-motion='reduce']) .float { display: none; }
+  :global(html[data-motion='reduce']) .bar, :global(html[data-motion='reduce']) .hpline, :global(html[data-motion='reduce']) .hpline b { animation: none !important; }
+  :global(html[data-motion='reduce']) .ghost.hpwave, :global(html[data-motion='reduce']) .ghost.hpwavein { animation: ghostOut 0.7s ease-out forwards; }
 </style>

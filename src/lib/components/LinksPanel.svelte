@@ -441,7 +441,7 @@
   }
   .add .plus svg { transition: transform 0.35s cubic-bezier(0.33, 1, 0.68, 1); }
   .add .plus:hover:not(:disabled) svg { transform: rotate(90deg); }
-  @media (prefers-reduced-motion: reduce) { .add .plus svg { transition: none; } }
+  :global(html[data-motion='reduce']) .add .plus svg { transition: none; }
   .add button:hover:not(:disabled) { border-color: var(--a); background: color-mix(in oklab, var(--a) 18%, transparent); }
   .add button:active:not(:disabled) { transform: translateY(1px); }
   .add button:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }

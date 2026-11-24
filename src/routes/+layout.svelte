@@ -9,7 +9,7 @@
   import type { Component } from 'svelte';
   import { arrive, prefersReducedMotion } from '#lib/motion.ts';
   import { profile } from '#lib/stores/profile.ts';
-  import { adoptAccountPrefs } from '#lib/prefs.ts';
+  import { adoptAccountPrefs, applyMotion, followDeviceMotion } from '#lib/prefs.ts';
   import { installSettle } from '#lib/settle.ts';
   import { hovered, listenForAlerts, pressed } from '#lib/sound.ts';
   import PullRefresh from '#lib/components/PullRefresh.svelte';
@@ -68,6 +68,13 @@
 
   // Nothing that moves makes a scrollbar flash (lib/settle.ts).
   $effect(() => installSettle());
+
+  // Reduced motion follows the device (app.html marked it before the first
+  // paint) and keeps following it while open, until chosen on the account page.
+  $effect(() => {
+    applyMotion();
+    return followDeviceMotion();
+  });
 
   // Button sounds (lib/sound.ts): every press on any page, a light-hearted error as it shows, and
   // on a computer (a mouse that hovers) a faint tick as the pointer comes onto a control.
@@ -239,7 +246,7 @@
   /* A phone: the page keeps the bars' heights free at its head and foot (TopBar, BottomBar set them). */
   .route { padding-top: var(--topbar, 0px); padding-bottom: var(--foot, 0px); }
   .route.pulling { transition: none; }
-  @media (prefers-reduced-motion: reduce) { .route { transition: none; } }
+  :global(html[data-motion='reduce']) .route { transition: none; }
   /* Moving between pages in a view transition: the new page rises and fades in over the old,
      which stays as it was underneath until covered, so the screen never dips between the two
      (the route's own arrival above is skipped meanwhile, or it would fade in twice). */

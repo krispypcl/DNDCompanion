@@ -162,7 +162,7 @@
   .phonebar.swapped > .place:nth-child(6) { animation-delay: 150ms; }
   .phonebar.swapped > .place:nth-child(7) { animation-delay: 180ms; }
   @keyframes placeIn { from { opacity: 0; transform: translateY(6px); } }
-  @media (prefers-reduced-motion: reduce) { .phonebar.swapped > .place { animation: none; } }
+  :global(html[data-motion='reduce']) .phonebar.swapped > .place { animation: none; }
   .place {
     display: grid; justify-items: center; align-content: center; gap: 0.125rem; min-height: 2.875rem; padding: 0.25rem 0 0.125rem;
     font: inherit; font-size: 0.65625rem; color: var(--dim); background: none; border: 0; border-radius: var(--r); cursor: pointer;

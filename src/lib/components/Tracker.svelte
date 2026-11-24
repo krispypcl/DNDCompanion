@@ -260,7 +260,7 @@
     60% { transform: translateX(-2px); }
     80% { transform: translateX(2px); }
   }
-  @media (prefers-reduced-motion: reduce) { .tracker.emptied, .pip.lose::after { animation: none; } }
+  :global(html[data-motion='reduce']) .tracker.emptied, :global(html[data-motion='reduce']) .pip.lose::after { animation: none; }
   .pip:disabled { cursor: default; }
   .pip.gain { animation: fill 0.42s cubic-bezier(0.33, 1, 0.68, 1) backwards; animation-delay: var(--delay); }
   .pip.gain::before { transition-delay: var(--delay); }

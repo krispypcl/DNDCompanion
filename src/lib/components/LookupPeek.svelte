@@ -244,7 +244,5 @@
 
   /* Moved aside: it became a kept window in the same place, so it goes at once. */
   .lookup-peek.quiet:not(.open) { transition: none; }
-  @media (prefers-reduced-motion: reduce) {
-    .lookup-peek { transition: none; }
-  }
+  :global(html[data-motion='reduce']) .lookup-peek { transition: none; }
 </style>

@@ -20,7 +20,8 @@ export type DiceStyle = 'tumble' | 'quick';
 
 export type Prefs = {
   mode?: ModeChoice;
-  reduceMotion?: boolean;
+  /** null: follows each device's own setting. */
+  reduceMotion?: boolean | null;
   dice?: DiceStyle;
   buttonSounds?: boolean;
 };
@@ -52,14 +53,42 @@ function write(key: string, value: string | null) {
   }
 }
 
-export function storedReduceMotion(): boolean {
-  return read(MOTION_KEY) === 'reduce';
+/*
+ * Motion: the device's own setting decides, until the player chooses on the
+ * account page. Whichever decides, the page carries the answer as
+ * html[data-motion] = 'reduce' | 'full', and every rule and transition reads
+ * only that (app.html sets it before the first paint, the same way).
+ */
+const deviceQuery = () => (typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : null);
+const deviceReduces = () => deviceQuery()?.matches ?? false;
+
+/** Reduced motion as it stands: the player's choice, else the device's. */
+export function reduceMotionNow(): boolean {
+  const kept = read(MOTION_KEY);
+  return kept === 'reduce' || (kept !== 'full' && deviceReduces());
 }
-export function setReduceMotion(on: boolean) {
-  write(MOTION_KEY, on ? 'reduce' : 'full');
+/** Marks the page with what reduceMotionNow() says. */
+export function applyMotion() {
   if (typeof document === 'undefined') return;
-  if (on) document.documentElement.setAttribute('data-motion', 'reduce');
-  else document.documentElement.removeAttribute('data-motion');
+  document.documentElement.setAttribute('data-motion', reduceMotionNow() ? 'reduce' : 'full');
+}
+/**
+ * The player's choice. Choosing what the device already says goes back to
+ * following the device, so a choice never sticks past its use.
+ */
+export function setReduceMotion(on: boolean): boolean | null {
+  const choice = on === deviceReduces() ? null : on;
+  write(MOTION_KEY, choice === null ? null : choice ? 'reduce' : 'full');
+  applyMotion();
+  /** What the account keeps: the choice, or null to follow each device. */
+  return choice;
+}
+/** Follows the device's setting changing while the app is open; returns a stop. */
+export function followDeviceMotion(): () => void {
+  const q = deviceQuery();
+  if (!q) return () => {};
+  q.addEventListener('change', applyMotion);
+  return () => q.removeEventListener('change', applyMotion);
 }
 
 export function storedDice(): DiceStyle {
@@ -90,7 +119,8 @@ export async function savePrefs(patch: Prefs) {
 export function adoptAccountPrefs(row: ProfileRow | null | undefined) {
   const p = prefsOf(row);
   if (p.mode && !choiceKept()) chooseMode(p.mode);
-  if (p.reduceMotion !== undefined && read(MOTION_KEY) === null) setReduceMotion(p.reduceMotion);
+  // A device following its own setting takes the account's choice, if it has one.
+  if (typeof p.reduceMotion === 'boolean' && read(MOTION_KEY) === null) setReduceMotion(p.reduceMotion);
   if (p.dice && read(DICE_KEY) === null) setDiceStyle(p.dice);
   if (p.buttonSounds !== undefined && read(BUTTON_SOUNDS_KEY) === null) setButtonSounds(p.buttonSounds);
 }

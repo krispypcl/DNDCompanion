@@ -43,5 +43,5 @@
     100% { opacity: 1; transform: none; }
   }
   path { transform-box: fill-box; }
-  @media (prefers-reduced-motion: reduce) { .playing .w1, .playing .w2 { animation: none; } }
+  :global(html[data-motion='reduce']) .playing .w1, :global(html[data-motion='reduce']) .playing .w2 { animation: none; }
 </style>

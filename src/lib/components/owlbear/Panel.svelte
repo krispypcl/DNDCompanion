@@ -664,7 +664,7 @@
   .go:active:not(:disabled), .btn:active:not(:disabled), .iconbtn:active { transform: translateY(1px); }
   .go:focus-visible, .btn:focus-visible, .iconbtn:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
   .go:disabled, .btn:disabled { opacity: 0.5; cursor: default; }
-  @media (prefers-reduced-motion: reduce) { .iconbtn svg { transition: none; } }
+  :global(html[data-motion='reduce']) .iconbtn svg { transition: none; }
 
   .chars { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
   .card {

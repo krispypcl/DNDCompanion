@@ -148,8 +148,6 @@
     70% { opacity: 1; transform: translate(-50%, -12px); }
     100% { opacity: 0; transform: translate(-50%, -20px); }
   }
-  @media (prefers-reduced-motion: reduce) {
-    .burst, .levelup { animation: none; }
-    .burst { display: none; }
-  }
+  :global(html[data-motion='reduce']) .burst, :global(html[data-motion='reduce']) .levelup { animation: none; }
+  :global(html[data-motion='reduce']) .burst { display: none; }
 </style>

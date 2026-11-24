@@ -151,7 +151,5 @@
   .shiver i { animation: shiver 0.8s ease-in-out 1s infinite; }
   @keyframes shiver { 0%, 100% { transform: translateY(0); } 25% { transform: translateY(-2px); } 75% { transform: translateY(2px); } }
 
-  @media (prefers-reduced-motion: reduce) {
-    .tint i { animation: none !important; }
-  }
+  :global(html[data-motion='reduce']) .tint i { animation: none !important; }
 </style>

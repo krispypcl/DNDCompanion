@@ -268,7 +268,7 @@
   .initfold.folded { opacity: 0; }
   /* While a tile is dragged it may leave the list's box: nothing clips it. */
   .initfold:has(:global(.reordering)) { overflow: visible; }
-  @media (prefers-reduced-motion: reduce) { .initfold { transition: none; } }
+  :global(html[data-motion='reduce']) .initfold { transition: none; }
   /* The order in reading order, a tile each: highest first, left to right, then down. */
   .initlist {
     position: relative; list-style: none; margin: 0; padding: 2px; display: grid; gap: 0.5rem;
@@ -339,7 +339,7 @@
   .initroll:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
   .initdie { flex: none; transition: transform 0.4s cubic-bezier(0.33, 1, 0.68, 1); }
   .initroll:hover .initdie, :global(.dicebtn:hover:not(:disabled)) .initdie { transform: rotate(72deg); }
-  @media (prefers-reduced-motion: reduce) { .initdie { transition: none; } }
+  :global(html[data-motion='reduce']) .initdie { transition: none; }
   .initnow {
     flex: none; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--a);
     padding: 0.125rem 0.4375rem; border-radius: 999px; border: 1px solid var(--a-edge); background: var(--a-wash);

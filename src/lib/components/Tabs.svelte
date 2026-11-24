@@ -167,7 +167,7 @@
   .indicator.ready {
     transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), width 0.32s cubic-bezier(0.22, 1, 0.36, 1);
   }
-  @media (prefers-reduced-motion: reduce) { .indicator.ready { transition: none; } }
+  :global(html[data-motion='reduce']) .indicator.ready { transition: none; }
   /* The tabs are a grid of card-like buttons at every width, every one in
      view; the rows even out as the module narrows. */
   .tablist {

@@ -143,9 +143,7 @@
     animation: pullveil 0.3s cubic-bezier(0.33, 1, 0.68, 1) both;
   }
   @keyframes pullveil { from { opacity: 0; } }
-  @media (prefers-reduced-motion: reduce) {
-    .pullmark.going, .pullveil { animation: none; }
-    .pullgap { transition: none; }
-  }
+  :global(html[data-motion='reduce']) .pullmark.going, :global(html[data-motion='reduce']) .pullveil { animation: none; }
+  :global(html[data-motion='reduce']) .pullgap { transition: none; }
   .pullword { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 </style>

@@ -1534,7 +1534,7 @@
   .gear :global(svg) { transition: transform 0.45s cubic-bezier(0.33, 1, 0.68, 1); }
   .gear:hover :global(svg) { transform: rotate(45deg); }
   .gear.open :global(svg) { transform: rotate(90deg); }
-  @media (prefers-reduced-motion: reduce) { .gear :global(svg) { transition: none; } }
+  :global(html[data-motion='reduce']) .gear :global(svg) { transition: none; }
   /* The player sits in the very middle of the header: the name and the
      buttons each take an equal share either side of it (the buttons never
      less than they need). */
@@ -1799,9 +1799,7 @@
     opacity: 0; animation: inspired 2.6s ease-in-out infinite; will-change: opacity;
   }
   @keyframes inspired { 50% { opacity: 1; } }
-  @media (prefers-reduced-motion: reduce) {
-    .entering .panel, .entering .identity, .defbox.inspired::after { animation: none; }
-  }
+  :global(html[data-motion='reduce']) .entering .panel, :global(html[data-motion='reduce']) .entering .identity, :global(html[data-motion='reduce']) .defbox.inspired::after { animation: none; }
   /* The search is for everyone: its button shows on every screen. */
   .keys.searchbtn { display: inline-grid; }
   /* Shortcuts are for a keyboard: the button only shows where there is a mouse. */
@@ -1816,7 +1814,7 @@
   .searchbtn svg, .kbd svg { transition: transform 0.4s cubic-bezier(0.33, 1, 0.68, 1); }
   .searchbtn:hover svg { transform: rotate(-14deg) scale(1.1); }
   .kbd:hover svg { transform: translateY(-1.5px) scale(1.06); }
-  @media (prefers-reduced-motion: reduce) { .searchbtn svg, .kbd svg { transition: none; } }
+  :global(html[data-motion='reduce']) .searchbtn svg, :global(html[data-motion='reduce']) .kbd svg { transition: none; }
   @media (hover: hover) and (pointer: fine) { .keys { display: inline-grid; } }
   @media (max-width: 860px) {
     .sheet { padding: 0.875rem; }

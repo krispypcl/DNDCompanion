@@ -37,5 +37,5 @@
   img.in { opacity: 1; }
   img:global(.instant) { transition: none; }
   .initial { color: var(--a); font-weight: 650; font-size: calc(var(--size) * 0.42); }
-  @media (prefers-reduced-motion: reduce) { img { transition: none; } }
+  :global(html[data-motion='reduce']) img { transition: none; }
 </style>
