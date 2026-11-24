@@ -97,7 +97,7 @@
   .preset {
     text-align: left; font: inherit; display: grid; gap: 0.125rem; cursor: pointer;
     background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 0.5rem 0.625rem;
-    color: var(--text); transition: border-color 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
+    color: var(--text); transition: border-color 0.15s var(--ease-out), transform 0.15s var(--ease-out), background-color 0.15s var(--ease-out);
   }
   .preset b { font-size: 0.8125rem; font-weight: 600; }
   .preset span { font-size: 0.72rem; color: var(--dim); line-height: 1.35; }

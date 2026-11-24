@@ -212,7 +212,7 @@
   button, .btn {
     font: inherit; font-size: 0.875rem; cursor: pointer; border-radius: var(--r-sm); padding: 0.4375rem 0.875rem;
     border: 1px solid var(--a-edge); background: var(--a-wash); color: var(--a); text-decoration: none;
-    transition: border-color 0.15s ease, background-color 0.15s ease;
+    transition: border-color 0.15s var(--ease-out), background-color 0.15s var(--ease-out);
   }
   button:hover:not(:disabled), .btn:hover { border-color: var(--a); }
   button:disabled { opacity: 0.5; cursor: default; }

@@ -1605,7 +1605,7 @@
       rotateY(calc(var(--px, 0) * 14deg))
       rotateX(calc(var(--py, 0) * -14deg))
       scale(calc(1 + var(--pz, 0) * 0.12));
-    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), filter 0.8s ease;
+    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), filter 0.8s var(--ease-out);
   }
   .frame::after {
     content: ''; position: absolute; inset: 0; pointer-events: none;
@@ -1614,7 +1614,7 @@
       rgb(255 255 255 / 0.28), transparent 60%
     );
     opacity: var(--pz, 0);
-    transition: opacity 0.45s ease;
+    transition: opacity 0.45s var(--ease-out);
     mix-blend-mode: soft-light;
   }
   /* Quick to follow the pointer; slow to settle back once it leaves. */
@@ -1680,7 +1680,7 @@
   .campaign a {
     color: inherit; text-decoration: none; overflow-wrap: anywhere; border: 1px solid var(--a-edge); border-radius: 999px;
     padding: 0.0625rem 0.5rem; background: color-mix(in oklab, var(--a) 9%, transparent);
-    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+    transition: background-color 0.15s var(--ease-out), border-color 0.15s var(--ease-out), transform 0.1s var(--ease-out);
   }
   .campaign a:hover { background: color-mix(in oklab, var(--a) 17%, transparent); border-color: var(--a); }
   /* A light page over a banner: the pill is solid, so its name reads on any picture. */
@@ -1696,7 +1696,7 @@
   button.campaign {
     font: inherit; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
     background: color-mix(in oklab, var(--a) 6%, transparent); border: 1px dashed var(--a-edge); border-radius: 999px; padding: 0.125rem 0.625rem 0.125rem 0.5rem;
-    color: var(--a); cursor: pointer; transition: background-color 0.15s ease, border-color 0.15s ease;
+    color: var(--a); cursor: pointer; transition: background-color 0.15s var(--ease-out), border-color 0.15s var(--ease-out);
   }
   button.campaign:hover { background: var(--a-wash); border-style: solid; }
   /* On a phone the name sits under the portrait, whose level badge hangs below it. */
@@ -1727,7 +1727,7 @@
   /* Editing: lit in the accent, its check showing. */
   .edit[aria-pressed='true'] { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
   .edit[aria-pressed='true']:hover { border-color: var(--a); background: var(--a-edge); color: var(--text); }
-  .edit { transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease; }
+  .edit { transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.08s var(--ease-out); }
   .edit:active { transform: translateY(1px); }
   .edit:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
   .stamps { display: flex; gap: 1rem; margin: 0 0.5rem 0 0; }
@@ -1780,7 +1780,7 @@
     padding: 0.625rem 0.3125rem; text-align: center; min-width: 0;
     display: flex; flex-direction: column; justify-content: space-between;
     min-height: 4.125rem;
-    transition: border-color 0.2s ease, background-color 0.2s ease;
+    transition: border-color 0.2s var(--ease-out), background-color 0.2s var(--ease-out);
   }
   .defbox:hover { border-color: var(--hover-line); background: var(--hover-bg); }
   /* Inspiration is the one number here that is spent, so it keeps the theme.
@@ -1791,12 +1791,12 @@
   .computed { display: inline-block; }
   .rollnum {
     font: inherit; color: inherit; background: none; border: 0; padding: 0.125rem 0.375rem; margin: -0.125rem 0;
-    border-radius: var(--r-sm); cursor: pointer; transition: color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
+    border-radius: var(--r-sm); cursor: pointer; transition: color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   /* The whole box is the button (the number's ::after covers it). Not the
      skills' dashed outline: a d20 sits in the corner, and on hover the box
      rises into the accent while the die gives a turn. */
-  .defbox.rollable { position: relative; cursor: pointer; transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s cubic-bezier(0.33, 1, 0.68, 1), box-shadow 0.2s ease; }
+  .defbox.rollable { position: relative; cursor: pointer; transition: border-color 0.2s var(--ease-out), background-color 0.2s var(--ease-out), transform 0.2s cubic-bezier(0.33, 1, 0.68, 1), box-shadow 0.2s var(--ease-out); }
   .rollnum::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
   .rollnum:focus-visible { outline: none; }
   .defbox.rollable:has(.rollnum:focus-visible) { outline: 2px solid var(--a); outline-offset: 2px; }
@@ -1809,7 +1809,7 @@
   .defbox .d20 {
     position: absolute; top: 0.375rem; right: 0.375rem; width: 0.8125rem; height: 0.8125rem;
     fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; color: var(--faint);
-    transition: color 0.2s ease, transform 0.35s cubic-bezier(0.33, 1, 0.68, 1); pointer-events: none;
+    transition: color 0.2s var(--ease-out), transform 0.35s cubic-bezier(0.33, 1, 0.68, 1); pointer-events: none;
   }
   .defbox.rollable:hover .d20 { color: var(--a); transform: rotate(72deg) scale(1.2); }
   .defbox .adv {
@@ -1884,7 +1884,7 @@
   .castroll {
     font: inherit; font-size: 1.0625rem; font-weight: 600; color: var(--text); cursor: pointer; background: none;
     border-radius: var(--r-sm); padding: 0.15rem 0.625rem; border: 1px solid transparent;
-    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+    transition: color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), border-color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .castroll:hover { color: var(--a); background: var(--a-wash); border-color: var(--a-edge); }
   .castroll:active { transform: translateY(1px); }
@@ -1900,11 +1900,11 @@
     display: inline-flex; align-items: center; gap: 0.375rem; font: inherit; font-size: 0.8125rem;
     background: var(--a-wash); border: 1px solid var(--a-edge); color: var(--a); border-radius: var(--r-sm);
     padding: 0.3125rem 0.625rem; cursor: pointer;
-    transition: border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .opener:hover { border-color: var(--a); color: var(--a-hi); }
   .opener:active { transform: translateY(1px); }
-  .chev { font-style: normal; font-size: 0.7rem; transition: transform 0.2s ease; }
+  .chev { font-style: normal; font-size: 0.7rem; transition: transform 0.2s var(--ease-out); }
   .chev.up { transform: rotate(180deg); }
   /* Opening a sheet: the panels fill in one after another, where the outline had them. */
   .entering .panel { animation: sheetFill 0.4s ease-out backwards; animation-delay: calc(var(--i, 0) * 60ms); }
@@ -1953,7 +1953,7 @@
   .keys {
     display: none; place-items: center; width: 2rem; height: 2rem; flex: none; padding: 0;
     background: var(--raised); border: 1px solid var(--line); border-radius: var(--r-sm);
-    color: var(--text); cursor: pointer; transition: border-color 0.18s ease, color 0.18s ease, transform 0.08s ease;
+    color: var(--text); cursor: pointer; transition: border-color 0.18s var(--ease-out), color 0.18s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .keys:hover { border-color: var(--a-edge); color: var(--a); }
   .keys:active { transform: translateY(1px); }

@@ -225,7 +225,7 @@
   .round { font-size: 0.8125rem; color: var(--a); font-weight: 650; }
   .roundof { color: var(--dim); font-weight: 500; }
   .initcall { font-size: 0.8125rem; font-weight: 600; color: var(--a); margin-right: 0.25rem; }
-  .initfold { overflow: clip; overflow-clip-margin: 8px; transition: height 0.32s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.26s ease; }
+  .initfold { overflow: clip; overflow-clip-margin: 8px; transition: height 0.32s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.26s var(--ease-out); }
   .initfold.folded { opacity: 0; }
   /* While a tile is dragged it may leave the list's box: nothing clips it. */
   .initfold:has(:global(.reordering)) { overflow: visible; }
@@ -239,7 +239,7 @@
     position: relative; display: flex; align-items: center; gap: 0.625rem; min-width: 0; min-height: 3.25rem;
     padding: 0.375rem 0.625rem 0.375rem 0.375rem; border-radius: var(--r); border: 1px solid var(--line-soft);
     background: var(--surface); font-size: 0.875rem;
-    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.25s ease, opacity 0.25s ease;
+    transition: border-color 0.2s var(--ease-out), background-color 0.2s var(--ease-out), box-shadow 0.25s var(--ease-out), opacity 0.25s var(--ease-out);
   }
   .initrow.initcr { background: color-mix(in oklab, var(--surface) 88%, var(--raised)); }
   /* A tie this viewer can settle: picked up and moved. */
@@ -266,7 +266,7 @@
   }
   .initrow.now .initscore { background: var(--a); border-color: var(--a); color: var(--bg); }
   /* A plain block: centering its items as a grid moved Chrome's placeholder box, and the dash sat left. */
-  input.initscore { display: block; place-items: normal; border-color: var(--line); background: var(--bg); text-align: center; transition: border-color 0.15s ease; }
+  input.initscore { display: block; place-items: normal; border-color: var(--line); background: var(--bg); text-align: center; transition: border-color 0.15s var(--ease-out); }
   input.initscore:hover { border-color: var(--a-edge); }
   input.initscore:focus { outline: none; border-color: var(--a); }
   input.initscore::placeholder { color: var(--dim); }
@@ -287,7 +287,7 @@
   .initroll {
     flex: none; width: 2.125rem; height: 2.125rem; display: grid; place-items: center; padding: 0; cursor: pointer;
     color: var(--a); background: var(--a-wash); border: 1px solid var(--a-edge); border-radius: var(--r-sm);
-    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+    transition: background-color 0.15s var(--ease-out), border-color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .initroll:hover { background: color-mix(in oklab, var(--a) 22%, transparent); border-color: var(--a); }
   .initroll:active { transform: translateY(1px); }

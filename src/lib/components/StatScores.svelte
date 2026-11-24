@@ -33,7 +33,7 @@
   span { font-weight: 650; letter-spacing: 0.08em; font-size: 0.625rem; }
   input {
     font: inherit; font-size: 0.8125rem; color: var(--text); min-width: 0; width: 100%; text-align: center; padding: 0.25rem;
-    border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg); transition: border-color 0.15s ease;
+    border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg); transition: border-color 0.15s var(--ease-out);
   }
   input:hover { border-color: var(--a-edge); }
   input:focus { outline: none; border-color: var(--a-edge); }

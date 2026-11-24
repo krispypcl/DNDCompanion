@@ -140,7 +140,7 @@
   .or::before, .or::after { content: ''; flex: 1; height: 1px; background: var(--line-soft); }
   .meter {
     margin-top: 0.4375rem; display: grid; grid-template-rows: 0fr; opacity: 0;
-    transition: grid-template-rows 0.25s ease, opacity 0.2s ease;
+    transition: grid-template-rows 0.25s var(--ease-out), opacity 0.2s var(--ease-out);
   }
   .meter > * { min-height: 0; overflow: hidden; }
   .meter.shown { grid-template-rows: auto auto; opacity: 1; }
@@ -148,13 +148,13 @@
   .bars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.25rem; }
   .bars i {
     height: 4px; border-radius: 2px; background: var(--track);
-    transition: background-color 0.3s ease, transform 0.3s cubic-bezier(0.33, 1, 0.68, 1);
+    transition: background-color 0.3s var(--ease-out), transform 0.3s cubic-bezier(0.33, 1, 0.68, 1);
     transform-origin: left center;
   }
   .meter[data-score='0'] .bars i.lit, .meter[data-score='1'] .bars i.lit { background: var(--danger); }
   .meter[data-score='2'] .bars i.lit { background: color-mix(in oklch, var(--danger) 45%, var(--a)); }
   .meter[data-score='3'] .bars i.lit, .meter[data-score='4'] .bars i.lit { background: var(--a); }
-  .bars i.lit { animation: fill 0.3s ease; }
+  .bars i.lit { animation: fill 0.3s var(--ease-out); }
   @keyframes fill { from { transform: scaleX(0.3); } }
   .meter p { margin: 0.3125rem 0 0; font-size: 0.78rem; color: var(--dim); line-height: 1.4; }
   .meter b { color: var(--text); font-weight: 600; }
@@ -202,7 +202,7 @@
     padding: 0.625rem 0.75rem;
     font: inherit;
     font-size: 0.9375rem;
-    transition: border-color 0.15s ease;
+    transition: border-color 0.15s var(--ease-out);
   }
   input:hover { border-color: var(--a-edge); }
   input:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; border-color: var(--a); }
@@ -217,7 +217,7 @@
     font-size: 0.9375rem;
     font-weight: 600;
     cursor: pointer;
-    transition: filter 0.15s ease, transform 0.08s ease;
+    transition: filter 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   button:hover:not(:disabled) { filter: brightness(1.08); }
   button:active:not(:disabled) { transform: translateY(1px); }

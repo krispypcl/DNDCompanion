@@ -350,7 +350,7 @@
   ol::-webkit-scrollbar-thumb { background: color-mix(in oklch, var(--a) 55%, transparent); border-radius: 6px; }
   li {
     display: flex; align-items: center; border-radius: var(--r-sm); margin-bottom: 0.125rem;
-    transition: background-color 0.15s ease;
+    transition: background-color 0.15s var(--ease-out);
   }
   li:hover { background: var(--hover-bg); }
   li.on { background: var(--a-wash); }
@@ -368,7 +368,7 @@
   .x {
     flex: none; width: 1.75rem; height: 1.75rem; display: grid; place-items: center; padding: 0;
     background: none; border: 0; color: var(--faint); font-size: 1.05rem; cursor: pointer; border-radius: var(--r-sm);
-    opacity: 0; transition: opacity 0.15s ease, color 0.15s ease;
+    opacity: 0; transition: opacity 0.15s var(--ease-out), color 0.15s var(--ease-out);
   }
   li:hover .x, .x:focus-visible { opacity: 1; }
   .x:hover { color: var(--bad); }
@@ -377,7 +377,7 @@
   .add { display: flex; gap: 0.5rem; }
   .add button { white-space: nowrap; flex: none; }
   .progress { height: 3px; border-radius: 2px; background: var(--line-soft); margin-top: 0.5rem; overflow: hidden; }
-  .progress i { display: block; height: 100%; background: var(--a); transition: width 0.25s ease; }
+  .progress i { display: block; height: 100%; background: var(--a); transition: width 0.25s var(--ease-out); }
   .pick.still { cursor: default; }
   .add input {
     flex: 1; min-width: 0; font: inherit; font-size: 0.8125rem; padding: 0.4375rem 0.625rem; color: var(--text);

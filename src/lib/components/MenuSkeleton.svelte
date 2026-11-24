@@ -37,7 +37,7 @@
 
 <style>
   /* The same frame as the real areas in the main menu (+page.svelte). */
-  .mskel { animation: in 0.4s ease 0.15s backwards; }
+  .mskel { animation: in 0.4s var(--ease-out) 0.15s backwards; }
   @keyframes in { from { opacity: 0; } }
   .mhead { margin-top: 1.75rem; display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem 1.5rem; flex-wrap: wrap; }
   .mgreet { display: grid; gap: 0.375rem; flex: 1 1 20rem; }

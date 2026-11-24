@@ -102,7 +102,7 @@
     color: var(--text);
     background: none;
     box-sizing: border-box;
-    transition: border-color 0.18s ease, background-color 0.18s ease;
+    transition: border-color 0.18s var(--ease-out), background-color 0.18s var(--ease-out);
   }
   /* Under 16px a phone zooms in when a field takes focus, which on a sheet
      full of small numbers means zooming on every tap. The floor applies to
@@ -129,7 +129,7 @@
     min-width: 2.5rem;
   }
   /* Entering edit mode: the boxes fade in around the words, which stay put. */
-  input.field, textarea.field { animation: fieldIn 0.32s ease; }
+  input.field, textarea.field { animation: fieldIn 0.32s var(--ease-out); }
   @keyframes fieldIn {
     from { border-color: transparent; background-color: transparent; }
   }

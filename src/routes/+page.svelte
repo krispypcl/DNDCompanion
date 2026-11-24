@@ -1172,7 +1172,7 @@
     -webkit-mask-composite: source-in;
     mask-image: linear-gradient(to left, #000 15%, transparent 95%), linear-gradient(to top, #000 20%, transparent 100%);
     mask-composite: intersect;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.3s var(--ease-out);
   }
   li:hover .cardbanner { opacity: 0.5; }
   /* A light card: at a low opacity over white the picture came out milky; multiplied into the
@@ -1299,7 +1299,7 @@
     border-radius: 6px; padding: 0.4rem 0.9rem; font: inherit; font-size: 0.875rem; cursor: pointer;
   }
   button {
-    transition: border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   button:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
   button:active:not(:disabled) { transform: translateY(1px); }
@@ -1329,7 +1329,7 @@
     border-radius: 8px;
     background: var(--surface);
     padding-right: 0.5rem;
-    transition: border-color 0.15s ease, transform 0.15s ease;
+    transition: border-color 0.15s var(--ease-out), transform 0.15s var(--ease-out);
   }
   li:hover { border-color: var(--a-edge); transform: translateY(-1px); box-shadow: 0 6px 18px -8px rgb(0 0 0 / 0.45); }
   li a {
@@ -1370,7 +1370,7 @@
     display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; color: var(--text);
     font-size: 0.875rem; padding: 0.1875rem 0.75rem 0.1875rem 0.1875rem; border-radius: 999px;
     border: 1px solid var(--line); background: var(--raised);
-    transition: border-color 0.15s ease, color 0.15s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out);
   }
   .me:hover { border-color: var(--a-edge); color: var(--a); }
   /* In a phone's top bar: the picture alone, round. */
@@ -1393,9 +1393,9 @@
   .star {
     flex: none; background: none; border: 0; padding: 0.5rem 0 0.5rem 0.75rem; cursor: pointer;
     color: var(--faint); display: grid; place-items: center;
-    transition: color 0.15s ease, transform 0.2s cubic-bezier(0.33, 1, 0.68, 1);
+    transition: color 0.15s var(--ease-out), transform 0.2s cubic-bezier(0.33, 1, 0.68, 1);
   }
-  .star svg { fill: none; transition: fill 0.2s ease; }
+  .star svg { fill: none; transition: fill 0.2s var(--ease-out); }
   .star:hover { color: var(--a); transform: scale(1.15); }
   .star.on { color: oklch(84% 0.15 90); }
   .star.on svg { fill: currentColor; animation: starPop 0.4s cubic-bezier(0.33, 1, 0.68, 1); }
@@ -1413,7 +1413,7 @@
   @media (hover: hover) and (pointer: fine) {
     .star, .trash, .grip {
       opacity: 0;
-      transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.2, 0.8, 0.3, 1), color 0.15s ease;
+      transition: opacity 0.2s var(--ease-out), transform 0.25s cubic-bezier(0.2, 0.8, 0.3, 1), color 0.15s var(--ease-out);
     }
     .star { transform: translateX(-6px) scale(0.8); }
     .trash, .grip { transform: translateX(6px) scale(0.8); }
@@ -1437,7 +1437,7 @@
     /* The picture alone says whose account it is: a round button, no pill. */
     .me span { display: none; }
     .me { padding: 0; border: 0; background: none; border-radius: 50%; }
-    .me :global(.avatar) { width: 2.25rem; height: 2.25rem; transition: box-shadow 0.15s ease; }
+    .me :global(.avatar) { width: 2.25rem; height: 2.25rem; transition: box-shadow 0.15s var(--ease-out); }
     .me:hover :global(.avatar), .me:focus-visible :global(.avatar) { box-shadow: 0 0 0 2px var(--a-edge); }
   }
 </style>

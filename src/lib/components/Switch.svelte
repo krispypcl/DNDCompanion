@@ -25,20 +25,20 @@
     display: inline-flex; align-items: center; gap: 0.5rem;
     background: none; border: 0; padding: 0.125rem 0; cursor: pointer;
     font: inherit; font-size: 0.8125rem; color: var(--dim);
-    transition: color 0.18s ease;
+    transition: color 0.18s var(--ease-out);
   }
   .switch:hover:not(:disabled), .switch[aria-checked='true'] { color: var(--text); }
   .switch:disabled { cursor: default; opacity: 0.5; }
   .track {
     position: relative; width: 2.125rem; height: 1.25rem; flex: none;
     border-radius: 999px; background: var(--track); border: 1px solid var(--line);
-    transition: background-color 0.22s ease, border-color 0.22s ease;
+    transition: background-color 0.22s var(--ease-out), border-color 0.22s var(--ease-out);
   }
   .knob {
     position: absolute; top: 1px; left: 1px; width: calc(1.25rem - 4px); height: calc(1.25rem - 4px);
     border-radius: 50%; background: var(--text);
     box-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
-    transition: transform 0.24s cubic-bezier(0.33, 1, 0.68, 1), background-color 0.22s ease;
+    transition: transform 0.24s cubic-bezier(0.33, 1, 0.68, 1), background-color 0.22s var(--ease-out);
   }
   .switch[aria-checked='true'] .track { background: var(--a); border-color: var(--a); }
   .switch[aria-checked='true'] .knob { transform: translateX(0.875rem); background: #fff; }

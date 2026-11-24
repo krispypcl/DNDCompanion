@@ -112,12 +112,12 @@
 
 <style>
   .reveal { position: relative; cursor: pointer; border-radius: var(--r-sm); outline-offset: 2px; }
-  .inner { transition: opacity 0.22s ease, filter 0.22s ease; }
+  .inner { transition: opacity 0.22s var(--ease-out), filter 0.22s var(--ease-out); }
   /* Nothing of what is underneath shows through: not the count, not the colors. */
   .veiled .inner { opacity: 0; filter: blur(4px); user-select: none; }
   .cue {
     position: absolute; inset: 0; display: grid; place-items: center;
-    pointer-events: none; opacity: 0; transition: opacity 0.22s ease;
+    pointer-events: none; opacity: 0; transition: opacity 0.22s var(--ease-out);
   }
   .veiled .cue { opacity: 1; }
   .cue::before {

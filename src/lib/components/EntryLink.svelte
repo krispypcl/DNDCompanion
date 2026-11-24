@@ -110,7 +110,7 @@
   .lookup {
     color: var(--dim);
     opacity: 0;
-    transition: opacity 0.15s ease, color 0.15s ease;
+    transition: opacity 0.15s var(--ease-out), color 0.15s var(--ease-out);
     display: inline-flex;
     align-items: center;
     padding: 0.1rem;

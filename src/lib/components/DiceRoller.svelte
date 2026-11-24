@@ -220,13 +220,13 @@
   summary::after {
     content: ''; width: 0.4rem; height: 0.4rem;
     border-right: 1.5px solid var(--dim); border-bottom: 1.5px solid var(--dim);
-    transform: rotate(45deg) translateY(-1px); transition: transform 0.2s ease;
+    transform: rotate(45deg) translateY(-1px); transition: transform 0.2s var(--ease-out);
   }
   details[open] summary::after { transform: rotate(-135deg) translateY(-1px); }
   /* Unfolds the same way as General actions. */
   .tray::details-content {
     block-size: 0; opacity: 0; overflow: hidden;
-    transition: block-size 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.26s ease,
+    transition: block-size 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.26s var(--ease-out),
       content-visibility 0.32s allow-discrete;
   }
   .tray[open]::details-content { block-size: auto; opacity: 1; overflow: visible; }
@@ -245,7 +245,7 @@
     position: relative; min-width: 3rem; padding: 0.4375rem 0.625rem;
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); font-size: 0.8125rem; font-weight: 600;
-    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .add:hover { border-color: var(--a-edge); color: var(--a); }
   .add:active { transform: translateY(1px) scale(0.97); }
@@ -272,7 +272,7 @@
   .mod { display: inline-flex; align-items: stretch; }
   .mod button {
     width: 2rem; background: var(--raised); border: 1px solid var(--line); color: var(--text);
-    transition: border-color 0.15s ease, color 0.15s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out);
   }
   .mod button:first-child { border-radius: var(--r-sm) 0 0 var(--r-sm); }
   .mod button:last-child { border-radius: 0 var(--r-sm) var(--r-sm) 0; }
@@ -286,7 +286,7 @@
   .modes { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; }
   .modes button {
     background: none; border: 0; color: var(--dim); padding: 0.375rem 0.75rem; font-size: 0.8125rem;
-    transition: background-color 0.18s ease, color 0.18s ease;
+    transition: background-color 0.18s var(--ease-out), color 0.18s var(--ease-out);
   }
   .modes button + button { border-left: 1px solid var(--line); }
   .modes button:hover { color: var(--text); }
@@ -303,7 +303,7 @@
   .roll {
     background: var(--a); border: 1px solid var(--a); color: var(--bg); font-weight: 650;
     border-radius: var(--r-sm); padding: 0.4375rem 1.25rem; font-size: 0.875rem;
-    transition: filter 0.15s ease, transform 0.08s ease, opacity 0.15s ease;
+    transition: filter 0.15s var(--ease-out), transform 0.08s var(--ease-out), opacity 0.15s var(--ease-out);
   }
   .roll:hover:not(:disabled) { filter: brightness(1.1); }
   .roll:active:not(:disabled) { transform: translateY(1px); }
@@ -364,11 +364,11 @@
   .clearhist {
     background: none; border: 1px solid transparent; color: var(--dim); font-size: 0.75rem;
     border-radius: var(--r-sm); padding: 0.1875rem 0.5rem;
-    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+    transition: color 0.15s var(--ease-out), border-color 0.15s var(--ease-out), background-color 0.15s var(--ease-out);
   }
   .clearhist:hover { color: var(--danger); border-color: color-mix(in oklch, var(--danger) 45%, transparent); background: var(--danger-wash); }
   .history { list-style: none; margin: 0.375rem 0 0; padding: 0; display: grid; gap: 0.25rem; }
-  .history li { font-size: 0.78rem; color: var(--faint); display: flex; gap: 0.5rem; animation: land 0.25s ease; }
+  .history li { font-size: 0.78rem; color: var(--faint); display: flex; gap: 0.5rem; animation: land 0.25s var(--ease-out); }
   .history b { color: var(--dim); min-width: 1.75rem; text-align: right; font-variant-numeric: tabular-nums; }
 
   @media (max-width: 700px) {

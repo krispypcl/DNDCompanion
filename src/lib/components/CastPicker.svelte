@@ -157,7 +157,7 @@
     font: inherit; display: grid; gap: 0.125rem; text-align: center; cursor: pointer;
     background: var(--raised); border: 1px solid var(--line); border-radius: var(--r-sm);
     padding: 0.5rem 0.25rem; color: var(--text);
-    transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
+    transition: border-color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .lvl b { font-size: 0.9375rem; }
   .lvl span { font-size: 0.75rem; font-variant-numeric: tabular-nums; }
@@ -172,7 +172,7 @@
   .actions button {
     flex: 1; font: inherit; font-size: 0.9375rem; cursor: pointer; border-radius: var(--r-sm);
     padding: 0.625rem 0.75rem; border: 1px solid var(--line); background: var(--raised); color: var(--text);
-    transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
+    transition: border-color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .actions b { font-variant-numeric: tabular-nums; }
   .actions .roll { border-color: var(--a-edge); background: var(--a-wash); color: var(--a); }

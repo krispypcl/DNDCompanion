@@ -110,7 +110,7 @@
   /* Both in one cell: the spend row lies over the buttons and is as big. */
   .restbox { display: grid; }
   .rests, .spend { grid-area: 1 / 1; min-width: 0; }
-  .rests { display: flex; gap: 0.4rem; flex-wrap: wrap; transition: opacity 0.16s ease; }
+  .rests { display: flex; gap: 0.4rem; flex-wrap: wrap; transition: opacity 0.16s var(--ease-out); }
   .rests.away { opacity: 0; }
   .spend { display: flex; align-items: stretch; gap: 0.4rem; }
   .step {
@@ -132,7 +132,7 @@
     font: inherit;
     font-size: 0.875rem;
     cursor: pointer;
-    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
   button:disabled { opacity: 0.5; cursor: default; }

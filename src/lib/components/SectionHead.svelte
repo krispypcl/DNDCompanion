@@ -59,11 +59,11 @@
     font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; cursor: pointer;
     display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.625rem; margin-left: -0.625rem;
     border: 1px solid transparent; border-radius: 999px; background: none;
-    transition: border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .secfold::after {
     content: ''; width: 0.4rem; height: 0.4rem; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
-    transform: rotate(-135deg) translateY(-1px); transition: transform 0.2s ease;
+    transform: rotate(-135deg) translateY(-1px); transition: transform 0.2s var(--ease-out);
   }
   .secfold[aria-expanded='false']::after { transform: rotate(45deg) translateY(-1px); }
   .secfold:hover { border-color: var(--a-edge); color: var(--a); }

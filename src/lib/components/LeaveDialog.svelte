@@ -50,7 +50,7 @@
   .row { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.125rem; }
   button {
     font: inherit; font-size: 0.875rem; border-radius: var(--r-sm); padding: 0.5rem 0.875rem; cursor: pointer;
-    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, filter 0.15s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), filter 0.15s var(--ease-out);
   }
   .leave { background: none; border: 1px solid var(--line); color: var(--dim); }
   .leave:hover { color: var(--danger); border-color: var(--danger); }

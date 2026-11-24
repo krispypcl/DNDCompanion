@@ -132,7 +132,7 @@
      outline, the whole chip is the button: a d20 waits in its corner, and on
      hover the chip rises, takes the accent, and the die gives a turn. */
   .toggle.rolls { cursor: pointer; }
-  .save.rollable { transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s cubic-bezier(0.33, 1, 0.68, 1), box-shadow 0.2s ease; }
+  .save.rollable { transition: border-color 0.2s var(--ease-out), background-color 0.2s var(--ease-out), transform 0.2s cubic-bezier(0.33, 1, 0.68, 1), box-shadow 0.2s var(--ease-out); }
   .save.rollable:hover {
     border-color: var(--a-edge); transform: translateY(-2px);
     box-shadow: 0 6px 14px -8px color-mix(in oklch, var(--a) 70%, transparent);
@@ -142,7 +142,7 @@
   .d20 {
     position: absolute; top: 0.3125rem; right: 0.3125rem; width: 0.75rem; height: 0.75rem;
     fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; color: var(--faint);
-    transition: color 0.2s ease, transform 0.35s cubic-bezier(0.33, 1, 0.68, 1);
+    transition: color 0.2s var(--ease-out), transform 0.35s cubic-bezier(0.33, 1, 0.68, 1);
   }
   /* Advantage, from a feature or an item: a small tag beside the number. */
   .adv {
@@ -166,7 +166,7 @@
   .ability {
     background: var(--raised); border: 1px solid var(--line);
     border-radius: var(--r); padding: 0.625rem 0.5rem 0.5rem; text-align: center; min-width: 0;
-    transition: border-color 0.2s ease, background-color 0.2s ease;
+    transition: border-color 0.2s var(--ease-out), background-color 0.2s var(--ease-out);
   }
   .ability:hover { border-color: var(--hover-line); background: var(--hover-bg); }
   .name {
@@ -191,7 +191,7 @@
     background: var(--raised); border: 1px solid var(--line-soft);
     border-radius: var(--r-sm); padding: 0.375rem 0.25rem 0.3125rem;
     text-align: center; min-width: 0;
-    transition: border-color 0.2s ease, background-color 0.2s ease;
+    transition: border-color 0.2s var(--ease-out), background-color 0.2s var(--ease-out);
   }
   .save:not(.on):hover { border-color: var(--hover-line); background: var(--hover-bg); }
   .save.on { border-color: var(--a-edge); background: var(--a-wash); }
@@ -200,7 +200,7 @@
     position: absolute; top: 0.4375rem; left: 0.4375rem;
     width: 0.5625rem; height: 0.5625rem; border-radius: 50%;
     border: 1.5px solid var(--faint); background: transparent;
-    transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+    transition: background-color 0.18s var(--ease-out), border-color 0.18s var(--ease-out), transform 0.18s var(--ease-out);
   }
   .dot.on { border-color: var(--a); background: var(--a); }
   .toggle:not(:disabled):hover .dot { transform: scale(1.25); }

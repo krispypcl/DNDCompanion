@@ -96,7 +96,7 @@
     /* A big target that takes no more line height than the words beside
        it: a heading with an "i" is as tall as one without. */
     margin-block: -0.5rem;
-    transition: color 0.15s ease, background-color 0.15s ease;
+    transition: color 0.15s var(--ease-out), background-color 0.15s var(--ease-out);
   }
   .info:hover, .info.on { color: var(--a); background: var(--a-wash); }
   .note {

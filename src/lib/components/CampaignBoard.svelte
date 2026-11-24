@@ -915,14 +915,14 @@
 
 <style>
   .boardwrap { margin-top: 2rem; }
-  .boardfold { overflow: clip; overflow-clip-margin: 6px; transition: height 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.26s ease; }
+  .boardfold { overflow: clip; overflow-clip-margin: 6px; transition: height 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.26s var(--ease-out); }
   .boardfold.folded { opacity: 0; }
   @media (prefers-reduced-motion: reduce) { .boardfold { transition: none; } }
   .pages { display: flex; flex-wrap: wrap; gap: 0.25rem; align-items: center; min-width: 0; }
   .pagetab, .pagename {
     font: inherit; font-size: 0.8125rem; border-radius: 999px; padding: 0.25rem 0.75rem;
     border: 1px solid var(--line); background: var(--raised); color: var(--dim); cursor: pointer;
-    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), background-color 0.15s var(--ease-out);
   }
   .pagetab:hover { border-color: var(--a-edge); color: var(--text); }
   .pagetab.on { border-color: var(--a-edge); background: var(--a-wash); color: var(--a); }
@@ -932,7 +932,7 @@
   .tool {
     width: 2rem; height: 2rem; display: grid; place-items: center; padding: 0; border-radius: var(--r-sm);
     border: 1px solid var(--line); background: var(--raised); color: var(--text); cursor: pointer;
-    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .tool:hover { border-color: var(--a-edge); color: var(--a); }
   .tool:active { transform: translateY(1px); }
@@ -941,7 +941,7 @@
   .swatches, .sizes { display: flex; flex-wrap: wrap; gap: 0.25rem; align-items: center; }
   .sw {
     width: 1.25rem; height: 1.25rem; border-radius: 50%; padding: 0; cursor: pointer; background: var(--sw);
-    border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line); transition: box-shadow 0.15s ease, transform 0.15s ease;
+    border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line); transition: box-shadow 0.15s var(--ease-out), transform 0.15s var(--ease-out);
   }
   .sw[aria-pressed='true'] { box-shadow: 0 0 0 2px var(--a); transform: scale(1.1); }
   .sw:hover { box-shadow: 0 0 0 2px var(--a-edge); transform: scale(1.08); }
@@ -952,7 +952,7 @@
   }
   .size i { display: block; width: var(--d); height: var(--d); border-radius: 50%; background: currentColor; }
   .size[aria-pressed='true'] { border-color: var(--a-edge); background: var(--a-wash); color: var(--a); }
-  .size { transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease; }
+  .size { transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.08s var(--ease-out); }
   .size:hover { border-color: var(--a-edge); color: var(--a); }
   .size:active { transform: translateY(1px); }
   .grow { flex: 1; }
@@ -962,7 +962,7 @@
   }
   .paper { padding: 0.3125rem 0.5rem; }
   .clear, .ask button, .paper, .pagetab {
-    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .clear:hover { color: var(--bad); border-color: var(--bad); }
   .paper:hover, .ask button:hover { border-color: var(--a-edge); color: var(--a); }
@@ -985,7 +985,7 @@
     background-color: color-mix(in oklch, var(--surface) 70%, transparent);
     backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
     background-position: var(--px) var(--py); background-size: var(--step) var(--step);
-    transition: border-color 0.2s ease;
+    transition: border-color 0.2s var(--ease-out);
   }
   .board.active { border-color: var(--a-edge); }
   .board.panning { cursor: grabbing; }
@@ -1005,7 +1005,7 @@
   .ink path.erasable { cursor: pointer; }
   .ink path.erasable:hover { opacity: 0.45; }
 
-  .item { position: absolute; box-sizing: border-box; user-select: none; transition: box-shadow 0.2s ease, transform 0.2s ease; }
+  .item { position: absolute; box-sizing: border-box; user-select: none; transition: box-shadow 0.2s var(--ease-out), transform 0.2s var(--ease-out); }
   .live.tool-move .item { cursor: grab; }
   .item.lifted { cursor: grabbing; transform: rotate(-1.2deg) scale(1.02); box-shadow: 0 18px 40px -16px rgb(0 0 0 / 0.55); }
   .note {
@@ -1018,7 +1018,7 @@
   .boardpic { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: inherit; pointer-events: none; -webkit-user-drag: none; }
   .grip {
     position: absolute; right: -6px; bottom: -6px; width: 14px; height: 14px; border-radius: 4px; cursor: nwse-resize;
-    background: var(--surface); border: 1px solid var(--a-edge); opacity: 0; transition: opacity 0.15s ease; touch-action: none;
+    background: var(--surface); border: 1px solid var(--a-edge); opacity: 0; transition: opacity 0.15s var(--ease-out); touch-action: none;
   }
   .item.image:hover .grip, .grip:active { opacity: 1; }
   @media (hover: none) { .grip { opacity: 0.85; } }
@@ -1035,7 +1035,7 @@
   .text textarea { font-weight: 600; outline: 1px dashed color-mix(in oklch, var(--ic, var(--text)) 50%, transparent); }
   .pen {
     position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; display: grid; place-items: center;
-    padding: 0; border: 0; border-radius: 50%; cursor: pointer; opacity: 0; transition: opacity 0.15s ease;
+    padding: 0; border: 0; border-radius: 50%; cursor: pointer; opacity: 0; transition: opacity 0.15s var(--ease-out);
     background: color-mix(in oklch, white 55%, transparent); color: oklch(25% 0.02 286);
   }
   .item:hover .pen, .pen:focus-visible { opacity: 1; }

@@ -28,7 +28,7 @@
   .speaker {
     width: 1.5rem; height: 1.5rem; padding: 0; flex: none; display: inline-grid; place-items: center; cursor: pointer;
     border: 1px solid var(--line); border-radius: 50%; background: var(--raised); color: var(--dim);
-    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.1s var(--ease-out);
   }
   .speaker:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
   .speaker:active:not(:disabled) { transform: translateY(1px); }

@@ -122,7 +122,7 @@
     width: 100%; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; column-gap: 0.75rem;
     text-align: left; font: inherit; padding: 0.75rem 0.9rem; border-radius: var(--r); cursor: pointer;
     border: 1px solid var(--line); background: var(--surface); color: var(--text);
-    transition: border-color 0.15s ease, transform 0.15s ease;
+    transition: border-color 0.15s var(--ease-out), transform 0.15s var(--ease-out);
   }
   li button:hover:not(:disabled) { border-color: var(--a-edge); transform: translateY(-1px); }
   li button:disabled { cursor: default; opacity: 0.7; }

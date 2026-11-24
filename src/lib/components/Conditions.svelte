@@ -151,7 +151,7 @@
     background: none; border: 0; color: var(--dim); cursor: pointer;
     font-size: 1rem; line-height: 1; width: 1.25rem; height: 1.25rem;
     border-radius: 50%; padding: 0; display: inline-grid; place-items: center;
-    transition: color 0.15s ease, background-color 0.15s ease;
+    transition: color 0.15s var(--ease-out), background-color 0.15s var(--ease-out);
   }
   .x:hover { color: var(--danger); background: var(--raised); }
 
@@ -159,7 +159,7 @@
   .dot {
     width: 0.75rem; height: 0.75rem; border-radius: 50%; padding: 0; margin-right: 0.125rem;
     border: 1px solid color-mix(in oklch, var(--text) 30%, transparent); background: var(--dot); cursor: pointer;
-    transition: transform 0.15s ease;
+    transition: transform 0.15s var(--ease-out);
   }
   .dot:hover { transform: scale(1.25); }
   .dot.none { background: none; border-style: dashed; }
@@ -167,7 +167,7 @@
     flex: 1 1 auto; min-width: 0; background: var(--bg); border: 1px solid var(--line);
     color: var(--text); border-radius: var(--r-sm); padding: 0.3125rem 0.5rem;
     font: inherit; font-size: 0.8125rem;
-    transition: border-color 0.15s ease;
+    transition: border-color 0.15s var(--ease-out);
   }
   input:hover { border-color: var(--a-edge); }
   input::placeholder { color: var(--dim); opacity: 0.7; }
@@ -177,7 +177,7 @@
   .go {
     flex: none; background: var(--raised); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.3125rem 0.75rem; font: inherit; font-size: 0.8125rem;
-    cursor: pointer; transition: border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+    cursor: pointer; transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), opacity 0.15s var(--ease-out);
   }
   .go:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
   .go:disabled { opacity: 0.45; cursor: default; }

@@ -124,7 +124,7 @@
   .hex {
     width: 5.5rem; font: inherit; font-size: 0.8125rem; font-variant-numeric: tabular-nums; text-transform: lowercase;
     padding: 0.3125rem 0.5rem; border: 1px solid var(--line); border-radius: var(--r-sm);
-    background: var(--bg); color: var(--text); transition: border-color 0.15s ease;
+    background: var(--bg); color: var(--text); transition: border-color 0.15s var(--ease-out);
   }
   .hex:focus { outline: none; border-color: var(--a-edge); }
   .hex.bad { border-color: var(--bad); }

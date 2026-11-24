@@ -42,7 +42,7 @@
     position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 0.4375rem;
     font: inherit; font-size: 0.875rem; color: var(--dim); cursor: pointer; white-space: nowrap;
     border: 0; background: none; border-radius: 999px; padding: 0.375rem 0.875rem;
-    transition: color 0.2s ease, transform 0.08s ease;
+    transition: color 0.2s var(--ease-out), transform 0.08s var(--ease-out);
   }
   button:hover { color: var(--a); }
   button:active { transform: translateY(1px); }
@@ -53,7 +53,7 @@
   .areacount {
     font-size: 0.6875rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1;
     padding: 0.1875rem 0.4375rem; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--dim);
-    transition: color 0.2s ease, border-color 0.2s ease;
+    transition: color 0.2s var(--ease-out), border-color 0.2s var(--ease-out);
   }
   button.on .areacount { border-color: var(--a-edge); color: var(--a); }
 </style>

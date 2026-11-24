@@ -73,7 +73,7 @@
   button {
     width: 100%; display: flex; align-items: center; gap: 0.5rem; font: inherit; color: var(--text); text-align: left; cursor: pointer;
     border: 1px solid transparent; background: none; border-radius: var(--r-sm); padding: 0.25rem 0.375rem;
-    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.1s var(--ease-out);
   }
   button:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); background: color-mix(in oklch, var(--a) 8%, transparent); }
   button:active:not(:disabled) { transform: translateY(1px); }

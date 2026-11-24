@@ -248,7 +248,7 @@
     border-radius: var(--r-sm);
     border: 1px solid transparent;
     cursor: pointer;
-    transition: background-color 0.12s ease, border-color 0.12s ease;
+    transition: background-color 0.12s var(--ease-out), border-color 0.12s var(--ease-out);
   }
   li.variant { padding-left: 1.25rem; }
   li.first:not(:first-child) { margin-top: 0.25rem; }

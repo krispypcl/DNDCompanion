@@ -389,14 +389,14 @@
   .card {
     position: relative; border: 1px solid var(--line-soft); border-radius: var(--r); background: var(--surface);
     padding: 0.875rem; display: flex; flex-direction: column;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    transition: border-color 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out);
   }
   .card:hover { border-color: var(--a-edge); }
   /* Hurt shows on the card's edge (app.css .hurtcard); pointed at, a hurt card still shows its own color round it. */
   .card:is(.bloodied, .critical, .down, .dead):hover { border-color: var(--a-edge); }
 
   /* Dragging: the others slide to make room; the lifted one rides above. */
-  .dragging .card { transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.3, 1), border-color 0.3s ease; }
+  .dragging .card { transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.3, 1), border-color 0.3s var(--ease-out); }
   .dragging .card.lifted {
     transition: none; z-index: 3; cursor: grabbing; border-color: var(--a-edge);
     box-shadow: 0 18px 40px -14px rgb(0 0 0 / 0.65);
@@ -405,7 +405,7 @@
     position: absolute; top: 0.5rem; right: 0.5rem; width: 1.625rem; height: 1.625rem; padding: 0;
     display: grid; place-items: center; border: 0; border-radius: var(--r-sm); background: none;
     color: var(--faint); cursor: grab; touch-action: none; opacity: 0;
-    transition: opacity 0.15s ease, color 0.15s ease, right 0.2s cubic-bezier(0.33, 1, 0.68, 1);
+    transition: opacity 0.15s var(--ease-out), color 0.15s var(--ease-out), right 0.2s cubic-bezier(0.33, 1, 0.68, 1);
   }
   .card:hover .grip, .grip:focus-visible, .lifted .grip { opacity: 1; }
   /* Here: a small green light on the portrait's top right corner, ringed in
@@ -433,7 +433,7 @@
   .open:hover strong, .open:focus-visible strong { background-position: 0 0; }
   @media (prefers-reduced-motion: reduce) { .who strong { transition: none; } }
   .open:focus-visible { outline: 2px solid var(--a); outline-offset: 3px; }
-  button.portrait { padding: 0; font: inherit; color: inherit; cursor: zoom-in; transition: border-color 0.35s ease, transform 0.15s ease; }
+  button.portrait { padding: 0; font: inherit; color: inherit; cursor: zoom-in; transition: border-color 0.35s var(--ease-out), transform 0.15s var(--ease-out); }
   button.portrait:hover { transform: scale(1.04); }
   button.portrait:active { transform: scale(0.98); }
   button.portrait:focus-visible { outline: 2px solid var(--a); outline-offset: 3px; }
@@ -443,7 +443,7 @@
   }
   .portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
   /* Ringed by conditions (ConditionRing), its own edge steps aside. */
-  .portrait { transition: border-color 0.35s ease; }
+  .portrait { transition: border-color 0.35s var(--ease-out); }
   .portrait.ringed { border-color: transparent; }
   .lvl {
     position: absolute; left: 50%; bottom: -0.4375rem; transform: translateX(-50%); white-space: nowrap;
@@ -463,7 +463,7 @@
   .hpkey {
     flex: none; width: 2rem; height: 2rem; display: grid; place-items: center; padding: 0; cursor: pointer;
     border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--raised); color: var(--dim);
-    transition: border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .hpkey:hover, .hpkey.on { border-color: var(--a-edge); color: var(--a); }
   .hpkey:active { transform: translateY(1px); }
@@ -487,8 +487,8 @@
   .stats dd { margin: 0.125rem 0 0; font-size: 1.0625rem; font-weight: 600; font-variant-numeric: tabular-nums; }
   /* Pointed at, a stat box lights as the sheet's own boxes do, and its number grows a touch in the
      character's color. */
-  .stats div { transition: border-color 0.2s ease, background-color 0.2s ease; }
-  .stats dt, .stats dd { transition: color 0.2s ease, transform 0.22s cubic-bezier(0.33, 1, 0.68, 1); }
+  .stats div { transition: border-color 0.2s var(--ease-out), background-color 0.2s var(--ease-out); }
+  .stats dt, .stats dd { transition: color 0.2s var(--ease-out), transform 0.22s cubic-bezier(0.33, 1, 0.68, 1); }
   .stats div:hover { border-color: var(--a-edge); background: color-mix(in oklab, var(--a) 7%, var(--raised)); }
   .stats div:hover dt { color: var(--a); }
   .stats div:hover dd { color: var(--a-hi, var(--a)); transform: scale(1.08); }
@@ -527,7 +527,7 @@
   }
   .dot.tint {
     width: 0.6875rem; height: 0.6875rem; padding: 0; border: 0; cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: transform 0.15s var(--ease-out), box-shadow 0.15s var(--ease-out);
   }
   .dot.tint:hover, .dot.tint[aria-expanded='true'] { transform: scale(1.15); box-shadow: 0 0 0 1.5px var(--a); }
   .dot.tint:active { transform: scale(1.15) translateY(1px); }
@@ -542,7 +542,7 @@
   .plus {
     width: 1.375rem; height: 1.375rem; padding: 0; display: grid; place-items: center; border-radius: 999px;
     border: 1px dashed var(--line); background: none; color: var(--dim); font-size: 0.9375rem; line-height: 1; cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease, transform 0.2s ease;
+    transition: color 0.15s var(--ease-out), border-color 0.15s var(--ease-out), transform 0.2s var(--ease-out);
   }
   .plus:hover { color: var(--a); border-color: var(--a-edge); }
   .plus[aria-expanded='true'] { color: var(--a); border-color: var(--a-edge); transform: rotate(45deg); }
@@ -553,7 +553,7 @@
   .x {
     position: absolute; top: 0.5rem; right: 2.25rem; width: 1.625rem; height: 1.625rem; padding: 0;
     display: grid; place-items: center; border: 0; background: none; color: var(--dim); font-size: 1.1rem; cursor: pointer;
-    opacity: 0; transition: opacity 0.15s ease, color 0.15s ease;
+    opacity: 0; transition: opacity 0.15s var(--ease-out), color 0.15s var(--ease-out);
   }
   .card:hover .x, .x:focus-visible { opacity: 1; }
   .x:hover { color: var(--bad); }

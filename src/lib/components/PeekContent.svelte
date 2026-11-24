@@ -140,7 +140,7 @@
     background: none;
     border: 1px solid var(--line-soft);
     border-radius: var(--r-sm);
-    transition: border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), transform 0.1s var(--ease-out);
   }
   .peek-tools :global(.peek-pin):hover, .peek-tools :global(.peek-pin.on) { border-color: var(--a-edge); color: var(--a); }
   .peek-tools :global(.peek-pin):active { transform: translateY(1px); }

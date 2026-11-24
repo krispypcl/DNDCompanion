@@ -31,7 +31,7 @@
   @property --hurt { syntax: '<number>'; inherits: true; initial-value: 0; }
   .edges {
     position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    transition: --hurt 0.9s ease;
+    transition: --hurt 0.9s var(--ease-out);
   }
   .edge {
     position: absolute; top: 0; bottom: 0;

@@ -226,7 +226,7 @@
     padding: 0;
     cursor: pointer;
     position: relative;
-    transition: border-color 0.16s ease-out, transform 0.18s ease;
+    transition: border-color 0.16s ease-out, transform 0.18s var(--ease-out);
   }
   /* The fill is a layer whose opacity moves. Animating the theme's accent as
      a color either overshot or switched at once, so a spent pip held its
@@ -285,7 +285,7 @@
     font-size: 0.9rem; line-height: 1;
     display: grid; place-items: center;
     cursor: pointer;
-    transition: border-color 0.15s ease, color 0.15s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out);
   }
   .step:not(:disabled):hover { border-color: var(--a-edge); color: var(--a); }
   .step:disabled { cursor: default; opacity: 0.5; }
@@ -306,7 +306,7 @@
   .ask button {
     font: inherit; font-size: 0.78rem; padding: 0.15rem 0.6rem; cursor: pointer;
     border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--bg); color: var(--text);
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition: border-color 0.15s var(--ease-out), background 0.15s var(--ease-out);
   }
   .ask .yes { border-color: var(--a-edge); color: var(--a); }
   .ask button:hover { border-color: var(--a-edge); }

@@ -57,7 +57,7 @@
     font: inherit;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+    transition: background-color 0.15s var(--ease-out), color 0.15s var(--ease-out), border-color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   button:hover { background: var(--a); border-color: var(--a); color: var(--on-accent); }
   button:active { transform: translateY(1px); }

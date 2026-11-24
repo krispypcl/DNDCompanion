@@ -311,7 +311,7 @@
   /* A player's: the crest as on the page, a rounded square; the banner a wide strip, cut to fit. */
   .bigpic {
     display: block; padding: 0; overflow: hidden; cursor: zoom-in; border-radius: var(--r); background: var(--raised);
-    transition: border-color 0.15s ease, transform 0.15s ease;
+    transition: border-color 0.15s var(--ease-out), transform 0.15s var(--ease-out);
   }
   .bigpic img { display: block; width: 100%; height: 100%; object-fit: cover; }
   .bigpic:hover { border-color: var(--a-edge); transform: scale(1.02); }
@@ -325,7 +325,7 @@
   .thumb {
     padding: 0; cursor: zoom-in; flex: none; height: 2.125rem; border-radius: var(--r-sm); overflow: hidden;
     border: 1px solid var(--line); background: var(--raised); position: relative;
-    opacity: 0.4; transition: opacity 0.25s ease, border-color 0.25s ease, transform 0.15s ease;
+    opacity: 0.4; transition: opacity 0.25s var(--ease-out), border-color 0.25s var(--ease-out), transform 0.15s var(--ease-out);
   }
   .thumb.crest { width: 2.125rem; }
   .thumb.banner { width: 4.5rem; }

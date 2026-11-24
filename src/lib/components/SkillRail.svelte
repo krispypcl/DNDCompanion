@@ -118,7 +118,7 @@
   .row {
     display: flex; align-items: center; gap: 0.5625rem;
     padding: 0.3125rem 0.25rem; margin: 0 -0.25rem; font-size: 0.845rem;
-    border-radius: var(--r-sm); transition: background-color 0.15s ease;
+    border-radius: var(--r-sm); transition: background-color 0.15s var(--ease-out);
   }
   .row:hover { background: var(--hover-bg); }
   .dot {
@@ -126,7 +126,7 @@
     border: 1.5px solid var(--faint); background: none; padding: 0; flex: none; cursor: pointer;
   }
   .dot:disabled { cursor: default; }
-  .dot { transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease; }
+  .dot { transition: background-color 0.18s var(--ease-out), border-color 0.18s var(--ease-out), transform 0.18s var(--ease-out); }
   .dot:not(:disabled):hover { transform: scale(1.25); }
   /* Half filled for proficiency, filled for expertise: the shape says which,
      without a legend and without color doing the work on its own. */
@@ -147,7 +147,7 @@
   button.bonus {
     font: inherit; font-size: 0.8125rem; font-weight: 600; font-variant-numeric: tabular-nums;
     background: none; cursor: pointer;
-    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   button.bonus:hover { border-color: var(--a); color: var(--a); background: var(--a-wash); border-style: dashed; }
   button.bonus:active { transform: translateY(1px); }

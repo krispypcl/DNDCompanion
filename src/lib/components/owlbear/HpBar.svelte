@@ -42,7 +42,7 @@
 <style>
   .hp { --hurt-red: oklch(64% 0.21 25); --temp: oklch(66% 0.14 245); display: flex; align-items: center; gap: 0.4375rem; min-width: 0; flex: 1 1 auto; width: 100%; }
   .bar { position: relative; flex: 1; min-width: 2.5rem; height: 0.4375rem; border-radius: 999px; background: color-mix(in oklch, var(--text) 13%, transparent); overflow: hidden; }
-  .fill, .temp { position: absolute; top: 0; bottom: 0; transition: width 0.5s cubic-bezier(0.2, 0.8, 0.25, 1), left 0.5s cubic-bezier(0.2, 0.8, 0.25, 1), background-color 0.4s ease; }
+  .fill, .temp { position: absolute; top: 0; bottom: 0; transition: width 0.5s cubic-bezier(0.2, 0.8, 0.25, 1), left 0.5s cubic-bezier(0.2, 0.8, 0.25, 1), background-color 0.4s var(--ease-out); }
   .fill { left: 0; z-index: 1; --hp-base: var(--a); }
   /* With temporary hit points the fill's end waves too, the temporary stretch running 6px under it
      so its color shows in the wave's troughs. */

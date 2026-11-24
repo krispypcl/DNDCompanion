@@ -144,7 +144,7 @@
   svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
   path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
   path.hit { cursor: pointer; }
-  path.gone { opacity: 0; transition: opacity 0.12s ease; }
+  path.gone { opacity: 0; transition: opacity 0.12s var(--ease-out); }
   path.hit:hover { opacity: 0.45; }
   /* The paper, drawn by the layer under the writing's own background. */
   .paper-lines { background-image: repeating-linear-gradient(to bottom, transparent 0 calc(1.55em - 1px), color-mix(in oklch, var(--text) 13%, transparent) calc(1.55em - 1px) 1.55em); background-position: 0 calc(0.15rem + 1px); }

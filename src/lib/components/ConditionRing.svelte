@@ -78,7 +78,7 @@
   path {
     stroke-dashoffset: calc((var(--off) + var(--spin)) * var(--p) * -1px);
     transition: stroke-dasharray 0.5s cubic-bezier(0.2, 0.8, 0.25, 1), --off 0.5s cubic-bezier(0.2, 0.8, 0.25, 1),
-      stroke 0.4s ease;
+      stroke 0.4s var(--ease-out);
   }
   /* On a light page a pale band (Invisible, White) needs an edge to be seen. */
   :global([data-mode='light']) .ring { filter: drop-shadow(0 0 0.6px rgb(0 0 0 / 0.55)); }

@@ -924,7 +924,7 @@
     font: inherit; color: inherit; background: none; cursor: pointer;
     border: 1px dashed transparent; border-radius: var(--r-sm);
     padding: 0 0.3rem; margin: 0 -0.3rem; text-align: inherit;
-    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), background-color 0.15s var(--ease-out);
   }
   .press:hover { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
   .press:active { transform: translateY(1px); }
@@ -970,9 +970,9 @@
   .toggle {
     flex: none; width: 1.75rem; height: 1.75rem; padding: 0; display: grid; place-items: center;
     background: none; border: 1px solid var(--line); border-radius: var(--r-sm); color: var(--faint);
-    cursor: pointer; transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+    cursor: pointer; transition: color 0.15s var(--ease-out), border-color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.15s var(--ease-out);
   }
-  .toggle svg { fill: none; transition: fill 0.2s ease, transform 0.25s cubic-bezier(0.33, 1, 0.68, 1); }
+  .toggle svg { fill: none; transition: fill 0.2s var(--ease-out), transform 0.25s cubic-bezier(0.33, 1, 0.68, 1); }
   .toggle:hover:not(:disabled) { color: var(--a); border-color: var(--a-edge); }
   .toggle.on { color: var(--a); border-color: var(--a-edge); background: var(--a-wash); }
   .toggle.on svg { fill: currentColor; transform: rotate(45deg); }
@@ -982,7 +982,7 @@
     flex: none; margin-left: 0.375rem; vertical-align: 0.0625rem; padding: 0.0625rem 0.4375rem; border-radius: 999px;
     font: inherit; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.04em; line-height: 1.4; cursor: pointer;
     border: 1px dashed var(--line); background: none; color: var(--dim);
-    transition: color 0.18s ease, border-color 0.18s ease, background-color 0.18s ease, transform 0.08s ease;
+    transition: color 0.18s var(--ease-out), border-color 0.18s var(--ease-out), background-color 0.18s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .equip:hover:not(:disabled) { color: var(--a); border-color: var(--a-edge); }
   .equip:active:not(:disabled) { transform: translateY(1px); }
@@ -1016,13 +1016,13 @@
     background: var(--bg); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.2rem 0.35rem; font: inherit; line-height: 1.4;
     font-size: 0.875rem; width: 100%; min-width: 0; box-sizing: border-box;
-    transition: border-color 0.15s ease;
+    transition: border-color 0.15s var(--ease-out);
   }
   textarea { display: block; resize: none; overflow: hidden; line-height: 1.4; }
   /* Long writing keeps the lines it was written in. */
   td.wide .cell { white-space: pre-line; }
   input:hover, select:hover, textarea:hover { border-color: var(--a-edge); }
-  .editing input:not([type='checkbox']), .editing select, .editing textarea { animation: fieldIn 0.32s ease; }
+  .editing input:not([type='checkbox']), .editing select, .editing textarea { animation: fieldIn 0.32s var(--ease-out); }
   @keyframes fieldIn {
     from { border-color: transparent; background-color: transparent; }
   }
@@ -1033,7 +1033,7 @@
   .x, .grip {
     background: none; border: 0; color: var(--dim); cursor: pointer;
     font-size: 1rem; padding: 0.125rem 0.3rem; line-height: 1; border-radius: var(--r-sm);
-    transition: color 0.15s ease, background-color 0.15s ease;
+    transition: color 0.15s var(--ease-out), background-color 0.15s var(--ease-out);
   }
   .x:hover { color: var(--danger); }
   /* The handle: grabbed, not clicked, so the page must not scroll under a
@@ -1072,7 +1072,7 @@
   .add { background: none; border: 1px dashed var(--line);
     color: var(--dim); border-radius: var(--r-sm); padding: 0.4rem 0.9rem;
     font: inherit; font-size: 0.85rem; cursor: pointer;
-    transition: border-color 0.15s ease, color 0.15s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out);
   }
   .add:hover { border-color: var(--a-edge); color: var(--a); }
   .empty { color: var(--dim); margin: 0; }

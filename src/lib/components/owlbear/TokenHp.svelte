@@ -143,13 +143,13 @@
   input {
     flex: 1; min-width: 0; font: inherit; padding: 0.3125rem 0.5rem; color: var(--text);
     border: 1px solid var(--line); border-radius: var(--r-sm); background: color-mix(in oklch, var(--bg) 70%, transparent);
-    transition: border-color 0.15s ease;
+    transition: border-color 0.15s var(--ease-out);
   }
   input:hover { border-color: var(--a-edge); }
   input:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
   button {
     flex: 1; font: inherit; cursor: pointer; border: 1px solid var(--line); background: var(--raised); color: var(--text);
-    border-radius: var(--r-sm); padding: 0.3125rem 0.5rem; transition: border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+    border-radius: var(--r-sm); padding: 0.3125rem 0.5rem; transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), transform 0.1s var(--ease-out);
   }
   button:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
   button:active:not(:disabled) { transform: translateY(1px); }

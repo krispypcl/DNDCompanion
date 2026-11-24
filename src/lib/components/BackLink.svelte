@@ -24,7 +24,7 @@
     border-radius: var(--r-sm); padding: 0.375rem 0.875rem; font-size: 0.8125rem;
     text-decoration: none; flex: none; line-height: 1.5; min-height: var(--btn-h, 0px); box-sizing: border-box;
     display: inline-flex; align-items: center; justify-content: center; user-select: none; -webkit-user-select: none;
-    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .backlink:hover { border-color: var(--a-edge); color: var(--a); }
   .backlink:active { transform: translateY(1px); }

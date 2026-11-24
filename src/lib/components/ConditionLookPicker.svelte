@@ -72,7 +72,7 @@
   .sw {
     width: 1.5rem; height: 1.5rem; border-radius: 50%; padding: 0; cursor: pointer;
     background: var(--sw); border: 2px solid transparent; outline: 1px solid var(--line);
-    transition: transform 0.15s ease, border-color 0.15s ease; position: relative; overflow: hidden;
+    transition: transform 0.15s var(--ease-out), border-color 0.15s var(--ease-out); position: relative; overflow: hidden;
     display: inline-grid; place-items: center;
   }
   .sw:hover { transform: scale(1.12); }
@@ -87,7 +87,7 @@
   .motions button {
     background: var(--bg); border: 1px solid var(--line); color: var(--dim); border-radius: 999px;
     padding: 0.1875rem 0.625rem; font: inherit; font-size: 0.75rem; cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
+    transition: color 0.15s var(--ease-out), border-color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.1s var(--ease-out);
   }
   .motions button:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
   .motions button:active:not(:disabled) { transform: translateY(1px); }
@@ -98,7 +98,7 @@
   .go {
     flex: none; background: var(--raised); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.3125rem 0.75rem; font: inherit; font-size: 0.8125rem;
-    cursor: pointer; transition: border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+    cursor: pointer; transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), transform 0.1s var(--ease-out);
   }
   .go:hover { border-color: var(--a-edge); color: var(--a); }
   .go:active { transform: translateY(1px); }

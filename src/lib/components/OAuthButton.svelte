@@ -51,7 +51,7 @@
     display: inline-flex; align-items: center; justify-content: center; gap: 0.625rem; width: 100%;
     font: inherit; font-size: 0.9375rem; font-weight: 500; cursor: pointer; padding: 0.625rem 1rem;
     border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--raised); color: var(--text);
-    transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
+    transition: border-color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .oauth:hover:not(:disabled) { border-color: var(--a-edge); }
   .oauth:active:not(:disabled) { transform: translateY(1px); }

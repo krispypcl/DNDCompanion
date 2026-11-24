@@ -54,7 +54,7 @@
   .home {
     text-decoration: none; color: var(--text); font-size: 0.875rem;
     background: var(--raised); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 0.5rem 1rem;
-    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), background-color 0.15s var(--ease-out);
   }
   .home:hover { border-color: var(--a-edge); color: var(--a); }
   .home.primary { border-color: var(--a-edge); background: var(--a-wash); color: var(--a); }

@@ -176,13 +176,13 @@
   h2 { margin: 0; font-size: 1.0625rem; }
   .lead { margin: 0.375rem 0 0.875rem; color: var(--dim); font-size: 0.875rem; line-height: 1.45; }
   .rows { display: grid; gap: 0.375rem; }
-  .row { border: 1px solid var(--line-soft); border-radius: var(--r-sm); padding: 0.5rem 0.625rem; transition: border-color 0.18s ease, background-color 0.18s ease; }
+  .row { border: 1px solid var(--line-soft); border-radius: var(--r-sm); padding: 0.5rem 0.625rem; transition: border-color 0.18s var(--ease-out), background-color 0.18s var(--ease-out); }
   .row.on { border-color: var(--a-edge); background: var(--a-wash); }
   .row:not(.on):hover { border-color: var(--line); background: var(--raised); }
   .pick:hover { color: var(--a); }
   .opts input:hover, .opts select:hover { border-color: var(--a-edge); }
   .opts input:focus-visible, .opts select:focus-visible, .pick input:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
-  .actions button { transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease; }
+  .actions button { transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.08s var(--ease-out); }
   .actions button:active { transform: translateY(1px); }
   .actions button:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
   .pick { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9375rem; }

@@ -259,7 +259,7 @@
   .inkbar .sw { width: 1.125rem; height: 1.125rem; }
   .inkbar .sw {
     width: 1.25rem; height: 1.25rem; padding: 0; border-radius: 50%; cursor: pointer; background: var(--sw);
-    border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line); transition: transform 0.12s ease, box-shadow 0.12s ease;
+    border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line); transition: transform 0.12s var(--ease-out), box-shadow 0.12s var(--ease-out);
   }
   .inkbar .sw[aria-pressed='true'] { box-shadow: 0 0 0 2px var(--a); transform: scale(1.1); }
   .thick { width: 1.75rem; height: 1.75rem; display: grid; place-items: center; padding: 0; border: 1px solid transparent; border-radius: var(--r-sm); background: none; color: var(--text); cursor: pointer; }
@@ -272,7 +272,7 @@
   }
   .itool.done { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
   /* The drawing tools answer the pointer like every other button on the sheet. */
-  .itool, .thick { transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease; }
+  .itool, .thick { transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.08s var(--ease-out); }
   .itool:hover:not(:disabled), .inkbar select:hover, .thick:hover { border-color: var(--a-edge); color: var(--a); }
   .itool.danger:hover { border-color: var(--bad); color: var(--bad); background: color-mix(in oklch, var(--bad) 10%, transparent); }
   .itool:active:not(:disabled), .thick:active, .inkbar .sw:active { transform: translateY(1px); }
@@ -350,7 +350,7 @@
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.3125rem 0.625rem; font: inherit; font-size: 0.78rem;
     white-space: nowrap;
-    cursor: pointer; transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+    cursor: pointer; transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), background-color 0.15s var(--ease-out);
   }
   .pg:hover { border-color: var(--a-edge); color: var(--a); }
   .pg.remove:hover, .pg.confirming { border-color: var(--danger); color: var(--danger); }

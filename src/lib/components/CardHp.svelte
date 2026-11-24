@@ -156,7 +156,7 @@
   .gauge { position: relative; }
   .bar {
     position: relative; display: flex; height: 6px; border-radius: 3px; background: var(--bg);
-    overflow: hidden; margin-top: 0.3125rem; transition: box-shadow 0.45s ease;
+    overflow: hidden; margin-top: 0.3125rem; transition: box-shadow 0.45s var(--ease-out);
   }
   .bar i { display: block; height: 100%; transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
   .cur { --hp-base: var(--accent, var(--a)); }

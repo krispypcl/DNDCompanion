@@ -22,7 +22,7 @@
 </div>
 
 <style>
-  .skel { padding: var(--page-pad); max-width: var(--page-width); margin: 0 auto; animation: in 0.4s ease 0.15s backwards; }
+  .skel { padding: var(--page-pad); max-width: var(--page-width); margin: 0 auto; animation: in 0.4s var(--ease-out) 0.15s backwards; }
   @keyframes in { from { opacity: 0; } }
   /* Each block is the shared shimmer (.skeleton, app.css). */
   .head { display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; }

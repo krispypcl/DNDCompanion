@@ -574,12 +574,12 @@
   input {
     background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: var(--r-sm);
     padding: 0.5rem 0.625rem; font: inherit; font-size: 0.9375rem; width: 100%; box-sizing: border-box;
-    transition: border-color 0.15s ease;
+    transition: border-color 0.15s var(--ease-out);
   }
   input:focus { outline: none; border-color: var(--a-edge); }
   .who { display: flex; gap: 1rem; align-items: center; }
   .grow { flex: 1; display: grid; gap: 0.375rem; }
-  .pic { padding: 0; border: 0; background: none; border-radius: 50%; cursor: zoom-in; transition: transform 0.15s ease; }
+  .pic { padding: 0; border: 0; background: none; border-radius: 50%; cursor: zoom-in; transition: transform 0.15s var(--ease-out); }
   .pic:disabled { cursor: default; }
   .pic:not(:disabled):hover { transform: scale(1.05); }
   .probe { display: none; }
@@ -589,12 +589,12 @@
   .email b { color: var(--text); font-weight: 600; }
   .dim { color: var(--dim); margin: 0; font-size: 0.875rem; line-height: 1.5; }
   .row { display: flex; justify-content: flex-end; align-items: center; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap; }
-  .msg { font-size: 0.8125rem; color: oklch(72% 0.17 150); margin-right: auto; animation: rise 0.25s ease; }
+  .msg { font-size: 0.8125rem; color: oklch(72% 0.17 150); margin-right: auto; animation: rise 0.25s var(--ease-out); }
   .msg.bad { color: var(--danger); }
   .btn {
     font: inherit; font-size: 0.875rem; border-radius: var(--r-sm); padding: 0.5rem 0.875rem; cursor: pointer;
     background: var(--raised); border: 1px solid var(--line); color: var(--text); text-decoration: none;
-    transition: border-color 0.15s ease, color 0.15s ease, filter 0.15s ease, transform 0.08s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), filter 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .btn:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
   .btn:active:not(:disabled) { transform: translateY(1px); }
@@ -614,7 +614,7 @@
   .danger-zone .msg { margin: 0; }
   .meter { display: grid; gap: 0.25rem; }
   .bars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.25rem; }
-  .bars i { height: 4px; border-radius: 2px; background: var(--track); transition: background-color 0.3s ease; }
+  .bars i { height: 4px; border-radius: 2px; background: var(--track); transition: background-color 0.3s var(--ease-out); }
   .meter[data-score='0'] i.lit, .meter[data-score='1'] i.lit { background: var(--danger); }
   .meter[data-score='2'] i.lit { background: color-mix(in oklch, var(--danger) 45%, var(--a)); }
   .meter[data-score='3'] i.lit, .meter[data-score='4'] i.lit { background: var(--a); }

@@ -78,7 +78,7 @@
     display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 0.75rem; align-content: start; min-width: 0;
     padding: 0.875rem; border-radius: var(--r);
     background: var(--surface); border: 1px solid var(--line-soft);
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    transition: border-color 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out);
   }
   .foe.bloodied { --vc: oklch(72% 0.15 70); }
   .foe.critical { --vc: oklch(64% 0.2 35); }
@@ -90,11 +90,11 @@
   .foepic {
     position: relative; flex: none; width: 3.25rem; height: 3.25rem; border-radius: 50%; display: grid; place-items: center;
     border: 1px solid color-mix(in oklab, oklch(62% 0.21 25) 45%, var(--line)); background: var(--raised); color: var(--dim);
-    transition: border-color 0.35s ease;
+    transition: border-color 0.35s var(--ease-out);
   }
   .foepic.npc { border-color: var(--a-edge); }
   .foepic.ringed { border-color: transparent; }
-  button.foepic { padding: 0; font: inherit; cursor: zoom-in; transition: border-color 0.35s ease, transform 0.15s ease; }
+  button.foepic { padding: 0; font: inherit; cursor: zoom-in; transition: border-color 0.35s var(--ease-out), transform 0.15s var(--ease-out); }
   button.foepic:hover { transform: scale(1.05); }
   button.foepic:active { transform: scale(0.98); }
   button.foepic:focus-visible { outline: 2px solid var(--a); outline-offset: 3px; }

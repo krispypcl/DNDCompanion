@@ -229,7 +229,7 @@
     flex: 1 1 auto; min-height: 16rem; outline: none; cursor: text;
     background: var(--bg); border: 1px solid var(--line); border-radius: 4px;
     padding: 0.15rem 0.3rem; position: relative;
-    transition: border-color 0.18s ease;
+    transition: border-color 0.18s var(--ease-out);
   }
   .editing:focus-visible, .editing:focus { border-color: var(--a-edge); }
   .editing.blank::before {

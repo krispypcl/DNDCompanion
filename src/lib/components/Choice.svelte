@@ -29,7 +29,7 @@
   button {
     font: inherit; font-size: 0.8125rem; padding: 0.3125rem 0.75rem; border-radius: calc(var(--r-sm) - 2px);
     border: 1px solid transparent; background: none; color: var(--dim); cursor: pointer;
-    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+    transition: color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), border-color 0.15s var(--ease-out);
   }
   button:hover { color: var(--text); }
   button.on { background: var(--a-wash); border-color: var(--a-edge); color: var(--a); }

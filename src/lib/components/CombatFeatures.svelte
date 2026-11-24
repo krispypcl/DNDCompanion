@@ -82,7 +82,7 @@
     border-radius: var(--r-sm);
     padding: 0.125rem 0.4375rem;
     cursor: pointer;
-    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   button:hover { border-color: var(--a-edge); color: var(--a); background: var(--a-wash); }
   button:active { transform: translateY(1px); }

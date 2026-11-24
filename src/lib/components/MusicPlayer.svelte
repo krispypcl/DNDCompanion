@@ -846,7 +846,7 @@
     border: 1px solid var(--line); border-radius: 999px; background: color-mix(in oklch, var(--surface) 94%, transparent);
     box-shadow: 0 6px 18px rgb(0 0 0 / 0.25);
     opacity: 0; pointer-events: none; transform: translate(-50%, 6px) scale(0.92); transform-origin: bottom center;
-    transition: opacity 0.16s ease, transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1);
+    transition: opacity 0.16s var(--ease-out), transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1);
   }
   .vol.open .pop, .vol:focus-within .pop { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
   /* Bridges the gap down to the speaker, so the pointer never leaves on the way up. */
@@ -894,7 +894,7 @@
   }
   .capbtn {
     flex: none; width: 1.75rem; height: 1.75rem; border-radius: 50%; display: grid; place-items: center; padding: 0;
-    border: 0; background: none; color: var(--dim); cursor: pointer; transition: color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
+    border: 0; background: none; color: var(--dim); cursor: pointer; transition: color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .capbtn:hover:not(:disabled), .capvol.open .capbtn, .vol.open > .capbtn { color: var(--a); background: var(--a-wash); }
   .capbtn:active:not(:disabled) { transform: translateY(1px); }
@@ -907,7 +907,7 @@
   .caprange {
     -webkit-appearance: none; appearance: none; width: 0; height: 4px; margin: 0; padding: 0; border-radius: 2px; opacity: 0;
     background: linear-gradient(to right, var(--a) var(--v), var(--line) var(--v)); cursor: pointer; touch-action: none;
-    transition: width 0.25s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease, margin 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: width 0.25s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s var(--ease-out), margin 0.25s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .capvol.open .caprange { width: 5.5rem; opacity: 1; margin: 0 0.375rem 0 0.25rem; }
   .caprange::-webkit-slider-thumb { -webkit-appearance: none; width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--a); border: 0; }
@@ -946,7 +946,7 @@
   .time input::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--a); }
   .time input::-webkit-slider-thumb {
     -webkit-appearance: none; width: 0.75rem; height: 0.75rem; margin-top: -4px; border-radius: 50%; background: var(--a); border: 0;
-    transform: scale(0.8); transition: transform 0.15s ease;
+    transform: scale(0.8); transition: transform 0.15s var(--ease-out);
   }
   .time input:hover::-webkit-slider-thumb, .time input:active::-webkit-slider-thumb { transform: scale(1.1); }
   .time input::-moz-range-thumb { width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--a); border: 0; }
@@ -958,7 +958,7 @@
   .ctl {
     flex: none; width: 1.875rem; height: 1.875rem; border-radius: 50%; display: grid; place-items: center;
     padding: 0; border: 1px solid transparent; background: none; color: var(--text); cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+    transition: background-color 0.15s var(--ease-out), color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .ctl:hover:not(:disabled) { background: var(--a-wash); color: var(--a); }
   .ctl:active:not(:disabled) { transform: scale(0.92); }

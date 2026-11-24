@@ -166,12 +166,12 @@
   .place {
     display: grid; justify-items: center; align-content: center; gap: 0.125rem; min-height: 2.875rem; padding: 0.25rem 0 0.125rem;
     font: inherit; font-size: 0.65625rem; color: var(--dim); background: none; border: 0; border-radius: var(--r); cursor: pointer;
-    -webkit-tap-highlight-color: transparent; transition: color 0.18s ease, transform 0.08s ease;
+    -webkit-tap-highlight-color: transparent; transition: color 0.18s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .place.on { color: var(--a); font-weight: 650; }
   .place:active { transform: translateY(1px); }
   .place:focus-visible { outline: 2px solid var(--a); outline-offset: -2px; }
-  .ic { position: relative; display: grid; place-items: center; width: min(2.75rem, 100%); height: 1.625rem; border-radius: 999px; transition: background-color 0.2s ease; }
+  .ic { position: relative; display: grid; place-items: center; width: min(2.75rem, 100%); height: 1.625rem; border-radius: 999px; transition: background-color 0.2s var(--ease-out); }
   .place.on .ic { background: var(--a-wash); }
   /* Something wants you there: a dot in the accent. */
   .ic.badge::after {

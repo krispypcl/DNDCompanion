@@ -138,14 +138,14 @@
   .mark > * { grid-area: 1 / 1; }
   .mark.pulling { transition: none; }
   .ink {
-    width: 26px; height: 26px; transition: opacity 0.2s ease;
+    width: 26px; height: 26px; transition: opacity 0.2s var(--ease-out);
     -webkit-backdrop-filter: grayscale(1) invert(1) contrast(30);
     backdrop-filter: grayscale(1) invert(1) contrast(30);
     --die: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none' stroke='%23000' stroke-linejoin='round'%3E%3Cpolygon points='24 3 43 14 43 34 24 45 5 34 5 14' stroke-width='2.4'/%3E%3Cpolygon points='24 12 34 29 14 29' stroke-width='2'/%3E%3Cpath d='M24 12 24 3M24 12 43 14M24 12 5 14M34 29 43 14M34 29 43 34M34 29 24 45M14 29 24 45M14 29 5 34M14 29 5 14' stroke-width='1.3' stroke-linecap='round' stroke-opacity='0.6'/%3E%3C/svg%3E");
     -webkit-mask: var(--die) center / contain no-repeat;
     mask: var(--die) center / contain no-repeat;
   }
-  .lit { display: grid; color: var(--a); opacity: 0; transition: opacity 0.2s ease; }
+  .lit { display: grid; color: var(--a); opacity: 0; transition: opacity 0.2s var(--ease-out); }
   .mark.ready .lit, .mark.going .lit { opacity: 1; }
   .mark.ready .ink, .mark.going .ink { opacity: 0; }
   /* Moving between pages (html.vt-page, set by the layout around a view transition): the dice is

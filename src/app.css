@@ -7,6 +7,10 @@
 :root {
   color-scheme: dark;
 
+  /* The one curve every transition and animation eases out on (motion.ts's
+     cubicOut). Plain `ease` eases in as well, so it isn't used. */
+  --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
+
   /* Matches DEFAULT_THEME ('slate') in src/lib/theme.ts. */
   --h: 255; /* accent hue */
   --c: 0.45; /* chroma scale: 0 is neutral, 1 is full */
@@ -279,7 +283,7 @@ button, summary, label:has(> input:is([type='checkbox'], [type='radio'])), [role
   padding: 0.3125rem 0.625rem; font: inherit; font-size: 0.8125rem; line-height: 1.25; letter-spacing: normal;
   text-transform: none; color: var(--text); text-decoration: none; cursor: pointer; white-space: normal;
   border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--raised); min-height: var(--btn-h, 0px);
-  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
+  transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.1s var(--ease-out);
 }
 /* On the campaign page every button is as tall as its Back (--btn-h), in its
    windows too (settings, M&N), which open outside its main. */
@@ -419,7 +423,7 @@ html:has(main.campaignpage) { --btn-h: 2.125rem; }
   flex: none; width: var(--x-size, 2rem); height: var(--x-size, 2rem); display: grid; place-items: center; padding: 0;
   font: inherit; font-size: 1.125rem; line-height: 1; color: var(--dim); cursor: pointer;
   border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--raised);
-  transition: border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), transform 0.1s var(--ease-out);
 }
 .closex:hover { border-color: var(--a-edge); color: var(--a); }
 .closex:active { transform: translateY(1px); }
@@ -543,7 +547,7 @@ html[data-motion='reduce'] *, html[data-motion='reduce'] *::before, html[data-mo
 .diemark {
   display: inline-block; flex: none; width: 0.8125em; height: 0.8125em; margin-left: 0.3125em; vertical-align: -0.0625em;
   fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; color: var(--faint);
-  transition: color 0.2s ease, transform 0.35s cubic-bezier(0.33, 1, 0.68, 1);
+  transition: color 0.2s var(--ease-out), transform 0.35s cubic-bezier(0.33, 1, 0.68, 1);
 }
 .rolls-hover:hover .diemark, .rolls-hover:focus-within .diemark { color: var(--a); transform: rotate(72deg) scale(1.15); }
 @media (prefers-reduced-motion: reduce) { .diemark { transition: none; } }

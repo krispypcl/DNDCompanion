@@ -46,7 +46,7 @@
     display: inline-flex; align-items: center; gap: 0.375rem; font: inherit; font-size: 0.8125rem; cursor: pointer;
     padding: 0.3125rem 0.625rem; border-radius: 999px; color: var(--dim);
     border: 1px solid var(--line-soft); background: var(--surface);
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    transition: background-color 0.15s var(--ease-out), border-color 0.15s var(--ease-out), color 0.15s var(--ease-out);
   }
   .opt:hover { color: var(--text); border-color: color-mix(in oklab, var(--cc) 50%, var(--line)); }
   .opt:active, .own button:active:not(:disabled) { transform: translateY(1px); }
@@ -67,7 +67,7 @@
   .own button {
     font: inherit; font-size: 0.8125rem; cursor: pointer; border-radius: var(--r-sm); padding: 0.3125rem 0.625rem;
     border: 1px solid var(--a-edge); background: var(--a-wash); color: var(--a);
-    transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
+    transition: border-color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.1s var(--ease-out);
   }
   .own button:hover:not(:disabled) { border-color: var(--a); }
   .own button:disabled { opacity: 0.5; cursor: default; }

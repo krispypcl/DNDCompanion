@@ -137,7 +137,7 @@
     font: inherit; font-size: 0.8125rem; color: var(--text); min-width: 0; width: 100%;
     padding: 0.375rem 0.5rem; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg);
   }
-  input, select, textarea { transition: border-color 0.15s ease; }
+  input, select, textarea { transition: border-color 0.15s var(--ease-out); }
   input:hover, select:hover, textarea:hover { border-color: var(--a-edge); }
   input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a-edge); }
   textarea { display: block; box-sizing: border-box; overflow: hidden; }
@@ -151,7 +151,7 @@
   .fname { font-weight: 600; }
   .fdrop {
     width: 2rem; padding: 0; border: 1px solid transparent; border-radius: var(--r-sm); background: none; color: var(--dim);
-    font-size: 1.05rem; cursor: pointer; transition: color 0.15s ease, border-color 0.15s ease;
+    font-size: 1.05rem; cursor: pointer; transition: color 0.15s var(--ease-out), border-color 0.15s var(--ease-out);
   }
   .fdrop:hover { color: var(--bad); border-color: color-mix(in oklch, var(--bad) 50%, transparent); }
 </style>

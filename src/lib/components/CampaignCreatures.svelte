@@ -535,7 +535,7 @@
   .creature {
     position: relative; display: grid; grid-row: span 6; grid-template-rows: subgrid; row-gap: 0.75rem; min-width: 0;
     padding: 0.875rem; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line-soft);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: border-color 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
   }
   .creature:hover { border-color: var(--a-edge); }
   /* Revealed: a mark down its left edge, kept while a hurt card's edge beats (app.css .hurtcard). */
@@ -560,10 +560,10 @@
   .cportrait {
     position: relative; flex: none; width: 3.25rem; height: 3.25rem; border-radius: 50%; display: grid; place-items: center;
     border: 1px solid color-mix(in oklab, oklch(62% 0.21 25) 45%, var(--line)); background: var(--raised); color: var(--dim);
-    transition: border-color 0.35s ease;
+    transition: border-color 0.35s var(--ease-out);
   }
   .cportrait.npc { border-color: var(--a-edge); }
-  button.cportrait { padding: 0; font: inherit; cursor: zoom-in; transition: border-color 0.35s ease, transform 0.15s ease; }
+  button.cportrait { padding: 0; font: inherit; cursor: zoom-in; transition: border-color 0.35s var(--ease-out), transform 0.15s var(--ease-out); }
   button.cportrait:hover { transform: scale(1.04); }
   button.cportrait:active { transform: scale(0.98); }
   button.cportrait:focus-visible { outline: 2px solid var(--a); outline-offset: 3px; }
@@ -575,7 +575,7 @@
   .addcreature svg { flex: none; }
   .cportrait.ringed { border-color: transparent; }
   .cportrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
-  .cdot.tint { padding: 0; border: 0; cursor: pointer; width: 0.625rem; height: 0.625rem; transition: transform 0.15s ease; }
+  .cdot.tint { padding: 0; border: 0; cursor: pointer; width: 0.625rem; height: 0.625rem; transition: transform 0.15s var(--ease-out); }
   .cdot.tint:hover { transform: scale(1.25); }
   .cdot.tint:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
   .cconds li.plain .cdot { background: none; box-shadow: inset 0 0 0 1px var(--dim); }
@@ -593,7 +593,7 @@
   .ctool {
     width: 1.75rem; height: 1.75rem; display: grid; place-items: center; padding: 0; border-radius: var(--r-sm);
     border: 1px solid transparent; background: none; color: var(--dim); cursor: pointer; text-decoration: none; font-size: 1.05rem;
-    transition: color 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+    transition: color 0.15s var(--ease-out), border-color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .ctool:hover { color: var(--a); border-color: var(--a-edge); }
   .ctool.eye.on { color: var(--a); }
@@ -629,7 +629,7 @@
   .plus {
     width: 1.375rem; height: 1.375rem; padding: 0; display: grid; place-items: center; border-radius: 999px;
     border: 1px dashed var(--line); background: none; color: var(--dim); cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    transition: color 0.15s var(--ease-out), border-color 0.15s var(--ease-out);
   }
   .plus:hover { color: var(--a); border-color: var(--a-edge); }
   .cnote {
@@ -641,7 +641,7 @@
   .ways { display: inline-grid; grid-auto-flow: column; gap: 0.25rem; padding: 3px; margin-bottom: 1rem; border-radius: 999px; border: 1px solid var(--line); background: var(--raised); max-width: 100%; }
   .ways button, .kindpick button {
     font: inherit; font-size: 0.8125rem; padding: 0.3125rem 0.875rem; border-radius: 999px; border: 1px solid transparent; white-space: nowrap;
-    background: none; color: var(--dim); cursor: pointer; transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+    background: none; color: var(--dim); cursor: pointer; transition: color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), border-color 0.15s var(--ease-out);
   }
   .ways button:hover, .kindpick button:hover { color: var(--text); }
   .ways button.on, .kindpick button.on { color: var(--text); background: var(--a-wash); border-color: var(--a-edge); }

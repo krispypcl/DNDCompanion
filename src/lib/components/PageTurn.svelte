@@ -23,7 +23,7 @@
     display: inline-grid; place-items: center; width: 1.875rem; height: 1.875rem;
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); cursor: pointer; padding: 0;
-    transition: border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease, transform 0.08s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), opacity 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .nav:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
   .nav:active:not(:disabled) { transform: translateY(1px); }

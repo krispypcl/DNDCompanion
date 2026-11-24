@@ -121,7 +121,7 @@
   .opt {
     width: 1.375rem; height: 1.375rem; padding: 0; border-radius: 50%; cursor: pointer;
     border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line); background: var(--sw);
-    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    transition: transform 0.12s var(--ease-out), box-shadow 0.12s var(--ease-out);
   }
   .opt.h { border-radius: 0.3rem; background: color-mix(in oklch, var(--sw) 45%, transparent); }
   .opt:hover { transform: scale(1.12); box-shadow: 0 0 0 1px var(--a-edge); }
@@ -133,7 +133,7 @@
     display: inline-grid; place-items: center; width: 1.875rem; height: 1.875rem;
     background: none; border: 1px solid transparent; border-radius: var(--r-sm);
     color: var(--dim); cursor: pointer; padding: 0; font: inherit; font-size: 0.875rem;
-    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+    transition: color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), border-color 0.15s var(--ease-out);
   }
   .tool:hover { color: var(--text); background: var(--raised); border-color: var(--line); }
   .tool.on { color: var(--a); background: var(--a-wash); border-color: var(--a-edge); }

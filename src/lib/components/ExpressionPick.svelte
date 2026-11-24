@@ -108,7 +108,7 @@
     width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; text-align: left;
     font: inherit; font-size: 0.8125rem; padding: 0.3125rem 0.5rem; color: var(--text); cursor: pointer;
     border: 1px solid var(--line-soft); border-radius: var(--r-sm); background: var(--raised);
-    transition: border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .exprbtn:hover:not(:disabled), .exprbtn[aria-expanded='true'] { border-color: var(--a-edge); }
   .exprbtn:active:not(:disabled) { transform: translateY(1px); }
@@ -134,7 +134,7 @@
   .exprlist button {
     display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; text-align: left; cursor: pointer;
     font: inherit; font-size: 0.8125rem; padding: 0.3125rem 0.5rem; color: var(--text); border: 0; border-radius: var(--r-sm); background: none;
-    transition: background-color 0.12s ease, color 0.12s ease;
+    transition: background-color 0.12s var(--ease-out), color 0.12s var(--ease-out);
   }
   .exprlist button:hover, .exprlist button:focus-visible { background: var(--a-wash); color: var(--a); outline: none; }
   .exprlist button[aria-selected='true'] { color: var(--a); font-weight: 600; }

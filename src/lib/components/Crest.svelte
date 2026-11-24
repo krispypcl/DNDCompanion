@@ -55,7 +55,7 @@
     position: relative; flex: none; display: block; width: var(--crest); height: var(--crest); padding: 0;
     border: 0; border-radius: var(--r); background: none; font: inherit; color: var(--a);
   }
-  button.crest { cursor: zoom-in; transition: transform 0.15s ease; }
+  button.crest { cursor: zoom-in; transition: transform 0.15s var(--ease-out); }
   button.crest:active { transform: translateY(1px); }
   button.crest:focus-visible { outline: 2px solid var(--a); outline-offset: 3px; }
   /* The frame and its wash stay still; what is inside turns toward the
@@ -75,7 +75,7 @@
   .crestframe::after {
     content: ''; position: absolute; inset: 0; pointer-events: none;
     background: radial-gradient(circle at calc(50% + var(--px, 0) * 45%) calc(50% + var(--py, 0) * 45%), rgb(255 255 255 / 0.28), transparent 60%);
-    opacity: var(--pz, 0); transition: opacity 0.45s ease; mix-blend-mode: soft-light;
+    opacity: var(--pz, 0); transition: opacity 0.45s var(--ease-out); mix-blend-mode: soft-light;
   }
   @media (prefers-reduced-motion: reduce) { .crestframe > img, .crestframe > :global(.class-icon) { transition: none; } }
 </style>

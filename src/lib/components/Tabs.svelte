@@ -151,7 +151,7 @@
     padding: 0.5rem 0 0.6875rem;
     cursor: pointer;
     white-space: nowrap;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    transition: color 0.15s var(--ease-out), border-color 0.15s var(--ease-out);
   }
   button:hover { color: var(--text); }
   .active { color: var(--a); }
@@ -178,7 +178,7 @@
     padding: 0.5rem 0.25rem; border: 1px solid var(--line-soft); border-radius: var(--r-sm);
     background: var(--raised); text-align: center; font-size: 0.8125rem;
     overflow-wrap: break-word; white-space: normal; line-height: 1.25;
-    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
+    transition: color 0.15s var(--ease-out), border-color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   button:hover { border-color: var(--a-edge); color: var(--text); }
   button:active { transform: translateY(1px); }

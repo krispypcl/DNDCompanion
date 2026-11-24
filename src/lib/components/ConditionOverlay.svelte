@@ -75,7 +75,7 @@
   /* Behind the modules (z 1), with the hurt edges, above only the page. */
   .overlay {
     position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    transition: --hurt 0.9s ease;
+    transition: --hurt 0.9s var(--ease-out);
     /* The sides give way to the hurt edges as they come in. */
     --side: calc(var(--hurt) * clamp(5rem, 18vw, 18rem));
     -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--side), #000 calc(100% - var(--side)), transparent 100%);
@@ -87,7 +87,7 @@
   /* The entrance is on the wrapper and the movement on the band inside it,
      so the two never fight over one transform: the movement starts from
      exactly where the entrance ends, with no jump between them. */
-  .tint { position: absolute; inset: 0; opacity: 0; transition: opacity 1.1s ease; transform-origin: center bottom; }
+  .tint { position: absolute; inset: 0; opacity: 0; transition: opacity 1.1s var(--ease-out); transform-origin: center bottom; }
   .tint.on { opacity: 1; }
   .tint { animation: rise 1s cubic-bezier(0.2, 0.8, 0.3, 1); }
   @keyframes rise { from { transform: scaleY(0.55); } }

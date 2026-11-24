@@ -29,7 +29,7 @@
 
 <style>
   /* The same frame as the page (CampaignView main). */
-  .cskel { max-width: var(--page-width); margin: 0 auto; padding: 2rem var(--page-pad) 4rem; animation: in 0.4s ease 0.15s backwards; }
+  .cskel { max-width: var(--page-width); margin: 0 auto; padding: 2rem var(--page-pad) 4rem; animation: in 0.4s var(--ease-out) 0.15s backwards; }
   @keyframes in { from { opacity: 0; } }
   .head { display: flex; align-items: center; gap: 0.875rem; }
   .logo { width: 1.625rem; height: 1.625rem; border-radius: 50%; flex: none; }

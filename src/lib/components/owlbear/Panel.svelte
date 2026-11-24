@@ -644,7 +644,7 @@
   input {
     flex: 1; min-width: 0; font: inherit; font-size: 0.875rem; padding: 0.5rem 0.6875rem; color: var(--text);
     border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface);
-    transition: border-color 0.15s ease;
+    transition: border-color 0.15s var(--ease-out);
   }
   input:hover { border-color: var(--a-edge); }
   input:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
@@ -652,7 +652,7 @@
   .go, .btn, .iconbtn {
     border: 1px solid var(--line); background: var(--raised); color: var(--text); border-radius: var(--r-sm);
     padding: 0.4375rem 0.75rem; font-size: 0.875rem; text-decoration: none; white-space: nowrap;
-    transition: border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), transform 0.1s var(--ease-out);
   }
   .iconbtn { width: 2rem; height: 2rem; padding: 0; display: grid; place-items: center; flex: none; }
   .iconbtn svg { transition: rotate 0.24s cubic-bezier(0.33, 1, 0.68, 1); }
@@ -667,7 +667,7 @@
   .chars { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
   .card {
     border: 1px solid var(--line-soft); border-radius: var(--r); background: var(--surface); padding: 0.875rem 1rem;
-    display: grid; gap: 0.75rem; transition: border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+    display: grid; gap: 0.75rem; transition: border-color 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out), opacity 0.3s var(--ease-out);
   }
   .card:hover { border-color: var(--a-edge); }
   .card.bloodied { border-color: color-mix(in oklab, var(--hurt-red) 45%, var(--line-soft)); }
@@ -679,7 +679,7 @@
   .portrait {
     position: relative; flex: none; width: 3rem; height: 3rem; border-radius: var(--r-sm);
     border: 1px solid var(--a-edge); background: linear-gradient(150deg, var(--portrait-from, var(--raised)), var(--portrait-to, var(--surface)));
-    display: grid; place-items: center; transition: border-color 0.35s ease;
+    display: grid; place-items: center; transition: border-color 0.35s var(--ease-out);
   }
   .portrait.round { border-radius: 50%; }
   .portrait.ringed { border-color: transparent; }

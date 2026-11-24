@@ -58,7 +58,7 @@
     position: relative; z-index: 1;
     display: flex; align-items: center; gap: 0.875rem; margin: 0 0 1rem; padding: 0.625rem 0.875rem;
     border-radius: var(--r); border: 1px solid var(--line-soft); background: var(--si-ground);
-    transition: border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+    transition: border-color 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out), background-color 0.25s var(--ease-out);
   }
   :global(.bannered) .sheetinit { background: transparent; border-color: color-mix(in oklch, var(--line) 70%, transparent); }
   :global(.bannered) .sheetinit::before {

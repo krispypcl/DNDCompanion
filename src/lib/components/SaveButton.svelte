@@ -28,7 +28,7 @@
     display: inline-grid; place-items: center; width: 2rem; height: 2rem; flex: none; padding: 0;
     background: var(--raised); border: 1px solid var(--line); border-radius: var(--r-sm);
     color: var(--text); cursor: pointer;
-    transition: border-color 0.18s ease, color 0.18s ease, background-color 0.18s ease, transform 0.08s ease;
+    transition: border-color 0.18s var(--ease-out), color 0.18s var(--ease-out), background-color 0.18s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .savepdf:hover:not(:disabled) { border-color: var(--a-edge); color: var(--a); }
   .savepdf:active:not(:disabled) { transform: translateY(1px); }

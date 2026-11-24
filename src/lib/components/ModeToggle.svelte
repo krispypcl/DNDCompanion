@@ -50,7 +50,7 @@
     color: var(--text);
     cursor: pointer;
     padding: 0;
-    transition: border-color 0.18s ease, color 0.18s ease, background-color 0.18s ease, transform 0.08s ease;
+    transition: border-color 0.18s var(--ease-out), color 0.18s var(--ease-out), background-color 0.18s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .mode:hover { border-color: var(--a-edge); color: var(--a); }
   .mode:active { transform: translateY(1px); }

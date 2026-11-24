@@ -133,7 +133,7 @@
     transition: height 0.28s cubic-bezier(0.33, 1, 0.68, 1);
   }
   .pullgap.pulling { transition: none; }
-  .pullmark { display: grid; place-items: center; color: var(--text); transform: rotate(var(--turn)); transition: color 0.2s ease; }
+  .pullmark { display: grid; place-items: center; color: var(--text); transform: rotate(var(--turn)); transition: color 0.2s var(--ease-out); }
   .pullmark.ready, .pullmark.going { color: var(--a); }
   .pullmark.going { animation: pullspin 0.9s linear infinite; }
   @keyframes pullspin { from { transform: rotate(var(--turn)); } to { transform: rotate(calc(var(--turn) + 360deg)); } }

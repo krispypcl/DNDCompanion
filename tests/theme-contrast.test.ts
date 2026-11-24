@@ -152,7 +152,7 @@ describe.each(Object.entries(MODES))('%s mode contrast', (name, where) => {
 describe('the two modes stay in step', () => {
   it('defines every neutral in light that dark defines', () => {
     const names = (source: string) => [...source.matchAll(/--([a-z-]+):/g)].map((m) => m[1]).sort();
-    const dark = names(block(':root {')).filter((n) => !['h', 'c', 'r', 'r-sm'].includes(n));
+    const dark = names(block(':root {')).filter((n) => !['h', 'c', 'r', 'r-sm', 'ease-out'].includes(n));
     const light = names(block(MODES.light.neutrals));
     expect(light).toEqual(expect.arrayContaining(dark));
   });

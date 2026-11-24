@@ -369,7 +369,7 @@
   .pics { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: center; min-width: 0; max-width: 100%; }
   .pic {
     flex: none; padding: 0; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden;
-    background: var(--raised); cursor: zoom-in; transition: transform 0.15s ease, opacity 0.15s ease, border-color 0.15s ease;
+    background: var(--raised); cursor: zoom-in; transition: transform 0.15s var(--ease-out), opacity 0.15s var(--ease-out), border-color 0.15s var(--ease-out);
   }
   .pic { min-width: 0; max-width: 100%; }
   .pic img { display: block; width: 100%; height: 100%; max-width: 100%; object-fit: cover; }
@@ -386,7 +386,7 @@
   .thumb {
     padding: 0; cursor: zoom-in; flex: none; height: 2.125rem; border-radius: var(--r-sm); overflow: hidden;
     border: 1px solid var(--line); background: var(--raised); position: relative;
-    opacity: 0.4; transition: opacity 0.25s ease, border-color 0.25s ease, transform 0.15s ease;
+    opacity: 0.4; transition: opacity 0.25s var(--ease-out), border-color 0.25s var(--ease-out), transform 0.15s var(--ease-out);
   }
   .thumb.portrait { width: 2.125rem; }
   .thumb.banner { width: 4.5rem; }
@@ -405,7 +405,7 @@
   .go {
     display: flex; align-items: center; gap: 0.625rem; padding: 0.5rem 0.75rem; border-radius: var(--r-sm);
     border: 1px solid var(--line-soft); background: var(--raised); color: var(--text); text-decoration: none;
-    transition: border-color 0.15s ease, background-color 0.15s ease;
+    transition: border-color 0.15s var(--ease-out), background-color 0.15s var(--ease-out);
   }
   .go span { color: var(--dim); font-size: 0.8125rem; flex: 1; min-width: 0; overflow-wrap: anywhere; }
   .go svg { color: var(--dim); flex: none; }
@@ -421,14 +421,14 @@
   .x {
     justify-self: end; width: 2.125rem; height: 2.125rem; padding: 0; border: 1px solid transparent; border-radius: var(--r-sm);
     background: none; color: var(--dim); font-size: 1.1rem; cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
+    transition: color 0.15s var(--ease-out), border-color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.1s var(--ease-out);
   }
   .x:hover { color: var(--bad); border-color: var(--line); background: var(--raised); }
   .x:active { transform: translateY(1px); }
   .x:focus-visible { outline: 2px solid var(--a); outline-offset: 1px; }
   .add input {
     min-width: 0; font: inherit; font-size: 0.875rem; padding: 0 0.625rem; color: var(--text); box-sizing: border-box;
-    border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg); transition: border-color 0.15s ease;
+    border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg); transition: border-color 0.15s var(--ease-out);
   }
   .add input:hover { border-color: var(--a-edge); }
   .add input:focus { outline: none; border-color: var(--a-edge); }
@@ -437,7 +437,7 @@
   .add .plus {
     justify-self: end; width: 2.125rem; height: 2.125rem; padding: 0; display: grid; place-items: center; cursor: pointer;
     border-radius: var(--r-sm); border: 1px solid var(--a-edge); background: var(--a-wash); color: var(--a);
-    transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
+    transition: border-color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), transform 0.1s var(--ease-out);
   }
   .add .plus svg { transition: transform 0.35s cubic-bezier(0.33, 1, 0.68, 1); }
   .add .plus:hover:not(:disabled) svg { transform: rotate(90deg); }

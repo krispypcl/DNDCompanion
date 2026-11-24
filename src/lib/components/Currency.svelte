@@ -55,7 +55,7 @@
     line-height: 1.4; height: calc(1.4em + 0.375rem + 2px);
   }
   input {
-    animation: fieldIn 0.32s ease;
+    animation: fieldIn 0.32s var(--ease-out);
     background: var(--bg); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.1875rem 0.125rem; font-family: inherit;
     -moz-appearance: textfield; appearance: textfield;

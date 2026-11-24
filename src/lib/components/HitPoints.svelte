@@ -505,7 +505,7 @@
 
   /* Temporary hit points: a pale gold outline round the gauge for as long as
      there are any, which flares when more are gained. */
-  .bar { transition: box-shadow 0.45s ease; }
+  .bar { transition: box-shadow 0.45s var(--ease-out); }
   .bar.shielded {
     box-shadow: 0 0 0 1.5px var(--shield), 0 0 10px -2px color-mix(in oklch, var(--shield) 70%, transparent);
   }
@@ -564,7 +564,7 @@
   }
   .pip[aria-pressed='true'] { background: var(--a); border-color: var(--a); animation: pipPop 0.35s cubic-bezier(0.33, 1, 0.68, 1); }
   @keyframes pipPop { from { transform: scale(0.3); } }
-  .pip { transition: background-color 0.2s ease, border-color 0.2s ease; }
+  .pip { transition: background-color 0.2s var(--ease-out), border-color 0.2s var(--ease-out); }
   .deaths { padding: 0.25rem 0.625rem; }
   /* Failures are red whatever the theme. */
   .pip.fail[aria-pressed='true'] { background: var(--hurt-red); border-color: var(--hurt-red); }
@@ -627,7 +627,7 @@
     background: var(--raised); border: 1px solid var(--line); color: var(--text);
     border-radius: var(--r-sm); padding: 0.5rem 0.5rem;
     font: inherit; font-size: 0.875rem; cursor: pointer; flex: 1 1 0; min-width: 0;
-    transition: border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+    transition: border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), transform 0.08s var(--ease-out);
   }
   .hprow button:active, .restrow :global(.rests button:active) { transform: translateY(1px); }
   .hprow button:hover, .restrow :global(.rests button:hover) {

@@ -32,7 +32,7 @@
     border-right: 1.5px solid var(--dim);
     border-bottom: 1.5px solid var(--dim);
     transform: rotate(45deg) translateY(-1px);
-    transition: transform 0.2s ease;
+    transition: transform 0.2s var(--ease-out);
   }
   .fold[open] summary::after { transform: rotate(-135deg) translateY(-1px); }
 
@@ -45,7 +45,7 @@
     overflow: hidden;
     transition:
       block-size 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-      opacity 0.26s ease,
+      opacity 0.26s var(--ease-out),
       content-visibility 0.32s allow-discrete;
   }
   .fold[open]::details-content { block-size: auto; opacity: 1; }
