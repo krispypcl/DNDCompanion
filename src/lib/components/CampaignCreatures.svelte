@@ -622,7 +622,7 @@
   .cconds li:not(.add) {
     --cc: var(--dim);
     display: inline-flex; align-items: center; gap: 0.3125rem; font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 999px; color: var(--text);
-    border: 1px solid color-mix(in oklch, var(--cc) 60%, var(--line)); background: color-mix(in oklch, var(--cc) 18%, var(--raised));
+    border: 1px solid color-mix(in oklab, var(--cc) 60%, var(--line)); background: color-mix(in oklab, var(--cc) 18%, var(--raised));
   }
   .cdot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--cc); box-shadow: 0 0 0 1px color-mix(in oklch, var(--text) 25%, transparent); }
   .cx { margin: 0 -0.25rem 0 0; padding: 0 0.125rem; border: 0; background: none; color: var(--dim); font-size: 0.875rem; line-height: 1; cursor: pointer; }

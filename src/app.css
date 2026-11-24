@@ -262,7 +262,7 @@ body {
 }
 
 /*
- * Anything you click that is words (Back, Add, Sign in, Open ↗, Cancel) is a
+ * Anything you click that is words (Back, Add, Sign In, Open, Cancel) is a
  * button, never bare text: a small bordered one, the same everywhere.
  * `quiet` is the muted kind (the privacy link under sign-in).
  */
@@ -411,7 +411,7 @@ html:has(main.campaignpage) { --btn-h: 2.125rem; }
 .app-alert.bad {
   color: var(--bad);
   border-color: color-mix(in oklch, var(--bad) 35%, transparent);
-  background: color-mix(in oklch, var(--bad) 7%, var(--surface));
+  background: color-mix(in oklab, var(--bad) 7%, var(--surface));
 }
 
 /* A small square × that closes what it sits in (a window, a stat block). */

@@ -112,7 +112,7 @@
   .foeconds { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.375rem; align-content: start; }
   .foeconds li {
     display: inline-flex; align-items: center; gap: 0.3125rem; font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 999px;
-    border: 1px solid color-mix(in oklch, var(--cc) 60%, var(--line)); background: color-mix(in oklch, var(--cc) 18%, var(--raised));
+    border: 1px solid color-mix(in oklab, var(--cc) 60%, var(--line)); background: color-mix(in oklab, var(--cc) 18%, var(--raised));
   }
   .foeconds li span { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--cc); }
 </style>

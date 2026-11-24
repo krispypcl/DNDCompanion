@@ -515,8 +515,8 @@
     --cc: var(--dim);
     display: inline-flex; align-items: center; gap: 0.3125rem;
     font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 999px; color: var(--text);
-    border: 1px solid color-mix(in oklch, var(--cc) 60%, var(--line));
-    background: color-mix(in oklch, var(--cc) 18%, var(--raised));
+    border: 1px solid color-mix(in oklab, var(--cc) 60%, var(--line));
+    background: color-mix(in oklab, var(--cc) 18%, var(--raised));
   }
   /* Light mode: the same chips in the condition's own color as in dark
      mode; only the dot's ring is a little darker, to show on a light page. */

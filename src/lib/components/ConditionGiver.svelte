@@ -54,9 +54,9 @@
   /* Given: tinted in its color and ringed, the ring mixed toward the text so
      a dark color (Blinded, Dead) still shows on a dark page, as a light one does on a light page. */
   .opt.on {
-    color: var(--text); border-color: color-mix(in oklch, var(--cc) 65%, var(--text));
-    background: color-mix(in oklch, var(--cc) 22%, var(--raised));
-    box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--cc) 65%, var(--text));
+    color: var(--text); border-color: color-mix(in oklab, var(--cc) 65%, var(--text));
+    background: color-mix(in oklab, var(--cc) 22%, var(--raised));
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--cc) 65%, var(--text));
   }
   .own { display: flex; gap: 0.375rem; margin-top: 1rem; }
   .own input {

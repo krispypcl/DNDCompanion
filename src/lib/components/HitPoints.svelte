@@ -589,7 +589,7 @@
   /* The sheet's own colors: the accent while well, danger as it fails. */
   .status.healthy { color: var(--a); border-color: var(--a-edge); background: var(--a-wash); }
   .status.bloodied {
-    color: color-mix(in oklch, var(--danger) 70%, var(--text));
+    color: color-mix(in oklab, var(--danger) 70%, var(--text));
     border-color: color-mix(in oklch, var(--danger) 40%, transparent);
     background: color-mix(in oklch, var(--danger-wash) 60%, transparent);
   }

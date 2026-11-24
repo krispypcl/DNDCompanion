@@ -1217,7 +1217,7 @@
   .condchips { display: flex; flex-wrap: wrap; gap: 0.25rem; }
   .condchip {
     font-size: 0.6875rem; padding: 0.0625rem 0.4375rem; border-radius: 999px; color: var(--text); white-space: nowrap;
-    border: 1px solid color-mix(in oklch, var(--cc) 55%, var(--line)); background: color-mix(in oklch, var(--cc) 16%, var(--raised));
+    border: 1px solid color-mix(in oklab, var(--cc) 55%, var(--line)); background: color-mix(in oklab, var(--cc) 16%, var(--raised));
   }
   .condmore { font-size: 0.6875rem; color: var(--dim); align-self: center; }
   /*
