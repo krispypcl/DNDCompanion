@@ -6,6 +6,7 @@
 
 import type { FormulaContext } from './formula.ts';
 import { abilityScoreParts, equippedEffects, type Part } from './equipment.ts';
+import { speedPenalty } from './exhaustion.ts';
 import { speciesWalk } from './lookup.ts';
 import {
   ABILITIES,
@@ -116,8 +117,8 @@ export function speedParts(def: Definition, exhaustion = 0): { total: number; pa
     note: walk.from === 'species' ? (def.identity.ancestry || 'species') : walk.from === 'written' ? 'as written' : 'the usual'
   }];
   for (const { item, effect } of equippedEffects(def)) if (effect.kind === 'speed') parts.push({ label: item, value: effect.bonus });
-  // Exhaustion takes 5 feet a level (rules/exhaustion.ts); Speed never goes below 0.
-  if (exhaustion > 0) parts.push({ label: `Exhaustion ${exhaustion}`, value: -5 * exhaustion });
+  // Exhaustion takes 5 feet a level; Speed never goes below 0.
+  if (exhaustion > 0) parts.push({ label: `Exhaustion ${exhaustion}`, value: -speedPenalty(exhaustion) });
   return { total: Math.max(0, parts.reduce((s, p) => s + p.value, 0)), parts };
 }
 
