@@ -16,6 +16,9 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // Each file still runs in its own context, but jsdom is built once per
+    // worker instead of once per file: the suite runs in about half the time.
+    pool: 'vmThreads',
     include: ['tests/**/*.test.ts'],
     setupFiles: ['tests/setup.ts']
   }
