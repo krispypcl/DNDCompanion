@@ -320,7 +320,7 @@
   .result { position: relative; --gold: oklch(86% 0.15 90); }
   .result.crit { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 0 26px -6px var(--gold); }
   .result.crit .total { color: var(--gold); animation: critPop 0.6s cubic-bezier(0.33, 1, 0.68, 1); }
-  @keyframes critPop { from { transform: scale(0.5); } 55% { transform: scale(1.25); } }
+  @keyframes critPop { from { transform: scale(0.5); } }
   .result.crit::after {
     content: ''; position: absolute; left: 2.25rem; top: 50%; width: 1px; height: 1px; border-radius: 50%;
     box-shadow: 0 0 0 0 var(--gold); pointer-events: none;

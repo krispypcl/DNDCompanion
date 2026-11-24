@@ -262,15 +262,15 @@
   }
   @media (prefers-reduced-motion: reduce) { .tracker.emptied, .pip.lose::after { animation: none; } }
   .pip:disabled { cursor: default; }
-  .pip.gain { animation: fill 0.42s backwards; animation-delay: var(--delay); }
+  .pip.gain { animation: fill 0.42s cubic-bezier(0.33, 1, 0.68, 1) backwards; animation-delay: var(--delay); }
   .pip.gain::before { transition-delay: var(--delay); }
   /* Spending is quick: the fill fades from the first frame, a few
      hundredths of a second apart, while the pip gives a small dip. */
   .pip.lose { animation: drain 0.2s ease-out; animation-delay: var(--delay); transition-delay: var(--delay); }
   .pip.lose::before { animation: drain-fill 0.16s ease-out backwards; animation-delay: var(--delay); }
+  /* Grows straight to its size, easing out: no overshoot past it. */
   @keyframes fill {
     from { transform: scale(0.4); }
-    60%  { transform: scale(1.22); }
     to   { transform: scale(1); }
   }
   @keyframes drain { 50% { transform: scale(0.8); } }

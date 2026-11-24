@@ -563,7 +563,7 @@
     border: 1px solid var(--faint); background: transparent; padding: 0; cursor: pointer;
   }
   .pip[aria-pressed='true'] { background: var(--a); border-color: var(--a); animation: pipPop 0.35s cubic-bezier(0.33, 1, 0.68, 1); }
-  @keyframes pipPop { from { transform: scale(0.3); } 60% { transform: scale(1.3); } }
+  @keyframes pipPop { from { transform: scale(0.3); } }
   .pip { transition: background-color 0.2s ease, border-color 0.2s ease; }
   .deaths { padding: 0.25rem 0.625rem; }
   /* Failures are red whatever the theme. */
