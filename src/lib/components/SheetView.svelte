@@ -96,7 +96,7 @@
   import { parseRoll, type Pool, type Roll } from '#lib/rules/dice.ts';
   import { d20Penalty, requestRoll } from '#lib/stores/dice.ts';
   import { conditionsFor, d20Penalty as d20PenaltyOf, exhaustionLevel, exhaustionTracker } from '#lib/rules/exhaustion.ts';
-  import { friendlyDate, latest } from '#lib/rules/dates.ts';
+  import { latest, numericDate } from '#lib/rules/dates.ts';
   import { exportFileName, exportSheet } from '#lib/exchange.ts';
   import { resolveImageUrl } from '#lib/rules/imageUrl.ts';
   import { needsConcentration, ordinal, spellGroup, spellLevel, spellRank } from '#lib/rules/spells.ts';
@@ -961,8 +961,8 @@
              sees the same on the sheet list instead. -->
         {#if !isOwner}
           <dl class="stamps">
-            <div><dt>Created</dt><dd>{friendlyDate(sheet.created_at)}</dd></div>
-            <div><dt>Last updated</dt><dd>{friendlyDate(updated)}</dd></div>
+            <div><dt>Created</dt><dd>{numericDate(sheet.created_at)}</dd></div>
+            <div><dt>Last updated</dt><dd>{numericDate(updated)}</dd></div>
           </dl>
         {/if}
         <!-- One row, as the campaign's: Back, Edit, and the cog, then the sheet's tools. -->
@@ -996,8 +996,8 @@
       <!-- For a visitor, when the sheet was made and last touched, which sit in the header on a computer. -->
       <div class="phonetools" data-places="more">
         <dl class="stamps">
-          <div><dt>Created</dt><dd>{friendlyDate(sheet.created_at)}</dd></div>
-          <div><dt>Last updated</dt><dd>{friendlyDate(updated)}</dd></div>
+          <div><dt>Created</dt><dd>{numericDate(sheet.created_at)}</dd></div>
+          <div><dt>Last updated</dt><dd>{numericDate(updated)}</dd></div>
         </dl>
       </div>
     {/if}

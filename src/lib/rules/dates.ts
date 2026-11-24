@@ -1,25 +1,11 @@
 /**
- * Dates as a person says them: "today", "yesterday", or the day itself, with
- * the year only when it is not this one.
+ * Dates. A day something happened (made, changed, played) is written out in
+ * full, month first; the next session is said as people plan it.
  */
 const DAY = 86_400_000;
 
 function startOfDay(d: Date): number {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-}
-
-export function friendlyDate(iso: string | null | undefined, now: Date = new Date()): string {
-  if (!iso) return '';
-  const when = new Date(iso);
-  if (Number.isNaN(when.getTime())) return '';
-  const days = Math.round((startOfDay(now) - startOfDay(when)) / DAY);
-  if (days === 0) return 'today';
-  if (days === 1) return 'yesterday';
-  return when.toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
-    ...(when.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {})
-  });
 }
 
 /** A day written out in full, month first: 11/16/2026. */
