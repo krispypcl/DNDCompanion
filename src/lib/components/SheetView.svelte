@@ -352,14 +352,19 @@
     loadError = null;
     resetUndo();
     resetTray();
+    // Moving straight to another sheet (back and forward between two) keeps
+    // this page: a slow answer for the one left must not land on the new one.
+    let current = true;
     sheetRepo
       .loadSheet(id)
       .then((found) => {
+        if (!current) return;
         sheetStore.load(found);
         if (!found) loadError = 'notfound';
       })
-      .catch((e) => (loadError = friendlyError(e, 'This sheet wouldn’t load! Give it another roll in a moment.')))
-      .finally(() => (loading = false));
+      .catch((e) => current && (loadError = friendlyError(e, 'This sheet wouldn’t load! Give it another roll in a moment.')))
+      .finally(() => current && (loading = false));
+    return () => (current = false);
   });
 
   // The sheet's own sound effects, while it is on screen.
